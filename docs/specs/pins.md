@@ -40,7 +40,8 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
 
 Cidade, Vila, Castelo, Masmorra, NPC, Ponto de interesse, Personalizado. Cada tipo tem um ícone
 padrão; o ícone pode vir de uma biblioteca embutida ou de uma imagem enviada pelo usuário
-(PNG/JPG/SVG até 1 MB, redimensionada para 256 px ao enviar).
+(PNG/JPG/SVG até 1 MB, redimensionada para 256 px ao enviar). Acima de 1 MB, o usuário escolhe
+entre recusar o arquivo ou aceitá-lo com a redução.
 
 ## Estados
 
@@ -51,9 +52,10 @@ padrão; o ícone pode vir de uma biblioteca embutida ou de uma imagem enviada p
 | Hover | Mouse sobre o pin | `scale(1.1)` + nome |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, marca tracejada no chão |
 | Agrupado | Zoom < 0,8 e pins a < 34 px | Círculo com contador |
-| Excluído | Excluir confirmado | O pin encolhe (180 ms); toast "Pin excluído" com a ação "Desfazer" |
+| Excluído | Excluir | O pin encolhe (180 ms); toast "Pin excluído" com a ação "Desfazer" |
 | Vazio | Mundo sem pins | TODO: não descrito no material |
-| Erro | Imagem enviada acima de 1 MB ou em formato não aceito | TODO: mensagem não descrita no material |
+| Imagem grande | Imagem enviada acima de 1 MB | Mensagem explicando o limite e duas opções: recusar o arquivo (o ícone anterior continua) ou aceitar com a redução. TODO: texto da mensagem e dos botões |
+| Formato não aceito | Arquivo que não é PNG, JPG nem SVG | O arquivo é recusado, com uma mensagem dos formatos aceitos; o ícone anterior continua. TODO: texto da mensagem |
 
 ## Ações
 
@@ -63,7 +65,7 @@ padrão; o ícone pode vir de uma biblioteca embutida ou de uma imagem enviada p
 | Clicar num pin | Abre o drawer (E2) |
 | Arrastar um pin | Muda a posição |
 | Ocultar por tipo | Esconde os pins daquele tipo |
-| Excluir | Pede confirmação; pode ser desfeito (Ctrl+Z) |
+| Excluir (Delete) | Exclui na hora, sem confirmação; o toast "Pin excluído" oferece "Desfazer", e Ctrl+Z também desfaz |
 | Duplicar | TODO: não descrito no material |
 | Centralizar | Centraliza a câmera no pin |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
@@ -94,5 +96,4 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 > Pendente: conteúdo das abas Detalhes e Conexões (sem tela no material; os campos livres
 > chave/valor ficam em Detalhes?).
 
-> Pendente: telas da busca (Ctrl K), da confirmação de exclusão e da escolha de ícone/upload (sem
-> tela no material).
+> Pendente: telas da busca (Ctrl K) e da escolha de ícone/upload (sem tela no material).

@@ -89,8 +89,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Erro | A geração falha | Toast de erro "Não foi possível gerar o mapa", com a ação "Tentar de novo" |
 | Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água" |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
-
-> Pendente: o que o usuário vê quando o navegador não tem WebGL2 (obrigatório pelo RNF-6)?
+| Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso com os navegadores suportados. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)). TODO: texto do aviso |
 
 > Pendente: o que acontece com o pin depois do aviso "N pins ficaram sobre a água" (fica onde
 > está, é movido, oferece ação)?

@@ -64,10 +64,9 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Erro ao importar | O arquivo não é um mundo válido | 03 · Erro ao importar |
 | Salvando | Mudança no mundo ativo | Indicador "Salvando…" (`loader-circle` girando) |
 | Salvo | Salvamento concluído | Indicador "Salvo" (`cloud`, verde) |
-| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho) |
+| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup) |
+| Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor (ver [geracao-terreno.md](geracao-terreno.md)) |
 | Carregando | Lista sendo lida do IndexedDB | TODO: não descrito no material |
-
-> Pendente: o que o usuário pode fazer depois de "Erro ao salvar" (tentar de novo, exportar)?
 
 ## Ações
 
@@ -80,7 +79,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Renomear | TODO: tela não descrita no material |
 | Duplicar | Cria uma cópia do mundo |
 | Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
-| Excluir | TODO: confirmação não descrita no material |
+| Excluir | Pede confirmação num modal; não pode ser desfeito (o histórico é do mundo). TODO: tela e texto do modal |
 | Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z) | Desfaz ou refaz mudanças em pins, estradas e parâmetros de geração |
 
 ## Regras
@@ -101,7 +100,7 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 ## Pendências
 
-> Pendente: telas de Exportar (JSON e PNG), Renomear e confirmação de Excluir (o design system cita
+> Pendente: telas de Exportar (JSON e PNG), Renomear e do modal de confirmação de Excluir (o design system cita
 > um modal "Exportar", mas não há tela no material).
 
 > Pendente: outros motivos de recusa na importação, além de "falta o terreno", e o texto de cada um.
