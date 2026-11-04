@@ -62,11 +62,11 @@ tabela e o ID fica vago). A coluna Área vira a label `area:*` (criada pelo `boo
 
 | ID | Feature | Prioridade | Spec | Área |
 |---|---|---|---|---|
-| F1 | Geração de terreno e sidebar | Must | [specs/geracao-terreno.md](specs/geracao-terreno.md) | <a definir> |
-| F2 | Câmera e navegação | Must | [specs/navegacao.md](specs/navegacao.md) | <a definir> |
-| F3 | Pins e drawer | Must | [specs/pins.md](specs/pins.md) | <a definir> |
-| F4 | Mundos e persistência | Must | [specs/mundos.md](specs/mundos.md) | <a definir> |
-| F5 | Estradas e rotas | Should | [specs/estradas.md](specs/estradas.md) | <a definir> |
+| F1 | Geração de terreno e sidebar | Must | [specs/geracao-terreno.md](specs/geracao-terreno.md) | area:geracao |
+| F2 | Câmera e navegação | Must | [specs/navegacao.md](specs/navegacao.md) | area:mapa |
+| F3 | Pins e drawer | Must | [specs/pins.md](specs/pins.md) | area:pins |
+| F4 | Mundos e persistência | Must | [specs/mundos.md](specs/mundos.md) | area:mundos |
+| F5 | Estradas e rotas | Should | [specs/estradas.md](specs/estradas.md) | area:estradas |
 
 ## Requisitos não funcionais
 
@@ -121,7 +121,7 @@ código.
 
 ## Questões em aberto
 
-> Pendente: haverá contas e sincronização em nuvem, ou o app será só local?
+Só local na v1, sem contas nem nuvem: ver [ADR 0003](adr/0003-app-so-local-na-v1.md).
 
 > Pendente: a interface será só em português ou já nasce preparada para outros idiomas?
 

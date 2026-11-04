@@ -1,6 +1,6 @@
 ---
 feature: F1
-area: <a definir>
+area: area:geracao
 updated: 2026-11-04
 ---
 

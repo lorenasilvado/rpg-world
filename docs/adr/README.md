@@ -6,6 +6,9 @@ Cada arquivo `NNNN-<slug>.md` registra uma decisão técnica duradoura: por que 
 
 | # | Título | Status | Data |
 |---|---|---|---|
+| [0001](0001-stack-da-v1.md) | Stack da v1: React + TypeScript, PixiJS e núcleo de geração num Web Worker | Aceita | 2026-11-04 |
+| [0002](0002-hospedagem-github-pages.md) | Hospedagem no GitHub Pages, com o repositório público | Aceita | 2026-11-04 |
+| [0003](0003-app-so-local-na-v1.md) | App só local na v1: sem contas, backend nem sincronização | Aceita | 2026-11-04 |
 
 Mantenha este índice em dia ao criar um ADR ou mudar o status de um.
 

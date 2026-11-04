@@ -1,6 +1,6 @@
 ---
 feature: F4
-area: <a definir>
+area: area:mundos
 updated: 2026-11-04
 ---
 

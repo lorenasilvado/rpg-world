@@ -1,6 +1,6 @@
 ---
 feature: F2
-area: <a definir>
+area: area:mapa
 updated: 2026-11-04
 ---
 

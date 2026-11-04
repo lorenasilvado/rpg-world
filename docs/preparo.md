@@ -16,11 +16,11 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 | # | Item | Nível | Status | Evidência (arquivo §seção) | Destino | Em aberto |
 |---|------|-------|--------|----------------------------|---------|-----------|
 | 1 | Visão, problema e público | trava | tem | PRD §Visão geral e objetivos | prd.md |  |
-| 2 | Features com IDs e MoSCoW | trava | parcial | PRD §Requisitos funcionais (RF-1 a RF-5), §Fora de escopo | prd.md (Features) | F1–F5 a partir de RF-1..RF-5; F1–F4 Must, F5 e Medir distância Should (rodada 1); faltam as áreas `area:*` |
-| 3 | Decisões técnicas: stack, plataformas, hospedagem, banco | trava | parcial | PRD §Stack de tecnologias, §RNF-6 | overview.md + ADRs | stack é recomendação, sem ADR; hospedagem não definida |
+| 2 | Features com IDs e MoSCoW | trava | tem | PRD §Requisitos funcionais (RF-1 a RF-5), §Fora de escopo | prd.md (Features) | F1–F4 Must, F5 e Medir distância Should; áreas uma por feature (rodadas 1 e 2) |
+| 3 | Decisões técnicas: stack, plataformas, hospedagem, banco | trava | tem | PRD §Stack de tecnologias, §RNF-6; ADRs 0001, 0002 | overview.md + ADRs | |
 | 4 | Fluxos de usuário com erros e estados vazios | trava | parcial | Telas.md §Fluxo, 02, 03, E3; DS PDF §05 Feedback | specs/ | faltam: sem WebGL2, upload inválido, confirmação de exclusão, carregando, depois do "Erro ao salvar" |
 | 5 | Modelo de dados e glossário | trava | parcial | PRD §Modelo de dados, §Pipeline | overview.md + specs | glossário montado a partir do material; em aberto: sizeKm, bordas do mapa, rios, hierarquia de pins, versões do gerador |
-| 6 | Integrações externas (APIs, auth, limites) | trava | parcial | PRD §Questões em aberto | specs + ADRs | provável n/a (app só local), mas "contas e nuvem?" está em aberto |
+| 6 | Integrações externas (APIs, auth, limites) | trava | n/a | ADR 0003 | specs + ADRs | n/a: app só local na v1, sem contas, backend nem integrações (ADR 0003); fontes e ícones vêm de CDN no protótipo |
 | 7 | Design system e tokens | trava | tem | design-system.md §1–9; DS PDF | design/design-system.md + tokens.json (PDF em design/, depois do .md) | valores dos presets em rpg-kit.js (não veio) |
 | 8 | Telas ou mockups das features Must | trava | parcial | Telas.md; screens/*.png (7 telas × 2 temas) | assets/design/ (imagens); PDF em design/; specs (Referência) | sem tela: busca, exportar, renomear, excluir, abas Detalhes/Conexões, mobile, boas-vindas, drawer da estrada |
 | 9 | Requisitos não funcionais | ajuda | tem | PRD §Requisitos não funcionais | prd.md + specs |  |
@@ -81,3 +81,4 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 
 - 2026-11-04 · inventário: material de `_import/` (PRD, Telas.md, design-system.md, 2 PDFs, demo, 14 telas) organizado em `docs/`. Telas PDF e demo não importados.
 - 2026-11-04 · rodada 1: contradições e item 2. Presets: "Deserto árido" e "Terras geladas" (contra as telas). Seed: sortear e copiar, sem "Gerar". Neve em Relevo e seção Avançado na sidebar. F5 e Medir distância: Should.
+- 2026-11-04 · rodada 2: itens 2, 3 e 6. Áreas: area:geracao, area:mapa, area:pins, area:mundos, area:estradas. Stack do PRD aceita (ADR 0001). Hospedagem no GitHub Pages com o repositório público (ADR 0002). Só local na v1 (ADR 0003).

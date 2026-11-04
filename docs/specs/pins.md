@@ -1,6 +1,6 @@
 ---
 feature: F3
-area: <a definir>
+area: area:pins
 updated: 2026-11-04
 ---
 

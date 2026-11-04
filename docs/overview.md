@@ -8,29 +8,29 @@ navegador e salva os mundos localmente. Visão e escopo em [prd.md](prd.md).
 
 ## Stack
 
-A stack abaixo é a **recomendação** do PRD; ainda não há ADR.
-
-> Pendente: confirmar a stack (vira ADR) e definir a hospedagem.
+Decidida no [ADR 0001](adr/0001-stack-da-v1.md). Hospedagem no
+[ADR 0002](adr/0002-hospedagem-github-pages.md). O app é só local na v1
+([ADR 0003](adr/0003-app-so-local-na-v1.md)).
 
 | Camada | Escolha | Por quê | ADR |
 |---|---|---|---|
-| Build | Vite | Rápido, já conhecido do RPG-land, suporte nativo a workers | TODO |
-| Linguagem | TypeScript (strict) | Tipos para o modelo do mundo e para a fronteira com o worker | TODO |
-| UI | React 19 | Sidebar, drawer e formulários; não participa do loop de render do mapa | TODO |
-| Componentes | shadcn/ui (Radix) + Tailwind CSS | Slider, Sheet (drawer), Dialog e Tabs acessíveis e customizáveis | TODO |
-| Estado | Zustand (+ middleware `temporal` do zundo para desfazer) | Simples, sem boilerplate, legível fora do React pelo renderer | TODO |
-| Render 2D | PixiJS v8 | WebGL/WebGPU, sprites em lote, ideal para milhares de ícones e pins | TODO |
-| Câmera | pixi-viewport | Pan, zoom no cursor, pinça, inércia e limites prontos | TODO |
-| Ruído | simplex-noise (`createNoise3D`) + alea | Ruído 3D permite migrar para esfera sem trocar o gerador | TODO |
-| Worker | Comlink | Chamada assíncrona tipada; transfere `ArrayBuffer` sem cópia | TODO |
-| Formulários | react-hook-form + zod | Validação dos dados do pin e do JSON importado | TODO |
-| Texto rico | TipTap | Descrições de locais e NPCs com formatação | TODO |
-| Persistência | Dexie (IndexedDB) | Guarda mundos e imagens enviadas (blobs) sem limite de 5 MB | TODO |
-| Testes | Vitest + Playwright | Unitário do gerador; E2E dos fluxos de pin e sidebar | TODO |
-| 3D (futuro) | Three.js via react-three-fiber | Esfera, iluminação e câmera orbital | TODO |
-| Hospedagem | TODO | | TODO |
+| Build | Vite | Rápido, já conhecido do RPG-land, suporte nativo a workers | [0001](adr/0001-stack-da-v1.md) |
+| Linguagem | TypeScript (strict) | Tipos para o modelo do mundo e para a fronteira com o worker | [0001](adr/0001-stack-da-v1.md) |
+| UI | React 19 | Sidebar, drawer e formulários; não participa do loop de render do mapa | [0001](adr/0001-stack-da-v1.md) |
+| Componentes | shadcn/ui (Radix) + Tailwind CSS | Slider, Sheet (drawer), Dialog e Tabs acessíveis e customizáveis | [0001](adr/0001-stack-da-v1.md) |
+| Estado | Zustand (+ middleware `temporal` do zundo para desfazer) | Simples, sem boilerplate, legível fora do React pelo renderer | [0001](adr/0001-stack-da-v1.md) |
+| Render 2D | PixiJS v8 | WebGL/WebGPU, sprites em lote, ideal para milhares de ícones e pins | [0001](adr/0001-stack-da-v1.md) |
+| Câmera | pixi-viewport | Pan, zoom no cursor, pinça, inércia e limites prontos | [0001](adr/0001-stack-da-v1.md) |
+| Ruído | simplex-noise (`createNoise3D`) + alea | Ruído 3D permite migrar para esfera sem trocar o gerador | [0001](adr/0001-stack-da-v1.md) |
+| Worker | Comlink | Chamada assíncrona tipada; transfere `ArrayBuffer` sem cópia | [0001](adr/0001-stack-da-v1.md) |
+| Formulários | react-hook-form + zod | Validação dos dados do pin e do JSON importado | [0001](adr/0001-stack-da-v1.md) |
+| Texto rico | TipTap | Descrições de locais e NPCs com formatação | [0001](adr/0001-stack-da-v1.md) |
+| Persistência | Dexie (IndexedDB) | Guarda mundos e imagens enviadas (blobs) sem limite de 5 MB | [0001](adr/0001-stack-da-v1.md) |
+| Testes | Vitest + Playwright | Unitário do gerador; E2E dos fluxos de pin e sidebar | [0001](adr/0001-stack-da-v1.md) |
+| 3D (futuro) | Three.js via react-three-fiber | Esfera, iluminação e câmera orbital | [0001](adr/0001-stack-da-v1.md) |
+| Hospedagem | GitHub Pages (build estático) | App estático, repositório público | [0002](adr/0002-hospedagem-github-pages.md) |
 
-**Alternativas descartadas no PRD**
+**Alternativas descartadas** (detalhes no ADR 0001)
 
 - **Leaflet:** pensado para tiles de servidor; dar estilo cartoon e regerar o mapa a cada slider
   exige lutar contra a biblioteca.
