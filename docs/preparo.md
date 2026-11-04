@@ -1,6 +1,6 @@
 ---
 updated: 2026-11-04
-fase: entrevista
+fase: pronto
 ---
 
 # Preparo do projeto
@@ -85,3 +85,4 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 - 2026-11-04 · rodada 3: item 5. Mapa limitado, com oceano nas bordas. Rios e lagos na v1, sem hidrologia (método, modelo e estilo viraram Pendente). Pins com hierarquia (detalhes Pendente). sizeKm: decido depois (Pendente).
 - 2026-11-04 · rodada 4: item 4. Sem WebGL2: aviso no lugar do editor, a lista funciona. Pin excluído sem confirmação, com Desfazer (muda o PRD, que pedia confirmação); mundo excluído com confirmação. Erro ao salvar: tenta de novo e oferece Tentar de novo e Exportar .json. Imagem acima de 1 MB: mensagem, e o usuário escolhe recusar ou aceitar com redução; formato errado é recusado.
 - 2026-11-04 · rodada 5: itens 4 e 8. Lista carregando: cartões esqueleto. Editor abrindo: prévia borrada como no E3. Rota automática sem caminho: toast com "Criar rota marítima". Telas sem mockup seguem o design system, com prints revistos no PR.
+- 2026-11-04 · fechamento: fase pronto, com o item 5 parcial só por Pendente (aceito pelo usuário).
