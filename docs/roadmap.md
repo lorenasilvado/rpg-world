@@ -31,3 +31,4 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
 
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
+| 1 | #1 | [chore] Setup do projeto | todo | — | |
