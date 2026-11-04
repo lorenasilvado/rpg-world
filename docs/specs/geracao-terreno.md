@@ -30,10 +30,12 @@ de dados em [overview.md](../overview.md).
 
 - Painel esquerdo de 320 px, recolhível (48 px recolhido).
 - Nome do mundo e status de salvamento ("Salvo").
-- Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável.
+- Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável. Não há
+  botão "Gerar": editar ou sortear a seed regenera o mapa.
 - Seções recolhíveis: Presets, Terreno (Oceano 45%, Praias 30%), Biomas (Desertos 15%,
-  Florestas 35%), Relevo (Montanhas 30%). Cada controle tem ícone, amostra de cor, porcentagem e
-  slider.
+  Florestas 35%), Relevo (Montanhas 30%, Neve 40%) e Avançado (Tamanho do continente, Rugosidade
+  da costa, Temperatura global). Cada controle tem ícone, amostra de cor, porcentagem e slider. A
+  tela E1 mostra só as quatro primeiras seções (sem Neve).
 - Rodapé: barra "Distribuição do mapa" com a porcentagem real de cada bioma no mapa gerado,
   legenda e botão "Restaurar padrão".
 
@@ -53,7 +55,8 @@ Cada slider vai de 0 a 100%:
 | Rugosidade da costa (avançado) | | 50 |
 | Temperatura global (avançado) | | 50 |
 
-Os controles avançados ficam numa seção recolhível.
+Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam na seção recolhível
+"Avançado".
 
 ### 04 · Assistente de novo mundo
 
@@ -67,8 +70,11 @@ Os controles avançados ficam numa seção recolhível.
   |---|---|
   | Continente temperado | Um grande continente de campos e florestas |
   | Arquipélago | Dezenas de ilhas e mares rasos |
-  | Reinos áridos | Desertos vastos e serras secas |
-  | Norte gelado | Cordilheiras altas e neve eterna |
+  | Deserto árido | Desertos vastos e serras secas |
+  | Terras geladas | Cordilheiras altas e neve eterna |
+
+  As telas (`assistente-*.png`) ainda mostram "Reinos áridos" e "Norte gelado": valem os nomes
+  desta tabela.
 
 - Seção "Avançado": Seed (opcional) com botões sortear e copiar; nota "A mesma seed sempre gera o
   mesmo mapa."
@@ -96,6 +102,7 @@ Os controles avançados ficam numa seção recolhível.
 | Arrastar um slider | Prévia 256² em tempo real; cada pedido novo cancela o anterior |
 | Soltar o slider | Gera o mapa final em 1024² |
 | Sortear seed | Seed aleatória e mapa novo |
+| Editar a seed | Regenera o mapa com a seed nova |
 | Copiar seed | Copia a seed |
 | Escolher preset | Aplica os parâmetros do preset |
 | "Restaurar padrão" | Volta os parâmetros ao padrão |
@@ -125,18 +132,8 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 ## Pendências
 
-> Pendente: nomes dos presets. O PRD diz "Arquipélago, Continente temperado, Deserto árido, Terras
-> geladas"; o design system e as telas dizem "Continente temperado, Arquipélago, Reinos áridos,
-> Norte gelado".
-
 > Pendente: valores de cada preset (no protótipo, `rpg-kit.js → PRESETS`, que não veio no
 > material).
-
-> Pendente: botões da seed. O PRD diz "Gerar" e "Aleatório"; as telas mostram sortear e copiar, e o
-> mapa regenera sozinho quando um slider muda. Existe botão "Gerar"?
-
-> Pendente: a tela E1 mostra só Oceano, Praias, Desertos, Florestas e Montanhas. Onde ficam Neve e
-> os controles avançados (tamanho, rugosidade, temperatura)?
 
 > Pendente: o mapa deve ser limitado (ilha/continente com bordas de oceano) ou contínuo nas bordas?
 

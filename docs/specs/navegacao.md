@@ -57,7 +57,7 @@ barra inferior.
 | Centralizar (atalho 0) | Centraliza o mapa |
 | Arrastar o retângulo do minimapa | Move a área visível |
 | Recolher o minimapa | Esconde o minimapa |
-| Medir distância (M) (desejável) | Mede a distância entre dois pontos |
+| Medir distância (M) (Should) | Mede a distância entre dois pontos |
 
 ## Regras
 

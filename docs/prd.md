@@ -43,11 +43,11 @@ cidades, NPCs e pontos de interesse.
 - F4 · Mundos e persistência
 
 ### Should
-- TODO: o material marca como "desejável" o F5 (Estradas e rotas) e a ferramenta "Medir
-  distância" (F2), sem dizer se é Should ou Could.
+- F5 · Estradas e rotas
+- Ferramenta "Medir distância" (parte de F2)
 
 ### Could
-- TODO: ver Should.
+- (nenhum)
 
 ### Won't (nesta versão)
 - Planeta 3D (só a preparação arquitetural).
@@ -66,7 +66,7 @@ tabela e o ID fica vago). A coluna Área vira a label `area:*` (criada pelo `boo
 | F2 | Câmera e navegação | Must | [specs/navegacao.md](specs/navegacao.md) | <a definir> |
 | F3 | Pins e drawer | Must | [specs/pins.md](specs/pins.md) | <a definir> |
 | F4 | Mundos e persistência | Must | [specs/mundos.md](specs/mundos.md) | <a definir> |
-| F5 | Estradas e rotas | <desejável: a definir> | [specs/estradas.md](specs/estradas.md) | <a definir> |
+| F5 | Estradas e rotas | Should | [specs/estradas.md](specs/estradas.md) | <a definir> |
 
 ## Requisitos não funcionais
 

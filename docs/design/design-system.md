@@ -307,7 +307,8 @@ Implementação no protótipo: `rpg-decor-medieval.js → RPG_MEDIEVAL_V2B`, car
 Oceano 45, praias 30, desertos 15, florestas 35, montanhas 30, neve 40, tamanho 50, rugosidade 50,
 temperatura 50 (todos 0–100). Desertos + florestas ≤ 100.
 
-**Presets:** Continente temperado · Arquipélago · Reinos áridos · Norte gelado.
+**Presets:** Continente temperado · Arquipélago · Deserto árido · Terras geladas. As telas e o
+PDF ainda mostram "Reinos áridos" e "Norte gelado": valem os nomes daqui.
 
 > Pendente: os valores de cada preset estão em `rpg-kit.js → PRESETS`, que não veio no material.
 

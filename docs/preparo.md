@@ -16,7 +16,7 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 | # | Item | Nível | Status | Evidência (arquivo §seção) | Destino | Em aberto |
 |---|------|-------|--------|----------------------------|---------|-----------|
 | 1 | Visão, problema e público | trava | tem | PRD §Visão geral e objetivos | prd.md |  |
-| 2 | Features com IDs e MoSCoW | trava | parcial | PRD §Requisitos funcionais (RF-1 a RF-5), §Fora de escopo | prd.md (Features) | F1–F5 propostos a partir de RF-1..RF-5; falta confirmar, definir as áreas e a prioridade dos itens "desejável" (F5, medir distância) |
+| 2 | Features com IDs e MoSCoW | trava | parcial | PRD §Requisitos funcionais (RF-1 a RF-5), §Fora de escopo | prd.md (Features) | F1–F5 a partir de RF-1..RF-5; F1–F4 Must, F5 e Medir distância Should (rodada 1); faltam as áreas `area:*` |
 | 3 | Decisões técnicas: stack, plataformas, hospedagem, banco | trava | parcial | PRD §Stack de tecnologias, §RNF-6 | overview.md + ADRs | stack é recomendação, sem ADR; hospedagem não definida |
 | 4 | Fluxos de usuário com erros e estados vazios | trava | parcial | Telas.md §Fluxo, 02, 03, E3; DS PDF §05 Feedback | specs/ | faltam: sem WebGL2, upload inválido, confirmação de exclusão, carregando, depois do "Erro ao salvar" |
 | 5 | Modelo de dados e glossário | trava | parcial | PRD §Modelo de dados, §Pipeline | overview.md + specs | glossário montado a partir do material; em aberto: sizeKm, bordas do mapa, rios, hierarquia de pins, versões do gerador |
@@ -80,3 +80,4 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 <!-- uma linha por rodada: data, itens tratados, decisões, o que virou Pendente -->
 
 - 2026-11-04 · inventário: material de `_import/` (PRD, Telas.md, design-system.md, 2 PDFs, demo, 14 telas) organizado em `docs/`. Telas PDF e demo não importados.
+- 2026-11-04 · rodada 1: contradições e item 2. Presets: "Deserto árido" e "Terras geladas" (contra as telas). Seed: sortear e copiar, sem "Gerar". Neve em Relevo e seção Avançado na sidebar. F5 e Medir distância: Should.
