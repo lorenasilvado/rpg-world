@@ -142,4 +142,4 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 
-> Pendente: telas das dicas de boas-vindas (não há tela no material).
+Dicas de boas-vindas: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.

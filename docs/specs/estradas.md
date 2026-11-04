@@ -22,7 +22,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Rota ou tela | O que mostra | Referência |
 |---|---|---|
 | E1 · Editor | Estradas (contínua) e trilhas (pontilhada) no mapa; ferramentas "Desenhar estrada" e "Rota automática" na toolbar | `../assets/design/editor-claro.png`, `../assets/design/editor-escuro.png` |
-| Drawer da estrada | Nome, tipo de via, pins conectados e excluir | TODO: sem tela no material |
+| Drawer da estrada | Nome, tipo de via, pins conectados e excluir | Sem mockup: segue o design system |
 
 ## Estados
 
@@ -31,7 +31,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Desenhando | Ferramenta "Desenhar estrada" ativa | Prévia tracejada |
 | Selecionada | Clique numa estrada | Halo âmbar; drawer da estrada aberto |
 | Vazio | Mundo sem estradas | TODO: não descrito no material |
-| Erro | Rota automática sem caminho possível | TODO: não descrito no material |
+| Sem caminho | Rota automática sem caminho por terra (ex.: pin numa ilha) | Toast de erro explicando que não há caminho, com a ação "Criar rota marítima" entre os dois pins; sem a ação, nada é criado. TODO: texto do toast |
 
 ## Ações
 

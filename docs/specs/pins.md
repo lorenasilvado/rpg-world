@@ -96,4 +96,4 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 > Pendente: conteúdo das abas Detalhes e Conexões (sem tela no material; os campos livres
 > chave/valor ficam em Detalhes?).
 
-> Pendente: telas da busca (Ctrl K) e da escolha de ícone/upload (sem tela no material).
+Busca (Ctrl K), escolha de ícone/upload e abas Detalhes e Conexões: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.

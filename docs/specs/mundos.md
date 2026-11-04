@@ -66,7 +66,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Salvo | Salvamento concluído | Indicador "Salvo" (`cloud`, verde) |
 | Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup) |
 | Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor (ver [geracao-terreno.md](geracao-terreno.md)) |
-| Carregando | Lista sendo lida do IndexedDB | TODO: não descrito no material |
+| Carregando | Lista sendo lida do IndexedDB | Grade de 4 colunas com cartões esqueleto (em `--sunken` no lugar da miniatura e do texto), sem pular de layout quando os dados chegam |
 
 ## Ações
 
@@ -100,7 +100,6 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 ## Pendências
 
-> Pendente: telas de Exportar (JSON e PNG), Renomear e do modal de confirmação de Excluir (o design system cita
-> um modal "Exportar", mas não há tela no material).
+Exportar (JSON e PNG), Renomear e o modal de confirmação de Excluir: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
 > Pendente: outros motivos de recusa na importação, além de "falta o terreno", e o texto de cada um.

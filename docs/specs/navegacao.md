@@ -41,7 +41,7 @@ barra inferior.
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Carregando | TODO: não descrito no material | |
+| Carregando | Abrir um mundo (o mapa final 1024² leva até 1,5 s) | Os painéis aparecem na hora; o mapa mostra a prévia 256² borrada e "Distribuição do mapa" mostra "Gerando", como no E3 (ver [geracao-terreno.md](geracao-terreno.md)) |
 | Vazio | — | n/a: o editor sempre abre com um mapa |
 | Erro | TODO: não descrito no material | |
 
@@ -78,7 +78,6 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 > Pendente: o que fazem "Camadas" e "Ajuda"? O material lista os botões, mas não descreve o
 > comportamento.
 
-> Pendente: layout do editor abaixo de 768 px (RNF-7: sidebar e drawer viram painéis
-> sobrepostos), sem tela no material.
+Layout abaixo de 768 px (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
 > Pendente: limites exatos de zoom (o PRD dá 0,25× a 8× como exemplo).
