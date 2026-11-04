@@ -2,26 +2,197 @@
 
 ## Resumo
 
-<Uma ou duas frases: o que é o projeto, para quem e por quê.>
+Aplicação web para mestres de RPG e worldbuilders gerarem, a partir de uma seed, um mapa cartoon
+de um mundo fictício e marcarem nele cidades, NPCs e locais, com anotações em cada pin. Roda no
+navegador e salva os mundos localmente. Visão e escopo em [prd.md](prd.md).
 
 ## Stack
 
-| Camada | Escolha | ADR |
-|---|---|---|
-| Frontend | | |
-| Backend | | |
-| Persistência | | |
+Decidida no [ADR 0001](adr/0001-stack-da-v1.md). Hospedagem no
+[ADR 0002](adr/0002-hospedagem-github-pages.md). O app é só local na v1
+([ADR 0003](adr/0003-app-so-local-na-v1.md)).
+
+| Camada | Escolha | Por quê | ADR |
+|---|---|---|---|
+| Build | Vite | Rápido, já conhecido do RPG-land, suporte nativo a workers | [0001](adr/0001-stack-da-v1.md) |
+| Linguagem | TypeScript (strict) | Tipos para o modelo do mundo e para a fronteira com o worker | [0001](adr/0001-stack-da-v1.md) |
+| UI | React 19 | Sidebar, drawer e formulários; não participa do loop de render do mapa | [0001](adr/0001-stack-da-v1.md) |
+| Componentes | shadcn/ui (Radix) + Tailwind CSS | Slider, Sheet (drawer), Dialog e Tabs acessíveis e customizáveis | [0001](adr/0001-stack-da-v1.md) |
+| Estado | Zustand (+ middleware `temporal` do zundo para desfazer) | Simples, sem boilerplate, legível fora do React pelo renderer | [0001](adr/0001-stack-da-v1.md) |
+| Render 2D | PixiJS v8 | WebGL/WebGPU, sprites em lote, ideal para milhares de ícones e pins | [0001](adr/0001-stack-da-v1.md) |
+| Câmera | pixi-viewport | Pan, zoom no cursor, pinça, inércia e limites prontos | [0001](adr/0001-stack-da-v1.md) |
+| Ruído | simplex-noise (`createNoise3D`) + alea | Ruído 3D permite migrar para esfera sem trocar o gerador | [0001](adr/0001-stack-da-v1.md) |
+| Worker | Comlink | Chamada assíncrona tipada; transfere `ArrayBuffer` sem cópia | [0001](adr/0001-stack-da-v1.md) |
+| Formulários | react-hook-form + zod | Validação dos dados do pin e do JSON importado | [0001](adr/0001-stack-da-v1.md) |
+| Texto rico | TipTap | Descrições de locais e NPCs com formatação | [0001](adr/0001-stack-da-v1.md) |
+| Persistência | Dexie (IndexedDB) | Guarda mundos e imagens enviadas (blobs) sem limite de 5 MB | [0001](adr/0001-stack-da-v1.md) |
+| Testes | Vitest + Playwright | Unitário do gerador; E2E dos fluxos de pin e sidebar | [0001](adr/0001-stack-da-v1.md) |
+| 3D (futuro) | Three.js via react-three-fiber | Esfera, iluminação e câmera orbital | [0001](adr/0001-stack-da-v1.md) |
+| Hospedagem | GitHub Pages (build estático) | App estático, repositório público | [0002](adr/0002-hospedagem-github-pages.md) |
+
+**Alternativas descartadas** (detalhes no ADR 0001)
+
+- **Leaflet:** pensado para tiles de servidor; dar estilo cartoon e regerar o mapa a cada slider
+  exige lutar contra a biblioteca.
+- **Canvas 2D puro (como no RPG-land):** sem GPU, milhares de ícones e zoom suave ficam lentos.
+- **Three.js já na v1:** resolveria a esfera, mas pins, rótulos e estradas 2D custam bem mais;
+  melhor entrar só na fase 3D.
+- **Vue:** viável, mas o RPG-land já é React e o ecossistema de componentes acessíveis é maior.
 
 ## Arquitetura
 
+Quatro camadas que só conversam por contratos: UI (React), estado (Zustand), núcleo de geração (TS
+puro no worker) e renderer (Pixi). O núcleo não conhece React nem Pixi; por isso o renderer 3D
+futuro reaproveita tudo. A UI só escreve no estado; o worker devolve arrays prontos e o renderer
+apenas desenha o que o estado contém.
+
 ```mermaid
 flowchart LR
-  UI[Interface] --> API[Backend]
-  API --> DB[(Banco)]
+  UI[UI · React] -->|escreve| ST[Estado · Zustand]
+  ST -->|parâmetros e seed| W[Worker · Comlink]
+  W --> CORE[Núcleo de geração · TS puro]
+  CORE -->|arrays tipados, sem cópia| ST
+  ST --> R[Renderer · PixiJS]
+  ST --> DB[(Dexie · IndexedDB)]
 ```
+
+### Estrutura de pastas
+
+```
+src/
+  core/                 # TS puro, sem React/Pixi; 100% testado
+    rng/                # seed, alea
+    noise/              # fbm, ridged, domain warp (ruído 3D)
+    world/              # generateWorld, campos, quantis, biomas
+    decor/              # Poisson-disk para árvores/montanhas
+    routing/            # A* e suavização de estradas
+    projection/         # Plane (v1) e Sphere (futuro)
+    types.ts
+  workers/
+    generator.worker.ts # expõe o core via Comlink
+  render/
+    MapRenderer.ts      # cria app Pixi + viewport
+    layers/             # TerrainLayer, DecorLayer, RoadLayer, PinLayer, LabelLayer
+    style/palette.ts    # cores e tons por bioma
+  state/
+    worldStore.ts       # seed, parâmetros, status da geração
+    pinsStore.ts        # pins + undo
+    roadsStore.ts
+    uiStore.ts          # ferramenta ativa, pin selecionado
+  features/
+    sidebar/  pins/  roads/  worlds/
+  persistence/
+    db.ts               # Dexie
+    exportImport.ts     # JSON + schema zod
+  app/
+    App.tsx  routes.tsx
+```
+
+### Pipeline de geração
+
+1. **Amostragem:** para cada célula, a projeção converte (u, v) num ponto 3D; na v1 é um plano, no
+   futuro um ponto na esfera.
+2. **Elevação:** máscara continental + fBm com domain warp + cordilheiras por ridged noise.
+3. **Umidade e temperatura:** fBm deslocado; temperatura cai com a altitude e com a distância do
+   "equador" do mapa.
+4. **Classificação por quantis:** o nível do mar é o percentil igual ao slider de oceano. Entre a
+   terra firme, as células mais secas viram deserto até atingir o percentual pedido, e as mais
+   úmidas viram floresta. Montanhas e neve usam percentis de elevação e de temperatura.
+5. **Praias:** faixa de largura configurável a partir da costa, por distância, não por altura.
+6. **Sombreamento:** hillshade pela inclinação, guardado em `Int8Array`.
+7. **Rios e lagos:** TODO: a etapa existe na v1 (sem hidrologia), mas o método não está
+   definido.
+8. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
+9. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
+   RGBA única e os sprites de decoração.
+
+A prévia roda o mesmo pipeline em 256²; cada pedido novo cancela o anterior por um número de
+versão.
+
+## Modelo de dados
+
+```ts
+type WorldParams = {
+  ocean: number; beach: number; desert: number;
+  forest: number; mountains: number; snow: number;
+  continentSize: number; coastRoughness: number; temperature: number;
+};
+
+type World = {
+  id: string; name: string; seed: string;
+  generatorVersion: number;   // garante reprodutibilidade
+  sizeKm: number;             // largura do mapa; alimenta escala e régua
+  params: WorldParams;
+  pins: Pin[]; roads: Road[];
+  createdAt: string; updatedAt: string;
+};
+
+type Pin = {
+  id: string; type: PinType; name: string;
+  pos: { u: number; v: number }; // 0..1 no mapa; vira lat/lon na esfera
+  icon: { kind: 'builtin'; key: string } | { kind: 'image'; blobId: string };
+  description: string;            // HTML do TipTap
+  tags: string[]; fields: Record<string, string>;
+};
+
+type Road = { id: string; kind: 'road' | 'trail' | 'sea';
+  points: { u: number; v: number }[]; from?: string; to?: string };
+
+// Saída do worker (não é salva; é regerada)
+type WorldField = { width: number; height: number;
+  elevation: Float32Array; moisture: Float32Array;
+  temperature: Float32Array; biome: Uint8Array; shade: Int8Array };
+```
+
+> Pendente: como o `Pin` guarda a hierarquia (um pin pertence a outro, ex.: vila de um reino)? O
+> modelo acima ainda não tem esse campo.
+
+> Pendente: como rios e lagos entram no modelo (biomas novos no `WorldField`? traços como as
+> estradas?).
+
+> Pendente: qual a largura padrão do mundo em km (`sizeKm`)? Define a escala e a régua.
+
+> Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
+> mantidas?
+
+## Projeto de referência: RPG-land
+
+O RPG-land tem boas ideias de geração procedural, mas a estrutura de dados e a renderização não
+escalam: o projeto novo herda os conceitos e reescreve a execução. Nenhum arquivo dele é alterado
+ou importado. Ele usa React 19 + Vite, Canvas 2D, `simplex-noise` e `alea`; um grid fixo de
+1200×1200 células é gerado em `generateTerrain.js`, classificado em 10 biomas em `biomes.js` e
+pintado célula a célula em `MapCanvas.jsx`.
+
+| Aspecto | No RPG-land | Decisão no novo projeto |
+|---|---|---|
+| Ruído em camadas (fBm), domain warp, máscara continental | Bem feito | Reaproveitar o conceito |
+| Montanhas por ridged noise com campo, núcleo e relevo | Bem feito | Reaproveitar, adicionando temperatura para neve |
+| Sombreamento pela inclinação (hillshade) | Simples e eficaz | Reaproveitar, suavizado para o estilo cartoon |
+| Padrão "ajusta e depois aplica" nos sliders | Existe | Trocar por prévia ao vivo em baixa resolução |
+| Dados: 1,44 milhão de objetos JS com 10 campos cada | Pesado (centenas de MB) | Arrays tipados (`Float32Array`, `Uint8Array`) |
+| Geração na thread principal | Trava a UI | Web Worker |
+| Render: um `fillRect` com string `rgb()` por pixel | Lento; regera tudo a cada mudança | Textura única na GPU, gerada uma vez |
+| Câmera | Fixa, sem setter; zoom inexistente | Viewport com pan, zoom no cursor e pinça |
+| Sliders por limiar absoluto (`seaLevel`, `beachLevel`) | Efeito pouco previsível | Sliders por percentual alvo (quantis) |
+| Deserto | Sem slider próprio (só via umidade) | Slider dedicado de aridez |
+| Ruído 2D | Impede a esfera sem reescrever | Ruído 3D desde o início |
+
+> Pendente: o projeto novo vive num repositório próprio ou substitui o RPG-land no mesmo
+> repositório?
 
 ## Glossário
 
 | Termo | Significado |
 |---|---|
-| | |
+| Mundo | Um mapa salvo: nome, seed, parâmetros, pins e estradas (`World`) |
+| Seed | Texto que determina o mapa gerado: a mesma seed com os mesmos parâmetros sempre gera o mesmo mapa |
+| Parâmetros | Valores dos sliders de geração, de 0 a 100 (`WorldParams`) |
+| Preset | Conjunto pronto de parâmetros ("ponto de partida" no assistente) |
+| Bioma | Classe de terreno de uma célula: oceano profundo, água rasa, praia, campo, floresta, deserto, colina, montanha rochosa, neve |
+| Terra firme | Células que não são água; base do percentual de desertos e florestas (sem as montanhas) |
+| Prévia | Geração em 256² enquanto o slider se mexe; a geração final é em 1024² |
+| Pin | Marcador no mapa com tipo, nome e ficha (descrição, tags, campos livres, capa) |
+| Drawer | Painel lateral direito com os dados do pin ou da estrada selecionada |
+| Estrada | Via entre pontos do mapa: estrada, trilha ou rota marítima (`Road`) |
+| `generatorVersion` | Versão do gerador salva no mundo, para que o mapa seja reproduzido igual |
+| `sizeKm` | Largura do mapa em km; alimenta a barra de escala e a régua |
