@@ -100,8 +100,10 @@ src/
    úmidas viram floresta. Montanhas e neve usam percentis de elevação e de temperatura.
 5. **Praias:** faixa de largura configurável a partir da costa, por distância, não por altura.
 6. **Sombreamento:** hillshade pela inclinação, guardado em `Int8Array`.
-7. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
-8. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
+7. **Rios e lagos:** TODO: a etapa existe na v1 (sem hidrologia), mas o método não está
+   definido.
+8. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
+9. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
    RGBA única e os sprites de decoração.
 
 A prévia roda o mesmo pipeline em 256²; cada pedido novo cancela o anterior por um número de
@@ -141,6 +143,12 @@ type WorldField = { width: number; height: number;
   elevation: Float32Array; moisture: Float32Array;
   temperature: Float32Array; biome: Uint8Array; shade: Int8Array };
 ```
+
+> Pendente: como o `Pin` guarda a hierarquia (um pin pertence a outro, ex.: vila de um reino)? O
+> modelo acima ainda não tem esse campo.
+
+> Pendente: como rios e lagos entram no modelo (biomas novos no `WorldField`? traços como as
+> estradas?).
 
 > Pendente: qual a largura padrão do mundo em km (`sizeKm`)? Define a escala e a régua.
 

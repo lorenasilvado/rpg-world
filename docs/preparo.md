@@ -19,7 +19,7 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 | 2 | Features com IDs e MoSCoW | trava | tem | PRD §Requisitos funcionais (RF-1 a RF-5), §Fora de escopo | prd.md (Features) | F1–F4 Must, F5 e Medir distância Should; áreas uma por feature (rodadas 1 e 2) |
 | 3 | Decisões técnicas: stack, plataformas, hospedagem, banco | trava | tem | PRD §Stack de tecnologias, §RNF-6; ADRs 0001, 0002 | overview.md + ADRs | |
 | 4 | Fluxos de usuário com erros e estados vazios | trava | parcial | Telas.md §Fluxo, 02, 03, E3; DS PDF §05 Feedback | specs/ | faltam: sem WebGL2, upload inválido, confirmação de exclusão, carregando, depois do "Erro ao salvar" |
-| 5 | Modelo de dados e glossário | trava | parcial | PRD §Modelo de dados, §Pipeline | overview.md + specs | glossário montado a partir do material; em aberto: sizeKm, bordas do mapa, rios, hierarquia de pins, versões do gerador |
+| 5 | Modelo de dados e glossário | trava | parcial | PRD §Modelo de dados, §Pipeline | overview.md + specs | bordas: limitado; rios e lagos na v1; pins com hierarquia (rodada 3). Pendentes: sizeKm, versões do gerador, campo da hierarquia no Pin, rios e lagos no modelo |
 | 6 | Integrações externas (APIs, auth, limites) | trava | n/a | ADR 0003 | specs + ADRs | n/a: app só local na v1, sem contas, backend nem integrações (ADR 0003); fontes e ícones vêm de CDN no protótipo |
 | 7 | Design system e tokens | trava | tem | design-system.md §1–9; DS PDF | design/design-system.md + tokens.json (PDF em design/, depois do .md) | valores dos presets em rpg-kit.js (não veio) |
 | 8 | Telas ou mockups das features Must | trava | parcial | Telas.md; screens/*.png (7 telas × 2 temas) | assets/design/ (imagens); PDF em design/; specs (Referência) | sem tela: busca, exportar, renomear, excluir, abas Detalhes/Conexões, mobile, boas-vindas, drawer da estrada |
@@ -64,7 +64,7 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 
 | # | Item | Fonte (arquivo §seção) | Feature (F#) | Observação |
 |---|------|------------------------|--------------|------------|
-| 1 | Decidir se há rios e lagos na v1 antes do núcleo de geração (rios mudam o custo do A\* das estradas) | PRD §Questões em aberto | F1, F5 | Pendente também na spec de F1 |
+| 1 | Decidir se há rios e lagos na v1 antes do núcleo de geração (rios mudam o custo do A\* das estradas) | PRD §Questões em aberto | F1, F5 | Decidido na rodada 3: rios e lagos na v1; método pendente na spec de F1 |
 | 2 | Começar os ícones com um pacote CC0 (ex.: Kenney), spritesheet isolado em `render/style` | PRD §Riscos | F1 | |
 | 3 | Teste de hash do mapa em Chrome, Firefox e WebKit no CI (Playwright) | PRD §Riscos; RNF-4 | F1 | |
 | 4 | Manter as versões antigas do gerador (`generatorVersion`) | PRD §Riscos | F4 | Quantas e por quanto tempo está em aberto (overview.md) |
@@ -82,3 +82,4 @@ Nível: **trava** (sem isso o /planejar não roda) · **ajuda** (pode ficar para
 - 2026-11-04 · inventário: material de `_import/` (PRD, Telas.md, design-system.md, 2 PDFs, demo, 14 telas) organizado em `docs/`. Telas PDF e demo não importados.
 - 2026-11-04 · rodada 1: contradições e item 2. Presets: "Deserto árido" e "Terras geladas" (contra as telas). Seed: sortear e copiar, sem "Gerar". Neve em Relevo e seção Avançado na sidebar. F5 e Medir distância: Should.
 - 2026-11-04 · rodada 2: itens 2, 3 e 6. Áreas: area:geracao, area:mapa, area:pins, area:mundos, area:estradas. Stack do PRD aceita (ADR 0001). Hospedagem no GitHub Pages com o repositório público (ADR 0002). Só local na v1 (ADR 0003).
+- 2026-11-04 · rodada 3: item 5. Mapa limitado, com oceano nas bordas. Rios e lagos na v1, sem hidrologia (método, modelo e estilo viraram Pendente). Pins com hierarquia (detalhes Pendente). sizeKm: decido depois (Pendente).

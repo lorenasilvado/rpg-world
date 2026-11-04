@@ -58,4 +58,6 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 ## Pendências
 
+> Pendente: como a rota automática trata rios e lagos (pontes, custo, desvio)?
+
 > Pendente: onde fica o botão "Conectar cidades" (não aparece nas telas)?

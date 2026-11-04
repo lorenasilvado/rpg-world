@@ -121,6 +121,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - O ruído fica fixo pela seed; só os limiares mudam quando um slider se mexe.
 - Mesma seed + parâmetros + `generatorVersion` = mesmo mapa (RNF-4).
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
+- O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
+  mapa).
+- O mapa tem rios e lagos na v1, sem hidrologia (o PRD sugere rios por descida de gradiente).
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
@@ -135,11 +138,8 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 > Pendente: valores de cada preset (no protótipo, `rpg-kit.js → PRESETS`, que não veio no
 > material).
 
-> Pendente: o mapa deve ser limitado (ilha/continente com bordas de oceano) ou contínuo nas bordas?
-
-> Pendente: terá rios e lagos na v1, ou ficam para depois? Sugestão do PRD: rios simples por
-> descida de gradiente na v1, sem hidrologia. Decidir antes do núcleo de geração (rios mudam o
-> custo do A\* das estradas).
+> Pendente: como os rios e lagos são gerados e controlados (há slider? quantos? onde nascem?). O
+> material não descreve.
 
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 

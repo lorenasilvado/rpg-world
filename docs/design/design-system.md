@@ -280,6 +280,8 @@ Cores chapadas, 3 tons por bioma (sombra, base, luz). Valores em `tokens.json �
 | Montanha rochosa | `#6B6560` | `#8A837C` | `#A9A39C` | Montanhas com hachura |
 | Neve | `#C9D6DE` | `#E4ECF0` | `#FFFFFF` | Montanhas nevadas com hachura |
 
+> Pendente: cores e traço de rios e lagos (a v1 terá os dois; o material não define o estilo).
+
 ### Traços
 
 | Elemento | Estilo |

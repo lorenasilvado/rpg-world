@@ -72,6 +72,7 @@ padrão; o ícone pode vir de uma biblioteca embutida ou de uma imagem enviada p
 
 ## Regras
 
+- Pins têm hierarquia: um pin pode pertencer a outro (ex.: uma vila pertence a um reino).
 - Pins mantêm tamanho constante na tela (32 px) em qualquer zoom; o rótulo com o nome aparece a
   partir do zoom 1,5×.
 - Pins guardam coordenadas `(u, v)` de 0 a 1, independentes da projeção (RNF-9).
@@ -87,7 +88,8 @@ Nenhum ainda: os ACs nascem no `/planejar M<n>`.
 
 ## Pendências
 
-> Pendente: pins devem ter hierarquia (vila pertence a um reino) ou ser independentes?
+> Pendente: hierarquia de pins. Quais tipos podem ser pai de quais? Quantos níveis? Onde o usuário
+> escolhe o pai (aba Detalhes?) e o que acontece com os filhos quando o pai é excluído?
 
 > Pendente: conteúdo das abas Detalhes e Conexões (sem tela no material; os campos livres
 > chave/valor ficam em Detalhes?).
