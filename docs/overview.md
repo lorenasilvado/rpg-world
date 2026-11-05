@@ -61,6 +61,10 @@ O `npm run dev` sobe o app em `http://localhost:5173`.
 | `npm run build` | Tipos + build de produção em `dist/`, com o caminho base `/rpg-world/` do GitHub Pages |
 | `npm run preview` | Serve o `dist/` em `http://localhost:4173/rpg-world/`, como no Pages |
 
+O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e no build
+(`http://localhost:5173/mockup.html`). A paleta e o spritesheet dos ícones ficam em
+`src/render/style/`, com a origem e a licença dos ícones no `README.md` dessa pasta.
+
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de docs.
 
 ### Publicação

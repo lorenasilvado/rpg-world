@@ -81,7 +81,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 1 | #1 | [chore] Setup do projeto | done | — | #12 |
 | 2 | #5 | [chore] Layout vazio do editor | done | — | #17 |
 | 3 | #6 | [chore] Publicar no GitHub Pages | done | — | #22 |
-| 4 | #7 | [chore] Spike visual: mockup estático do mapa | todo | — | |
+| 4 | #7 | [chore] Spike visual: mockup estático do mapa | doing | — | |
 | 5 | #8 | [chore] Spike de determinismo entre navegadores | todo | — | |
 | 6 | #9 | [chore] Spike de desempenho: geração no worker | todo | — | |
 | 7 | #10 | [chore] Spike de desempenho: 5.000 sprites no PixiJS | todo | — | |
