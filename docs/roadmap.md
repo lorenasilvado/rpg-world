@@ -21,7 +21,8 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
 ### M0 — Fundação e spike
 - **Objetivo:** projeto rodando na stack do ADR 0001 e os três maiores riscos testados antes do
   código de produção.
-- **Escopo:** setup do projeto (#1) + spikes de risco: **visual** (mockup estático do mapa com
+- **Escopo:** setup do projeto (#1), layout vazio do editor e publicação no GitHub Pages
+  (ADR 0002) + spikes de risco: **visual** (mockup estático do mapa com
   paleta posterizada, contorno de costa, água rasa e 3 a 4 ícones decorativos), **determinismo**
   (mesmo hash do campo de terreno para a mesma seed no Chrome, Firefox e WebKit, RNF-4) e
   **desempenho** (prévia 256² ≤ 150 ms e mapa 1024² ≤ 1,5 s num worker, RNF-2; 5.000 sprites no
@@ -78,3 +79,9 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
 | 1 | #1 | [chore] Setup do projeto | todo | — | |
+| 2 | #5 | [chore] Layout vazio do editor | todo | — | |
+| 3 | #6 | [chore] Publicar no GitHub Pages | todo | — | |
+| 4 | #7 | [chore] Spike visual: mockup estático do mapa | todo | — | |
+| 5 | #8 | [chore] Spike de determinismo entre navegadores | todo | — | |
+| 6 | #9 | [chore] Spike de desempenho: geração no worker | todo | — | |
+| 7 | #10 | [chore] Spike de desempenho: 5.000 sprites no PixiJS | todo | — | |
