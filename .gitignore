@@ -1,4 +1,14 @@
-# Ajuste para a stack na issue de setup ([chore] Setup do projeto)
+# Node / Vite
+node_modules
+dist
+dist-ssr
+*.local
+npm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
 .env
 .env.*

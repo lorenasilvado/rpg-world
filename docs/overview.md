@@ -39,6 +39,27 @@ Decidida no [ADR 0001](adr/0001-stack-da-v1.md). Hospedagem no
   melhor entrar só na fase 3D.
 - **Vue:** viável, mas o RPG-land já é React e o ecossistema de componentes acessíveis é maior.
 
+## Desenvolvimento
+
+Pré-requisito: Node 24 (o mesmo do CI).
+
+```bash
+npm install
+npm run dev
+```
+
+O `npm run dev` sobe o app em `http://localhost:5173`.
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento do Vite |
+| `npm run lint` | Lint com oxlint (`.oxlintrc.json`) |
+| `npm run typecheck` | Checagem de tipos (`tsc -b`, TypeScript strict) |
+| `npm test` | Testes com Vitest (ambiente jsdom) |
+| `npm run build` | Tipos + build de produção em `dist/` |
+
+O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes e build em todo PR que não é só de docs.
+
 ## Arquitetura
 
 Quatro camadas que só conversam por contratos: UI (React), estado (Zustand), núcleo de geração (TS
