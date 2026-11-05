@@ -24,7 +24,7 @@ olha só `docs/`; sem nada, o comando para e pergunta.
 ## Passos
 
 Sempre na branch `prep/docs`: `git switch prep/docs` se existir (local ou em `origin`), senão
-`git switch main && git pull && git switch -c prep/docs`.
+`git switch main; git pull; git switch -c prep/docs`.
 
 ### Fase 1: inventário (só leitura)
 
