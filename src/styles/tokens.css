@@ -1,0 +1,80 @@
+/*
+ * Tokens da interface: copiados de docs/design/design-system.md (Cores → Copiar e colar).
+ * Fonte da verdade: docs/design/design-system.md e docs/design/tokens.json.
+ */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #e9e0cc;
+  --paper: rgba(247, 241, 227, 0.92);
+  --paper-solid: #f7f1e3;
+  --field: #fffbf2;
+  --sunken: #ede4d0;
+  --line: rgba(43, 36, 32, 0.14);
+  --line-2: rgba(43, 36, 32, 0.26);
+  --ink: #2b2420;
+  --ink-2: #5a4f45;
+  --ink-3: #726558;
+  --amber: #c8892b;
+  --amber-hover: #b87a20;
+  --amber-press: #a06a18;
+  --amber-ink: #8a5a12;
+  --amber-soft: rgba(200, 137, 43, 0.18);
+  --on-amber: #2b2420;
+  --brick: #b33a2e;
+  --brick-ink: #a3352a;
+  --brick-soft: rgba(179, 58, 46, 0.1);
+  --hover: rgba(43, 36, 32, 0.06);
+  --press: rgba(43, 36, 32, 0.11);
+  --scrim: rgba(43, 36, 32, 0.38);
+  --ok: #4c7a34;
+  --shadow-sm: 0 1px 2px rgba(74, 48, 20, 0.16);
+  --shadow: 0 6px 20px rgba(74, 48, 20, 0.18), 0 1px 3px rgba(74, 48, 20, 0.12);
+  --shadow-lg: 0 18px 48px rgba(43, 30, 15, 0.3), 0 2px 6px rgba(74, 48, 20, 0.14);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #14120f;
+  --paper: rgba(30, 27, 24, 0.9);
+  --paper-solid: #1e1b18;
+  --field: #26221e;
+  --sunken: #171512;
+  --line: rgba(239, 232, 218, 0.12);
+  --line-2: rgba(239, 232, 218, 0.24);
+  --ink: #efe8da;
+  --ink-2: #cfc5b3;
+  --ink-3: #a39886;
+  --amber: #d99a3a;
+  --amber-hover: #e5a84a;
+  --amber-press: #c68a2e;
+  --amber-ink: #e8b465;
+  --amber-soft: rgba(217, 154, 58, 0.18);
+  --on-amber: #1e1b18;
+  --brick: #b33a2e;
+  --brick-ink: #e58377;
+  --brick-soft: rgba(229, 131, 119, 0.14);
+  --hover: rgba(239, 232, 218, 0.07);
+  --press: rgba(239, 232, 218, 0.12);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --ok: #8dbf6a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+:root {
+  /* Raios (design-system.md → Raios) */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-modal: 16px;
+  --radius-pill: 999px;
+  /* Layout do Editor */
+  --sidebar-width: 320px;
+  --drawer-width: 400px;
+  --editor-header-height: 56px;
+  /* Fundo do canvas fora do mapa (design-system.md → Estilo do mapa) */
+  --map-canvas: #1f4e79;
+  /* Movimento: painéis */
+  --ease-panel: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

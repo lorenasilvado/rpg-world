@@ -17,3 +17,7 @@ npm-debug.log*
 # Material de entrada do /preparar: fica fora do git e é limpo no fim do /preparar
 _import/*
 !_import/.gitkeep
+
+# Playwright
+test-results
+playwright-report

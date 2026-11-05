@@ -1,1 +1,63 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-paper: var(--paper);
+  --color-paper-solid: var(--paper-solid);
+  --color-field: var(--field);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-amber-soft: var(--amber-soft);
+  --color-on-amber: var(--on-amber);
+  --color-hover: var(--hover);
+  --color-press: var(--press);
+  --color-scrim: var(--scrim);
+  --color-ok: var(--ok);
+  --color-map-canvas: var(--map-canvas);
+  --font-sans: 'Nunito', system-ui, sans-serif;
+  --font-title: 'Cinzel', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow);
+  --shadow-lg: var(--shadow-lg);
+  --radius-control: var(--radius-control);
+  --radius-panel: var(--radius-panel);
+  --radius-modal: var(--radius-modal);
+  --radius-pill: var(--radius-pill);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/20px 'Nunito', system-ui, sans-serif;
+}
+
+/* Anel de foco âmbar (design-system.md → Anel de foco) */
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--paper-solid),
+    0 0 0 4px var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+  }
+}
