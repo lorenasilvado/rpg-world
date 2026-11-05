@@ -1,5 +1,4 @@
-# CI da stack do projeto. Placeholder: troque o passo "Testes da stack" pelos
-# comandos de lint e testes (AC da issue de setup).
+# CI da stack do projeto: lint (oxlint), tipos (tsc), testes (Vitest) e build (Vite).
 #
 # Roda em todo pull_request, sem filtro de paths: o check "ci" é obrigatório no
 # ruleset da main, e um check obrigatório que não roda trava o PR.
@@ -36,6 +35,29 @@ jobs:
             echo "only=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Testes da stack
+      - name: Node
         if: steps.docs.outputs.only != 'true'
-        run: echo "configure os testes da stack em .github/workflows/ci.yml"
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Dependências
+        if: steps.docs.outputs.only != 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.docs.outputs.only != 'true'
+        run: npm run lint
+
+      - name: Tipos
+        if: steps.docs.outputs.only != 'true'
+        run: npm run typecheck
+
+      - name: Testes
+        if: steps.docs.outputs.only != 'true'
+        run: npm test
+
+      - name: Build
+        if: steps.docs.outputs.only != 'true'
+        run: npm run build
