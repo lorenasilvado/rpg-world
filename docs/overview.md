@@ -57,7 +57,7 @@ O `npm run dev` sobe o app em `http://localhost:5173`.
 | `npm run lint` | Lint com oxlint (`.oxlintrc.json`) |
 | `npm run typecheck` | Checagem de tipos (`tsc -b`, TypeScript strict) |
 | `npm test` | Testes com Vitest (ambiente jsdom) |
-| `npm run e2e` | E2E com Playwright em `e2e/`, no Google Chrome instalado (sobe o Vite na porta 5199) |
+| `npm run e2e` | E2E com Playwright em `e2e/`, no Google Chrome instalado: o app no servidor de desenvolvimento (porta 5199) e o build no `vite preview` em `/rpg-world/` (porta 5198; localmente faz o build antes) |
 | `npm run build` | Tipos + build de produção em `dist/`, com o caminho base `/rpg-world/` do GitHub Pages |
 | `npm run preview` | Serve o `dist/` em `http://localhost:4173/rpg-world/`, como no Pages |
 
