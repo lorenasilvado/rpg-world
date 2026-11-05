@@ -58,9 +58,16 @@ O `npm run dev` sobe o app em `http://localhost:5173`.
 | `npm run typecheck` | Checagem de tipos (`tsc -b`, TypeScript strict) |
 | `npm test` | Testes com Vitest (ambiente jsdom) |
 | `npm run e2e` | E2E com Playwright em `e2e/`, no Google Chrome instalado (sobe o Vite na porta 5199) |
-| `npm run build` | Tipos + build de produção em `dist/` |
+| `npm run build` | Tipos + build de produção em `dist/`, com o caminho base `/rpg-world/` do GitHub Pages |
+| `npm run preview` | Serve o `dist/` em `http://localhost:4173/rpg-world/`, como no Pages |
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de docs.
+
+### Publicação
+
+Cada push na `main` publica o build no GitHub Pages pelo workflow `.github/workflows/pages.yml`
+([ADR 0002](adr/0002-hospedagem-github-pages.md)): https://lorenasilvado.github.io/rpg-world/.
+O repositório precisa estar com Settings → Pages → Source em "GitHub Actions".
 
 ## Arquitetura
 
