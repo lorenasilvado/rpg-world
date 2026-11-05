@@ -41,10 +41,11 @@ Decidida no [ADR 0001](adr/0001-stack-da-v1.md). Hospedagem no
 
 ## Desenvolvimento
 
-Pré-requisito: Node 24 (o mesmo do CI).
+Pré-requisito: a versão do Node do arquivo `.nvmrc` (a mesma que o CI usa).
+
+Depois de instalar as dependências uma vez com `npm install`, o app roda com um único comando:
 
 ```bash
-npm install
 npm run dev
 ```
 

@@ -39,7 +39,7 @@ jobs:
         if: steps.docs.outputs.only != 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Dependências
