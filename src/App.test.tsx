@@ -1,7 +1,20 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+
+// jsdom não tem matchMedia: este stub guarda os ouvintes para simular a troca de largura.
+let mediaListeners: Array<(e: { matches: boolean }) => void> = []
+beforeEach(() => {
+  mediaListeners = []
+  window.matchMedia = ((query: string) => ({
+    media: query,
+    matches: false,
+    addEventListener: (_: string, fn: (e: { matches: boolean }) => void) => mediaListeners.push(fn),
+    removeEventListener: (_: string, fn: (e: { matches: boolean }) => void) => {
+      mediaListeners = mediaListeners.filter((l) => l !== fn)
+    },
+  })) as unknown as typeof window.matchMedia
+})
 
 afterEach(() => {
   cleanup()
@@ -55,5 +68,24 @@ describe('Layout vazio do editor', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
     fireEvent.click(screen.getByTestId('scrim'))
     expect(document.activeElement).toBe(drawerOpener)
+  })
+
+  it('com um painel aberto, o resto da tela fica inert', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir painel' }))
+    expect(screen.getByTestId('actions').hasAttribute('inert')).toBe(true)
+    expect(screen.getByTestId('map').hasAttribute('inert')).toBe(true)
+    expect(screen.getByTestId('drawer').hasAttribute('inert')).toBe(true)
+    expect(screen.getByTestId('sidebar').hasAttribute('inert')).toBe(false)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByTestId('actions').hasAttribute('inert')).toBe(false)
+  })
+
+  it('ao passar para 768 px ou mais, os painéis abertos fecham', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    expect(screen.getByTestId('drawer').dataset.open).toBe('true')
+    act(() => mediaListeners.forEach((fn) => fn({ matches: true })))
+    expect(screen.getByTestId('drawer').dataset.open).toBe('false')
   })
 })

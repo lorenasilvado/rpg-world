@@ -87,4 +87,38 @@ test.describe('Layout vazio do editor', () => {
     await expect(page.getByTestId('drawer')).toBeHidden()
     await expect(drawerOpener).toBeFocused()
   })
+
+  test('com o painel aberto, o Tab não sai dele (AC-M0-02)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Abrir painel' }).click()
+    const close = page.getByRole('button', { name: 'Fechar painel' })
+    await expect(close).toBeFocused()
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press('Tab')
+      const inSidebar = await page.evaluate(
+        () => document.querySelector('[data-testid="sidebar"]')?.contains(document.activeElement) ?? false,
+      )
+      const inActions = await page.evaluate(
+        () => document.querySelector('[data-testid="actions"]')?.contains(document.activeElement) ?? false,
+      )
+      expect(inActions).toBe(false)
+      if (!inSidebar) {
+        // Fora do painel, o foco só pode ter ido para o próprio documento (nada focável fora).
+        expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+      }
+    }
+  })
+
+  test('ao alargar para 768 px ou mais, o painel aberto fecha (AC-M0-02)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Abrir detalhes' }).click()
+    await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'false')
+    await expect(page.getByTestId('scrim')).toHaveCount(0)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByTestId('drawer')).toBeHidden()
+  })
 })

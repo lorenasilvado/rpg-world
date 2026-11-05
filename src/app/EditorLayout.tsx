@@ -7,7 +7,8 @@ import { useTheme } from './useTheme'
  * mapa em tela cheia atrás dos painéis, sidebar à esquerda (320 px) e drawer à direita (400 px).
  * Abaixo de 768 px, sidebar e drawer viram painéis sobrepostos, abertos pelos botões da barra:
  * o scrim cobre o mapa e a barra de ações, Esc fecha o painel, o foco vai para o botão de fechar
- * do painel ao abrir e volta ao botão que o abriu ao fechar.
+ * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
+ * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  */
 export function EditorLayout() {
   const { theme, toggle } = useTheme()
@@ -27,6 +28,15 @@ export function EditorLayout() {
   }
 
   useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) closeAll()
+    }
+    desktop.addEventListener('change', onChange)
+    return () => desktop.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
     if (!anyOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeAll()
@@ -37,7 +47,7 @@ export function EditorLayout() {
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor">
-      <main aria-label="Mapa" data-testid="map" className="absolute inset-0 bg-map-canvas" />
+      <main aria-label="Mapa" data-testid="map" inert={anyOpen} className="absolute inset-0 bg-map-canvas" />
 
       {anyOpen && (
         <div
@@ -52,6 +62,7 @@ export function EditorLayout() {
         aria-label="Gerar mundo"
         data-testid="sidebar"
         data-open={sidebarOpen}
+        inert={drawerOpen}
         className={[
           'absolute inset-y-0 left-0 z-20 flex w-[min(var(--sidebar-width),100vw)] flex-col',
           'bg-paper-solid shadow-[4px_0_24px_rgba(43,30,15,0.18)]',
@@ -81,6 +92,7 @@ export function EditorLayout() {
 
       <div
         data-testid="actions"
+        inert={anyOpen}
         className={[
           'absolute top-3 right-3 z-10 flex h-14 items-center gap-1 rounded-panel bg-paper px-2 shadow-md backdrop-blur-[14px]',
           'md:right-[calc(var(--drawer-width)+12px)]',
@@ -104,6 +116,7 @@ export function EditorLayout() {
         aria-label="Detalhes"
         data-testid="drawer"
         data-open={drawerOpen}
+        inert={sidebarOpen}
         className={[
           'absolute inset-y-0 right-0 z-20 flex w-[min(var(--drawer-width),100vw)] flex-col',
           'bg-paper-solid shadow-lg',
