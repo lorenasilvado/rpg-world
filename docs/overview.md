@@ -57,9 +57,10 @@ O `npm run dev` sobe o app em `http://localhost:5173`.
 | `npm run lint` | Lint com oxlint (`.oxlintrc.json`) |
 | `npm run typecheck` | Checagem de tipos (`tsc -b`, TypeScript strict) |
 | `npm test` | Testes com Vitest (ambiente jsdom) |
+| `npm run e2e` | E2E com Playwright em `e2e/`, no Google Chrome instalado (sobe o Vite na porta 5199) |
 | `npm run build` | Tipos + build de produção em `dist/` |
 
-O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes e build em todo PR que não é só de docs.
+O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de docs.
 
 ## Arquitetura
 

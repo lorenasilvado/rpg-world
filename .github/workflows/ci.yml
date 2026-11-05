@@ -1,4 +1,5 @@
-# CI da stack do projeto: lint (oxlint), tipos (tsc), testes (Vitest) e build (Vite).
+# CI da stack do projeto: lint (oxlint), tipos (tsc), testes (Vitest), E2E (Playwright no
+# Google Chrome do runner) e build (Vite).
 #
 # Roda em todo pull_request, sem filtro de paths: o check "ci" é obrigatório no
 # ruleset da main, e um check obrigatório que não roda trava o PR.
@@ -61,3 +62,7 @@ jobs:
       - name: Build
         if: steps.docs.outputs.only != 'true'
         run: npm run build
+
+      - name: E2E
+        if: steps.docs.outputs.only != 'true'
+        run: npm run e2e
