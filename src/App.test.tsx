@@ -39,4 +39,21 @@ describe('Layout vazio do editor', () => {
     fireEvent.click(screen.getByTestId('scrim'))
     expect(drawer.dataset.open).toBe('false')
   })
+
+  it('Esc fecha o painel aberto e o foco volta ao botão que o abriu', () => {
+    render(<App />)
+    const opener = screen.getByRole('button', { name: 'Abrir painel' })
+    opener.focus()
+    fireEvent.click(opener)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar painel' }))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByTestId('sidebar').dataset.open).toBe('false')
+    expect(document.activeElement).toBe(opener)
+
+    const drawerOpener = screen.getByRole('button', { name: 'Abrir detalhes' })
+    fireEvent.click(drawerOpener)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    fireEvent.click(screen.getByTestId('scrim'))
+    expect(document.activeElement).toBe(drawerOpener)
+  })
 })

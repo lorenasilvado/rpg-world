@@ -1,22 +1,39 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useTheme } from './useTheme'
 
 /**
  * Casca vazia do editor (design-system.md → Layout do Editor):
  * mapa em tela cheia atrás dos painéis, sidebar à esquerda (320 px) e drawer à direita (400 px).
- * Abaixo de 768 px, sidebar e drawer viram painéis sobrepostos, abertos pelos botões da barra.
+ * Abaixo de 768 px, sidebar e drawer viram painéis sobrepostos, abertos pelos botões da barra:
+ * o scrim cobre o mapa e a barra de ações, Esc fecha o painel, o foco vai para o botão de fechar
+ * do painel ao abrir e volta ao botão que o abriu ao fechar.
  */
 export function EditorLayout() {
   const { theme, toggle } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const anyOpen = sidebarOpen || drawerOpen
+  const sidebarOpener = useRef<HTMLButtonElement>(null)
+  const sidebarClose = useRef<HTMLButtonElement>(null)
+  const drawerOpener = useRef<HTMLButtonElement>(null)
+  const drawerClose = useRef<HTMLButtonElement>(null)
+  usePanelFocus(sidebarOpen, sidebarClose, sidebarOpener)
+  usePanelFocus(drawerOpen, drawerClose, drawerOpener)
 
   const closeAll = () => {
     setSidebarOpen(false)
     setDrawerOpen(false)
   }
+
+  useEffect(() => {
+    if (!anyOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeAll()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyOpen])
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor">
@@ -26,7 +43,7 @@ export function EditorLayout() {
         <div
           aria-hidden="true"
           data-testid="scrim"
-          className="absolute inset-0 z-10 bg-scrim md:hidden"
+          className="absolute inset-0 z-[15] bg-scrim md:hidden"
           onClick={closeAll}
         />
       )}
@@ -48,7 +65,11 @@ export function EditorLayout() {
             <Compass size={20} aria-hidden="true" />
           </span>
           <span className="font-title text-base/5 font-semibold">RPG World Builder</span>
-          <IconButton label="Fechar painel" className="ml-auto md:hidden" onClick={() => setSidebarOpen(false)}>
+          <IconButton
+            ref={sidebarClose}
+            label="Fechar painel"
+            className="ml-auto md:hidden"
+            onClick={() => setSidebarOpen(false)}>
             <X size={20} aria-hidden="true" />
           </IconButton>
         </header>
@@ -65,10 +86,10 @@ export function EditorLayout() {
           'md:right-[calc(var(--drawer-width)+12px)]',
         ].join(' ')}
       >
-        <IconButton label="Abrir painel" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+        <IconButton ref={sidebarOpener} label="Abrir painel" className="md:hidden" onClick={() => setSidebarOpen(true)}>
           <PanelLeftOpen size={20} aria-hidden="true" />
         </IconButton>
-        <IconButton label="Abrir detalhes" className="md:hidden" onClick={() => setDrawerOpen(true)}>
+        <IconButton ref={drawerOpener} label="Abrir detalhes" className="md:hidden" onClick={() => setDrawerOpen(true)}>
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
         <IconButton
@@ -92,7 +113,7 @@ export function EditorLayout() {
         ].join(' ')}
       >
         <div className="flex h-14 shrink-0 items-center justify-end px-3 md:hidden">
-          <IconButton label="Fechar detalhes" onClick={() => setDrawerOpen(false)}>
+          <IconButton ref={drawerClose} label="Fechar detalhes" onClick={() => setDrawerOpen(false)}>
             <X size={20} aria-hidden="true" />
           </IconButton>
         </div>
@@ -102,12 +123,28 @@ export function EditorLayout() {
   )
 }
 
+/** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */
+function usePanelFocus(
+  open: boolean,
+  closeButton: RefObject<HTMLButtonElement | null>,
+  opener: RefObject<HTMLButtonElement | null>,
+) {
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (open) closeButton.current?.focus()
+    else if (wasOpen.current) opener.current?.focus()
+    wasOpen.current = open
+  }, [open, closeButton, opener])
+}
+
 function IconButton({
+  ref,
   label,
   className = '',
   onClick,
   children,
 }: {
+  ref?: Ref<HTMLButtonElement>
   label: string
   className?: string
   onClick: () => void
@@ -115,6 +152,7 @@ function IconButton({
 }) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       title={label}

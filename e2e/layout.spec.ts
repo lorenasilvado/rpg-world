@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
 
 test.describe('Layout vazio do editor', () => {
@@ -58,5 +59,32 @@ test.describe('Layout vazio do editor', () => {
     expect(await sidebar.boundingBox()).toEqual(before)
     await page.getByRole('button', { name: 'Usar tema claro' }).click()
     await expect(sidebar).toHaveCSS('background-color', 'rgb(247, 241, 227)')
+  })
+
+  test('no celular, o scrim cobre a barra de ações e Esc fecha o painel (AC-M0-02)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    const opener = page.getByRole('button', { name: 'Abrir painel' })
+    await opener.click()
+    await expect(page.getByRole('button', { name: 'Fechar painel' })).toBeFocused()
+
+    // O ponto do botão de tema (na barra de ações) fica sob o scrim, não sob o botão.
+    const theme = await page.getByRole('button', { name: 'Usar tema escuro' }).boundingBox()
+    const topmost = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x, y)?.getAttribute('data-testid'),
+      [theme!.x + theme!.width / 2, theme!.y + theme!.height / 2],
+    )
+    expect(topmost).toBe('scrim')
+
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('sidebar')).toBeHidden()
+    await expect(opener).toBeFocused()
+
+    const drawerOpener = page.getByRole('button', { name: 'Abrir detalhes' })
+    await drawerOpener.click()
+    await expect(page.getByRole('button', { name: 'Fechar detalhes' })).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('drawer')).toBeHidden()
+    await expect(drawerOpener).toBeFocused()
   })
 })
