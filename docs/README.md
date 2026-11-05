@@ -52,7 +52,7 @@ comportamento atualiza a spec no mesmo PR.
   PR só de docs (tudo em `docs/` ou `*.md`, exceto o `CLAUDE.md`) dispensa prints e QA.
 - IDs de feature (`F<n>`) e de AC (`AC-F<n>-NN`) nunca são renomeados nem reaproveitados.
 - ADR `Aceita` não é editado: um novo ADR o substitui (`Superada por 0007`).
-- Versão do PRD: git tag `prd-vX.Y` (`git tag prd-v1.0 && git push origin prd-v1.0`). Nunca
+- Versão do PRD: git tag `prd-vX.Y` (`git tag prd-v1.0; git push origin prd-v1.0`). Nunca
   escreva sha ou número de versão no texto dos docs; o histórico está no git.
 - Imagem oficial vai em `docs/assets/design/`; PDF de referência, em `docs/design/`; print de
   teste vai na branch `pr-assets` (`issue-<N>/<sha7>/`).

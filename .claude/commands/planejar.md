@@ -29,7 +29,7 @@ assim) e a tabela Features do `docs/prd.md` preenchida.
 1. Leia `docs/prd.md`, as specs que existem, os ADRs, `docs/overview.md` e `docs/preparo.md`,
    incluindo a seção **"Para o /planejar"**: as linhas de "Fases, milestones e ordem de entrega"
    são o ponto de partida da seção Milestones. Se a tabela estiver vazia, proponha do zero.
-2. `git switch main && git pull && git switch -c plan/roadmap`. Escreva a seção **Milestones** do
+2. `git switch main; git pull; git switch -c plan/roadmap`. Escreva a seção **Milestones** do
    `docs/roadmap.md`. Para cada milestone, **só**:
    - `### M<n> — <nome>` (travessão; o mesmo título será usado no GitHub);
    - **Objetivo** (1 frase), **Escopo** (ids `F#`), **Critério de saída** testável

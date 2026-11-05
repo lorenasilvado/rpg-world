@@ -315,7 +315,7 @@ roda numa sessão nova, sem o contexto de quem implementou (veja "Em outros agen
 Repos criados a partir de um template não recebem as mudanças dele. Para trazer o processo novo
 para um projeto antigo:
 
-1. `git switch main && git pull && git switch -c chore/atualiza-template`
+1. `git switch main; git pull; git switch -c chore/atualiza-template`
 2. `./scripts/atualiza-template.sh` mostra o que mudou (não altera nada). Se o projeto ainda não
    tem esse script, copie-o do template antes.
 3. `./scripts/atualiza-template.sh --aplicar` traz os caminhos "pode trazer inteiro" e mantém os

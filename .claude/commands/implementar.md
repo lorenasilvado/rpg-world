@@ -26,7 +26,7 @@ pedir; passar o número é pedir (ex.: hotfix).
    branch, `git rebase origin/main` (conflito: pare, mostre os arquivos e pergunte) e continue do
    passo 5. O commit `wip:` do hotfix pode ficar ou ser desfeito com `git reset --soft HEAD~1`;
    nunca reescreva o que já teve push.
-3. `git switch main && git pull`. Leia a issue (`gh api repos/{owner}/{repo}/issues/<N>`), a
+3. `git switch main; git pull`. Leia a issue (`gh api repos/{owner}/{repo}/issues/<N>`), a
    spec citada em **Spec:**, os ADRs e os docs de design citados.
 4. Se a issue citar um AC que não existe na spec, pare: "A issue #<N> cita <AC>, que não existe
    em <spec>: escreva o AC na spec (no PR desta task ou pelo /planejar M<n>)."
@@ -40,9 +40,9 @@ pedir; passar o número é pedir (ex.: hotfix).
 
 1. **Pare e confirme**: "A task #<atual> está em andamento; faço o hotfix #<N> antes?". Sem o
    "sim", não mexa em nada.
-2. Na branch da task atual: commit local de tudo (`git add -A && git commit -m "wip: <resumo>"`),
+2. Na branch da task atual: commit local de tudo (`git add -A; git commit -m "wip: <resumo>"`),
    sem push.
-3. `git switch main && git pull` e `git switch -c task/<N>-<slug>`.
+3. `git switch main; git pull` e `git switch -c task/<N>-<slug>`.
 4. Roadmap: a linha do hotfix vai para logo depois da última linha `done` (antes da task
    interrompida): `./scripts/new-issue.sh --existing <N> --after <última done>`. O script cria a
    linha se ela não existe, ou a move se já está no roadmap. Depois,
