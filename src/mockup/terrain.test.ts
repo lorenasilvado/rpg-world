@@ -59,4 +59,25 @@ describe('terreno do mockup (AC-M0-06)', () => {
       }
     }
   })
+
+  it('põe neve só nos picos: uma parte das montanhas, sempre encostada na rocha', () => {
+    let snow = 0
+    let rock = 0
+    for (const b of terrain.biome) {
+      if (b === BIOME_ID.snow) snow++
+      if (b === BIOME_ID.rockyMountain) rock++
+    }
+    expect(snow / (snow + rock)).toBeCloseTo(DEFAULT_MOCK_PARAMS.snow, 1)
+    // Neve em manchas, não num bloco: cada célula de neve fica a no máximo 6 células da rocha.
+    for (let i = 0; i < terrain.biome.length; i++) {
+      if (terrain.biome[i] !== BIOME_ID.snow) continue
+      const x = i % W
+      const y = Math.floor(i / W)
+      let near = false
+      for (let dy = -6; dy <= 6 && !near; dy++)
+        for (let dx = -6; dx <= 6 && !near; dx++)
+          near = terrain.biome[(y + dy) * W + x + dx] === BIOME_ID.rockyMountain
+      expect(near).toBe(true)
+    }
+  })
 })

@@ -39,9 +39,9 @@ export const DEFAULT_MOCK_PARAMS: MockParams = {
   desert: 0.15,
   forest: 0.35,
   mountains: 0.14,
-  snow: 0.4,
+  snow: 0.3,
   shallowWidth: 5,
-  beachWidth: 1,
+  beachWidth: 3,
 }
 
 /** Gerador pseudoaleatório determinístico a partir de um texto (hash FNV-1a + mulberry32). */
@@ -152,10 +152,13 @@ export function generateMockTerrain(
   const warpNoise = valueNoise(rand)
   const moistNoise = valueNoise(rand)
   const toneNoise = valueNoise(rand)
+  const ridgeNoise = valueNoise(rand)
   const n = width * height
   const elevation = new Float32Array(n)
   const moisture = new Float32Array(n)
   const patches = new Float32Array(n)
+  /** Elevação com ruído fino, só para escolher onde há neve: quebra a neve em manchas nos picos. */
+  const snowScore = new Float32Array(n)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -169,9 +172,12 @@ export function generateMockTerrain(
       const r = Math.sqrt(dx * dx + dy * dy)
       const mask = 1 - Math.min(1, r * r)
       const i = y * width + x
-      elevation[i] = fbm(elevNoise, wx, wy, 5) * 0.55 + mask * 0.75
+      // Cordilheiras por ridged noise: cristas finas, mais altas no interior da ilha.
+      const ridge = 1 - Math.abs(2 * fbm(ridgeNoise, u * 5 + 3.1, v * 5 + 8.4, 4) - 1)
+      elevation[i] = fbm(elevNoise, wx, wy, 5) * 0.55 + mask * 0.75 + ridge * ridge * ridge * mask * 0.45
       moisture[i] = fbm(moistNoise, u * 4 + 11.7, v * 4 + 3.9, 4)
       patches[i] = fbm(toneNoise, u * 14, v * 14, 3)
+      snowScore[i] = elevation[i] + (fbm(toneNoise, u * 40 + 5.5, v * 40 + 1.7, 2) - 0.5) * 0.4
     }
   }
 
@@ -185,7 +191,7 @@ export function generateMockTerrain(
   const biome = new Uint8Array(n)
   const isInland = (i: number) => land[i] === 1 && toWater[i] > params.beachWidth
   const mountainLevel = quantile(elevation, 1 - params.mountains, isInland)
-  const snowLevel = quantile(elevation, 1 - params.snow, (i) => isInland(i) && elevation[i] >= mountainLevel)
+  const snowLevel = quantile(snowScore, 1 - params.snow, (i) => isInland(i) && elevation[i] >= mountainLevel)
   const hillLevel = quantile(elevation, 1 - params.mountains * 1.8, isInland)
   const isLowland = (i: number) => isInland(i) && elevation[i] < hillLevel
   const desertLevel = quantile(moisture, params.desert, isLowland)
@@ -194,7 +200,7 @@ export function generateMockTerrain(
   for (let i = 0; i < n; i++) {
     if (land[i] === 0) biome[i] = toLand[i] <= params.shallowWidth ? BIOME_ID.shallowWater : BIOME_ID.deepOcean
     else if (!isInland(i)) biome[i] = BIOME_ID.beach
-    else if (elevation[i] >= snowLevel) biome[i] = BIOME_ID.snow
+    else if (elevation[i] >= mountainLevel && snowScore[i] >= snowLevel) biome[i] = BIOME_ID.snow
     else if (elevation[i] >= mountainLevel) biome[i] = BIOME_ID.rockyMountain
     else if (elevation[i] >= hillLevel) biome[i] = BIOME_ID.hill
     else if (moisture[i] <= desertLevel) biome[i] = BIOME_ID.desert
@@ -216,7 +222,8 @@ export function generateMockTerrain(
       return d <= 3 ? 2 : d <= 14 ? 1 : 0
     }
     if (b === BIOME_ID.shallowWater) return toLand[i] <= 1 ? 2 : toLand[i] <= 3 ? 1 : 0
-    if (b === BIOME_ID.beach) return 1
+    // Praia: luz junto da água, base no resto.
+    if (b === BIOME_ID.beach) return toWater[i] <= 1 ? 2 : 1
     // Luz vinda do noroeste: hillshade posterizado, somado a manchas de baixa frequência.
     const x0 = Math.max(0, x - 1)
     const y0 = Math.max(0, y - 1)

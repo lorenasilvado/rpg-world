@@ -1,4 +1,4 @@
-import { DECOR_BY_BIOME, DECOR_FRAMES, DECOR_FRAME_SIZE } from '../render/style/decor'
+import { DECOR_BY_BIOME, DECOR_DENSITY, DECOR_FRAMES, DECOR_FRAME_SIZE, DECOR_SIZE } from '../render/style/decor'
 import { BIOMES, BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE, hexToRgb } from '../render/style/palette'
 import { seededRandom, type MockTerrain } from './terrain'
 
@@ -51,8 +51,10 @@ export function placeDecor(t: MockTerrain, seed: string, spacing = 5): DecorPlac
       const cy = Math.floor(y)
       if (cx >= t.width || cy >= t.height) continue
       const kinds = DECOR_BY_BIOME[BIOMES[t.biome[cy * t.width + cx]]]
-      if (kinds.length === 0 || rand() > 0.8) continue
-      out.push({ kind: kinds[Math.floor(pick * kinds.length)], x, y })
+      if (kinds.length === 0) continue
+      const kind = kinds[Math.floor(pick * kinds.length)]
+      if (rand() > DECOR_DENSITY[kind]) continue
+      out.push({ kind, x, y })
     }
   }
   return out.sort((a, b) => a.y - b.y)
@@ -105,12 +107,12 @@ export function drawMockup(
 
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  const size = 26 * scale
   for (const d of decor) {
+    const size = DECOR_SIZE[d.kind] * scale
     const f = DECOR_FRAMES[d.kind]
     const px = ox + d.x * cell
     const py = oy + d.y * cell
     // Âncora na base central do quadro (o pé do ícone fica perto da borda de baixo).
-    ctx.drawImage(sheet, f.x, f.y, DECOR_FRAME_SIZE, DECOR_FRAME_SIZE, px - size / 2, py - size * 0.9, size, size)
+    ctx.drawImage(sheet, f.x, f.y, DECOR_FRAME_SIZE, DECOR_FRAME_SIZE, px - size / 2, py - size, size, size)
   }
 }
