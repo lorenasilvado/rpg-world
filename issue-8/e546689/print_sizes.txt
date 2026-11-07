@@ -1,0 +1,4 @@
+commit: e546689c353bf74cc20df36d339814e920d8a127
+ac-m0-10-campo-256-por-seed.png  1280x800  f89bd6868a8d11fd0eda2959af29d862f2cfef285d6fa4432938e8be16ba8f39
+ac-m0-11-hash-igual-3-navegadores.png  1280x800  033bad4fddc9bc1aa8434a83327d725dee2a211256c886094f8daebb33100a16
+ac-m0-12-sem-math-transcendente.png  1280x800  bede017d2d0fac2dc4e73adb89d58cfddd3ff55411050edec1dba0dc529e421a
