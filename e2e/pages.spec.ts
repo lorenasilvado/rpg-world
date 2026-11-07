@@ -31,3 +31,18 @@ test('o build abre em /rpg-world/ sem erro, com os assets no caminho base (AC-M0
   for (const p of sameOrigin) expect(p.startsWith('/rpg-world/')).toBe(true)
   expect(problems).toEqual([])
 })
+
+// O mockup do spike visual (#7) também abre no caminho base, com o spritesheet carregando.
+test('o mockup abre em /rpg-world/mockup.html com o spritesheet (AC-M0-05, AC-M0-08)', async ({ page }) => {
+  const problems: string[] = []
+  const images: string[] = []
+  page.on('response', (r) => {
+    if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`)
+    if (r.request().resourceType() === 'image') images.push(new URL(r.url()).pathname)
+  })
+  page.on('pageerror', (e) => problems.push(`erro ${e.message}`))
+  await page.goto('./mockup.html')
+  await expect(page.getByTestId('mockup')).toHaveAttribute('data-ready', 'true')
+  expect(images.some((p) => p.startsWith('/rpg-world/assets/decor'))).toBe(true)
+  expect(problems).toEqual([])
+})

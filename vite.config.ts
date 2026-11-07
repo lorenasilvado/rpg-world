@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
 // Caminho base do GitHub Pages (ADR 0002): https://<owner>.github.io/rpg-world/.
@@ -11,6 +12,15 @@ const PAGES_BASE = '/rpg-world/'
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? PAGES_BASE : '/',
   plugins: [react(), tailwindcss()],
+  // Duas páginas: o app e o mockup estático do mapa do spike visual (#7), em /mockup.html.
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        mockup: fileURLToPath(new URL('./mockup.html', import.meta.url)),
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
