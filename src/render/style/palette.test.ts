@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import tokens from '../../../docs/design/tokens.json'
+import { BIOME } from '../../core/types'
 import { BIOMES, BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE, hexToRgb } from './palette'
 
 const biomeTokens: Record<string, string[]> = tokens.map.biome
@@ -17,5 +18,10 @@ describe('paleta do mapa (AC-M0-06, AC-M0-08)', () => {
 
   it('converte #RRGGBB em rgb', () => {
     expect(hexToRgb('#1F4E79')).toEqual([31, 78, 121])
+  })
+
+  it('usa os mesmos índices de bioma que o núcleo (BIOME em core/types.ts)', () => {
+    // O núcleo não importa o renderer, então repete a ordem; aqui elas não podem divergir.
+    expect(BIOMES.map((b, i) => [b, i])).toEqual(Object.entries(BIOME))
   })
 })
