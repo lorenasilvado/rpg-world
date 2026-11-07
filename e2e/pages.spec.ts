@@ -32,6 +32,22 @@ test('o build abre em /rpg-world/ sem erro, com os assets no caminho base (AC-M0
   expect(problems).toEqual([])
 })
 
+// A medição do spike de desempenho (#9) abre no caminho base, com o worker do build gerando.
+test('a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-05)', async ({ page }) => {
+  const problems: string[] = []
+  page.on('response', (r) => {
+    if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`)
+  })
+  page.on('pageerror', (e) => problems.push(`erro ${e.message}`))
+  const workers: string[] = []
+  page.on('worker', (w) => workers.push(new URL(w.url()).pathname))
+  await page.goto('./bench.html?rapido')
+  await page.getByRole('button', { name: 'Medir' }).click()
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 60_000 })
+  expect(workers.some((p) => p.startsWith('/rpg-world/assets/'))).toBe(true)
+  expect(problems).toEqual([])
+})
+
 // O mockup do spike visual (#7) também abre no caminho base, com o spritesheet carregando.
 test('o mockup abre em /rpg-world/mockup.html com o spritesheet (AC-M0-05, AC-M0-08)', async ({ page }) => {
   const problems: string[] = []

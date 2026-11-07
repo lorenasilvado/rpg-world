@@ -95,6 +95,18 @@ o gerador de propósito exige subir `GENERATOR_VERSION` (`src/core/types.ts`) e 
 de referência. As versões de `alea` e `simplex-noise` ficam fixadas, sem `^`, no `package.json`:
 trocar a versão delas também é mudar o gerador.
 
+O worker de geração (spike de desempenho do M0) fica em `src/workers/`: o
+`generator.worker.ts` expõe o núcleo pelo Comlink e devolve os arrays por transferência, sem cópia,
+e o `generatorClient.ts` cria o worker na thread principal. Cada pedido ganha um número de versão
+(`latestOnly.ts`): fica no máximo um pedido no worker e um na espera, um pedido novo toma o lugar
+do que esperava, e um resultado que chega depois de um pedido mais novo é descartado; quem perdeu a
+vez recebe `null`. A página de medição abre em `/bench.html`, no dev e no build
+(`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² (medianas
+depois de uma geração de aquecimento), simula o arrasto de um slider e compara o maior intervalo
+entre quadros da UI com a mesma geração feita na thread principal. Meça com a aba à vista: com ela
+escondida, o navegador espaça quadros e timers, e a página avisa que o resultado não vale. O
+`e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas.
+
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
 
