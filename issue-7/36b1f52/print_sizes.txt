@@ -1,0 +1,4 @@
+commit: 36b1f522b241df533dc9883d7e040fc5a8d5210a
+ac-m0-06-mockup-terreno-costa-agua-rasa.png  1440x900  ee353d6e87019107a1d22a31d0a8d1077201addfa8571cc00de770441308d4cf
+ac-m0-07-icones-cc0-detalhe.png  1280x800  ce447396627f1fd3fa0330ac12d717a98de2179180f3f1bd1a42ea075a78b3bd
+ac-m0-08-paleta-e-spritesheet-render-style.png  1440x900  85996473a5c09a9db3ff2fd5ff5ed620fda01fcf36c4e1e8c40d38829352704f
