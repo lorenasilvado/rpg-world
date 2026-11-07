@@ -3,7 +3,7 @@ import { BIOME, GENERATOR_VERSION } from '../types'
 import { DEFAULT_CORE_PARAMS, generateField } from './generateField'
 import { GOLDEN_HASHES, GOLDEN_SIZE } from './golden'
 import { hashField } from './hashField'
-import { quantile } from './quantile'
+import { quantile, quantiles } from './quantile'
 
 describe('núcleo mínimo de geração (AC-M0-10)', () => {
   it('gera o campo 256² a partir de uma seed', () => {
@@ -64,5 +64,11 @@ describe('quantile', () => {
     expect(quantile(v, 0.4)).toBe(3)
     expect(quantile(v, 1)).toBe(5)
     expect(() => quantile(new Float32Array(), 0.5)).toThrow()
+  })
+
+  it('lê vários percentis de uma ordenação só, com o mesmo valor de cada um', () => {
+    const v = new Float32Array([9, 1, 5, 3, 7, 2, 8])
+    expect(quantiles(v, [0, 0.25, 0.5, 0.75, 1])).toEqual([1, 2, 5, 8, 9])
+    expect(() => quantiles(new Float32Array(), [0.5])).toThrow()
   })
 })

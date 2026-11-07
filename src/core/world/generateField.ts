@@ -1,7 +1,7 @@
 import { createFbm3D } from '../noise/fbm'
 import { createRandom } from '../rng/random'
 import { BIOME, type CoreField, type CoreParams } from '../types'
-import { quantile } from './quantile'
+import { quantiles } from './quantile'
 
 /**
  * Núcleo mínimo do spike de determinismo (#8): elevação por fBm 3D com máscara continental e
@@ -46,13 +46,15 @@ export function generateField(
   }
 
   // Classificação por quantis: os sliders pedem frações, não limiares absolutos.
-  const seaLevel = quantile(elevation, params.ocean)
-  const deepLevel = quantile(elevation, params.ocean * (1 - params.shallow))
   const landStart = params.ocean
   const landSpan = 1 - landStart
-  const hillLevel = quantile(elevation, landStart + landSpan * (1 - params.hills))
-  const mountainLevel = quantile(elevation, landStart + landSpan * (1 - params.mountains))
-  const snowLevel = quantile(elevation, landStart + landSpan * (1 - params.mountains * params.snow))
+  const [seaLevel, deepLevel, hillLevel, mountainLevel, snowLevel] = quantiles(elevation, [
+    params.ocean,
+    params.ocean * (1 - params.shallow),
+    landStart + landSpan * (1 - params.hills),
+    landStart + landSpan * (1 - params.mountains),
+    landStart + landSpan * (1 - params.mountains * params.snow),
+  ])
 
   const biome = new Uint8Array(n)
   for (let i = 0; i < n; i++) {
