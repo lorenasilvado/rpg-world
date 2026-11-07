@@ -81,7 +81,10 @@ sem acento, definindo `PLAYWRIGHT_BROWSERS_PATH` (ex.: `C:\pwtmp`) antes do `ins
 `npm run e2e`.
 
 O núcleo não usa funções Math transcendentes (`sin`, `exp`, `pow`…) nem o operador `**`, que
-podem variar entre engines (RNF-4); `src/core/determinism.test.ts` confere o código do núcleo e o
+podem variar entre engines (RNF-4), e só depende da seed: nada de `Math.random`, `Date`,
+`performance` ou `crypto`. A varredura aceita só uma lista de funções Math exatas (`floor`,
+`sqrt`, `min`, `imul`…), então o acesso indireto (`Math['pow']`) também é pego.
+`src/core/determinism.test.ts` confere o código do núcleo e o
 das bibliotecas `alea` e `simplex-noise`, e falha se uma delas passar a importar outro módulo. Mudar
 o gerador de propósito exige subir `GENERATOR_VERSION` (`src/core/types.ts`) e atualizar os hashes
 de referência. As versões de `alea` e `simplex-noise` ficam fixadas, sem `^`, no `package.json`:
