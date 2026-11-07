@@ -82,8 +82,10 @@ sem acento, definindo `PLAYWRIGHT_BROWSERS_PATH` (ex.: `C:\pwtmp`) antes do `ins
 
 O núcleo não usa funções Math transcendentes (`sin`, `exp`, `pow`…) nem o operador `**`, que
 podem variar entre engines (RNF-4); `src/core/determinism.test.ts` confere o código do núcleo e o
-das bibliotecas `alea` e `simplex-noise`. Mudar o gerador de propósito exige subir
-`GENERATOR_VERSION` (`src/core/types.ts`) e atualizar os hashes de referência.
+das bibliotecas `alea` e `simplex-noise`, e falha se uma delas passar a importar outro módulo. Mudar
+o gerador de propósito exige subir `GENERATOR_VERSION` (`src/core/types.ts`) e atualizar os hashes
+de referência. As versões de `alea` e `simplex-noise` ficam fixadas, sem `^`, no `package.json`:
+trocar a versão delas também é mudar o gerador.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.

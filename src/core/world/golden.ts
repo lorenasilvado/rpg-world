@@ -3,6 +3,9 @@
  * (`GENERATOR_VERSION`). O Vitest confere no Node e o Playwright no Chrome, no Firefox e no
  * WebKit (`e2e/determinismo.spec.ts`): se todos batem com estes valores, os motores geram o
  * mesmo campo. Mudou o gerador de propósito? Suba `GENERATOR_VERSION` e atualize os hashes.
+ *
+ * O campo também depende da versão de `alea` e `simplex-noise`, fixadas sem `^` no
+ * `package.json`: trocar a versão delas é mudar o gerador (suba `GENERATOR_VERSION`).
  */
 export const GOLDEN_SIZE = 256
 
