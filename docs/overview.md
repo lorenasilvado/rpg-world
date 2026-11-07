@@ -65,7 +65,38 @@ O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e
 (`http://localhost:5173/mockup.html`). A paleta e o spritesheet dos ícones ficam em
 `src/render/style/`, com a origem e a licença dos ícones no `README.md` dessa pasta.
 
-O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de docs.
+O núcleo mínimo de geração (spike de determinismo do M0) fica em `src/core/`. O teste de
+determinismo (`e2e/determinismo.spec.ts`) roda o núcleo no Chrome, no Firefox e no WebKit e
+compara o hash do campo com o de referência (`src/core/world/golden.ts`), o mesmo que o Vitest
+confere no Node. Firefox e WebKit são os navegadores do Playwright.
+
+Limite: o "WebKit" desse teste é o build de WebKit do Playwright, que roda no Linux (CI) e no
+Windows (local). É o mesmo motor JavaScript do Safari (JavaScriptCore), mas não é o Safari no
+macOS nem no iOS, que ninguém testa hoje.
+
+Para rodar o `npm run e2e` localmente, instale os navegadores uma vez:
+
+```bash
+npx playwright install firefox webkit
+```
+
+No Windows, se o caminho do usuário tem acento (ex.: `C:\Users\Usuário`), o Firefox do
+Playwright não abre ("configuração lado a lado incorreta"). Instale os navegadores num caminho
+sem acento, definindo `PLAYWRIGHT_BROWSERS_PATH` (ex.: `C:\pwtmp`) antes do `install` e do
+`npm run e2e`.
+
+O núcleo não usa funções Math transcendentes (`sin`, `exp`, `pow`…) nem o operador `**`, que
+podem variar entre engines (RNF-4), e só depende da seed: nada de `Math.random`, `Date`,
+`performance` ou `crypto`. A varredura aceita só uma lista de funções Math exatas (`floor`,
+`sqrt`, `min`, `imul`…), então o acesso indireto (`Math['pow']`) também é pego.
+`src/core/determinism.test.ts` confere o código do núcleo e o
+das bibliotecas `alea` e `simplex-noise`, e falha se uma delas passar a importar outro módulo. Mudar
+o gerador de propósito exige subir `GENERATOR_VERSION` (`src/core/types.ts`) e atualizar os hashes
+de referência. As versões de `alea` e `simplex-noise` ficam fixadas, sem `^`, no `package.json`:
+trocar a versão delas também é mudar o gerador.
+
+O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
+docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
 
 ### Publicação
 

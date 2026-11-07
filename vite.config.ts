@@ -12,6 +12,12 @@ const PAGES_BASE = '/rpg-world/'
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? PAGES_BASE : '/',
   plugins: [react(), tailwindcss()],
+  // O núcleo de geração (src/core) ainda não é importado pelo app: sem isto, o Vite só descobre
+  // alea e simplex-noise no import() do teste de determinismo, otimiza de novo e recarrega a
+  // página no meio do teste (#8).
+  optimizeDeps: {
+    include: ['alea', 'simplex-noise'],
+  },
   // Duas páginas: o app e o mockup estático do mapa do spike visual (#7), em /mockup.html.
   build: {
     rollupOptions: {
