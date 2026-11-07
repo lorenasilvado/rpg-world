@@ -37,8 +37,19 @@ function violations(code: string, allowedMath: readonly string[] = EXACT_MATH): 
 
 /** No núcleo: além da Math, nada de relógio nem de aleatoriedade fora da seed. */
 function coreViolations(code: string): string[] {
-  return [...violations(code), ...(stripComments(code).match(NONDETERMINISTIC) ?? [])]
+  return [...violations(code), ...clockUses(code)]
 }
+
+function clockUses(code: string): string[] {
+  return stripComments(code).match(NONDETERMINISTIC) ?? []
+}
+
+/**
+ * O `alea` usa o relógio num ponto só: `args = [+new Date]`, quando é chamado sem seed. O
+ * `createRandom` sempre passa a seed, então esse caminho não roda no núcleo. Qualquer outro uso
+ * de relógio nas bibliotecas (numa versão nova, por exemplo) é violação.
+ */
+const ALEA_CLOCK_FALLBACK = /if\s*\(\s*args\.length\s*==\s*0\s*\)\s*\{\s*args\s*=\s*\[\s*\+\s*new\s+Date\s*\]\s*;?\s*\}/
 
 /**
  * Módulos que o código importa (`import`, `export … from`, `import()` ou `require()`). A
@@ -63,6 +74,13 @@ describe('núcleo sem funções Math transcendentes (AC-M0-12)', () => {
     expect(simplexSource).toContain('createNoise3D')
     expect(violations(aleaSource, LIBRARY_MATH)).toEqual([])
     expect(violations(simplexSource, LIBRARY_MATH)).toEqual([])
+  })
+
+  it('nas bibliotecas, o relógio só aparece no padrão do alea sem seed', () => {
+    expect(clockUses(simplexSource)).toEqual([])
+    expect(clockUses(aleaSource)).toEqual(['Date'])
+    expect(aleaSource).toMatch(ALEA_CLOCK_FALLBACK)
+    expect(clockUses(aleaSource.replace(ALEA_CLOCK_FALLBACK, ''))).toEqual([])
   })
 
   it('as bibliotecas são um arquivo só: a varredura acima cobre todo o código delas', () => {
