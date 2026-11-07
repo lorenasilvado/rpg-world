@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, GENERATOR_VERSION } from '../types'
 import { DEFAULT_CORE_PARAMS, generateField } from './generateField'
-import { GOLDEN_HASHES, GOLDEN_SIZE } from './golden'
+import { GOLDEN_HASHES, GOLDEN_SIZE, GOLDEN_VERSION } from './golden'
 import { hashField } from './hashField'
 import { quantile, quantiles } from './quantile'
 
@@ -40,6 +40,10 @@ describe('núcleo mínimo de geração (AC-M0-10)', () => {
 })
 
 describe('hash do campo (AC-M0-11)', () => {
+  it('os hashes de referência são da versão atual do gerador', () => {
+    expect(GOLDEN_VERSION).toBe(GENERATOR_VERSION)
+  })
+
   it(`bate com os hashes de referência no Node (gerador v${GENERATOR_VERSION})`, () => {
     for (const { seed, hash } of GOLDEN_HASHES) {
       expect(hashField(generateField(seed, GOLDEN_SIZE)), seed).toBe(hash)

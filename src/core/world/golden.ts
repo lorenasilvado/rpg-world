@@ -9,6 +9,13 @@
  */
 export const GOLDEN_SIZE = 256
 
+/**
+ * Versão do gerador a que estes hashes pertencem. Um teste exige que seja igual a
+ * `GENERATOR_VERSION`: trocar os hashes pede trocar esta versão junto, e ela só passa no teste
+ * se `GENERATOR_VERSION` também subir.
+ */
+export const GOLDEN_VERSION = 1
+
 export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; hash: string }> = [
   { seed: 'rpg-world', hash: '00a47247' },
   { seed: 'Aldebaran', hash: '443d1b6b' },
