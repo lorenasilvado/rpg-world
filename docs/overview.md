@@ -68,8 +68,13 @@ O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e
 O núcleo mínimo de geração (spike de determinismo do M0) fica em `src/core/`. O teste de
 determinismo (`e2e/determinismo.spec.ts`) roda o núcleo no Chrome, no Firefox e no WebKit e
 compara o hash do campo com o de referência (`src/core/world/golden.ts`), o mesmo que o Vitest
-confere no Node. Firefox e WebKit são os navegadores do Playwright; para rodar o `npm run e2e`
-localmente, instale-os uma vez:
+confere no Node. Firefox e WebKit são os navegadores do Playwright.
+
+Limite: o "WebKit" desse teste é o build de WebKit do Playwright, que roda no Linux (CI) e no
+Windows (local). É o mesmo motor JavaScript do Safari (JavaScriptCore), mas não é o Safari no
+macOS nem no iOS, que ninguém testa hoje.
+
+Para rodar o `npm run e2e` localmente, instale os navegadores uma vez:
 
 ```bash
 npx playwright install firefox webkit
