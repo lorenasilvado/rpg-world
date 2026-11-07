@@ -1,5 +1,6 @@
 # CI da stack do projeto: lint (oxlint), tipos (tsc), testes (Vitest), E2E (Playwright no
-# Google Chrome do runner) e build (Vite).
+# Google Chrome do runner, e no Firefox e WebKit do Playwright para o teste de determinismo)
+# e build (Vite).
 #
 # Roda em todo pull_request, sem filtro de paths: o check "ci" é obrigatório no
 # ruleset da main, e um check obrigatório que não roda trava o PR.
@@ -62,6 +63,10 @@ jobs:
       - name: Build
         if: steps.docs.outputs.only != 'true'
         run: npm run build
+
+      - name: Navegadores do teste de determinismo (Firefox e WebKit)
+        if: steps.docs.outputs.only != 'true'
+        run: npx playwright install --with-deps firefox webkit
 
       - name: E2E
         if: steps.docs.outputs.only != 'true'

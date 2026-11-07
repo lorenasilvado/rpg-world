@@ -65,7 +65,28 @@ O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e
 (`http://localhost:5173/mockup.html`). A paleta e o spritesheet dos ícones ficam em
 `src/render/style/`, com a origem e a licença dos ícones no `README.md` dessa pasta.
 
-O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de docs.
+O núcleo mínimo de geração (spike de determinismo do M0) fica em `src/core/`. O teste de
+determinismo (`e2e/determinismo.spec.ts`) roda o núcleo no Chrome, no Firefox e no WebKit e
+compara o hash do campo com o de referência (`src/core/world/golden.ts`), o mesmo que o Vitest
+confere no Node. Firefox e WebKit são os navegadores do Playwright; para rodar o `npm run e2e`
+localmente, instale-os uma vez:
+
+```bash
+npx playwright install firefox webkit
+```
+
+No Windows, se o caminho do usuário tem acento (ex.: `C:\Users\Usuário`), o Firefox do
+Playwright não abre ("configuração lado a lado incorreta"). Instale os navegadores num caminho
+sem acento, definindo `PLAYWRIGHT_BROWSERS_PATH` (ex.: `C:\pwtmp`) antes do `install` e do
+`npm run e2e`.
+
+O núcleo não usa funções Math transcendentes (`sin`, `exp`, `pow`…) nem o operador `**`, que
+podem variar entre engines (RNF-4); `src/core/determinism.test.ts` confere o código do núcleo e o
+das bibliotecas `alea` e `simplex-noise`. Mudar o gerador de propósito exige subir
+`GENERATOR_VERSION` (`src/core/types.ts`) e atualizar os hashes de referência.
+
+O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
+docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
 
 ### Publicação
 
