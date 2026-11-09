@@ -18,14 +18,16 @@ export default defineConfig(({ command, isPreview }) => ({
   optimizeDeps: {
     include: ['alea', 'simplex-noise', 'comlink'],
   },
-  // Três páginas: o app, o mockup estático do mapa do spike visual (#7), em /mockup.html, e a
-  // medição da geração no worker do spike de desempenho (#9), em /bench.html.
+  // Quatro páginas: o app, o mockup estático do mapa do spike visual (#7), em /mockup.html, a
+  // medição da geração no worker (#9), em /bench.html, e a medição dos 5.000 sprites (#10), em
+  // /sprites.html.
   build: {
     rollupOptions: {
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         mockup: fileURLToPath(new URL('./mockup.html', import.meta.url)),
         bench: fileURLToPath(new URL('./bench.html', import.meta.url)),
+        sprites: fileURLToPath(new URL('./sprites.html', import.meta.url)),
       },
     },
   },

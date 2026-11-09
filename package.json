@@ -16,6 +16,8 @@
     "alea": "1.0.1",
     "comlink": "4.4.2",
     "lucide-react": "^1.69.0",
+    "pixi-viewport": "^7.0.2",
+    "pixi.js": "^8.22.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "simplex-noise": "4.0.3"
