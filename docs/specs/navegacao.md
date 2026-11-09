@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-04
+updated: 2026-11-09
 ---
 
 # F2 · Câmera e navegação
@@ -57,12 +57,14 @@ barra inferior.
 | Centralizar (atalho 0) | Centraliza o mapa |
 | Arrastar o retângulo do minimapa | Move a área visível |
 | Recolher o minimapa | Esconde o minimapa |
+| Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa |
+| Ajuda | Abre o modal "Atalhos de teclado" |
 | Medir distância (M) (Should) | Mede a distância entre dois pontos |
 
 ## Regras
 
-- Limites de zoom (ex.: 0,25× a 8×) e de pan (o mapa não some da tela).
-- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`).
+- Limites de zoom (0,4× a 4×) e de pan (o mapa não some da tela).
+- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos).
 
@@ -71,13 +73,20 @@ barra inferior.
 IDs `AC-F2-NN`, em sequência. AC novo recebe o próximo número livre; AC removido sai da
 lista e o número não volta a ser usado.
 
-Nenhum ainda: os ACs nascem no `/planejar M<n>`.
+- AC-F2-01: arrastar o mapa, com mouse ou toque, faz pan, com inércia suave ao soltar
+- AC-F2-02: a roda do mouse faz zoom centrado no cursor
+- AC-F2-03: a pinça faz zoom
+- AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza o mapa
+- AC-F2-05: o zoom fica entre 0,4× e 4×, e o mapa não some da tela
+- AC-F2-06: com `prefers-reduced-motion: reduce`, a câmera salta direto, sem deslizar
+- AC-F2-07: com 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
+- AC-F2-08: o minimapa acompanha o mapa, o retângulo da área visível é arrastável e o minimapa recolhe
+- AC-F2-09: o canto inferior direito mostra a escala em km, a porcentagem de zoom, − e +, e centralizar; com menos de 860 px de área livre, esconde a escala e a porcentagem
+- AC-F2-10: a barra superior e a toolbar seguem o design system, e as ações de funções que ainda não existem aparecem desabilitadas
+- AC-F2-11: Camadas abre o popover, e o interruptor "Decoração" mostra e esconde os ícones decorativos
+- AC-F2-12: Ajuda abre o modal "Atalhos de teclado"
+- AC-F2-13: Medir distância (M) mostra a distância em km entre dois pontos clicados
 
 ## Pendências
 
-> Pendente: o que fazem "Camadas" e "Ajuda"? O material lista os botões, mas não descreve o
-> comportamento.
-
 Layout abaixo de 768 px (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
-
-> Pendente: limites exatos de zoom (o PRD dá 0,25× a 8× como exemplo).

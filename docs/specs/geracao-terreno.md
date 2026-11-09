@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-04
+updated: 2026-11-09
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -73,6 +73,15 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   | Deserto árido | Desertos vastos e serras secas |
   | Terras geladas | Cordilheiras altas e neve eterna |
 
+  Valores de cada preset:
+
+  | Preset | Oceano | Praias | Desertos | Florestas | Montanhas | Neve | Continente | Costa | Temperatura |
+  |---|---|---|---|---|---|---|---|---|---|
+  | Continente temperado | 45 | 30 | 15 | 35 | 30 | 40 | 50 | 50 | 50 |
+  | Arquipélago | 66 | 55 | 8 | 45 | 22 | 15 | 8 | 72 | 64 |
+  | Deserto árido | 32 | 25 | 62 | 10 | 34 | 12 | 74 | 45 | 85 |
+  | Terras geladas | 48 | 12 | 4 | 42 | 52 | 85 | 58 | 62 | 15 |
+
   As telas (`assistente-*.png`) ainda mostram "Reinos áridos" e "Norte gelado": valem os nomes
   desta tabela.
 
@@ -98,7 +107,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 
 | Ação | Resultado |
 |---|---|
-| Arrastar um slider | Prévia 256² em tempo real; cada pedido novo cancela o anterior |
+| Arrastar um slider | Prévia 256² em tempo real: o mapa mostra cada resultado mais novo que o último exibido, e um resultado velho nunca substitui um novo |
 | Soltar o slider | Gera o mapa final em 1024² |
 | Sortear seed | Seed aleatória e mapa novo |
 | Editar a seed | Regenera o mapa com a seed nova |
@@ -116,13 +125,17 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   florestas é medido sobre a terra firme sem montanhas.
 - Desertos e florestas disputam a terra firme: a soma nunca passa de 100%.
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células
-  oceânicas.
+  oceânicas. O alvo vale com o Oceano de 5% a 95%: a borda do mapa é sempre água, inclusive em 0%.
+  Lagos não contam como oceano.
 - O ruído fica fixo pela seed; só os limiares mudam quando um slider se mexe.
 - Mesma seed + parâmetros + `generatorVersion` = mesmo mapa (RNF-4).
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
   mapa).
-- O mapa tem rios e lagos na v1, sem hidrologia (o PRD sugere rios por descida de gradiente).
+- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0005](../adr/0005-rios-e-lagos-por-descida-de-gradiente.md)):
+  os rios nascem em montanhas e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
+  depressão onde a descida fica presa. O traçado não muda com os sliders: mexer no oceano só corta o
+  rio na costa nova.
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
@@ -130,15 +143,31 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 IDs `AC-F1-NN`, em sequência. AC novo recebe o próximo número livre; AC removido sai da
 lista e o número não volta a ser usado.
 
-Nenhum ainda: os ACs nascem no `/planejar M<n>`.
+- AC-F1-01: o hash do pipeline completo, para a mesma seed, parâmetros e `generatorVersion`, é igual no Chrome, no Firefox e no WebKit
+- AC-F1-02: com o Oceano em 30, o mapa tem 30% ± 2% de água oceânica, em várias seeds
+- AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas
+- AC-F1-04: mexer num slider não muda a elevação gerada pela seed; só os limiares mudam
+- AC-F1-05: cada um dos 9 sliders muda o mapa de forma visível e na direção descrita na tabela de sliders
+- AC-F1-06: o mapa tem oceano em todas as bordas, com qualquer valor dos sliders
+- AC-F1-07: todo rio desce do ponto onde nasce até o mar ou um lago
+- AC-F1-08: a decoração é posicionada por Poisson-disk conforme o bioma, é determinística e tem no máximo 5.000 ícones
+- AC-F1-09: com o pipeline completo, a prévia 256² fica pronta em até 150 ms e o mapa 1024² em até 1,5 s, com no máximo 64 MB de dados do mundo
+- AC-F1-10: durante o arrasto de um slider o mapa continua atualizando, e um resultado velho nunca substitui um novo
+- AC-F1-11: ao soltar o slider, o mapa final 1024² substitui a prévia
+- AC-F1-12: se a geração ou o worker falhar, aparece o toast de erro "Não foi possível gerar o mapa", com a ação "Tentar de novo"
+- AC-F1-13: todos os sliders funcionam só com o teclado e têm rótulo
+- AC-F1-14: Desertos + Florestas nunca passa de 100%: o outro slider recua sozinho e pisca
+- AC-F1-15: sortear ou editar a seed regenera o mapa, e o botão copiar copia a seed
+- AC-F1-16: escolher um preset aplica os valores dele; com "Deserto árido", mais de 50% da terra firme sem montanhas é deserto
+- AC-F1-17: "Restaurar padrão" volta todos os parâmetros aos valores padrão
+- AC-F1-18: a barra "Distribuição do mapa" mostra a porcentagem real de cada bioma e, durante a geração, "Gerando", com a prévia borrada
+- AC-F1-19: o assistente cria o mundo com o nome, o preset e a seed escolhidos e mostra o mapa dele no editor
+- AC-F1-20: sem WebGL2, um aviso com os navegadores suportados aparece no lugar do editor
+- AC-F1-21: as seções da sidebar recolhem e abrem, e o painel recolhe e abre também pela tecla `[`
+- AC-F1-22: o terreno é desenhado com a paleta posterizada, o contorno de costa, a água rasa e o hillshade do mockup aprovado
+- AC-F1-23: o mapa tem a decoração completa do design system (hachura, ondas, pontilhado de areia, tufos, árvores redondas e dunas)
 
 ## Pendências
-
-> Pendente: valores de cada preset (no protótipo, `rpg-kit.js → PRESETS`, que não veio no
-> material).
-
-> Pendente: como os rios e lagos são gerados e controlados (há slider? quantos? onde nascem?). O
-> material não descreve.
 
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 
