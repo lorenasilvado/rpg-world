@@ -87,6 +87,11 @@ const STRAIT_EDGE_NOISE = 0.1
  * não contar nada joga a terra rasa perto dos estreitos na faixa comprimida.
  */
 const STRAIT_FLOOR_SHARE = 0.5
+/**
+ * Quanto das quedas perto da borda conta para o piso da escala. Contar tudo achata o relevo; sem
+ * contar nada, a terra perto da borda cai na faixa comprimida quando há pouco oceano.
+ */
+const DROP_FLOOR_CAP = 0.35
 /** Peso da máscara continental em ilhas e quanto ele cresce até a pangeia. */
 const MASK_WEIGHT_ISLANDS = 0.14
 const MASK_WEIGHT_RANGE = 0.5
@@ -176,14 +181,16 @@ export function composeElevation(
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
       const terrain = e + cut * (1 - STRAIT_FLOOR_SHARE)
-      if (terrain < floor) floor = terrain
       const dx = ((x + 0.5) / size - 0.5) * 2
       const distance = Math.sqrt(dx * dx + dy * dy)
       const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE
-      if (reach > edgeStart) e -= (reach - edgeStart) * edgeDrop
+      let drop = reach > edgeStart ? (reach - edgeStart) * edgeDrop : 0
       const frame = Math.max(Math.abs(dx), Math.abs(dy))
       const frameStart = Math.min(FRAME_START_MAX, FRAME_START + (radial[i] - distance) * FRAME_NOISE_SHARE)
-      if (frame > frameStart) e -= ((frame - frameStart) / (1 - frameStart)) * FRAME_DROP
+      if (frame > frameStart) drop += ((frame - frameStart) / (1 - frameStart)) * FRAME_DROP
+      e -= drop
+      const lowest = terrain - Math.min(drop, DROP_FLOOR_CAP)
+      if (lowest < floor) floor = lowest
       elevation[i] = e
       if (e < min) min = e
       if (e > max) max = e
@@ -197,7 +204,8 @@ export function composeElevation(
     for (let x = 1; x < size - 1; x++) {
       const i = y * size + x
       const e = elevation[i]
-      elevation[i] = e >= floor ? TERRAIN_FLOOR + (e - floor) * upper : MIN_INTERIOR + (e - min) * lower
+      // `min(1, …)`: o valor guardado em Float32 pode arredondar acima do `max` medido em double.
+      elevation[i] = e >= floor ? Math.min(1, TERRAIN_FLOOR + (e - floor) * upper) : MIN_INTERIOR + (e - min) * lower
     }
   }
   return elevation

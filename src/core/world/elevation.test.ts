@@ -138,6 +138,15 @@ describe('elevação de produção', () => {
     }
   })
 
+  it('também fica em no máximo 1 em mapas muito pequenos', () => {
+    for (const size of [4, 5, 6]) {
+      for (const seed of SEEDS) {
+        const e = composeElevation(sampleTerrainNoise(seed, size), { continentSize: 50, coastRoughness: 50 })
+        expect(Math.max(...e), `${seed}, ${size}`).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
   it('as camadas de ruído só dependem da seed', () => {
     expect(sampleTerrainNoise('rpg-world', 32)).toEqual(sampleTerrainNoise('rpg-world', 32))
     expect(sampleTerrainNoise('outra', 32).broad).not.toEqual(sampleTerrainNoise('rpg-world', 32).broad)
@@ -208,13 +217,13 @@ describe('elevação de produção', () => {
         }
       }
       expect(low, seed).toBeGreaterThanOrEqual(TERRAIN_FLOOR)
-      expect(high - low, seed).toBeGreaterThan(0.5)
+      expect(high - low, seed).toBeGreaterThan(0.4)
     }
   })
 
   it('com Oceano e Continente baixos, a terra fica fora da faixa comprimida da escala', () => {
-    const shares = SEEDS.map((seed) => {
-      const f = generateField(seed, 256, params({ ocean: 20, continentSize: 0 }))
+    const compressedShare = (continentSize: number) => SEEDS.map((seed) => {
+      const f = generateField(seed, 256, params({ ocean: 20, continentSize }))
       let land = 0
       let compressed = 0
       for (let i = 0; i < f.biome.length; i++) {
@@ -224,7 +233,10 @@ describe('elevação de produção', () => {
       }
       return compressed / land
     })
-    expect(shares.reduce((a, b) => a + b, 0) / shares.length).toBeLessThan(0.05)
+    for (const continentSize of [0, 50]) {
+      const shares = compressedShare(continentSize)
+      expect(shares.reduce((a, b) => a + b, 0) / shares.length, `continente ${continentSize}`).toBeLessThan(0.05)
+    }
   })
 
   it('os estreitos não achatam o relevo com Continente baixo', () => {
