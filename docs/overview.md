@@ -115,7 +115,10 @@ O spike dos 5.000 sprites (M0) fica em `src/sprites/` e abre em `/sprites.html`,
 num grupo de render do Pixi, sem culling, e pixi-viewport com pan, zoom no cursor e pinça. O botão
 "Medir automático" roda 30 s de câmera roteirizada, igual em toda máquina; "Medir manual" conta os
 30 s enquanto a pessoa faz pan e zoom. O fps mínimo é o da pior janela de 1 s, e o relatório traz o
-navegador, a GPU e a tela. Meça com a aba à vista, no Chrome, e registre o relatório no PR. O
+navegador, a GPU e a tela. Meça com a aba à vista, no Chrome, e registre o relatório no PR. Abra o
+Chrome pelo menos 1 minuto antes de medir: logo depois de ele abrir, surgem quadros lentos que não
+vêm da cena (o JS fica abaixo de 7 ms por quadro, sem tarefas longas). Feche outras abas com a
+cena, que disputam a GPU. O
 `e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do teste não
 usa a GPU.
 
