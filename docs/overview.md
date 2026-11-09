@@ -105,7 +105,8 @@ vez recebe `null`. A página de medição abre em `/bench.html`, no dev e no bui
 depois de uma geração de aquecimento), simula o arrasto de um slider e compara o maior intervalo
 entre quadros da UI com a mesma geração feita na thread principal. Meça com a aba à vista: com ela
 escondida, o navegador espaça quadros e timers, e a página avisa que o resultado não vale. O
-`e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas.
+`e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas, num projeto do Playwright
+que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os quadros da UI.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
