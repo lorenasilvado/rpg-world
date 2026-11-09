@@ -279,14 +279,14 @@ Cores chapadas, 3 tons por bioma (sombra, base, luz). Valores em `tokens.json �
 | Colina | `#7E8F55` | `#98A86A` | `#B2C184` | Colinas a traço com hachura |
 | Montanha rochosa | `#6B6560` | `#8A837C` | `#A9A39C` | Montanhas com hachura |
 | Neve | `#C9D6DE` | `#E4ECF0` | `#FFFFFF` | Montanhas nevadas com hachura |
-
-> Pendente: cores e traço de rios e lagos (a v1 terá os dois; o material não define o estilo).
+| Lago | `#4A9CC9` | `#6BB8DD` | `#8FD0EB` | — (mesmos tons da água rasa) |
 
 ### Traços
 
 | Elemento | Estilo |
 |---|---|
 | Costa | 2 px `#163A5C` |
+| Rio | `#6BB8DD` com contorno fino `#163A5C`; a largura é aprovada por print no PR |
 | Estrada | 3,5 px `#7A5230` sobre 7 px `#F5EACB` |
 | Trilha | 3,2 px `#7A5230` pontilhada (1 / 7) |
 | Rota marítima | 2,5 px `#FFFFFF` tracejada (10 / 8) |
@@ -312,7 +312,7 @@ temperatura 50 (todos 0–100). Desertos + florestas ≤ 100.
 **Presets:** Continente temperado · Arquipélago · Deserto árido · Terras geladas. As telas e o
 PDF ainda mostram "Reinos áridos" e "Norte gelado": valem os nomes daqui.
 
-> Pendente: os valores de cada preset estão em `rpg-kit.js → PRESETS`, que não veio no material.
+Os valores de cada preset estão em [specs/geracao-terreno.md](../specs/geracao-terreno.md).
 
 ## Pins
 

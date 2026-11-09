@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-05
+updated: 2026-11-09
 ---
 
 # Roadmap
@@ -38,20 +38,23 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
 ### M1 — Mapa gerado e navegável
 - **Objetivo:** criar um mundo pelo assistente e ajustar o terreno pelos sliders, vendo o mapa
   cartoon mudar de forma previsível, com pan e zoom fluidos.
-- **Escopo:** F1, F2.
+- **Escopo:** F1, F2. Dois itens de F1 dependem de F3 e F4 e entram no M2: o aviso de pins sobre a
+  água e as dicas de boas-vindas.
 - **Critério de saída:** cada slider muda o mapa de forma visível e previsível; oceano = 30% gera
-  30% ± 2% de água; o preset "Deserto árido" gera maioria de deserto; pan, zoom no cursor e pinça
-  a 60 fps com 5.000 ícones decorativos; todos os sliders funcionam só com teclado; os fluxos
-  principais estão cobertos por E2E.
-- **Depende de / decisões abertas:** go do M0. Antes do núcleo de geração: método dos rios e
-  lagos. Também em aberto: valores dos presets, `sizeKm` padrão, comportamento de Camadas e Ajuda.
-  Medir distância (Should) entra no fim e pode ser cortada.
+  30% ± 2% de água; no preset "Deserto árido", mais de 50% da terra firme sem montanhas é deserto;
+  pan, zoom no cursor e pinça a 60 fps de média e pelo menos 55 fps de mínimo, com 5.000 ícones
+  decorativos; todos os sliders funcionam só com teclado; os fluxos principais estão cobertos por
+  E2E.
+- **Depende de / decisões abertas:** go do M0 ([ADR 0004](adr/0004-go-no-go-m0.md)). Rios e lagos
+  no [ADR 0005](adr/0005-rios-e-lagos-por-descida-de-gradiente.md). Medir distância (Should) entra
+  no fim e pode ser cortada.
 - **Tamanho:** G
 
 ### M2 — Pins e mundos (v1)
 - **Objetivo:** usar o mapa como caderno de campanha, com pins editáveis e mundos salvos,
   exportados e importados. **Marco: v1.**
-- **Escopo:** F3, F4.
+- **Escopo:** F3, F4, e os dois itens de F1 que dependem delas: o aviso de pins sobre a água e as
+  dicas de boas-vindas.
 - **Critério de saída:** criar, editar, mover e excluir pin (com Desfazer); recarregar a página
   mantém tudo; JSON exportado reimporta idêntico; um usuário novo cria um mundo e marca 10 pins
   em menos de 10 minutos; pan e zoom sem travar com 500 pins.
@@ -85,3 +88,28 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 5 | #8 | [chore] Spike de determinismo entre navegadores | done | — | #30 |
 | 6 | #9 | [chore] Spike de desempenho: geração no worker | done | — | #33 |
 | 7 | #10 | [chore] Spike de desempenho: 5.000 sprites no PixiJS | done | — | #37 |
+
+### M1 — Mapa gerado e navegável
+
+| Ordem | Issue | Título | Status | Spec | PR |
+|---|---|---|---|---|---|
+| 8 | #41 | [feat] Núcleo: elevação, continente e costa | todo | specs/geracao-terreno.md | |
+| 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | todo | — | |
+| 10 | #42 | [feat] Núcleo: clima, biomas e praias | todo | specs/geracao-terreno.md | |
+| 11 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
+| 12 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
+| 13 | #45 | [feat] Worker de produção e prévia contínua | todo | specs/geracao-terreno.md | |
+| 14 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
+| 15 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
+| 16 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
+| 17 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
+| 18 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
+| 19 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
+| 20 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
+| 21 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |
+| 22 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | todo | specs/geracao-terreno.md | |
+| 23 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
+| 24 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
+| 25 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
+| 26 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
+| 27 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |

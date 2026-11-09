@@ -195,14 +195,16 @@ src/
    úmidas viram floresta. Montanhas e neve usam percentis de elevação e de temperatura.
 5. **Praias:** faixa de largura configurável a partir da costa, por distância, não por altura.
 6. **Sombreamento:** hillshade pela inclinação, guardado em `Int8Array`.
-7. **Rios e lagos:** TODO: a etapa existe na v1 (sem hidrologia), mas o método não está
-   definido.
+7. **Rios e lagos:** sem hidrologia ([ADR 0005](adr/0005-rios-e-lagos-por-descida-de-gradiente.md)):
+   rios descem pelo gradiente, de montanhas até o mar ou um lago; o lago ocupa a depressão onde a
+   descida fica presa.
 8. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
 9. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
    RGBA única e os sprites de decoração.
 
-A prévia roda o mesmo pipeline em 256²; cada pedido novo cancela o anterior por um número de
-versão.
+A prévia roda o mesmo pipeline em 256². Cada pedido tem um número de versão: durante o arrasto de
+um slider, o mapa mostra cada resultado mais novo que o último exibido, e um resultado velho nunca
+substitui um novo.
 
 ## Modelo de dados
 
@@ -216,7 +218,7 @@ type WorldParams = {
 type World = {
   id: string; name: string; seed: string;
   generatorVersion: number;   // garante reprodutibilidade
-  sizeKm: number;             // largura do mapa; alimenta escala e régua
+  sizeKm: number;             // largura do mapa (800 por padrão); alimenta escala e régua
   params: WorldParams;
   pins: Pin[]; roads: Road[];
   createdAt: string; updatedAt: string;
@@ -236,16 +238,12 @@ type Road = { id: string; kind: 'road' | 'trail' | 'sea';
 // Saída do worker (não é salva; é regerada)
 type WorldField = { width: number; height: number;
   elevation: Float32Array; moisture: Float32Array;
-  temperature: Float32Array; biome: Uint8Array; shade: Int8Array };
+  temperature: Float32Array; biome: Uint8Array; shade: Int8Array;
+  rivers: { u: number; v: number }[][] }; // polilinhas; lago é um bioma em `biome`
 ```
 
 > Pendente: como o `Pin` guarda a hierarquia (um pin pertence a outro, ex.: vila de um reino)? O
 > modelo acima ainda não tem esse campo.
-
-> Pendente: como rios e lagos entram no modelo (biomas novos no `WorldField`? traços como as
-> estradas?).
-
-> Pendente: qual a largura padrão do mundo em km (`sizeKm`)? Define a escala e a régua.
 
 > Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
 > mantidas?
@@ -283,7 +281,7 @@ pintado célula a célula em `MapCanvas.jsx`.
 | Seed | Texto que determina o mapa gerado: a mesma seed com os mesmos parâmetros sempre gera o mesmo mapa |
 | Parâmetros | Valores dos sliders de geração, de 0 a 100 (`WorldParams`) |
 | Preset | Conjunto pronto de parâmetros ("ponto de partida" no assistente) |
-| Bioma | Classe de terreno de uma célula: oceano profundo, água rasa, praia, campo, floresta, deserto, colina, montanha rochosa, neve |
+| Bioma | Classe de terreno de uma célula: oceano profundo, água rasa, lago, praia, campo, floresta, deserto, colina, montanha rochosa, neve |
 | Terra firme | Células que não são água; base do percentual de desertos e florestas (sem as montanhas) |
 | Prévia | Geração em 256² enquanto o slider se mexe; a geração final é em 1024² |
 | Pin | Marcador no mapa com tipo, nome e ficha (descrição, tags, campos livres, capa) |
