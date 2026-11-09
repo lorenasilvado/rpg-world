@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medição do worker · RPG World Builder</title>
+  </head>
+  <body class="bg-bg text-ink font-sans">
+    <main class="mx-auto max-w-3xl p-6">
+      <h1 class="font-title text-2xl">Medição da geração no worker</h1>
+      <p class="mt-1 text-sm text-ink-2">
+        Spike de desempenho (#9): prévia 256² em até 150 ms, mapa 1024² em até 1,5 s, sem travar a UI.
+      </p>
+      <p id="machine" class="mt-2 font-mono text-xs text-ink-3"></p>
+
+      <div class="mt-4 flex items-center gap-3">
+        <button
+          id="run"
+          type="button"
+          class="rounded-control bg-amber px-4 py-2 font-semibold text-on-amber shadow-sm disabled:opacity-50"
+        >
+          Medir
+        </button>
+        <span id="status" data-testid="status" class="text-sm text-ink-2"></span>
+      </div>
+
+      <div class="mt-4 rounded-panel bg-paper-solid p-3 shadow-sm" aria-label="A UI responde">
+        <div class="relative h-3 overflow-hidden rounded-pill bg-sunken" style="container-type: inline-size">
+          <span id="dot" class="absolute top-0 left-0 block h-3 w-3 rounded-pill bg-amber"></span>
+        </div>
+        <p class="mt-1 text-xs text-ink-3">Quadros desenhados: <span id="frames" class="font-mono">0</span></p>
+      </div>
+
+      <section id="results" data-testid="results" class="mt-4"></section>
+      <pre id="json" data-testid="report" class="mt-4 overflow-auto rounded-panel bg-sunken p-3 font-mono text-xs"></pre>
+    </main>
+    <script type="module" src="/src/bench/main.ts"></script>
+  </body>
+</html>
