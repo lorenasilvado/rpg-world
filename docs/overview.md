@@ -106,7 +106,9 @@ depois de uma geração de aquecimento), simula o arrasto de um slider e compara
 entre quadros da UI com a mesma geração feita na thread principal. Meça com a aba à vista: com ela
 escondida, o navegador espaça quadros e timers, e a página avisa que o resultado não vale. O
 `e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas, num projeto do Playwright
-que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os quadros da UI.
+que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os quadros da UI. As
+metas de tempo só são conferidas fora do CI, que é uma máquina compartilhada; no CI ficam a
+transferência sem cópia e o cancelamento.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.

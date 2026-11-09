@@ -5,6 +5,12 @@ import type { BenchReport } from '../src/bench/report.ts'
 // Spike de desempenho (#9, RNF-2): a página /bench.html gera no worker e mede. Os tempos são
 // medianas depois de uma geração de aquecimento; a máquina e os números vão para as anotações
 // do teste (e para o PR).
+//
+// As checagens de tempo só rodam fora do CI: o check `ci` é obrigatório e roda numa máquina
+// compartilhada, onde uma lentidão do runner travaria o merge. No CI ficam as checagens que não
+// dependem do tempo (transferência sem cópia e cancelamento).
+const CONFERE_TEMPO = !process.env.CI
+
 test('a geração no worker atinge as metas, só o mais novo chega e a UI responde (AC-M0-13 a 15)', async ({ page }) => {
   test.setTimeout(120_000)
   const errors: string[] = []
@@ -22,8 +28,10 @@ test('a geração no worker atinge as metas, só o mais novo chega e a UI respon
   expect(report.visible).toBe(true)
 
   // AC-M0-13: metas de tempo, com os arrays transferidos sem cópia.
-  expect(report.preview.median).toBeLessThanOrEqual(report.targets.previewMs)
-  expect(report.map.median).toBeLessThanOrEqual(report.targets.mapMs)
+  if (CONFERE_TEMPO) {
+    expect(report.preview.median).toBeLessThanOrEqual(report.targets.previewMs)
+    expect(report.map.median).toBeLessThanOrEqual(report.targets.mapMs)
+  }
   expect(report.transferred).toBe(true)
 
   // AC-M0-14: no arrasto, pedidos são descartados e só o mais novo chega, com o campo certo.
@@ -39,7 +47,9 @@ test('a geração no worker atinge as metas, só o mais novo chega e a UI respon
     type: 'maior quadro da UI',
     description: `worker ${report.map.maxFrameGap} ms; thread principal ${report.mainThread!.maxFrameGap} ms`,
   })
-  expect(report.map.maxFrameGap).toBeLessThan(100)
-  expect(report.mainThread!.maxFrameGap).toBeGreaterThan(report.map.maxFrameGap)
+  if (CONFERE_TEMPO) {
+    expect(report.map.maxFrameGap).toBeLessThan(100)
+    expect(report.mainThread!.maxFrameGap).toBeGreaterThan(report.map.maxFrameGap)
+  }
   expect(errors).toEqual([])
 })
