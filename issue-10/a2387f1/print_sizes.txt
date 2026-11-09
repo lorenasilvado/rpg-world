@@ -1,0 +1,3 @@
+commit: a2387f151d3b526df6914799130f3e3f7c160495
+ac-m0-16-fps-minimo-com-pan-e-zoom.png  1280x800  9d5925d8bdaeef88657a95899333a512b0069c45cf20ff7fb3fadf78cdc7dabf
+ac-m0-17-relatorio-com-maquina-e-navegador.png  1280x800  526e985df77396399f623f7c6ab416ecfcf04a6e2f3d022c8ae669d994db1954
