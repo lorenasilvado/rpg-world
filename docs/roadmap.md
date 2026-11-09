@@ -93,7 +93,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
-| 8 | #41 | [feat] Núcleo: elevação, continente e costa | doing | specs/geracao-terreno.md | |
+| 8 | #41 | [feat] Núcleo: elevação, continente e costa | done | specs/geracao-terreno.md | |
 | 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | todo | — | |
 | 10 | #42 | [feat] Núcleo: clima, biomas e praias | todo | specs/geracao-terreno.md | |
 | 11 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
