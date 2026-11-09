@@ -34,6 +34,14 @@ describe('núcleo de geração (AC-M0-10)', () => {
     expect(water30 / ocean30.biome.length).toBeCloseTo(0.3, 2)
   })
 
+  it('com Montanhas em 0 não há montanha nem neve; com Neve em 0 não há neve', () => {
+    const noMountains = generateField('rpg-world', 64, { ...DEFAULT_WORLD_PARAMS, mountains: 0 })
+    expect(noMountains.biome.filter((b) => b === BIOME.rockyMountain || b === BIOME.snow)).toHaveLength(0)
+    const noSnow = generateField('rpg-world', 64, { ...DEFAULT_WORLD_PARAMS, snow: 0 })
+    expect(noSnow.biome.filter((b) => b === BIOME.snow)).toHaveLength(0)
+    expect(noSnow.biome.filter((b) => b === BIOME.rockyMountain).length).toBeGreaterThan(0)
+  })
+
   it('recusa tamanho inválido', () => {
     expect(() => generateField('x', 1)).toThrow()
     expect(() => generateField('x', 2.5)).toThrow()

@@ -12,6 +12,9 @@ import { quantiles } from './quantile'
 const SHALLOW_SHARE = 0.16
 /** Fração da terra que é montanha, com o slider Montanhas em 100. */
 const MOUNTAIN_SHARE = 0.4
+/** Fração da terra que é colina, além das montanhas, e quanto ela cresce até Montanhas em 100. */
+const HILL_SHARE_BASE = 0.04
+const HILL_SHARE_RANGE = 0.12
 
 export function generateField(
   seed: string,
@@ -24,18 +27,20 @@ export function generateField(
   // Classificação por quantis: os sliders pedem frações, não limiares absolutos.
   const ocean = params.ocean / 100
   const mountains = (params.mountains / 100) * MOUNTAIN_SHARE
-  const hills = mountains + 0.04 + (params.mountains / 100) * 0.12
+  const hills = mountains + HILL_SHARE_BASE + (params.mountains / 100) * HILL_SHARE_RANGE
   const snow = params.snow / 100
   const landSpan = 1 - ocean
-  const [seaQuantile, deepLevel, hillLevel, mountainLevel, snowLevel] = quantiles(elevation, [
+  const [seaQuantile, deepLevel, hillLevel, mountainQuantile, snowQuantile] = quantiles(elevation, [
     ocean,
     ocean * (1 - SHALLOW_SHARE),
     ocean + landSpan * (1 - hills),
     ocean + landSpan * (1 - mountains),
     ocean + landSpan * (1 - mountains * snow),
   ])
-  // Em 100% o quantil cai na célula mais alta, que ficaria de fora de `e < seaLevel`.
+  // Em 100% (ou em 0% de terra alta) o quantil cai na célula mais alta, que ficaria de fora do `e <`.
   const seaLevel = ocean >= 1 ? Infinity : seaQuantile
+  const mountainLevel = mountains > 0 ? mountainQuantile : Infinity
+  const snowLevel = mountains * snow > 0 ? snowQuantile : Infinity
 
   const n = size * size
   const biome = new Uint8Array(n)

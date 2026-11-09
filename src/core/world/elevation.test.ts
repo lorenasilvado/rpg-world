@@ -212,6 +212,21 @@ describe('elevação de produção', () => {
     }
   })
 
+  it('com Oceano e Continente baixos, a terra fica fora da faixa comprimida da escala', () => {
+    const shares = SEEDS.map((seed) => {
+      const f = generateField(seed, 256, params({ ocean: 20, continentSize: 0 }))
+      let land = 0
+      let compressed = 0
+      for (let i = 0; i < f.biome.length; i++) {
+        if (isWater(f.biome[i])) continue
+        land++
+        if (f.elevation[i] < TERRAIN_FLOOR) compressed++
+      }
+      return compressed / land
+    })
+    expect(shares.reduce((a, b) => a + b, 0) / shares.length).toBeLessThan(0.05)
+  })
+
   it('os estreitos não achatam o relevo com Continente baixo', () => {
     const relief = (seed: string, continentSize: number) => {
       const f = generateField(seed, 256, params({ continentSize }))

@@ -29,8 +29,9 @@ export type TerrainNoise = {
 export const BORDER_ELEVATION = 0
 const MIN_INTERIOR = 0.001
 /**
- * Início da escala do terreno. O que as quedas perto da borda empurram para baixo do terreno fica
- * em [`MIN_INTERIOR`, `TERRAIN_FLOOR`], para essas quedas não comprimirem a altura da terra.
+ * Início da escala do terreno. O que as quedas perto da borda e o fundo dos estreitos empurram
+ * para baixo do terreno fica em [`MIN_INTERIOR`, `TERRAIN_FLOOR`], para não comprimirem a altura da
+ * terra.
  */
 export const TERRAIN_FLOOR = 0.1
 
@@ -81,6 +82,20 @@ const STRAIT_DEPTH = 0.95
 const STRAIT_WIDTH_NOISE = 0.18
 /** Quanto o detalhe fino recorta a costa do estreito. */
 const STRAIT_EDGE_NOISE = 0.1
+/**
+ * Parte do afundamento dos estreitos que conta para o piso da escala: contar tudo achata o relevo, e
+ * não contar nada joga a terra rasa perto dos estreitos na faixa comprimida.
+ */
+const STRAIT_FLOOR_SHARE = 0.5
+/** Peso da máscara continental em ilhas e quanto ele cresce até a pangeia. */
+const MASK_WEIGHT_ISLANDS = 0.14
+const MASK_WEIGHT_RANGE = 0.5
+/** Peso do detalhe na costa lisa e quanto ele cresce até a costa recortada. */
+const DETAIL_WEIGHT_SMOOTH = 0.015
+const DETAIL_WEIGHT_RANGE = 0.13
+/** Inclinação da queda circular em ilhas e quanto ela cresce até a pangeia. */
+const EDGE_DROP_ISLANDS = 5
+const EDGE_DROP_RANGE = 1.5
 
 export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const random = createRandom(seed)
@@ -138,9 +153,9 @@ export function composeElevation(
   const { size, broad, island, detail, ridged, radial, straits } = noise
   const continent = continentSize / 100
   const straitWeight = Math.max(0, 1 - continent * 2) * STRAIT_DEPTH
-  const maskWeight = 0.14 + continent * 0.5
-  const detailWeight = 0.015 + (coastRoughness / 100) * 0.13
-  const edgeDrop = 5 + continent * 1.5
+  const maskWeight = MASK_WEIGHT_ISLANDS + continent * MASK_WEIGHT_RANGE
+  const detailWeight = DETAIL_WEIGHT_SMOOTH + (coastRoughness / 100) * DETAIL_WEIGHT_RANGE
+  const edgeDrop = EDGE_DROP_ISLANDS + continent * EDGE_DROP_RANGE
   const edgeStart = EDGE_START_ISLANDS + (EDGE_START_PANGEA - EDGE_START_ISLANDS) * continent
 
   const elevation = new Float32Array(size * size)
@@ -160,8 +175,8 @@ export function composeElevation(
       e -= cut
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
-      // O piso ignora o que os estreitos afundam: eles não podem comprimir a altura da terra.
-      if (e + cut < floor) floor = e + cut
+      const terrain = e + cut * (1 - STRAIT_FLOOR_SHARE)
+      if (terrain < floor) floor = terrain
       const dx = ((x + 0.5) / size - 0.5) * 2
       const distance = Math.sqrt(dx * dx + dy * dy)
       const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE
