@@ -1,65 +1,47 @@
-import { createFbm3D } from '../noise/fbm'
-import { createRandom } from '../rng/random'
-import { BIOME, type CoreField, type CoreParams } from '../types'
+import { BIOME, type CoreField, type WorldParams } from '../types'
+import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise } from './elevation'
+import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantiles } from './quantile'
 
 /**
- * Núcleo mínimo do spike de determinismo (#8): elevação por fBm 3D com máscara continental e
- * classificação por quantis de elevação. O pipeline completo (umidade, praias, decoração, rios)
- * é do M1.
+ * Gera o campo do mundo: elevação de produção e oceano por quantil. A classificação da terra
+ * ainda é mínima, só por elevação; clima, biomas de terra e praias entram depois.
  */
 
-export const DEFAULT_CORE_PARAMS: CoreParams = {
-  ocean: 0.45,
-  shallow: 0.3,
-  hills: 0.35,
-  mountains: 0.15,
-  snow: 0.4,
-}
-
-/** Frequência base do ruído, em ciclos por largura do mapa. */
-const BASE_FREQUENCY = 3
+/** Fração da água que é rasa. */
+const SHALLOW_SHARE = 0.16
+/** Fração da terra que é montanha, com o slider Montanhas em 100. */
+const MOUNTAIN_SHARE = 0.4
 
 export function generateField(
   seed: string,
   size = 256,
-  params: CoreParams = DEFAULT_CORE_PARAMS,
+  params: WorldParams = DEFAULT_WORLD_PARAMS,
 ): CoreField {
   if (!Number.isInteger(size) || size < 2) throw new Error(`generateField: tamanho inválido (${size})`)
-  const random = createRandom(seed)
-  const fbm = createFbm3D(random)
-  const n = size * size
-  const elevation = new Float32Array(n)
-
-  // Amostragem no plano: (u, v) de 0 a 1 vira o ponto (u, v, 0) do espaço do ruído.
-  for (let y = 0; y < size; y++) {
-    const v = (y + 0.5) / size
-    for (let x = 0; x < size; x++) {
-      const u = (x + 0.5) / size
-      const noise = fbm(u * BASE_FREQUENCY, v * BASE_FREQUENCY, 0) * 0.5 + 0.5
-      // Máscara continental: 1 no centro, 0 nas bordas (distância ao quadrado, sem sqrt).
-      const dx = u - 0.5
-      const dy = v - 0.5
-      const mask = 1 - Math.min(1, (dx * dx + dy * dy) * 4)
-      elevation[y * size + x] = noise * 0.6 + mask * 0.4
-    }
-  }
+  const elevation = composeElevation(sampleTerrainNoise(seed, size), params)
 
   // Classificação por quantis: os sliders pedem frações, não limiares absolutos.
-  const landStart = params.ocean
-  const landSpan = 1 - landStart
-  const [seaLevel, deepLevel, hillLevel, mountainLevel, snowLevel] = quantiles(elevation, [
-    params.ocean,
-    params.ocean * (1 - params.shallow),
-    landStart + landSpan * (1 - params.hills),
-    landStart + landSpan * (1 - params.mountains),
-    landStart + landSpan * (1 - params.mountains * params.snow),
+  const ocean = params.ocean / 100
+  const mountains = (params.mountains / 100) * MOUNTAIN_SHARE
+  const hills = mountains + 0.04 + (params.mountains / 100) * 0.12
+  const snow = params.snow / 100
+  const landSpan = 1 - ocean
+  const [seaQuantile, deepLevel, hillLevel, mountainLevel, snowLevel] = quantiles(elevation, [
+    ocean,
+    ocean * (1 - SHALLOW_SHARE),
+    ocean + landSpan * (1 - hills),
+    ocean + landSpan * (1 - mountains),
+    ocean + landSpan * (1 - mountains * snow),
   ])
+  // Em 100% o quantil cai na célula mais alta, que ficaria de fora de `e < seaLevel`.
+  const seaLevel = ocean >= 1 ? Infinity : seaQuantile
 
+  const n = size * size
   const biome = new Uint8Array(n)
   for (let i = 0; i < n; i++) {
     const e = elevation[i]
-    if (e < deepLevel) biome[i] = BIOME.deepOcean
+    if (e === BORDER_ELEVATION || e < deepLevel) biome[i] = BIOME.deepOcean
     else if (e < seaLevel) biome[i] = BIOME.shallowWater
     else if (e < hillLevel) biome[i] = BIOME.grassland
     else if (e < mountainLevel) biome[i] = BIOME.hill

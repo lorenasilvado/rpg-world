@@ -9,7 +9,8 @@ updated: 2026-11-09
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Nada implementado ainda: o conteúdo abaixo vem do material de design e do PRD.
+> Hoje só existe o núcleo de elevação, continente, costa e oceano (`src/core/world/`), sem UI; a
+> terra ainda é classificada só por elevação. O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -127,7 +128,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células
   oceânicas. O alvo vale com o Oceano de 5% a 95%: a borda do mapa é sempre água, inclusive em 0%.
   Lagos não contam como oceano.
-- O ruído fica fixo pela seed; só os limiares mudam quando um slider se mexe.
+- O ruído fica fixo pela seed; só os limiares mudam quando um slider se mexe. Tamanho do continente
+  e Rugosidade da costa são a exceção: mudam a elevação, mas só o peso com que as camadas de ruído
+  da seed se combinam.
 - Mesma seed + parâmetros + `generatorVersion` = mesmo mapa (RNF-4).
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do

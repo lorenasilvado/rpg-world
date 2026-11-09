@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 1
+export const GENERATOR_VERSION = 2
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -26,18 +26,22 @@ export const BIOME = {
   snow: 8,
 } as const
 
-/** Parâmetros do núcleo mínimo do spike (#8), em frações de 0 a 1. */
-export type CoreParams = {
-  /** Fração das células que é água. */
+/** Parâmetros do mundo: os valores dos sliders, de 0 a 100. */
+export type WorldParams = {
+  /** Porcentagem do mapa coberta por água oceânica. */
   ocean: number
-  /** Fração das células de água que é água rasa. */
-  shallow: number
-  /** Fração da terra que é colina ou mais alta. */
-  hills: number
-  /** Fração da terra que é montanha (rocha + neve). */
+  beach: number
+  desert: number
+  forest: number
+  /** Quantidade de cordilheiras. */
   mountains: number
-  /** Fração das montanhas que tem neve. */
+  /** Proporção de picos nevados versus rochosos. */
   snow: number
+  /** De ilhas (0) a pangeia (100). */
+  continentSize: number
+  /** De costa lisa (0) a recortada (100). */
+  coastRoughness: number
+  temperature: number
 }
 
 /** Campo gerado: elevação de 0 a 1 e bioma de cada célula, em ordem de linhas. */

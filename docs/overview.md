@@ -65,7 +65,7 @@ O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e
 (`http://localhost:5173/mockup.html`). A paleta e o spritesheet dos ícones ficam em
 `src/render/style/`, com a origem e a licença dos ícones no `README.md` dessa pasta.
 
-O núcleo mínimo de geração (spike de determinismo do M0) fica em `src/core/`. O teste de
+O núcleo de geração fica em `src/core/`. O teste de
 determinismo (`e2e/determinismo.spec.ts`) roda o núcleo no Chrome, no Firefox e no WebKit e
 compara o hash do campo com o de referência (`src/core/world/golden.ts`), o mesmo que o Vitest
 confere no Node. Firefox e WebKit são os navegadores do Playwright.

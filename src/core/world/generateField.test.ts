@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, GENERATOR_VERSION } from '../types'
-import { DEFAULT_CORE_PARAMS, generateField } from './generateField'
+import { generateField } from './generateField'
 import { GOLDEN_HASHES, GOLDEN_SIZE, GOLDEN_VERSION } from './golden'
 import { hashField } from './hashField'
+import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantile, quantiles } from './quantile'
 
 describe('núcleo mínimo de geração (AC-M0-10)', () => {
@@ -27,8 +28,8 @@ describe('núcleo mínimo de geração (AC-M0-10)', () => {
   it('classifica por quantis: a fração de água é a pedida', () => {
     const f = generateField('rpg-world')
     const water = f.biome.filter((b) => b === BIOME.deepOcean || b === BIOME.shallowWater).length
-    expect(water / f.biome.length).toBeCloseTo(DEFAULT_CORE_PARAMS.ocean, 2)
-    const ocean30 = generateField('rpg-world', 256, { ...DEFAULT_CORE_PARAMS, ocean: 0.3 })
+    expect(water / f.biome.length).toBeCloseTo(DEFAULT_WORLD_PARAMS.ocean / 100, 2)
+    const ocean30 = generateField('rpg-world', 256, { ...DEFAULT_WORLD_PARAMS, ocean: 30 })
     const water30 = ocean30.biome.filter((b) => b <= BIOME.shallowWater).length
     expect(water30 / ocean30.biome.length).toBeCloseTo(0.3, 2)
   })
@@ -45,8 +46,8 @@ describe('hash do campo (AC-M0-11)', () => {
   })
 
   it(`bate com os hashes de referência no Node (gerador v${GENERATOR_VERSION})`, () => {
-    for (const { seed, hash } of GOLDEN_HASHES) {
-      expect(hashField(generateField(seed, GOLDEN_SIZE)), seed).toBe(hash)
+    for (const { seed, params, hash } of GOLDEN_HASHES) {
+      expect(hashField(generateField(seed, GOLDEN_SIZE, params)), seed).toBe(hash)
     }
   })
 
