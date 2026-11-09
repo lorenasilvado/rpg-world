@@ -21,11 +21,18 @@ export type TerrainNoise = {
   ridged: Float32Array
   /** Distância ao centro do mapa, perturbada para o continente não ser um círculo. */
   radial: Float32Array
+  /** Linhas de estreitos, em [0, 1]: valem 1 no meio do estreito. */
+  straits: Float32Array
 }
 
 /** Elevação das células da borda: fica abaixo de qualquer outra, que começa em `MIN_INTERIOR`. */
 export const BORDER_ELEVATION = 0
 const MIN_INTERIOR = 0.001
+/**
+ * Início da escala do terreno. O que as quedas perto da borda empurram para baixo do terreno fica
+ * em [`MIN_INTERIOR`, `TERRAIN_FLOOR`], para essas quedas não comprimirem a altura da terra.
+ */
+export const TERRAIN_FLOOR = 0.1
 
 const TWO_OCTAVES: FbmOptions = { octaves: 2, lacunarity: 2.03, gain: 0.5 }
 const ONE_OCTAVE: FbmOptions = { octaves: 1, lacunarity: 2, gain: 0.5 }
@@ -37,6 +44,7 @@ const ISLAND_FREQUENCY = 5.5
 const DETAIL_FREQUENCY = 16
 const RIDGED_FREQUENCY = 4.5
 const RADIAL_FREQUENCY = 2.6
+const STRAIT_FREQUENCY = 3.4
 
 /** Deslocamento máximo do domain warp, em frações do mapa. */
 const WARP_AMPLITUDE = 0.05
@@ -55,17 +63,22 @@ const RIDGE_SPAN = 0.16
  * pouco oceano; nas ilhas ela começa mais longe, para não juntar tudo numa massa só.
  */
 const EDGE_START_ISLANDS = 1.04
-const EDGE_START_PANGEA = 0.88
+const EDGE_START_PANGEA = 0.82
 /** Parte da perturbação de `radial` que entra na queda: mais que isso leva a terra até a borda. */
 const EDGE_NOISE_SHARE = 0.3
 /**
  * Faixa estreita junto à moldura (0 no centro, 1 na moldura) que afunda o terreno, para a terra não
  * encostar nela. O início varia com o ruído, para a costa dali não sair reta.
  */
-const FRAME_START = 0.88
-const FRAME_START_MAX = 0.93
-const FRAME_NOISE_SHARE = 0.18
-const FRAME_DROP = 2.5
+const FRAME_START = 0.93
+const FRAME_START_MAX = 0.95
+const FRAME_NOISE_SHARE = 0.08
+const FRAME_DROP = 5
+/** Largura e profundidade dos estreitos, que só existem do Continente 50 para baixo. */
+const STRAIT_START = 0.78
+const STRAIT_DEPTH = 0.55
+/** Quanto o ruído das ilhas alarga e estreita o estreito, para ele não virar um canal uniforme. */
+const STRAIT_NOISE = 0.16
 
 export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const random = createRandom(seed)
@@ -77,6 +90,7 @@ export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const detailNoise = createFbm3D(random, TWO_OCTAVES)
   const ridgedNoise = createRidged3D(random, TWO_OCTAVES)
   const radialNoise = createFbm3D(random, ONE_OCTAVE)
+  const straitNoise = createRidged3D(random, ONE_OCTAVE)
 
   const n = size * size
   const broad = new Float32Array(n)
@@ -84,6 +98,7 @@ export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const detail = new Float32Array(n)
   const ridged = new Float32Array(n)
   const radial = new Float32Array(n)
+  const straits = new Float32Array(n)
 
   // Amostragem no plano: (u, v) de 0 a 1 vira o ponto (u, v, 0) do espaço do ruído (RNF-9).
   for (let y = 0; y < size; y++) {
@@ -97,6 +112,7 @@ export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
       island[i] = islandNoise(wu * ISLAND_FREQUENCY, wv * ISLAND_FREQUENCY, 0)
       detail[i] = detailNoise(wu * DETAIL_FREQUENCY, wv * DETAIL_FREQUENCY, 0)
       ridged[i] = ridgedNoise(wu * RIDGED_FREQUENCY, wv * RIDGED_FREQUENCY, 0)
+      straits[i] = straitNoise(wu * STRAIT_FREQUENCY, wv * STRAIT_FREQUENCY, 0)
       const dx = (u - 0.5) * 2
       const dy = (v - 0.5) * 2
       radial[i] =
@@ -105,20 +121,21 @@ export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
     }
   }
 
-  return { size, broad, island, detail, ridged, radial }
+  return { size, broad, island, detail, ridged, radial, straits }
 }
 
 /**
- * Elevação de 0 a 1. A borda do mapa fica em `BORDER_ELEVATION`; o interior é reescalado para
- * caber em [`MIN_INTERIOR`, 1], sem cortar valores: cortar criaria empates que o quantil do
- * oceano não consegue separar.
+ * Elevação de 0 a 1. A borda do mapa fica em `BORDER_ELEVATION`; o interior é reescalado em dois
+ * trechos contínuos e crescentes (ver `TERRAIN_FLOOR`), sem cortar valores: cortar criaria empates
+ * que o quantil do oceano não consegue separar.
  */
 export function composeElevation(
   noise: TerrainNoise,
   { continentSize, coastRoughness }: Pick<WorldParams, 'continentSize' | 'coastRoughness'>,
 ): Float32Array {
-  const { size, broad, island, detail, ridged, radial } = noise
+  const { size, broad, island, detail, ridged, radial, straits } = noise
   const continent = continentSize / 100
+  const straitWeight = Math.max(0, 1 - continent * 2) * STRAIT_DEPTH
   const maskWeight = 0.14 + continent * 0.5
   const detailWeight = 0.015 + (coastRoughness / 100) * 0.13
   const edgeDrop = 5 + continent * 1.5
@@ -127,6 +144,7 @@ export function composeElevation(
   const elevation = new Float32Array(size * size)
   let min = Infinity
   let max = -Infinity
+  let floor = Infinity
   for (let y = 1; y < size - 1; y++) {
     const dy = ((y + 0.5) / size - 0.5) * 2
     for (let x = 1; x < size - 1; x++) {
@@ -135,8 +153,11 @@ export function composeElevation(
       const mask = Math.min(MASK_PLATEAU, 1 - radial[i])
       let e = (0.5 + 0.5 * mass) * (1 - maskWeight) + mask * maskWeight
       e += detail[i] * detailWeight
+      const strait = straits[i] + island[i] * STRAIT_NOISE
+      if (strait > STRAIT_START) e -= ((strait - STRAIT_START) / (1 - STRAIT_START)) * straitWeight
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
+      if (e < floor) floor = e
       const dx = ((x + 0.5) / size - 0.5) * 2
       const distance = Math.sqrt(dx * dx + dy * dy)
       const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE
@@ -150,11 +171,14 @@ export function composeElevation(
     }
   }
 
-  const scale = max > min ? (1 - MIN_INTERIOR) / (max - min) : 0
+  if (floor === Infinity) floor = max
+  const upper = max > floor ? (1 - TERRAIN_FLOOR) / (max - floor) : 0
+  const lower = floor > min ? (TERRAIN_FLOOR - MIN_INTERIOR) / (floor - min) : 0
   for (let y = 1; y < size - 1; y++) {
     for (let x = 1; x < size - 1; x++) {
       const i = y * size + x
-      elevation[i] = MIN_INTERIOR + (elevation[i] - min) * scale
+      const e = elevation[i]
+      elevation[i] = e >= floor ? TERRAIN_FLOOR + (e - floor) * upper : MIN_INTERIOR + (e - min) * lower
     }
   }
   return elevation
