@@ -75,10 +75,12 @@ const FRAME_START_MAX = 0.95
 const FRAME_NOISE_SHARE = 0.08
 const FRAME_DROP = 5
 /** Largura e profundidade dos estreitos, que só existem do Continente 50 para baixo. */
-const STRAIT_START = 0.78
-const STRAIT_DEPTH = 0.55
-/** Quanto o ruído das ilhas alarga e estreita o estreito, para ele não virar um canal uniforme. */
-const STRAIT_NOISE = 0.16
+const STRAIT_START = 0.66
+const STRAIT_DEPTH = 0.95
+/** Quanto as massas grandes abrem o estreito em baías ou o fecham, ao longo do caminho. */
+const STRAIT_WIDTH_NOISE = 0.18
+/** Quanto o detalhe fino recorta a costa do estreito. */
+const STRAIT_EDGE_NOISE = 0.1
 
 export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const random = createRandom(seed)
@@ -153,7 +155,7 @@ export function composeElevation(
       const mask = Math.min(MASK_PLATEAU, 1 - radial[i])
       let e = (0.5 + 0.5 * mass) * (1 - maskWeight) + mask * maskWeight
       e += detail[i] * detailWeight
-      const strait = straits[i] + island[i] * STRAIT_NOISE
+      const strait = straits[i] + broad[i] * STRAIT_WIDTH_NOISE + detail[i] * STRAIT_EDGE_NOISE
       if (strait > STRAIT_START) e -= ((strait - STRAIT_START) / (1 - STRAIT_START)) * straitWeight
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
