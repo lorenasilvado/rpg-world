@@ -1,0 +1,4 @@
+commit: 5f4a77c24a3c46dd37bafab9027ca329541ab11b
+ac-m0-13-tempos-e-transferencia.png  1280x800  d760696be6eef59910aad81006227afd0f28ce37151cc73e78440439a145274d
+ac-m0-14-so-o-mais-novo-chega.png  1280x800  5441a961877ba9b6600bd275dad310be77bd224c27f44f2a03e616d056dac043
+ac-m0-15-ui-responde-durante-geracao.png  1280x800  4b05ce2fe6da9efe2fdc77f0088f3966399197073d8fe3589a221a69da2f9f30
