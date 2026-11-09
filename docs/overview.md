@@ -110,6 +110,15 @@ que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os qu
 metas de tempo só são conferidas fora do CI, que é uma máquina compartilhada; no CI ficam a
 transferência sem cópia e o cancelamento.
 
+O spike dos 5.000 sprites (M0) fica em `src/sprites/` e abre em `/sprites.html`, no dev e no build
+(`http://localhost:5173/sprites.html`): terreno em textura única, 5.000 ícones do mesmo spritesheet
+num grupo de render do Pixi, sem culling, e pixi-viewport com pan, zoom no cursor e pinça. O botão
+"Medir automático" roda 30 s de câmera roteirizada, igual em toda máquina; "Medir manual" conta os
+30 s enquanto a pessoa faz pan e zoom. O fps mínimo é o da pior janela de 1 s, e o relatório traz o
+navegador, a GPU e a tela. Meça com a aba à vista, no Chrome, e registre o relatório no PR. O
+`e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do teste não
+usa a GPU.
+
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
 

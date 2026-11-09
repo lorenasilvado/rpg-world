@@ -48,6 +48,22 @@ test('a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-
   expect(problems).toEqual([])
 })
 
+// A medição dos 5.000 sprites (#10) abre no caminho base, com o Pixi e o spritesheet do build.
+test('os sprites abrem em /rpg-world/sprites.html com a cena pronta (AC-M0-05)', async ({ page }) => {
+  const problems: string[] = []
+  const images: string[] = []
+  page.on('response', (r) => {
+    if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`)
+    if (r.request().resourceType() === 'image') images.push(new URL(r.url()).pathname)
+  })
+  page.on('pageerror', (e) => problems.push(`erro ${e.message}`))
+  await page.goto('./sprites.html?rapido')
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'idle', { timeout: 30_000 })
+  await expect(page.getByTestId('stage')).toHaveAttribute('data-sprites', '5000')
+  expect(images.some((p) => p.startsWith('/rpg-world/assets/decor'))).toBe(true)
+  expect(problems).toEqual([])
+})
+
 // O mockup do spike visual (#7) também abre no caminho base, com o spritesheet carregando.
 test('o mockup abre em /rpg-world/mockup.html com o spritesheet (AC-M0-05, AC-M0-08)', async ({ page }) => {
   const problems: string[] = []

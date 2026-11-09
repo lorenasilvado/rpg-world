@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5.000 sprites · RPG World Builder</title>
+  </head>
+  <body class="overflow-hidden bg-bg text-ink font-sans">
+    <div id="stage" data-testid="stage" class="fixed inset-0"></div>
+
+    <aside class="fixed top-4 left-4 w-80 rounded-panel bg-paper-solid p-4 shadow-sm">
+      <h1 class="font-title text-lg">5.000 sprites no PixiJS</h1>
+      <p class="mt-1 text-xs text-ink-2">Spike de desempenho (#10): pan e zoom em pelo menos 55 fps.</p>
+
+      <dl class="mt-3 grid grid-cols-3 gap-2">
+        <div>
+          <dt class="text-xs text-ink-3">fps</dt>
+          <dd id="fps" data-testid="fps" class="font-mono text-xl">–</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-ink-3">mínimo</dt>
+          <dd id="fps-min" class="font-mono text-xl">–</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-ink-3">zoom</dt>
+          <dd id="zoom" class="font-mono text-xl">–</dd>
+        </div>
+      </dl>
+
+      <div class="mt-3 flex gap-2">
+        <button
+          id="run-auto"
+          type="button"
+          disabled
+          class="rounded-control bg-amber px-3 py-1.5 text-sm font-semibold text-on-amber shadow-sm disabled:opacity-50"
+        >
+          Medir automático
+        </button>
+        <button
+          id="run-manual"
+          type="button"
+          disabled
+          class="rounded-control bg-sunken px-3 py-1.5 text-sm font-semibold shadow-sm disabled:opacity-50"
+        >
+          Medir manual
+        </button>
+      </div>
+
+      <p id="status" data-testid="status" class="mt-2 text-xs text-ink-2">Carregando…</p>
+      <p id="verdict" data-testid="verdict" class="mt-1 text-sm font-semibold"></p>
+      <pre
+        id="report"
+        data-testid="report"
+        hidden
+        class="mt-2 max-h-64 overflow-auto rounded-control bg-sunken p-2 font-mono text-[10px] select-text"
+      ></pre>
+    </aside>
+    <script type="module" src="/src/sprites/main.ts"></script>
+  </body>
+</html>
