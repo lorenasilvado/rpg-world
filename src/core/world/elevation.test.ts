@@ -132,16 +132,42 @@ describe('elevação de produção', () => {
   })
 
   it('as cordilheiras levantam a terra alta', () => {
-    const noise = sampleTerrainNoise('rpg-world', 128)
-    const flat = { ...noise, ridged: new Float32Array(noise.ridged.length) }
-    const shape = { continentSize: 50, coastRoughness: 50 }
-    const relief = (e: Float32Array) => {
-      let high = 0
-      for (const v of e) if (v > 0.7) high++
-      return high
+    // Terreno plano no miolo do mapa: só o ridged diferencia as três células.
+    const size = 16
+    const n = size * size
+    const noise = {
+      size,
+      broad: new Float32Array(n),
+      island: new Float32Array(n),
+      detail: new Float32Array(n),
+      ridged: new Float32Array(n),
+      radial: new Float32Array(n).fill(0.2),
     }
-    expect(composeElevation(noise, shape)).not.toEqual(composeElevation(flat, shape))
-    expect(relief(composeElevation(noise, shape))).toBeGreaterThan(0)
+    const crest = 7 * size + 7
+    const slope = 7 * size + 8
+    const plain = 8 * size + 7
+    noise.ridged[crest] = 1
+    noise.ridged[slope] = 0.5
+    const e = composeElevation(noise, { continentSize: 50, coastRoughness: 50 })
+    expect(e[crest]).toBeGreaterThan(e[slope])
+    expect(e[slope]).toBeGreaterThan(e[plain])
+  })
+
+  it('com pouco oceano, a terra não acompanha o retângulo do mapa', () => {
+    const size = 256
+    const corner = Math.floor(size * 0.12)
+    for (const seed of SEEDS) {
+      const f = generateField(seed, size, params({ ocean: 30 }))
+      let land = 0
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const nearX = x < corner || x >= size - corner
+          const nearY = y < corner || y >= size - corner
+          if (nearX && nearY && !isWater(f.biome[y * size + x])) land++
+        }
+      }
+      expect(land / (4 * corner * corner), seed).toBeLessThan(0.05)
+    }
   })
 })
 
@@ -155,12 +181,19 @@ describe('sliders de forma', () => {
   })
 
   it('Tamanho do continente vai de ilhas a uma massa dominante', () => {
+    // Pela média: seed a seed a maior massa oscila, porque a terra às vezes forma uma teia só.
+    const largestShare = (m: number[]) => Math.max(...m) / m.reduce((a, b) => a + b, 0)
+    const average = (continentSize: number, measure: (m: number[]) => number) =>
+      SEEDS.reduce((sum, seed) => sum + measure(landMasses(generateField(seed, 256, params({ continentSize })))), 0) / SEEDS.length
+    expect(average(0, (m) => m.length)).toBeGreaterThan(average(100, (m) => m.length))
+    expect(average(100, largestShare)).toBeGreaterThan(average(0, largestShare))
+  })
+
+  it('com menos Tamanho do continente, a terra fica mais fragmentada', () => {
     for (const seed of SEEDS) {
-      const largestShare = (m: number[]) => Math.max(...m) / m.reduce((a, b) => a + b, 0)
-      const islands = landMasses(generateField(seed, 256, params({ continentSize: 0 })))
-      const pangea = landMasses(generateField(seed, 256, params({ continentSize: 100 })))
-      expect(islands.length, seed).toBeGreaterThan(pangea.length)
-      expect(largestShare(pangea), seed).toBeGreaterThan(largestShare(islands))
+      const islands = coastLength(generateField(seed, 256, params({ continentSize: 0 })))
+      const pangea = coastLength(generateField(seed, 256, params({ continentSize: 100 })))
+      expect(islands, seed).toBeGreaterThan(pangea)
     }
   })
 })

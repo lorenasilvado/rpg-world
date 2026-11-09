@@ -53,7 +53,7 @@ Cada slider vai de 0 a 100%:
 | Montanhas | Quantidade de cordilheiras | 30 |
 | Neve | Proporção de picos nevados versus rochosos | 40 |
 | Tamanho do continente (avançado) | Ilhas × pangeia | 50 |
-| Rugosidade da costa (avançado) | | 50 |
+| Rugosidade da costa (avançado) | De costa lisa a recortada | 50 |
 | Temperatura global (avançado) | | 50 |
 
 Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam na seção recolhível

@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 2
+export const GENERATOR_VERSION = 3
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em

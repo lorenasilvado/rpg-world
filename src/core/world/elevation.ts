@@ -49,8 +49,15 @@ const RIDGE_HEIGHT = 0.42
 /** Faixa da elevação em que as cordilheiras entram, para não criar terra no meio do mar. */
 const RIDGE_START = 0.42
 const RIDGE_SPAN = 0.16
-/** A partir desta distância (0 no centro, 1 na borda) o terreno afunda. */
-const EDGE_START = 0.8
+/**
+ * Distância circular ao centro (1 no meio de cada lado do mapa) a partir da qual o terreno afunda,
+ * em ilhas e em pangeia. Ser circular evita que a terra acompanhe o retângulo do mapa quando há
+ * pouco oceano; nas ilhas ela começa mais longe, para não juntar tudo numa massa só.
+ */
+const EDGE_START_ISLANDS = 1.04
+const EDGE_START_PANGEA = 0.88
+/** Parte da perturbação de `radial` que entra na queda: mais que isso leva a terra até a borda. */
+const EDGE_NOISE_SHARE = 0.3
 
 export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const random = createRandom(seed)
@@ -106,13 +113,14 @@ export function composeElevation(
   const continent = continentSize / 100
   const maskWeight = 0.14 + continent * 0.5
   const detailWeight = 0.015 + (coastRoughness / 100) * 0.13
-  const edgeDrop = 2.5 + continent * 1.5
+  const edgeDrop = 5 + continent * 1.5
+  const edgeStart = EDGE_START_ISLANDS + (EDGE_START_PANGEA - EDGE_START_ISLANDS) * continent
 
   const elevation = new Float32Array(size * size)
   let min = Infinity
   let max = -Infinity
   for (let y = 1; y < size - 1; y++) {
-    const dy = Math.abs(((y + 0.5) / size - 0.5) * 2)
+    const dy = ((y + 0.5) / size - 0.5) * 2
     for (let x = 1; x < size - 1; x++) {
       const i = y * size + x
       const mass = island[i] + (broad[i] - island[i]) * continent
@@ -121,8 +129,10 @@ export function composeElevation(
       e += detail[i] * detailWeight
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
-      const edge = Math.max(Math.abs(((x + 0.5) / size - 0.5) * 2), dy)
-      if (edge > EDGE_START) e -= (edge - EDGE_START) * edgeDrop
+      const dx = ((x + 0.5) / size - 0.5) * 2
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE
+      if (reach > edgeStart) e -= (reach - edgeStart) * edgeDrop
       elevation[i] = e
       if (e < min) min = e
       if (e > max) max = e

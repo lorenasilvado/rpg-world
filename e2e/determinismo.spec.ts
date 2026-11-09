@@ -4,7 +4,7 @@ import { GOLDEN_HASHES, GOLDEN_SIZE } from '../src/core/world/golden.ts'
 // Spike de determinismo (#8, RNF-4): o núcleo roda dentro do navegador (importado do servidor
 // de desenvolvimento do Vite) e o hash do campo tem que bater com o de referência, o mesmo que o
 // Vitest confere no Node. Roda nos projetos determinismo-chrome, -firefox e -webkit.
-test('o hash do campo 256² é o de referência neste navegador (AC-M0-10, AC-M0-11, AC-F1-01)',async ({ page, browserName }) => {
+test('o hash do campo 256² é o de referência neste navegador (AC-M0-10, AC-M0-11, AC-F1-01)', async ({ page, browserName }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.goto('/')
