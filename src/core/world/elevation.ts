@@ -58,6 +58,14 @@ const EDGE_START_ISLANDS = 1.04
 const EDGE_START_PANGEA = 0.88
 /** Parte da perturbação de `radial` que entra na queda: mais que isso leva a terra até a borda. */
 const EDGE_NOISE_SHARE = 0.3
+/**
+ * Faixa estreita junto à moldura (0 no centro, 1 na moldura) que afunda o terreno, para a terra não
+ * encostar nela. O início varia com o ruído, para a costa dali não sair reta.
+ */
+const FRAME_START = 0.88
+const FRAME_START_MAX = 0.93
+const FRAME_NOISE_SHARE = 0.18
+const FRAME_DROP = 2.5
 
 export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
   const random = createRandom(seed)
@@ -133,6 +141,9 @@ export function composeElevation(
       const distance = Math.sqrt(dx * dx + dy * dy)
       const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE
       if (reach > edgeStart) e -= (reach - edgeStart) * edgeDrop
+      const frame = Math.max(Math.abs(dx), Math.abs(dy))
+      const frameStart = Math.min(FRAME_START_MAX, FRAME_START + (radial[i] - distance) * FRAME_NOISE_SHARE)
+      if (frame > frameStart) e -= ((frame - frameStart) / (1 - frameStart)) * FRAME_DROP
       elevation[i] = e
       if (e < min) min = e
       if (e > max) max = e

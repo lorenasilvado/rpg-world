@@ -96,6 +96,25 @@ describe('borda do mapa (AC-F1-06)', () => {
     }
   })
 
+  it('a partir do Oceano em 30, a terra não encosta na moldura do mapa', () => {
+    const size = 256
+    const band = Math.floor(size * 0.02)
+    for (const seed of SEEDS) {
+      for (const continentSize of [0, 50, 100]) {
+        for (const ocean of [30, 45, 66]) {
+          const f = generateField(seed, size, params({ ocean, continentSize }))
+          let land = 0
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              if (Math.min(x, y, size - 1 - x, size - 1 - y) < band && !isWater(f.biome[y * size + x])) land++
+            }
+          }
+          expect(land, `${seed}, oceano ${ocean}, continente ${continentSize}`).toBe(0)
+        }
+      }
+    }
+  })
+
   it('com o Oceano em 0, só a borda é água; em 100, o mapa todo', () => {
     const none = generateField('rpg-world', 64, params({ ocean: 0 }))
     expect(waterShare(none)).toBeCloseTo((64 * 4 - 4) / (64 * 64), 5)
