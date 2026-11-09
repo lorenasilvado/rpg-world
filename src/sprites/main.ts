@@ -4,7 +4,15 @@ import { generateMockTerrain } from '../mockup/terrain'
 import { cameraAt } from './cameraPath'
 import { summarizeFrames } from './frameStats'
 import { placeSprites } from './placeSprites'
-import { FULL_DURATION_MS, QUICK_DURATION_MS, SPRITE_COUNT, TARGET_FPS, type SpriteReport } from './report'
+import {
+  FULL_DURATION_MS,
+  invalidReason,
+  QUICK_DURATION_MS,
+  SPRITE_COUNT,
+  TARGET_FPS,
+  type Gestures,
+  type SpriteReport,
+} from './report'
 import { createScene } from './scene'
 
 /**
@@ -41,7 +49,13 @@ function gpuName(): string | null {
   return gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : null
 }
 
-type Run = { mode: SpriteReport['mode']; startedAt: number | null; times: number[]; visible: boolean }
+type Run = {
+  mode: SpriteReport['mode']
+  startedAt: number | null
+  times: number[]
+  visible: boolean
+  gestures: Gestures | null
+}
 
 async function start() {
   const terrain = generateMockTerrain(SEED, TERRAIN_WIDTH, TERRAIN_HEIGHT)
@@ -56,6 +70,7 @@ async function start() {
   const finish = (r: Run) => {
     run = null
     const stats = summarizeFrames(r.times)
+    const invalid = invalidReason(r.visible, r.gestures)
     const report: SpriteReport = {
       machine: {
         userAgent: navigator.userAgent,
@@ -71,15 +86,16 @@ async function start() {
       mode: r.mode,
       sprites: decor.length,
       visible: r.visible,
+      gestures: r.gestures,
       target: TARGET_FPS,
       stats,
-      pass: r.visible && stats.minFps >= TARGET_FPS,
+      pass: invalid === null && stats.minFps >= TARGET_FPS,
     }
     reportBox.textContent = JSON.stringify(report, null, 2)
     reportBox.hidden = false
     fpsMin.textContent = stats.minFps.toFixed(1)
-    verdict.textContent = !r.visible
-      ? 'Não vale: a aba ficou escondida.'
+    verdict.textContent = invalid
+      ? invalid
       : report.pass
         ? `✓ Mínimo ${stats.minFps} fps (meta ${TARGET_FPS})`
         : `✗ Mínimo ${stats.minFps} fps (meta ${TARGET_FPS})`
@@ -94,8 +110,22 @@ async function start() {
   }
   document.addEventListener('visibilitychange', onVisibility)
 
+  // Pelos gestos, não pela posição: o zoom no cursor também desloca a câmera.
+  viewport.on('moved', (e) => {
+    if (run?.gestures && e.type === 'drag') run.gestures.panned = true
+  })
+  viewport.on('zoomed', (e) => {
+    if (run?.gestures && (e.type === 'wheel' || e.type === 'pinch')) run.gestures.zoomed = true
+  })
+
   const begin = (mode: Run['mode']) => {
-    run = { mode, startedAt: null, times: [], visible: document.visibilityState === 'visible' }
+    run = {
+      mode,
+      startedAt: null,
+      times: [],
+      visible: document.visibilityState === 'visible',
+      gestures: mode === 'manual' ? { panned: false, zoomed: false } : null,
+    }
     autoButton.disabled = true
     manualButton.disabled = true
     reportBox.hidden = true

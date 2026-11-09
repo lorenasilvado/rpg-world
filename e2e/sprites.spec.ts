@@ -61,6 +61,32 @@ test('5.000 sprites, medição concluída e relatório com a máquina (AC-M0-17)
   expect(errors).toEqual([])
 })
 
+test('a medição manual sem pan e zoom não vale; com os dois, registra os gestos', async ({ page }) => {
+  test.setTimeout(90_000)
+  const errors: string[] = []
+  await open(page, errors)
+  const manual = page.getByRole('button', { name: 'Medir manual' })
+
+  await manual.click()
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 60_000 })
+  await expect(page.getByTestId('verdict')).toContainText('faltou fazer pan e zoom')
+  const idle = JSON.parse((await page.getByTestId('report').textContent()) ?? '') as SpriteReport
+  expect(idle.gestures).toEqual({ panned: false, zoomed: false })
+  expect(idle.pass).toBe(false)
+
+  await manual.click()
+  await page.mouse.move(900, 500)
+  await page.mouse.wheel(0, -300)
+  await page.mouse.down()
+  await page.mouse.move(700, 420, { steps: 5 })
+  await page.mouse.up()
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 60_000 })
+  await expect(page.getByTestId('verdict')).not.toContainText('Não vale')
+  const moved = JSON.parse((await page.getByTestId('report').textContent()) ?? '') as SpriteReport
+  expect(moved.gestures).toEqual({ panned: true, zoomed: true })
+  expect(errors).toEqual([])
+})
+
 test('a roda dá zoom no cursor, a pinça dá zoom e o arrasto faz pan', async ({ page }) => {
   test.setTimeout(90_000)
   const errors: string[] = []

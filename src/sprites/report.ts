@@ -33,8 +33,19 @@ export type SpriteReport = {
   sprites: number
   /** A aba ficou à vista o tempo todo. Escondida, o navegador espaça os quadros e o número não vale. */
   visible: boolean
+  /** Gestos feitos durante a medição manual; null na automática, em que a câmera é roteirizada. */
+  gestures: Gestures | null
   target: number
   stats: FrameStats
-  /** A medição vale (aba à vista) e o fps mínimo atingiu a meta. */
+  /** A medição vale e o fps mínimo atingiu a meta. */
   pass: boolean
+}
+
+export type Gestures = { panned: boolean; zoomed: boolean }
+
+/** Por que a medição não vale, ou null se vale. A meta é sobre pan e zoom: sem os dois, nada foi medido. */
+export function invalidReason(visible: boolean, gestures: Gestures | null): string | null {
+  if (!visible) return 'Não vale: a aba ficou escondida.'
+  if (gestures && !(gestures.panned && gestures.zoomed)) return 'Não vale: faltou fazer pan e zoom durante a medição.'
+  return null
 }
