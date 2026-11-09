@@ -13,10 +13,10 @@ const camera = (page: Page) =>
     y: Number(el.dataset.y),
   }))
 
-async function open(page: Page, errors: string[]) {
+async function open(page: Page, errors: string[], url = '/sprites.html?rapido') {
   page.on('pageerror', (e) => errors.push(e.message))
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/sprites.html?rapido')
+  await page.goto(url)
   await expect(page.locator('body')).toHaveAttribute('data-state', 'idle', { timeout: 30_000 })
   await expect(page.getByTestId('stage')).toHaveAttribute('data-scale', /\d/)
 }
@@ -61,20 +61,27 @@ test('5.000 sprites, medição concluída e relatório com a máquina (AC-M0-17)
   expect(errors).toEqual([])
 })
 
-test('a medição manual sem pan e zoom não vale; com os dois, registra os gestos', async ({ page }) => {
+test('a medição manual sem pan e zoom não vale', async ({ page }) => {
   test.setTimeout(90_000)
   const errors: string[] = []
   await open(page, errors)
-  const manual = page.getByRole('button', { name: 'Medir manual' })
 
-  await manual.click()
+  await page.getByRole('button', { name: 'Medir manual' }).click()
   await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 60_000 })
   await expect(page.getByTestId('verdict')).toContainText('faltou fazer pan e zoom')
   const idle = JSON.parse((await page.getByTestId('report').textContent()) ?? '') as SpriteReport
   expect(idle.gestures).toEqual({ panned: false, zoomed: false })
   expect(idle.pass).toBe(false)
+  expect(errors).toEqual([])
+})
 
-  await manual.click()
+test('a medição manual com pan e zoom registra os gestos', async ({ page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  // Os 30 s completos: no CI, os gestos podem levar mais que os 2 s do modo rápido.
+  await open(page, errors, '/sprites.html')
+
+  await page.getByRole('button', { name: 'Medir manual' }).click()
   await page.mouse.move(900, 500)
   await page.mouse.wheel(0, -300)
   await page.mouse.down()
