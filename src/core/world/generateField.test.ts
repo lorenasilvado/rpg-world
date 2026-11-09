@@ -6,7 +6,7 @@ import { hashField } from './hashField'
 import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantile, quantiles } from './quantile'
 
-describe('núcleo mínimo de geração (AC-M0-10)', () => {
+describe('núcleo de geração (AC-M0-10)', () => {
   it('gera o campo 256² a partir de uma seed', () => {
     const f = generateField('rpg-world')
     expect(f.width).toBe(256)

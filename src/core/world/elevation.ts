@@ -156,10 +156,12 @@ export function composeElevation(
       let e = (0.5 + 0.5 * mass) * (1 - maskWeight) + mask * maskWeight
       e += detail[i] * detailWeight
       const strait = straits[i] + broad[i] * STRAIT_WIDTH_NOISE + detail[i] * STRAIT_EDGE_NOISE
-      if (strait > STRAIT_START) e -= ((strait - STRAIT_START) / (1 - STRAIT_START)) * straitWeight
+      const cut = strait > STRAIT_START ? ((strait - STRAIT_START) / (1 - STRAIT_START)) * straitWeight : 0
+      e -= cut
       const inland = Math.min(1, Math.max(0, (e - RIDGE_START) / RIDGE_SPAN))
       e += ridged[i] * ridged[i] * RIDGE_HEIGHT * inland
-      if (e < floor) floor = e
+      // O piso ignora o que os estreitos afundam: eles não podem comprimir a altura da terra.
+      if (e + cut < floor) floor = e + cut
       const dx = ((x + 0.5) / size - 0.5) * 2
       const distance = Math.sqrt(dx * dx + dy * dy)
       const reach = distance + (radial[i] - distance) * EDGE_NOISE_SHARE

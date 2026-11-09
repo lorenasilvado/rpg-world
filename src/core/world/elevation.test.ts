@@ -211,6 +211,16 @@ describe('elevação de produção', () => {
       expect(high - low, seed).toBeGreaterThan(0.5)
     }
   })
+
+  it('os estreitos não achatam o relevo com Continente baixo', () => {
+    const relief = (seed: string, continentSize: number) => {
+      const f = generateField(seed, 256, params({ continentSize }))
+      const land = Array.from(f.elevation.filter((_, i) => !isWater(f.biome[i]))).sort((a, b) => a - b)
+      return land[Math.floor(land.length * 0.99)] - land[land.length >> 1]
+    }
+    const average = (continentSize: number) => SEEDS.reduce((sum, seed) => sum + relief(seed, continentSize), 0) / SEEDS.length
+    expect(average(0)).toBeGreaterThan(average(50) * 0.9)
+  })
 })
 
 describe('sliders de forma', () => {

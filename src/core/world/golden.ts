@@ -36,5 +36,5 @@ export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; params?: WorldParams; 
   { seed: 'rpg-world', hash: '5dbfff0d' },
   { seed: 'Aldebaran', hash: '582e24ce' },
   { seed: '42', hash: '63178c6e' },
-  { seed: 'rpg-world', params: ARCHIPELAGO, hash: 'fbbfa269' },
+  { seed: 'rpg-world', params: ARCHIPELAGO, hash: 'bcf72a4f' },
 ]
