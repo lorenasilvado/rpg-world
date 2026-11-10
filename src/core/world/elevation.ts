@@ -7,6 +7,10 @@ import type { WorldParams } from '../types'
  * Elevação em duas etapas: `sampleTerrainNoise` amostra as camadas de ruído, que só dependem da
  * seed; `composeElevation` combina essas camadas com Tamanho do continente e Rugosidade da costa.
  * Os dois sliders só mudam os pesos da combinação, sem amostrar ruído de novo.
+ *
+ * Todas as constantes deste arquivo fazem parte do gerador: frequências, pesos, limites e a ordem
+ * em que as camadas são criadas. Mudar qualquer uma delas muda o mapa de toda seed, e por isso
+ * exige subir `GENERATOR_VERSION` (`core/types.ts`) e atualizar os hashes de `golden.ts`.
  */
 
 export type TerrainNoise = {
@@ -46,6 +50,10 @@ const DETAIL_FREQUENCY = 16
 const RIDGED_FREQUENCY = 4.5
 const RADIAL_FREQUENCY = 2.6
 const STRAIT_FREQUENCY = 3.4
+
+/** Pesos de x e de y na distância ao centro: o continente sai um pouco mais largo que alto. */
+const RADIAL_WEIGHT_X = 0.85
+const RADIAL_WEIGHT_Y = 1.15
 
 /** Deslocamento máximo do domain warp, em frações do mapa. */
 const WARP_AMPLITUDE = 0.05
@@ -138,7 +146,7 @@ export function sampleTerrainNoise(seed: string, size: number): TerrainNoise {
       const dx = (u - 0.5) * 2
       const dy = (v - 0.5) * 2
       radial[i] =
-        Math.sqrt(dx * dx * 0.85 + dy * dy * 1.15) +
+        Math.sqrt(dx * dx * RADIAL_WEIGHT_X + dy * dy * RADIAL_WEIGHT_Y) +
         radialNoise(u * RADIAL_FREQUENCY, v * RADIAL_FREQUENCY, 0) * RADIAL_NOISE
     }
   }

@@ -6,6 +6,9 @@ import { quantiles } from './quantile'
 /**
  * Gera o campo do mundo: elevação de produção e oceano por quantil. A classificação da terra
  * ainda é mínima, só por elevação; clima, biomas de terra e praias entram depois.
+ *
+ * As constantes de classificação deste arquivo também fazem parte do gerador: mudar qualquer uma
+ * exige subir `GENERATOR_VERSION` e atualizar os hashes de `golden.ts`.
  */
 
 /** Fração da água que é rasa. */
@@ -47,6 +50,8 @@ export function generateField(
   const biome = new Uint8Array(n)
   for (let i = 0; i < n; i++) {
     const e = elevation[i]
+    // Só a borda tem elevação igual a `BORDER_ELEVATION`: o interior começa em `MIN_INTERIOR`, acima
+    // dela (ver `composeElevation`). Por isso a borda é sempre água, com qualquer Oceano.
     if (e === BORDER_ELEVATION || e < deepLevel) biome[i] = BIOME.deepOcean
     else if (e < seaLevel) biome[i] = BIOME.shallowWater
     else if (e < hillLevel) biome[i] = BIOME.grassland
