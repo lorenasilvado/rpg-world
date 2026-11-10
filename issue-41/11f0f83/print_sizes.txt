@@ -1,0 +1,4 @@
+commit: 11f0f83f11765402dac3e32cd7957da99e3e1c95
+ac-f1-01-hash-tres-navegadores.png  1280x800  5ee6bd2b45412856e42ddb8c9ee161bd12319ffeffdd9adb1dbf12569675aa0c
+ac-f1-02-oceano-30-por-cento.png  1280x800  f3de933ac7f52b2799d7324433068a7f4e97166ca6898211bf8dc9b62b461ad7
+ac-f1-06-oceano-nas-bordas.png  1280x800  f3d7bd722fef42a477ee3449607e3b250cc5acdb388da86ba5a396a7f56699eb
