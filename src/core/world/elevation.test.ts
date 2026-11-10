@@ -217,7 +217,7 @@ describe('elevação de produção', () => {
         }
       }
       expect(low, seed).toBeGreaterThanOrEqual(TERRAIN_FLOOR)
-      expect(high - low, seed).toBeGreaterThan(0.3)
+      expect(high - low, seed).toBeGreaterThan(0.35)
     }
   })
 
