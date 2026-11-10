@@ -1,9 +1,9 @@
 /**
  * Tipos do núcleo de geração. O núcleo é TS puro: não conhece React nem Pixi (ADR 0001).
  *
- * Determinismo (RNF-4): o núcleo só usa aritmética IEEE 754 (+, -, *, /), `Math.floor`,
- * `Math.sqrt` e comparações, que dão o mesmo resultado em qualquer engine. Funções Math
- * transcendentes (sin, exp, pow…) e o operador `**` são proibidos; o teste
+ * Determinismo (RNF-4): o núcleo só usa aritmética IEEE 754 (+, -, *, /), comparações e funções
+ * Math exatas (`floor`, `sqrt`, `abs`, `min`, `max`, `imul`), que dão o mesmo resultado em qualquer
+ * engine. Funções Math transcendentes (sin, exp, pow…) e o operador `**` são proibidos; o teste
  * `determinism.test.ts` confere o código do núcleo e o das bibliotecas que ele usa.
  */
 

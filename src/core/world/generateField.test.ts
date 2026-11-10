@@ -71,6 +71,21 @@ describe('hash do campo (AC-M0-11)', () => {
 })
 
 describe('quantile', () => {
+  it('dá exatamente o mesmo resultado que ordenar tudo, também com valores repetidos', () => {
+    let state = 7
+    const next = () => (state = (Math.imul(state, 1103515245) + 12345) >>> 0) / 4294967296
+    for (let round = 0; round < 40; round++) {
+      const n = 1 + Math.floor(next() * 3000)
+      const levels = round % 2 === 0 ? 0 : 1 + Math.floor(next() * 20)
+      const v = new Float32Array(n)
+      for (let i = 0; i < n; i++) v[i] = levels ? Math.floor(next() * levels) : next()
+      const qs = [0, next(), next(), 0.5, next(), 1]
+      const sorted = v.slice().sort()
+      const expected = qs.map((q) => sorted[Math.min(n - 1, Math.floor(q * n))])
+      expect(quantiles(v, qs), `rodada ${round}`).toEqual(expected)
+    }
+  })
+
   it('devolve o limiar do percentil pedido', () => {
     const v = new Float32Array([5, 1, 4, 2, 3])
     expect(quantile(v, 0)).toBe(1)

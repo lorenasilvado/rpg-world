@@ -91,7 +91,7 @@ const STRAIT_FLOOR_SHARE = 0.5
  * Quanto das quedas perto da borda conta para o piso da escala. Contar tudo achata o relevo; sem
  * contar nada, a terra perto da borda cai na faixa comprimida quando há pouco oceano.
  */
-const DROP_FLOOR_CAP = 0.35
+const DROP_FLOOR_CAP = 0.6
 /** Peso da máscara continental em ilhas e quanto ele cresce até a pangeia. */
 const MASK_WEIGHT_ISLANDS = 0.14
 const MASK_WEIGHT_RANGE = 0.5
