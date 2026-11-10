@@ -10,7 +10,8 @@ Cada arquivo `NNNN-<slug>.md` registra uma decisão técnica duradoura: por que 
 | [0002](0002-hospedagem-github-pages.md) | Hospedagem no GitHub Pages, com o repositório público | Aceita | 2026-11-04 |
 | [0003](0003-app-so-local-na-v1.md) | App só local na v1: sem contas, backend nem sincronização | Aceita | 2026-11-04 |
 | [0004](0004-go-no-go-m0.md) | Go no M0: seguir para o M1 com a stack e os spikes validados | Aceita | 2026-11-09 |
-| [0005](0005-rios-e-lagos-por-descida-de-gradiente.md) | Rios por descida de gradiente e lagos nas depressões, sem hidrologia | Aceita | 2026-11-09 |
+| [0005](0005-rios-e-lagos-por-descida-de-gradiente.md) | Rios por descida de gradiente e lagos nas depressões, sem hidrologia | Superada por 0006 | 2026-11-09 |
+| [0006](0006-rios-com-sliders-de-forma.md) | Rios e lagos com sliders de forma: o traçado acompanha Continente e Costa | Aceita | 2026-11-10 |
 
 Mantenha este índice em dia ao criar um ADR ou mudar o status de um.
 

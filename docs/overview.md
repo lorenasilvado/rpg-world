@@ -197,7 +197,7 @@ src/
    úmidas viram floresta. Montanhas e neve usam percentis de elevação e de temperatura.
 5. **Praias:** faixa de largura configurável a partir da costa, por distância, não por altura.
 6. **Sombreamento:** hillshade pela inclinação, guardado em `Int8Array`.
-7. **Rios e lagos:** sem hidrologia ([ADR 0005](adr/0005-rios-e-lagos-por-descida-de-gradiente.md)):
+7. **Rios e lagos:** sem hidrologia ([ADR 0006](adr/0006-rios-com-sliders-de-forma.md)):
    rios descem pelo gradiente, de montanhas até o mar ou um lago; o lago ocupa a depressão onde a
    descida fica presa.
 8. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
