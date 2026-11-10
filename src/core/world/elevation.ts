@@ -31,7 +31,7 @@ export type TerrainNoise = {
 
 /** Elevação das células da borda: fica abaixo de qualquer outra, que começa em `MIN_INTERIOR`. */
 export const BORDER_ELEVATION = 0
-const MIN_INTERIOR = 0.001
+export const MIN_INTERIOR = 0.001
 /**
  * Início da escala do terreno. O que as quedas perto da borda e o fundo dos estreitos empurram
  * para baixo do terreno fica em [`MIN_INTERIOR`, `TERRAIN_FLOOR`], para não comprimirem a altura da
@@ -213,7 +213,11 @@ export function composeElevation(
       const i = y * size + x
       const e = elevation[i]
       // `min(1, …)`: o valor guardado em Float32 pode arredondar acima do `max` medido em double.
-      elevation[i] = e >= floor ? Math.min(1, TERRAIN_FLOOR + (e - floor) * upper) : MIN_INTERIOR + (e - min) * lower
+      // `max(MIN_INTERIOR, …)`: deixa explícito que o interior nunca chega ao valor da borda.
+      elevation[i] =
+        e >= floor
+          ? Math.min(1, TERRAIN_FLOOR + (e - floor) * upper)
+          : Math.max(MIN_INTERIOR, MIN_INTERIOR + (e - min) * lower)
     }
   }
   return elevation

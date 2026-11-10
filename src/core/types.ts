@@ -30,8 +30,11 @@ export const BIOME = {
 export type WorldParams = {
   /** Porcentagem do mapa coberta por água oceânica. */
   ocean: number
+  /** Largura da faixa costeira de areia. Ainda sem efeito: as praias entram na #42. */
   beach: number
+  /** Fração da terra firme que vira deserto. Ainda sem efeito: entra na #42. */
   desert: number
+  /** Fração da terra firme coberta por mata. Ainda sem efeito: entra na #42. */
   forest: number
   /** Quantidade de cordilheiras. */
   mountains: number
@@ -41,6 +44,7 @@ export type WorldParams = {
   continentSize: number
   /** De costa lisa (0) a recortada (100). */
   coastRoughness: number
+  /** Temperatura global, de fria a quente. Ainda sem efeito: o clima entra na #42. */
   temperature: number
 }
 

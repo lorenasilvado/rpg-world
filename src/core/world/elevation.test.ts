@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, type CoreField, type WorldParams } from '../types'
-import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise, TERRAIN_FLOOR } from './elevation'
+import { BORDER_ELEVATION, composeElevation, MIN_INTERIOR, sampleTerrainNoise, TERRAIN_FLOOR } from './elevation'
 import { generateField } from './generateField'
 import { DEFAULT_WORLD_PARAMS } from './params'
 
@@ -134,6 +134,18 @@ describe('elevação de produção', () => {
         expect(e[i] === BORDER_ELEVATION, `célula ${x},${y}`).toBe(border)
         expect(e[i]).toBeGreaterThanOrEqual(0)
         expect(e[i]).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
+  it('nenhuma célula do interior fica abaixo de MIN_INTERIOR, nem por arredondamento', () => {
+    for (const seed of SEEDS) {
+      for (const continentSize of [0, 50, 100]) {
+        const size = 256
+        const e = composeElevation(sampleTerrainNoise(seed, size), { continentSize, coastRoughness: 50 })
+        let lowest = Infinity
+        for (let y = 1; y < size - 1; y++) for (let x = 1; x < size - 1; x++) lowest = Math.min(lowest, e[y * size + x])
+        expect(lowest, `${seed}, continente ${continentSize}`).toBeGreaterThanOrEqual(MIN_INTERIOR)
       }
     }
   })
