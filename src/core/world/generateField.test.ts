@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_FBM } from '../noise/fbm'
 import { BIOME, GENERATOR_VERSION } from '../types'
 import { generateField } from './generateField'
 import { GOLDEN_HASHES, GOLDEN_SIZE, GOLDEN_VERSION } from './golden'
@@ -40,6 +41,21 @@ describe('núcleo de geração (AC-M0-10)', () => {
     const noSnow = generateField('rpg-world', 64, { ...DEFAULT_WORLD_PARAMS, snow: 0 })
     expect(noSnow.biome.filter((b) => b === BIOME.snow)).toHaveLength(0)
     expect(noSnow.biome.filter((b) => b === BIOME.rockyMountain).length).toBeGreaterThan(0)
+  })
+
+  it('os parâmetros padrão do núcleo não podem ser alterados', () => {
+    expect(Object.isFrozen(DEFAULT_WORLD_PARAMS)).toBe(true)
+    expect(Object.isFrozen(DEFAULT_FBM)).toBe(true)
+    const before = hashField(generateField('rpg-world', 64))
+    expect(() => {
+      ;(DEFAULT_WORLD_PARAMS as { ocean: number }).ocean = 10
+    }).toThrow(TypeError)
+    expect(() => {
+      ;(DEFAULT_FBM as { octaves: number }).octaves = 1
+    }).toThrow(TypeError)
+    expect(DEFAULT_WORLD_PARAMS.ocean).toBe(45)
+    expect(DEFAULT_FBM.octaves).toBe(5)
+    expect(hashField(generateField('rpg-world', 64))).toBe(before)
   })
 
   it('recusa parâmetro fora de 0 a 100, que não é número ou que falta', () => {
