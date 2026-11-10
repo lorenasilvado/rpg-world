@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-09
+updated: 2026-11-10
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -128,17 +128,18 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células
   oceânicas. O alvo vale com o Oceano de 5% a 95%: a borda do mapa é sempre água, inclusive em 0%.
   Lagos não contam como oceano.
-- O ruído fica fixo pela seed; só os limiares mudam quando um slider se mexe. Tamanho do continente
-  e Rugosidade da costa são a exceção: mudam a elevação, mas só o peso com que as camadas de ruído
-  da seed se combinam.
+- O ruído fica fixo pela seed. Os sete sliders de limiar (Oceano, Praias, Desertos, Florestas,
+  Montanhas, Neve e Temperatura) só mudam limiares, não a elevação. Tamanho do continente e
+  Rugosidade da costa mudam a elevação, mas só o peso com que as camadas de ruído da seed se combinam.
 - Mesma seed + parâmetros + `generatorVersion` = mesmo mapa (RNF-4).
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
   mapa).
-- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0005](../adr/0005-rios-e-lagos-por-descida-de-gradiente.md)):
+- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0006](../adr/0006-rios-com-sliders-de-forma.md)):
   os rios nascem em montanhas e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
-  depressão onde a descida fica presa. O traçado não muda com os sliders: mexer no oceano só corta o
-  rio na costa nova.
+  depressão onde a descida fica presa. O traçado não muda com os sete sliders de limiar: mexer no
+  oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a elevação,
+  e o traçado é refeito.
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
@@ -149,7 +150,6 @@ lista e o número não volta a ser usado.
 - AC-F1-01: o hash do pipeline completo, para a mesma seed, parâmetros e `generatorVersion`, é igual no Chrome, no Firefox e no WebKit
 - AC-F1-02: com o Oceano em 30, o mapa tem 30% ± 2% de água oceânica, em várias seeds
 - AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas
-- AC-F1-04: mexer num slider não muda a elevação gerada pela seed; só os limiares mudam
 - AC-F1-05: cada um dos 9 sliders muda o mapa de forma visível e na direção descrita na tabela de sliders
 - AC-F1-06: o mapa tem oceano em todas as bordas, com qualquer valor dos sliders
 - AC-F1-07: todo rio desce do ponto onde nasce até o mar ou um lago
@@ -169,6 +169,7 @@ lista e o número não volta a ser usado.
 - AC-F1-21: as seções da sidebar recolhem e abrem, e o painel recolhe e abre também pela tecla `[`
 - AC-F1-22: o terreno é desenhado com a paleta posterizada, o contorno de costa, a água rasa e o hillshade do mockup aprovado
 - AC-F1-23: o mapa tem a decoração completa do design system (hachura, ondas, pontilhado de areia, tufos, árvores redondas e dunas)
+- AC-F1-24: mexer em Oceano, Praias, Desertos, Florestas, Montanhas, Neve ou Temperatura não muda a elevação gerada pela seed; só os limiares mudam. Tamanho do continente e Rugosidade da costa mudam a elevação só pelo peso com que as camadas de ruído da seed se combinam
 
 ## Pendências
 

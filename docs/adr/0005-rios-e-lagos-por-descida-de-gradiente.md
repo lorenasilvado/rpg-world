@@ -1,6 +1,6 @@
 # 0005. Rios por descida de gradiente e lagos nas depressões, sem hidrologia
 
-- Status: Aceita
+- Status: Superada por 0006
 - Data: 2026-11-09
 - Questão: como os rios e lagos da v1 são gerados e entram no modelo? (`docs/specs/geracao-terreno.md`)
 

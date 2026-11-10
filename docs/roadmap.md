@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-09
+updated: 2026-11-10
 ---
 
 # Roadmap
@@ -46,7 +46,7 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
   decorativos; todos os sliders funcionam só com teclado; os fluxos principais estão cobertos por
   E2E.
 - **Depende de / decisões abertas:** go do M0 ([ADR 0004](adr/0004-go-no-go-m0.md)). Rios e lagos
-  no [ADR 0005](adr/0005-rios-e-lagos-por-descida-de-gradiente.md). Medir distância (Should) entra
+  no [ADR 0006](adr/0006-rios-com-sliders-de-forma.md), que substituiu o 0005. Medir distância (Should) entra
   no fim e pode ser cortada.
 - **Tamanho:** G
 
@@ -94,22 +94,23 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
 | 8 | #41 | [feat] Núcleo: elevação, continente e costa | done | specs/geracao-terreno.md | #58 |
-| 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | todo | — | |
-| 10 | #42 | [feat] Núcleo: clima, biomas e praias | todo | specs/geracao-terreno.md | |
-| 11 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
-| 12 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
-| 13 | #45 | [feat] Worker de produção e prévia contínua | todo | specs/geracao-terreno.md | |
-| 14 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
-| 15 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
-| 16 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
-| 17 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
-| 18 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
-| 19 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
-| 20 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
-| 21 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |
-| 22 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | todo | specs/geracao-terreno.md | |
-| 23 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
-| 24 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
-| 25 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
-| 26 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
-| 27 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |
+| 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | done | — | #58 |
+| 10 | #59 | [docs] Decidir o AC-F1-04 e o ADR 0005 para Continente e Costa | done | specs/geracao-terreno.md | |
+| 11 | #42 | [feat] Núcleo: clima, biomas e praias | todo | specs/geracao-terreno.md | |
+| 12 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
+| 13 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
+| 14 | #45 | [feat] Worker de produção e prévia contínua | todo | specs/geracao-terreno.md | |
+| 15 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
+| 16 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
+| 17 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
+| 18 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
+| 19 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
+| 20 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
+| 21 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
+| 22 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |
+| 23 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | todo | specs/geracao-terreno.md | |
+| 24 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
+| 25 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
+| 26 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
+| 27 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
+| 28 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |
