@@ -42,6 +42,16 @@ describe('núcleo de geração (AC-M0-10)', () => {
     expect(noSnow.biome.filter((b) => b === BIOME.rockyMountain).length).toBeGreaterThan(0)
   })
 
+  it('recusa parâmetro fora de 0 a 100, que não é número ou que falta', () => {
+    for (const bad of [-1, 100.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, ocean: bad }), String(bad)).toThrow(/ocean/)
+    }
+    expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, snow: '40' as unknown as number })).toThrow(/snow/)
+    const { temperature: _, ...missing } = DEFAULT_WORLD_PARAMS
+    expect(() => generateField('x', 16, missing as typeof DEFAULT_WORLD_PARAMS)).toThrow(/temperature/)
+    expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, ocean: 0, mountains: 100, snow: 33.3 })).not.toThrow()
+  })
+
   it('recusa tamanho inválido', () => {
     expect(() => generateField('x', 1)).toThrow()
     expect(() => generateField('x', 2.5)).toThrow()

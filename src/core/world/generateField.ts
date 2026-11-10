@@ -1,6 +1,6 @@
 import { BIOME, type CoreField, type WorldParams } from '../types'
 import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise } from './elevation'
-import { DEFAULT_WORLD_PARAMS } from './params'
+import { DEFAULT_WORLD_PARAMS, validateWorldParams } from './params'
 import { quantiles } from './quantile'
 
 /**
@@ -22,6 +22,7 @@ export function generateField(
   params: WorldParams = DEFAULT_WORLD_PARAMS,
 ): CoreField {
   if (!Number.isInteger(size) || size < 2) throw new Error(`generateField: tamanho inválido (${size})`)
+  validateWorldParams(params)
   const elevation = composeElevation(sampleTerrainNoise(seed, size), params)
 
   // Classificação por quantis: os sliders pedem frações, não limiares absolutos.

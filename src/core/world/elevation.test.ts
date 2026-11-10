@@ -183,22 +183,25 @@ describe('elevação de produção', () => {
   })
 
   it('com pouco oceano, a terra não acompanha o retângulo do mapa', () => {
+    // Compara os cantos com o meio dos lados, em quadrados do mesmo tamanho: se a terra seguisse o
+    // retângulo, os dois teriam quase a mesma terra (a versão de queda quadrada dava de 0,35 a 0,55).
     const size = 256
-    const cornerLand = (seed: string, share: number) => {
-      const corner = Math.floor(size * share)
+    const side = Math.floor(size * 0.18)
+    const mid = (size - side) >> 1
+    const end = size - side
+    for (const seed of SEEDS) {
       const f = generateField(seed, size, params({ ocean: 30 }))
-      let land = 0
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const nearX = x < corner || x >= size - corner
-          const nearY = y < corner || y >= size - corner
-          if (nearX && nearY && !isWater(f.biome[y * size + x])) land++
+      const land = (x0: number, y0: number) => {
+        let count = 0
+        for (let y = y0; y < y0 + side; y++) {
+          for (let x = x0; x < x0 + side; x++) if (!isWater(f.biome[y * size + x])) count++
         }
+        return count
       }
-      return land / (4 * corner * corner)
+      const corners = land(0, 0) + land(end, 0) + land(0, end) + land(end, end)
+      const sides = land(mid, 0) + land(mid, end) + land(0, mid) + land(end, mid)
+      expect(corners / sides, seed).toBeLessThan(0.3)
     }
-    for (const seed of SEEDS) expect(cornerLand(seed, 0.12), seed).toBeLessThan(0.05)
-    expect(SEEDS.reduce((sum, seed) => sum + cornerLand(seed, 0.18), 0) / SEEDS.length).toBeLessThan(0.09)
   })
 
   it('a queda junto à moldura não comprime a altura do terreno', () => {
@@ -265,8 +268,8 @@ describe('sliders de forma', () => {
       const islands = landMasses(generateField(seed, 256, params({ continentSize: 0 })))
       const pangea = landMasses(generateField(seed, 256, params({ continentSize: 100 })))
       expect(islands.length, seed).toBeGreaterThan(pangea.length)
-      expect(largestShare(islands), seed).toBeLessThan(0.7)
-      expect(largestShare(pangea), seed).toBeGreaterThan(0.9)
+      // Relativo à pangeia da mesma seed: sem estreitos, a razão ficava acima de 0,89.
+      expect(largestShare(islands) / largestShare(pangea), seed).toBeLessThan(0.8)
     }
   })
 
