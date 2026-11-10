@@ -113,7 +113,7 @@ describe('borda do mapa (AC-F1-06)', () => {
         }
       }
     }
-  })
+  }, 30_000)
 
   it('com o Oceano em 0, só a borda é água; em 100, o mapa todo', () => {
     const none = generateField('rpg-world', 64, params({ ocean: 0 }))

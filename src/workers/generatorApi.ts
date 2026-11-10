@@ -23,7 +23,9 @@ export const generatorApi = {
     const start = performance.now()
     const field = generateField(seed, size, params)
     const workerMs = performance.now() - start
-    lastBuffers = [field.elevation.buffer as ArrayBuffer, field.biome.buffer as ArrayBuffer]
+    lastBuffers = [field.elevation, field.moisture, field.temperature, field.biome, field.shade].map(
+      (a) => a.buffer as ArrayBuffer,
+    )
     // Os arrays vão para a thread principal por transferência: o worker perde o acesso a eles
     // (o buffer fica com 0 bytes) e nada é copiado (AC-M0-13).
     return transfer({ seed, field, workerMs }, lastBuffers)
