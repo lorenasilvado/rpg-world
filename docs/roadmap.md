@@ -95,7 +95,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 |---|---|---|---|---|---|
 | 8 | #41 | [feat] Núcleo: elevação, continente e costa | done | specs/geracao-terreno.md | #58 |
 | 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | done | — | #58 |
-| 10 | #59 | [docs] Decidir o AC-F1-04 e o ADR 0005 para Continente e Costa | done | specs/geracao-terreno.md | |
+| 10 | #59 | [docs] Decidir o AC-F1-04 e o ADR 0005 para Continente e Costa | done | specs/geracao-terreno.md | #62 |
 | 11 | #42 | [feat] Núcleo: clima, biomas e praias | todo | specs/geracao-terreno.md | |
 | 12 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
 | 13 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
