@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_FBM } from '../noise/fbm'
 import { BIOME, GENERATOR_VERSION } from '../types'
-import { DEFAULT_CORE_PARAMS, generateField } from './generateField'
+import { generateField } from './generateField'
 import { GOLDEN_HASHES, GOLDEN_SIZE, GOLDEN_VERSION } from './golden'
 import { hashField } from './hashField'
+import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantile, quantiles } from './quantile'
 
-describe('núcleo mínimo de geração (AC-M0-10)', () => {
+describe('núcleo de geração (AC-M0-10)', () => {
   it('gera o campo 256² a partir de uma seed', () => {
     const f = generateField('rpg-world')
     expect(f.width).toBe(256)
@@ -27,10 +29,43 @@ describe('núcleo mínimo de geração (AC-M0-10)', () => {
   it('classifica por quantis: a fração de água é a pedida', () => {
     const f = generateField('rpg-world')
     const water = f.biome.filter((b) => b === BIOME.deepOcean || b === BIOME.shallowWater).length
-    expect(water / f.biome.length).toBeCloseTo(DEFAULT_CORE_PARAMS.ocean, 2)
-    const ocean30 = generateField('rpg-world', 256, { ...DEFAULT_CORE_PARAMS, ocean: 0.3 })
+    expect(water / f.biome.length).toBeCloseTo(DEFAULT_WORLD_PARAMS.ocean / 100, 2)
+    const ocean30 = generateField('rpg-world', 256, { ...DEFAULT_WORLD_PARAMS, ocean: 30 })
     const water30 = ocean30.biome.filter((b) => b <= BIOME.shallowWater).length
     expect(water30 / ocean30.biome.length).toBeCloseTo(0.3, 2)
+  })
+
+  it('com Montanhas em 0 não há montanha nem neve; com Neve em 0 não há neve', () => {
+    const noMountains = generateField('rpg-world', 64, { ...DEFAULT_WORLD_PARAMS, mountains: 0 })
+    expect(noMountains.biome.filter((b) => b === BIOME.rockyMountain || b === BIOME.snow)).toHaveLength(0)
+    const noSnow = generateField('rpg-world', 64, { ...DEFAULT_WORLD_PARAMS, snow: 0 })
+    expect(noSnow.biome.filter((b) => b === BIOME.snow)).toHaveLength(0)
+    expect(noSnow.biome.filter((b) => b === BIOME.rockyMountain).length).toBeGreaterThan(0)
+  })
+
+  it('os parâmetros padrão do núcleo não podem ser alterados', () => {
+    expect(Object.isFrozen(DEFAULT_WORLD_PARAMS)).toBe(true)
+    expect(Object.isFrozen(DEFAULT_FBM)).toBe(true)
+    const before = hashField(generateField('rpg-world', 64))
+    expect(() => {
+      ;(DEFAULT_WORLD_PARAMS as { ocean: number }).ocean = 10
+    }).toThrow(TypeError)
+    expect(() => {
+      ;(DEFAULT_FBM as { octaves: number }).octaves = 1
+    }).toThrow(TypeError)
+    expect(DEFAULT_WORLD_PARAMS.ocean).toBe(45)
+    expect(DEFAULT_FBM.octaves).toBe(5)
+    expect(hashField(generateField('rpg-world', 64))).toBe(before)
+  })
+
+  it('recusa parâmetro fora de 0 a 100, que não é número ou que falta', () => {
+    for (const bad of [-1, 100.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, ocean: bad }), String(bad)).toThrow(/ocean/)
+    }
+    expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, snow: '40' as unknown as number })).toThrow(/snow/)
+    const { temperature: _, ...missing } = DEFAULT_WORLD_PARAMS
+    expect(() => generateField('x', 16, missing as typeof DEFAULT_WORLD_PARAMS)).toThrow(/temperature/)
+    expect(() => generateField('x', 16, { ...DEFAULT_WORLD_PARAMS, ocean: 0, mountains: 100, snow: 33.3 })).not.toThrow()
   })
 
   it('recusa tamanho inválido', () => {
@@ -45,8 +80,8 @@ describe('hash do campo (AC-M0-11)', () => {
   })
 
   it(`bate com os hashes de referência no Node (gerador v${GENERATOR_VERSION})`, () => {
-    for (const { seed, hash } of GOLDEN_HASHES) {
-      expect(hashField(generateField(seed, GOLDEN_SIZE)), seed).toBe(hash)
+    for (const { seed, params, hash } of GOLDEN_HASHES) {
+      expect(hashField(generateField(seed, GOLDEN_SIZE, params)), seed).toBe(hash)
     }
   })
 
@@ -62,6 +97,21 @@ describe('hash do campo (AC-M0-11)', () => {
 })
 
 describe('quantile', () => {
+  it('dá exatamente o mesmo resultado que ordenar tudo, também com valores repetidos', () => {
+    let state = 7
+    const next = () => (state = (Math.imul(state, 1103515245) + 12345) >>> 0) / 4294967296
+    for (let round = 0; round < 40; round++) {
+      const n = 1 + Math.floor(next() * 3000)
+      const levels = round % 2 === 0 ? 0 : 1 + Math.floor(next() * 20)
+      const v = new Float32Array(n)
+      for (let i = 0; i < n; i++) v[i] = levels ? Math.floor(next() * levels) : next()
+      const qs = [0, next(), next(), 0.5, next(), 1]
+      const sorted = v.slice().sort()
+      const expected = qs.map((q) => sorted[Math.min(n - 1, Math.floor(q * n))])
+      expect(quantiles(v, qs), `rodada ${round}`).toEqual(expected)
+    }
+  })
+
   it('devolve o limiar do percentil pedido', () => {
     const v = new Float32Array([5, 1, 4, 2, 3])
     expect(quantile(v, 0)).toBe(1)

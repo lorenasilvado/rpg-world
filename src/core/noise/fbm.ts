@@ -9,7 +9,8 @@ export type FbmOptions = {
   gain: number
 }
 
-export const DEFAULT_FBM: FbmOptions = { octaves: 5, lacunarity: 2, gain: 0.5 }
+/** Opções padrão do fBm. Congeladas: alterá-las mudaria o ruído sem subir `GENERATOR_VERSION`. */
+export const DEFAULT_FBM: Readonly<FbmOptions> = Object.freeze({ octaves: 5, lacunarity: 2, gain: 0.5 })
 
 /**
  * fBm de ruído simplex 3D, normalizado para [-1, 1]. O ruído 3D permite trocar o plano pela

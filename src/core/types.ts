@@ -1,14 +1,14 @@
 /**
  * Tipos do núcleo de geração. O núcleo é TS puro: não conhece React nem Pixi (ADR 0001).
  *
- * Determinismo (RNF-4): o núcleo só usa aritmética IEEE 754 (+, -, *, /), `Math.floor`,
- * `Math.sqrt` e comparações, que dão o mesmo resultado em qualquer engine. Funções Math
- * transcendentes (sin, exp, pow…) e o operador `**` são proibidos; o teste
+ * Determinismo (RNF-4): o núcleo só usa aritmética IEEE 754 (+, -, *, /), comparações e funções
+ * Math exatas (`floor`, `sqrt`, `abs`, `min`, `max`, `imul`), que dão o mesmo resultado em qualquer
+ * engine. Funções Math transcendentes (sin, exp, pow…) e o operador `**` são proibidos; o teste
  * `determinism.test.ts` confere o código do núcleo e o das bibliotecas que ele usa.
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 1
+export const GENERATOR_VERSION = 3
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -26,18 +26,26 @@ export const BIOME = {
   snow: 8,
 } as const
 
-/** Parâmetros do núcleo mínimo do spike (#8), em frações de 0 a 1. */
-export type CoreParams = {
-  /** Fração das células que é água. */
+/** Parâmetros do mundo: os valores dos sliders, de 0 a 100. */
+export type WorldParams = {
+  /** Porcentagem do mapa coberta por água oceânica. */
   ocean: number
-  /** Fração das células de água que é água rasa. */
-  shallow: number
-  /** Fração da terra que é colina ou mais alta. */
-  hills: number
-  /** Fração da terra que é montanha (rocha + neve). */
+  /** Largura da faixa costeira de areia. Ainda sem efeito: as praias entram na #42. */
+  beach: number
+  /** Fração da terra firme que vira deserto. Ainda sem efeito: entra na #42. */
+  desert: number
+  /** Fração da terra firme coberta por mata. Ainda sem efeito: entra na #42. */
+  forest: number
+  /** Quantidade de cordilheiras. */
   mountains: number
-  /** Fração das montanhas que tem neve. */
+  /** Proporção de picos nevados versus rochosos. */
   snow: number
+  /** De ilhas (0) a pangeia (100). */
+  continentSize: number
+  /** De costa lisa (0) a recortada (100). */
+  coastRoughness: number
+  /** Temperatura global, de fria a quente. Ainda sem efeito: o clima entra na #42. */
+  temperature: number
 }
 
 /** Campo gerado: elevação de 0 a 1 e bioma de cada célula, em ordem de linhas. */

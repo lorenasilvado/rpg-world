@@ -65,7 +65,7 @@ O mockup estático do mapa (spike visual do M0) abre em `/mockup.html`, no dev e
 (`http://localhost:5173/mockup.html`). A paleta e o spritesheet dos ícones ficam em
 `src/render/style/`, com a origem e a licença dos ícones no `README.md` dessa pasta.
 
-O núcleo mínimo de geração (spike de determinismo do M0) fica em `src/core/`. O teste de
+O núcleo de geração fica em `src/core/`. O teste de
 determinismo (`e2e/determinismo.spec.ts`) roda o núcleo no Chrome, no Firefox e no WebKit e
 compara o hash do campo com o de referência (`src/core/world/golden.ts`), o mesmo que o Vitest
 confere no Node. Firefox e WebKit são os navegadores do Playwright.
@@ -187,7 +187,9 @@ src/
 
 1. **Amostragem:** para cada célula, a projeção converte (u, v) num ponto 3D; na v1 é um plano, no
    futuro um ponto na esfera.
-2. **Elevação:** máscara continental + fBm com domain warp + cordilheiras por ridged noise.
+2. **Elevação:** máscara continental + fBm com domain warp + cordilheiras por ridged noise. Com o
+   Tamanho do continente abaixo de 50, estreitos separam a terra em ilhas. Perto da borda, o terreno
+   afunda: uma queda circular arredonda o contorno, e uma faixa estreita afasta a terra da moldura.
 3. **Umidade e temperatura:** fBm deslocado; temperatura cai com a altitude e com a distância do
    "equador" do mapa.
 4. **Classificação por quantis:** o nível do mar é o percentil igual ao slider de oceano. Entre a

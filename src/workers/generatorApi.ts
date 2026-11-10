@@ -1,12 +1,12 @@
 import { transfer } from 'comlink'
-import { DEFAULT_CORE_PARAMS, generateField, type CoreField, type CoreParams } from '../core'
+import { DEFAULT_WORLD_PARAMS, generateField, type CoreField, type WorldParams } from '../core'
 
 /**
  * API que o worker de geração expõe pelo Comlink (`generator.worker.ts`). Fica num módulo à parte
  * para o Vitest testá-la sem worker. O relógio (`performance`) é usado só aqui, para medir: o
  * núcleo (`src/core`) continua dependendo só da seed.
  */
-export type GenerateRequest = { seed: string; size: number; params?: CoreParams }
+export type GenerateRequest = { seed: string; size: number; params?: WorldParams }
 
 export type GenerateResult = {
   seed: string
@@ -19,7 +19,7 @@ export type GenerateResult = {
 let lastBuffers: ArrayBuffer[] = []
 
 export const generatorApi = {
-  generate({ seed, size, params = DEFAULT_CORE_PARAMS }: GenerateRequest): GenerateResult {
+  generate({ seed, size, params = DEFAULT_WORLD_PARAMS }: GenerateRequest): GenerateResult {
     const start = performance.now()
     const field = generateField(seed, size, params)
     const workerMs = performance.now() - start

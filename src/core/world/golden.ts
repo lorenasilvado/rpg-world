@@ -1,5 +1,7 @@
+import type { WorldParams } from '../types.ts'
+
 /**
- * Hashes de referência do campo 256² nos parâmetros padrão, para a versão atual do gerador
+ * Hashes de referência do campo 256², para a versão atual do gerador
  * (`GENERATOR_VERSION`). O Vitest confere no Node e o Playwright no Chrome, no Firefox e no
  * WebKit (`e2e/determinismo.spec.ts`): se todos batem com estes valores, os motores geram o
  * mesmo campo. Mudou o gerador de propósito? Suba `GENERATOR_VERSION` e atualize os hashes.
@@ -14,10 +16,25 @@ export const GOLDEN_SIZE = 256
  * `GENERATOR_VERSION`: trocar os hashes pede trocar esta versão junto, e ela só passa no teste
  * se `GENERATOR_VERSION` também subir.
  */
-export const GOLDEN_VERSION = 1
+export const GOLDEN_VERSION = 3
 
-export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; hash: string }> = [
-  { seed: 'rpg-world', hash: '00a47247' },
-  { seed: 'Aldebaran', hash: '443d1b6b' },
-  { seed: '42', hash: '1e02bdb7' },
+/** Preset "Arquipélago": confere também os parâmetros longe do padrão. */
+const ARCHIPELAGO: WorldParams = {
+  ocean: 66,
+  beach: 55,
+  desert: 8,
+  forest: 45,
+  mountains: 22,
+  snow: 15,
+  continentSize: 8,
+  coastRoughness: 72,
+  temperature: 64,
+}
+
+/** Sem `params`, o caso usa os parâmetros padrão. */
+export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; params?: WorldParams; hash: string }> = [
+  { seed: 'rpg-world', hash: '6c0e5b6d' },
+  { seed: 'Aldebaran', hash: 'ba1a6c24' },
+  { seed: '42', hash: '0a724037' },
+  { seed: 'rpg-world', params: ARCHIPELAGO, hash: '93e1b436' },
 ]
