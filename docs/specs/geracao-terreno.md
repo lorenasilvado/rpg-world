@@ -9,8 +9,9 @@ updated: 2026-11-11
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Hoje existe o núcleo de elevação, clima, biomas, praias e hillshade (`src/core/world/`), sem UI
-> e ainda sem rios, lagos e decoração. O resto vem do material de design e do PRD.
+> Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
+> (`src/core/world/`), sem UI e ainda sem decoração; os rios ainda não são desenhados. O resto vem
+> do material de design e do PRD.
 
 ## Resumo
 
@@ -121,10 +122,10 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 
 ## Regras
 
-- Ordem de classificação fixa, para que os sliders não briguem: água → praia → montanha (rochosa ou
-  nevada) → deserto ou floresta → campo. Cada etapa só recebe as células que as anteriores deixaram:
-  montanha vale mais que bioma, e o percentual de desertos e florestas é medido sobre a terra firme
-  sem montanhas (e sem as praias, que vêm antes na ordem).
+- Ordem de classificação fixa, para que os sliders não briguem: água → lago → praia → montanha
+  (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só recebe as células que as
+  anteriores deixaram: montanha vale mais que bioma, e o percentual de desertos e florestas é
+  medido sobre a terra firme sem montanhas (e sem os lagos e as praias, que vêm antes na ordem).
 - Praia: a terra a até uma certa distância da água oceânica, medida em frações da largura do mapa
   (a mesma na prévia e no mapa final). Praias em 0 não tem praia; acima de 0, a faixa tem pelo
   menos uma célula.
@@ -155,11 +156,27 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
   mapa).
-- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0006](../adr/0006-rios-com-sliders-de-forma.md)):
-  os rios nascem em montanhas e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
-  depressão onde a descida fica presa. O traçado não muda com os sete sliders de limiar: mexer no
-  oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a elevação,
-  e o traçado é refeito.
+- O mapa tem rios e lagos, sem hidrologia e sem slider
+  ([ADR 0008](../adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)):
+  os rios nascem na terra alta e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
+  depressão grande onde a descida fica presa. O traçado não muda com os sete sliders de limiar:
+  mexer no oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a
+  elevação, e o traçado é refeito.
+- Nascentes: até 24 por mapa, sorteadas pela seed na terra alta (os 6% mais altos do mapa, que com
+  os sliders no padrão são a zona das montanhas), afastadas entre si. A zona é fixa, e não o bioma
+  montanha, para o slider Montanhas não mudar os rios. A prévia e o mapa final sorteiam os mesmos
+  pontos, então os rios ficam quase todos nos mesmos lugares.
+- Descida: cada passo vai para a vizinha mais baixa das 8. Uma depressão pequena (menos de 0,1% do
+  mapa debaixo da água) não vira lago: o rio a enche e segue pelo transbordo, ou termina no lago que
+  ela encosta antes de transbordar. Se a saída fica acima da nascente, o rio não existe: ele nunca
+  sobe acima de onde nasce. Uma depressão maior vira lago, até 0,4% do mapa, e o rio termina nele.
+  Um rio que encontra outro vira afluente e termina no encontro. O lago abaixo do nível do mar é
+  oceano; se o que sobra encosta no mar e fica abaixo do tamanho mínimo, volta a ser terra, e o rio
+  que terminava nele segue pelo resto até o mar (ou até outro rio, como afluente). Se esse caminho
+  passaria acima da nascente, o rio não existe.
+- Rio é uma polilinha nos centros das células (de 0 a 1), da nascente até a primeira célula de mar
+  ou de lago, ou até o encontro com outro rio. Lago é um bioma, com os tons da água rasa e sem
+  sombra.
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes

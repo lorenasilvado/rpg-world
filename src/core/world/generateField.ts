@@ -4,12 +4,13 @@ import { distanceToWater } from './coast'
 import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise } from './elevation'
 import { DEFAULT_WORLD_PARAMS, validateWorldParams } from './params'
 import { quantile, quantiles } from './quantile'
+import { cutRivers, traceHydrology, visibleLakes } from './rivers'
 import { hillshade } from './shade'
 
 /**
- * Gera o campo do mundo: elevação, clima, biomas e hillshade.
+ * Gera o campo do mundo: elevação, clima, biomas, hillshade, rios e lagos.
  *
- * Ordem de classificação fixa (`docs/specs/geracao-terreno.md`, Regras): água → praia → montanha
+ * Ordem de classificação fixa (`docs/specs/geracao-terreno.md`, Regras): água → lago → praia → montanha
  * (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só olha as células que as
  * anteriores deixaram, então os sliders não brigam. Colina (campo alto) e campo gelado (campo
  * abaixo da geada, bioma `frozenField`) são variantes do campo: não são etapas à parte. A neve de
@@ -54,6 +55,8 @@ export function generateField(
   const temperature = composeTemperature(climate, elevation, params.temperature)
   const { moisture } = climate
   const n = size * size
+  // Rios e lagos só dependem da seed e da elevação: os sliders de limiar não mudam o traçado.
+  const hydrology = traceHydrology(seed, elevation, size)
 
   // 1. Água, por quantil da elevação: os sliders pedem frações, não limiares absolutos.
   const { deepLevel, seaLevel, hillLevel, mountainLevel } = elevationLevels(elevation, params)
@@ -69,6 +72,10 @@ export function generateField(
     else continue
     water[i] = 1
   }
+  // Lago: o que fica fora do oceano, e sai da terra firme. O resto pequeno de um lago cortado pelo
+  // mar volta a ser terra.
+  const lakes = visibleLakes(hydrology.lake, water, size)
+  for (let i = 0; i < n; i++) if (lakes[i]) biome[i] = BIOME.lake
 
   // 2. Praia: a terra a até `beachWidth` células da água, pela distância, não pela altura.
   const beachWidth = params.beach > 0 ? Math.max(1, (params.beach / 100) * BEACH_MAX_WIDTH * size) : 0
@@ -77,7 +84,7 @@ export function generateField(
   const base: number[] = []
   const peaks: number[] = []
   for (let i = 0; i < n; i++) {
-    if (water[i]) continue
+    if (water[i] || biome[i] === BIOME.lake) continue
     if (distance[i] <= beachWidth) biome[i] = BIOME.beach
     else if (elevation[i] >= mountainLevel) {
       biome[i] = BIOME.rockyMountain
@@ -118,8 +125,12 @@ export function generateField(
     else biome[i] = elevation[i] >= hillLevel ? BIOME.hill : BIOME.grassland
   }
 
-  const shade = hillshade(elevation, water, size)
-  return { width: size, height: size, elevation, moisture, temperature, biome, shade }
+  // Lago é água: plano, sem sombra. Os rios são cortados na costa atual.
+  const flat = new Uint8Array(n)
+  for (let i = 0; i < n; i++) flat[i] = water[i] || biome[i] === BIOME.lake ? 1 : 0
+  const shade = hillshade(elevation, flat, size)
+  const rivers = cutRivers(hydrology, water, lakes, elevation, size)
+  return { width: size, height: size, elevation, moisture, temperature, biome, shade, rivers }
 }
 
 /** Limiares de elevação da classificação, por quantis da elevação. */
