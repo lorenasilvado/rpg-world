@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 4
+export const GENERATOR_VERSION = 5
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -23,7 +23,10 @@ export const BIOME = {
   desert: 5,
   hill: 6,
   rockyMountain: 7,
+  /** Neve de montanha: os picos nevados (slider Neve). */
   snow: 8,
+  /** Campo gelado: o campo abaixo da geada (Temperatura global), fora das montanhas. */
+  frozenField: 9,
 } as const
 
 /** Parâmetros do mundo: os valores dos sliders, de 0 a 100. */
@@ -38,7 +41,7 @@ export type WorldParams = {
   forest: number
   /** Quantidade de cordilheiras. */
   mountains: number
-  /** Proporção de picos nevados versus rochosos (os mais frios ficam nevados). */
+  /** Proporção de picos nevados versus rochosos (os mais frios ficam nevados); não muda o campo gelado. */
   snow: number
   /** De ilhas (0) a pangeia (100). */
   continentSize: number

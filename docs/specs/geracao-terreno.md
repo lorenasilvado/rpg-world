@@ -51,7 +51,7 @@ Cada slider vai de 0 a 100%:
 | Desertos | Fração da terra firme que vira deserto (mais aridez desloca o clima) | 15 |
 | Florestas | Fração da terra firme coberta por mata | 35 |
 | Montanhas | Quantidade de cordilheiras | 30 |
-| Neve | Proporção de picos nevados versus rochosos | 40 |
+| Neve | Proporção de picos nevados versus rochosos (não muda o campo gelado) | 40 |
 | Tamanho do continente (avançado) | Ilhas × pangeia | 50 |
 | Rugosidade da costa (avançado) | De costa lisa a recortada | 50 |
 | Temperatura global (avançado) | Esquenta ou esfria o mundo todo: mais fria dá mais neve nas montanhas e campos gelados nas regiões frias; mais quente, menos neve e nenhum campo gelado | 50 |
@@ -130,11 +130,15 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   menos uma célula.
 - Montanha: as células mais altas da terra, por percentil da elevação, na quantidade do slider
   Montanhas. Neve: as montanhas mais frias, na proporção do slider Neve; com a Temperatura global
-  em 50 a proporção é a do slider, abaixo dela há mais neve e acima, menos.
+  em 50 a proporção é a do slider, abaixo dela há mais neve e acima, menos. Com Neve em 0 não há
+  neve de montanha.
 - Deserto: as células mais áridas da base (secas e quentes). Floresta: as mais úmidas do que
   sobrou. Campo: o resto; o campo mais alto é colina, e o campo abaixo de uma temperatura fixa de
-  geada fica gelado (desenhado como neve). Como o campo vem por último, o campo gelado não muda o
-  percentual de desertos e florestas.
+  geada fica gelado. Como o campo vem por último, o campo gelado não muda o percentual de desertos
+  e florestas.
+- Neve de montanha e campo gelado são biomas distintos no campo gerado (`snow` e `frozenField`,
+  [ADR 0007](../adr/0007-campo-gelado-bioma-proprio.md)): quem lê o campo os separa pelo bioma, sem
+  recalcular limiares. O campo gelado é desenhado com os mesmos tons da neve e não tem decoração.
 - Clima: a umidade vem de um ruído fixo pela seed. A temperatura cai com a distância do "equador"
   (a linha do meio do mapa) e com a altitude, e a Temperatura global soma o mesmo valor a todas as
   células. Por isso ela muda o mapa só onde há um limiar de temperatura: a neve das montanhas e o

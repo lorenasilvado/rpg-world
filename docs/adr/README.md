@@ -12,6 +12,7 @@ Cada arquivo `NNNN-<slug>.md` registra uma decisão técnica duradoura: por que 
 | [0004](0004-go-no-go-m0.md) | Go no M0: seguir para o M1 com a stack e os spikes validados | Aceita | 2026-11-09 |
 | [0005](0005-rios-e-lagos-por-descida-de-gradiente.md) | Rios por descida de gradiente e lagos nas depressões, sem hidrologia | Superada por 0006 | 2026-11-09 |
 | [0006](0006-rios-com-sliders-de-forma.md) | Rios e lagos com sliders de forma: o traçado acompanha Continente e Costa | Aceita | 2026-11-10 |
+| [0007](0007-campo-gelado-bioma-proprio.md) | O campo gelado é um bioma próprio, separado da neve de montanha | Proposta | 2026-11-11 |
 
 Mantenha este índice em dia ao criar um ADR ou mudar o status de um.
 

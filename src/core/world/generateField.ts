@@ -12,7 +12,8 @@ import { hillshade } from './shade'
  * Ordem de classificação fixa (`docs/specs/geracao-terreno.md`, Regras): água → praia → montanha
  * (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só olha as células que as
  * anteriores deixaram, então os sliders não brigam. Colina (campo alto) e campo gelado (campo
- * abaixo da geada, com o bioma neve) são variantes do campo: não são etapas à parte.
+ * abaixo da geada, bioma `frozenField`) são variantes do campo: não são etapas à parte. A neve de
+ * montanha (`snow`) e o campo gelado são biomas distintos (ADR 0007).
  *
  * As constantes de classificação deste arquivo também fazem parte do gerador: mudar qualquer uma
  * exige subir `GENERATOR_VERSION` e atualizar os hashes de `golden.ts`.
@@ -109,11 +110,11 @@ export function generateField(
   for (let k = 0; k < rest.length; k++) wetness[k] = moisture[rest[k]]
   const forestLevel = forestCount > 0 && rest.length > 0 ? valueAtRank(wetness, rest.length - forestCount) : Infinity
 
-  // 5. Campo: o resto; o campo alto é colina, e o campo abaixo da geada fica gelado (neve).
+  // 5. Campo: o resto; o campo alto é colina, e o campo abaixo da geada fica gelado.
   for (let k = 0; k < rest.length; k++) {
     const i = rest[k]
     if (wetness[k] >= forestLevel) biome[i] = BIOME.forest
-    else if (temperature[i] < FROST_LEVEL) biome[i] = BIOME.snow
+    else if (temperature[i] < FROST_LEVEL) biome[i] = BIOME.frozenField
     else biome[i] = elevation[i] >= hillLevel ? BIOME.hill : BIOME.grassland
   }
 
