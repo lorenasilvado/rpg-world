@@ -1,0 +1,4 @@
+commit: e61fd9113f0fb1cd906cf09844cebd9b730909af
+ac-f1-09-tempos-e-memoria.png  1280x800  c23d50855be2cda64d1e9e11ea4b5658130c7ace41684e537fa695f689b9c80d
+ac-f1-10-arrasto-atualiza-em-ordem.png  1280x800  e1f8f045cc50e337fab02c66652f68c2f411918a8daa704869a06ab31b87e7db
+ac-f1-11-mapa-final-substitui-previa.png  1280x800  247b012fc218eb81e105c2d8ff4fd4a8ec4fbd768e71605f27765b2f6082e2f4
