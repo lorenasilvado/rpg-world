@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # Roadmap
@@ -97,20 +97,21 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 9 | #31 | [chore] Proteger os parâmetros padrão do núcleo e validar os params | done | — | #58 |
 | 10 | #59 | [docs] Decidir o AC-F1-04 e o ADR 0005 para Continente e Costa | done | specs/geracao-terreno.md | #62 |
 | 11 | #42 | [feat] Núcleo: clima, biomas e praias | done | specs/geracao-terreno.md | #65 |
-| 12 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
-| 13 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
-| 14 | #45 | [feat] Worker de produção e prévia contínua | todo | specs/geracao-terreno.md | |
-| 15 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
-| 16 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
-| 17 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
-| 18 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
-| 19 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
-| 20 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
-| 21 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
-| 22 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |
-| 23 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | todo | specs/geracao-terreno.md | |
-| 24 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
-| 25 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
-| 26 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
-| 27 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
-| 28 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |
+| 12 | #68 | [chore] Distinguir campo gelado da neve de montanha | todo | specs/geracao-terreno.md | |
+| 13 | #43 | [feat] Núcleo: rios e lagos | todo | specs/geracao-terreno.md | |
+| 14 | #44 | [feat] Núcleo: decoração por Poisson-disk | todo | specs/geracao-terreno.md | |
+| 15 | #45 | [feat] Worker de produção e prévia contínua | todo | specs/geracao-terreno.md | |
+| 16 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
+| 17 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
+| 18 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
+| 19 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
+| 20 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
+| 21 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
+| 22 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
+| 23 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |
+| 24 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | todo | specs/geracao-terreno.md | |
+| 25 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
+| 26 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
+| 27 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
+| 28 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
+| 29 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |
