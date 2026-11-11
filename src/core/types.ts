@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 6
+export const GENERATOR_VERSION = 7
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -53,13 +53,48 @@ export type WorldParams = {
   temperature: number
 }
 
+/**
+ * Tipos de ícone da decoração, no valor guardado no `Uint8Array` de `Decor.kind`. Um por desenho do
+ * design system (tabela "Estilo do mapa"); quem desenha escolhe o sprite de cada um.
+ */
+export const DECOR = {
+  /** Traço de onda, no oceano profundo. */
+  wave: 0,
+  /** Pontilhado de areia, na praia. */
+  sand: 1,
+  /** Tufo, no campo. */
+  tuft: 2,
+  /** Árvore (pinheiros e árvore redonda), na floresta. */
+  tree: 3,
+  /** Duna a traço, no deserto. */
+  dune: 4,
+  /** Cacto, no deserto. */
+  cactus: 5,
+  /** Colina a traço com hachura. */
+  hill: 6,
+  /** Montanha com hachura, na montanha rochosa. */
+  peak: 7,
+  /** Montanha nevada com hachura, na neve de montanha. */
+  snowPeak: 8,
+} as const
+
+export type DecorKind = (typeof DECOR)[keyof typeof DECOR]
+
+/**
+ * Ícones da decoração, de cima para baixo (a ordem de desenho): posição de 0 a 1 no mapa (`u` da
+ * esquerda para a direita, `v` de cima para baixo, no pé do ícone) e o tipo (`DECOR`). No máximo
+ * 5.000 ícones.
+ */
+export type Decor = { u: Float32Array; v: Float32Array; kind: Uint8Array }
+
 /** Ponto de um rio, de 0 a 1 no mapa (`u` da esquerda para a direita, `v` de cima para baixo). */
 export type RiverPoint = { u: number; v: number }
 
 /**
  * Campo gerado, em ordem de linhas: elevação de 0 a 1, umidade de 0 a 1, temperatura (sem corte, em
  * torno de 0 a 1 com a Temperatura global em 50), bioma de cada célula e hillshade de -127 a 127.
- * Os rios são polilinhas, da nascente até o mar, um lago ou outro rio; o lago é um bioma.
+ * Os rios são polilinhas, da nascente até o mar, um lago ou outro rio; o lago é um bioma. A
+ * decoração são os ícones por bioma, por Poisson-disk.
  */
 export type CoreField = {
   width: number
@@ -70,4 +105,5 @@ export type CoreField = {
   biome: Uint8Array
   shade: Int8Array
   rivers: RiverPoint[][]
+  decor: Decor
 }

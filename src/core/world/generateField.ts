@@ -1,3 +1,4 @@
+import { placeDecor } from '../decor/decor'
 import { BIOME, type CoreField, type WorldParams } from '../types'
 import { composeTemperature, sampleClimateNoise } from './climate'
 import { distanceToWater } from './coast'
@@ -8,7 +9,7 @@ import { cutRivers, traceHydrology, visibleLakes } from './rivers'
 import { hillshade } from './shade'
 
 /**
- * Gera o campo do mundo: elevação, clima, biomas, hillshade, rios e lagos.
+ * Gera o campo do mundo: elevação, clima, biomas, hillshade, rios e lagos e a decoração.
  *
  * Ordem de classificação fixa (`docs/specs/geracao-terreno.md`, Regras): água → lago → praia → montanha
  * (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só olha as células que as
@@ -130,7 +131,9 @@ export function generateField(
   for (let i = 0; i < n; i++) flat[i] = water[i] || biome[i] === BIOME.lake ? 1 : 0
   const shade = hillshade(elevation, flat, size)
   const rivers = cutRivers(hydrology, water, lakes, elevation, size)
-  return { width: size, height: size, elevation, moisture, temperature, biome, shade, rivers }
+  // Decoração: os ícones por bioma, sobre a classificação final.
+  const decor = placeDecor(seed, biome, size)
+  return { width: size, height: size, elevation, moisture, temperature, biome, shade, rivers, decor }
 }
 
 /** Limiares de elevação da classificação, por quantis da elevação. */

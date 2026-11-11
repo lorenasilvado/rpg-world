@@ -10,8 +10,8 @@ Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; 
 o comportamento atualiza esta spec.
 
 > Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
-> (`src/core/world/`), sem UI e ainda sem decoração; os rios ainda não são desenhados. O resto vem
-> do material de design e do PRD.
+> (`src/core/world/`) e da decoração (`src/core/decor/`), sem UI; os rios e a decoração ainda não
+> são desenhados. O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -177,6 +177,26 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Rio é uma polilinha nos centros das células (de 0 a 1), da nascente até a primeira célula de mar
   ou de lago, ou até o encontro com outro rio. Lago é um bioma, com os tons da água rasa e sem
   sombra.
+- Decoração: o núcleo entrega as posições e os tipos dos ícones, e o renderer só desenha o que
+  recebe. As posições vêm de uma amostra de Poisson-disk do mapa inteiro, sorteada pela seed, com
+  distância mínima de 1,3% da largura entre dois ícones; cada ponto fica com um ícone na chance do
+  bioma da sua célula. A amostra não depende do tamanho nem dos sliders: a prévia e o mapa final
+  têm os ícones quase todos nos mesmos lugares, e um slider só muda quais pontos ganham ícone.
+  O mapa tem no máximo 5.000 ícones (com os sliders no padrão, perto de 900); acima disso, fica
+  uma fração uniforme deles. Os ícones saem de cima para baixo, a ordem de desenho.
+
+  | Bioma | Ícone | Chance por ponto |
+  |---|---|---|
+  | Oceano profundo | Onda | 3% |
+  | Praia | Pontilhado de areia | 5% |
+  | Campo | Tufo | 16% |
+  | Floresta | Árvore | 80% |
+  | Deserto | Cacto / duna | 8% / 26% |
+  | Colina | Colina | 42% |
+  | Montanha rochosa | Montanha | 70% |
+  | Neve de montanha | Montanha nevada | 75% |
+
+  Água rasa, lago e campo gelado não têm decoração.
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
