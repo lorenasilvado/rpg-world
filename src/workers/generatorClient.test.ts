@@ -143,6 +143,25 @@ describe('falha do worker de geração (AC-F1-12)', () => {
     expect(spawned).toHaveLength(1)
   })
 
+  it('pedidos resolvidos não ficam presos na conexão (sem vazar os resultados)', async () => {
+    const { gen } = generatorWith()
+    toClose.push(gen)
+    for (let i = 0; i < 5; i++) await gen.request(req(`s${i}`))
+    await gen.lastResultTransferred()
+    expect(gen.pendingCalls()).toBe(0)
+  })
+
+  it('o pedido em andamento fica na conexão até o worker falhar, e sai dela na falha', async () => {
+    const broken = fakeWorker({ hang: true })
+    const { gen } = generatorWith(broken)
+    toClose.push(gen)
+    const pending = gen.request(req('a'))
+    expect(gen.pendingCalls()).toBe(1)
+    broken.emit('error', new Event('error'))
+    await expect(pending).rejects.toBeInstanceOf(GeneratorWorkerError)
+    expect(gen.pendingCalls()).toBe(0)
+  })
+
   it('um erro depois do worker descartado não afeta o worker novo', async () => {
     const broken = fakeWorker({ hang: true })
     const { gen, spawned } = generatorWith(broken)

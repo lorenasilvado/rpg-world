@@ -11,6 +11,11 @@ import { createNewerOnly, type NewerOnly } from './newerOnly'
  * dá para ler), o Comlink nunca responderia: o pedido em andamento é rejeitado com um
  * `GeneratorWorkerError` (AC-F1-12), o worker é descartado e o próximo pedido cria um novo. É assim
  * que "Tentar de novo" funciona depois de uma falha ao carregar.
+ *
+ * Os pedidos em andamento ficam num conjunto da conexão e saem dele ao terminar: a falha rejeita só
+ * os que ainda estão lá. (Correr cada pedido contra uma promise de falha que dura o worker inteiro
+ * deixaria presa nela uma reação por pedido, com o resultado, e todo mapa da sessão ficaria na
+ * memória.)
  */
 export type Generator = NewerOnly<GenerateRequest, GenerateResult> & {
   /**
@@ -19,6 +24,8 @@ export type Generator = NewerOnly<GenerateRequest, GenerateResult> & {
    */
   lastResultTransferred(): Promise<boolean>
   terminate(): void
+  /** Quantos pedidos ao worker estão em andamento (para os testes). */
+  pendingCalls(): number
 }
 
 /** O que o cliente usa do `Worker`: o Comlink conversa por mensagens, e os eventos de falha. */
@@ -34,7 +41,12 @@ export class GeneratorWorkerError extends Error {
 const createWorker = (): WorkerLike =>
   new Worker(new URL('./generator.worker.ts', import.meta.url), { type: 'module', name: 'generator' })
 
-type Connection = { worker: WorkerLike; api: Remote<GeneratorApi>; failed: Promise<never> }
+type Connection = {
+  worker: WorkerLike
+  api: Remote<GeneratorApi>
+  /** Quem rejeitar se o worker falhar: os pedidos em andamento. */
+  pending: Set<(error: GeneratorWorkerError) => void>
+}
 
 export function createGenerator(spawn: () => WorkerLike = createWorker): Generator {
   let conn: Connection | null = null
@@ -43,11 +55,11 @@ export function createGenerator(spawn: () => WorkerLike = createWorker): Generat
     if (conn) return conn
     const worker = spawn()
     const api = wrap<GeneratorApi>(worker)
-    let fail!: (error: GeneratorWorkerError) => void
-    const failed = new Promise<never>((_, reject) => (fail = reject))
-    // Sem ninguém esperando, a falha não vira "unhandled rejection".
-    failed.catch(() => {})
-    const current: Connection = { worker, api, failed }
+    const current: Connection = { worker, api, pending: new Set() }
+    const fail = (error: GeneratorWorkerError) => {
+      for (const reject of current.pending) reject(error)
+      current.pending.clear()
+    }
     const onError = (event: Event) => {
       const message = event instanceof ErrorEvent && event.message ? event.message : 'o worker de geração falhou'
       drop(current)
@@ -71,8 +83,20 @@ export function createGenerator(spawn: () => WorkerLike = createWorker): Generat
 
   /** Chama o worker, e rejeita se ele falhar antes de responder. */
   const call = <T>(fn: (api: Remote<GeneratorApi>) => Promise<T>): Promise<T> => {
-    const { api, failed } = connect()
-    return Promise.race([fn(api), failed])
+    const { api, pending } = connect()
+    return new Promise<T>((resolve, reject) => {
+      pending.add(reject)
+      fn(api).then(
+        (value) => {
+          pending.delete(reject)
+          resolve(value)
+        },
+        (error) => {
+          pending.delete(reject)
+          reject(error)
+        },
+      )
+    })
   }
 
   const newer = createNewerOnly((req: GenerateRequest) => call((api) => api.generate(req)))
@@ -90,5 +114,6 @@ export function createGenerator(spawn: () => WorkerLike = createWorker): Generat
       conn.worker.terminate()
       conn = null
     },
+    pendingCalls: () => conn?.pending.size ?? 0,
   }
 }
