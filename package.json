@@ -20,7 +20,8 @@
     "pixi.js": "^8.22.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "simplex-noise": "4.0.3"
+    "simplex-noise": "4.0.3",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

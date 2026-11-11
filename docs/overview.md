@@ -95,20 +95,33 @@ o gerador de propósito exige subir `GENERATOR_VERSION` (`src/core/types.ts`) e 
 de referência. As versões de `alea` e `simplex-noise` ficam fixadas, sem `^`, no `package.json`:
 trocar a versão delas também é mudar o gerador.
 
-O worker de geração (spike de desempenho do M0) fica em `src/workers/`: o
-`generator.worker.ts` expõe o núcleo pelo Comlink e devolve os arrays por transferência, sem cópia,
-e o `generatorClient.ts` cria o worker na thread principal. Cada pedido ganha um número de versão
-(`latestOnly.ts`): fica no máximo um pedido no worker e um na espera, um pedido novo toma o lugar
-do que esperava, e um resultado que chega depois de um pedido mais novo é descartado; quem perdeu a
-vez recebe `null`. A página de medição abre em `/bench.html`, no dev e no build
-(`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² (medianas
-depois de uma geração de aquecimento), simula o arrasto de um slider e compara o maior intervalo
-entre quadros da UI com a mesma geração feita na thread principal. Meça com a aba à vista: com ela
-escondida, o navegador espaça quadros e timers, e a página avisa que o resultado não vale. O
-`e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas, num projeto do Playwright
-que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os quadros da UI. As
-metas de tempo só são conferidas fora do CI, que é uma máquina compartilhada; no CI ficam a
-transferência sem cópia e o cancelamento.
+O worker de geração fica em `src/workers/`: o `generator.worker.ts` expõe o núcleo pelo Comlink
+(`generatorApi.ts`) e devolve os arrays por transferência, sem cópia, e o `generatorClient.ts` cria
+o worker na thread principal. O worker guarda o ruído da seed (`src/core/world/fieldCache.ts`), um
+por tamanho, só da seed mais recente: trocar a seed refaz tudo; Tamanho do continente ou Rugosidade
+da costa reaproveitam o ruído e refazem a elevação, os rios e a classificação; os outros sete
+sliders refazem só a classificação. O campo gerado com o cache é o mesmo da geração do zero (mesmo
+hash). Cada pedido ganha um número de versão (`newerOnly.ts`): fica no máximo um pedido no worker e
+um na espera, e um pedido novo toma o lugar do que esperava (que recebe `null`). Todo resultado mais
+novo que o último entregue chega, então o mapa continua atualizando durante o arrasto, e um
+resultado velho nunca chega depois de um novo.
+
+O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
+React): seed, parâmetros, o campo exibido e o status da geração. Arrastar um slider
+(`dragParams`) pede a prévia 256²; soltar (`releaseParams`) e trocar a seed pedem o mapa 1024². O
+campo só é trocado por um resultado de versão mais nova que a do exibido.
+
+A página de medição abre em `/bench.html`, no dev e no build
+(`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² com o
+pipeline completo (medianas depois de uma geração de aquecimento), com uma seed nova a cada vez e
+com o cache (um slider de limiar, e o Tamanho do continente), a memória do mundo (cache do worker
+mais o campo entregue), simula pelo `worldStore` o arrasto de um slider e o soltar, e compara o
+maior intervalo entre quadros da UI com a mesma geração feita na thread principal. Meça com a aba à
+vista: com ela escondida, o navegador espaça quadros e timers, e a página avisa que o resultado não
+vale. O `e2e/desempenho.spec.ts` roda a medição no Chrome e confere as metas, num projeto do
+Playwright que roda depois dos outros e sozinho, para a disputa pela CPU não atrasar os quadros da
+UI. As metas de tempo só são conferidas fora do CI, que é uma máquina compartilhada; no CI ficam a
+memória, a transferência sem cópia e a ordem de entrega.
 
 O spike dos 5.000 sprites (M0) fica em `src/sprites/` e abre em `/sprites.html`, no dev e no build
 (`http://localhost:5173/sprites.html`): terreno em textura única, 5.000 ícones do mesmo spritesheet
@@ -164,7 +177,8 @@ src/
     projection/         # Plane (v1) e Sphere (futuro)
     types.ts
   workers/
-    generator.worker.ts # expõe o core via Comlink
+    generator.worker.ts # expõe o core via Comlink (generatorApi.ts), com o cache do ruído
+    generatorClient.ts  # cria o worker; entrega o mais novo (newerOnly.ts)
   render/
     MapRenderer.ts      # cria app Pixi + viewport
     layers/             # TerrainLayer, DecorLayer, RoadLayer, PinLayer, LabelLayer

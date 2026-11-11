@@ -1,47 +1,59 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
-import type { BenchReport } from '../src/bench/report.ts'
+import type { BenchReport, Timing } from '../src/bench/report.ts'
 
-// Spike de desempenho (#9, RNF-2): a página /bench.html gera no worker e mede. Os tempos são
-// medianas depois de uma geração de aquecimento; a máquina e os números vão para as anotações
-// do teste (e para o PR).
+// Desempenho da geração (#9, #45; RNF-2): a página /bench.html gera no worker, com o pipeline
+// completo, e mede. Os tempos são medianas depois de uma geração de aquecimento; a máquina e os
+// números vão para as anotações do teste (e para o PR).
 //
 // As checagens de tempo só rodam fora do CI: o check `ci` é obrigatório e roda numa máquina
 // compartilhada, onde uma lentidão do runner travaria o merge. No CI ficam as checagens que não
-// dependem do tempo (transferência sem cópia e cancelamento).
+// dependem do tempo (memória, transferência sem cópia e ordem de entrega).
 const CONFERE_TEMPO = !process.env.CI
 
-test('a geração no worker atinge as metas, só o mais novo chega e a UI responde (AC-M0-13 a 15)', async ({ page }) => {
-  test.setTimeout(120_000)
+test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a UI responde (AC-F1-09 a 11)', async ({ page }) => {
+  test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.goto('/bench.html')
   await page.getByRole('button', { name: 'Medir' }).click()
-  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 110_000 })
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 170_000 })
   const report = JSON.parse((await page.getByTestId('report').textContent()) ?? '') as BenchReport
+  const t = report.targets
 
+  const timing = (label: string, x: Timing) => ({ type: label, description: `mediana ${x.median} ms, máx. ${x.max} ms` })
   test.info().annotations.push(
     { type: 'máquina', description: `${report.machine.userAgent} · ${report.machine.cores} núcleos` },
-    { type: 'prévia 256²', description: `mediana ${report.preview.median} ms, máx. ${report.preview.max} ms` },
-    { type: 'mapa 1024²', description: `mediana ${report.map.median} ms, máx. ${report.map.max} ms` },
+    timing('prévia 256², seed nova', report.preview),
+    timing('mapa 1024², seed nova', report.map),
+    timing('prévia 256², slider de limiar', report.previewSlider),
+    timing('mapa 1024², slider de limiar', report.mapSlider),
+    timing('mapa 1024², Tamanho do continente', report.mapShape),
+    { type: 'memória do mundo', description: `${report.memory.worldBytes} bytes` },
+    { type: 'arrasto', description: `${report.drag.sent} pedidos, ${report.drag.duringDrag} prévias exibidas` },
   )
   expect(report.visible).toBe(true)
 
-  // AC-M0-13: metas de tempo, com os arrays transferidos sem cópia.
+  // AC-F1-09: metas de tempo com o pipeline completo, e memória do mundo.
   if (CONFERE_TEMPO) {
-    expect(report.preview.median).toBeLessThanOrEqual(report.targets.previewMs)
-    expect(report.map.median).toBeLessThanOrEqual(report.targets.mapMs)
+    for (const x of [report.preview, report.previewSlider]) expect(x.median).toBeLessThanOrEqual(t.previewMs)
+    for (const x of [report.map, report.mapSlider, report.mapShape]) expect(x.median).toBeLessThanOrEqual(t.mapMs)
   }
+  expect(report.memory.worldBytes).toBeGreaterThan(0)
+  expect(report.memory.worldBytes).toBeLessThanOrEqual(t.worldBytes)
   expect(report.transferred).toBe(true)
 
-  // AC-M0-14: no arrasto, pedidos são descartados e só o mais novo chega, com o campo certo.
-  expect(report.drag.delivered).toBeLessThan(report.drag.sent)
-  expect(report.drag.onlyLatest).toBe(true)
-  expect(report.drag.lastDeliveredVersion).toBe(report.drag.lastVersion)
-  expect(report.drag.lastFieldMatches).toBe(true)
+  // AC-F1-10: no arrasto, o mapa continua atualizando, sempre do mais velho para o mais novo.
+  expect(report.drag.inOrder).toBe(true)
+  expect(report.drag.previewMatches).toBe(true)
+  if (CONFERE_TEMPO) expect(report.drag.duringDrag).toBeGreaterThanOrEqual(5)
+  // AC-F1-11: ao soltar, o mapa final 1024² substitui a prévia.
+  expect(report.drag.release.size).toBe(1024)
+  expect(report.drag.release.version).toBe(report.drag.release.lastVersion)
+  expect(report.drag.release.matches).toBe(true)
 
-  // AC-M0-15: durante o mapa 1024² no worker, nenhum quadro da UI passa de 100 ms; na thread
-  // principal, a mesma geração trava a UI pelo tempo inteiro dela.
+  // Durante o mapa 1024² no worker, nenhum quadro da UI passa de 100 ms; na thread principal, a
+  // mesma geração trava a UI pelo tempo inteiro dela.
   expect(report.mainThread).not.toBeNull()
   test.info().annotations.push({
     type: 'maior quadro da UI',
