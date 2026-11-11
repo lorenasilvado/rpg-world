@@ -287,7 +287,7 @@ pintado célula a célula em `MapCanvas.jsx`.
 | Seed | Texto que determina o mapa gerado: a mesma seed com os mesmos parâmetros sempre gera o mesmo mapa |
 | Parâmetros | Valores dos sliders de geração, de 0 a 100 (`WorldParams`) |
 | Preset | Conjunto pronto de parâmetros ("ponto de partida" no assistente) |
-| Bioma | Classe de terreno de uma célula: oceano profundo, água rasa, lago, praia, campo, floresta, deserto, colina, montanha rochosa, neve |
+| Bioma | Classe de terreno de uma célula: oceano profundo, água rasa, lago, praia, campo, floresta, deserto, colina, montanha rochosa, neve (de montanha), campo gelado |
 | Terra firme | Células que não são água; base do percentual de desertos e florestas (sem as montanhas) |
 | Prévia | Geração em 256² enquanto o slider se mexe; a geração final é em 1024² |
 | Pin | Marcador no mapa com tipo, nome e ficha (descrição, tags, campos livres, capa) |

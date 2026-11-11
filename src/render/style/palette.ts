@@ -13,6 +13,7 @@ export const BIOMES = [
   'hill',
   'rockyMountain',
   'snow',
+  'frozenField',
 ] as const
 
 export type Biome = (typeof BIOMES)[number]
@@ -33,6 +34,7 @@ export const BIOME_TONES: Record<Biome, readonly [string, string, string]> = {
   hill: ['#7E8F55', '#98A86A', '#B2C184'],
   rockyMountain: ['#6B6560', '#8A837C', '#A9A39C'],
   snow: ['#C9D6DE', '#E4ECF0', '#FFFFFF'],
+  frozenField: ['#C9D6DE', '#E4ECF0', '#FFFFFF'],
 }
 
 export const COAST_STROKE = { width: 2, color: '#163A5C' } as const

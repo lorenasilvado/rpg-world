@@ -16,23 +16,13 @@ function mountainMask(f: CoreField, p: WorldParams): Uint8Array {
   const { mountainLevel } = elevationLevels(f.elevation, p)
   return Uint8Array.from(f.biome, (b, i) => (!isWater(b) && b !== BIOME.beach && f.elevation[i] >= mountainLevel ? 1 : 0))
 }
-/** Montanhas (rochosas e nevadas) e campos gelados (neve fora das montanhas). */
-function snowSplit(f: CoreField, p: WorldParams) {
-  const mountain = mountainMask(f, p)
-  let peaks = 0
-  let peakSnow = 0
-  let frozen = 0
-  for (let i = 0; i < f.biome.length; i++) {
-    if (mountain[i]) {
-      peaks++
-      if (f.biome[i] === BIOME.snow) peakSnow++
-    } else if (f.biome[i] === BIOME.snow) frozen++
-  }
-  return { peaks, peakSnow, frozen }
+/** Montanhas (rochosas e nevadas) e campos gelados, só pelo bioma de cada célula (AC-F1-25). */
+function snowSplit(f: CoreField) {
+  const peakSnow = count(f, BIOME.snow)
+  return { peaks: count(f, BIOME.rockyMountain) + peakSnow, peakSnow, frozen: count(f, BIOME.frozenField) }
 }
 /** Base de desertos e florestas: a terra firme que não virou praia nem montanha (o campo gelado entra). */
-const baseCells = (f: CoreField, p: WorldParams) =>
-  count(f, BIOME.grassland, BIOME.hill, BIOME.forest, BIOME.desert) + snowSplit(f, p).frozen
+const baseCells = (f: CoreField) => count(f, BIOME.grassland, BIOME.hill, BIOME.forest, BIOME.desert, BIOME.frozenField)
 
 describe('desertos e florestas por quantil (AC-F1-03)', () => {
   it('atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas, em várias seeds', () => {
@@ -48,7 +38,7 @@ describe('desertos e florestas por quantil (AC-F1-03)', () => {
       for (const over of cases) {
         const p = params(over)
         const f = generateField(seed, 128, p)
-        const base = baseCells(f, p)
+        const base = baseCells(f)
         const label = `${seed} ${JSON.stringify(over)}`
         expect(Math.abs(count(f, BIOME.desert) / base - p.desert / 100), label).toBeLessThanOrEqual(0.02)
         expect(Math.abs(count(f, BIOME.forest) / base - p.forest / 100), label).toBeLessThanOrEqual(0.02)
@@ -64,7 +54,7 @@ describe('desertos e florestas por quantil (AC-F1-03)', () => {
   it('a soma acima de 100% não quebra: a floresta fica com o que sobrou', () => {
     const p = params({ desert: 80, forest: 80 })
     const f = generateField('rpg-world', 64, p)
-    expect(count(f, BIOME.desert) + count(f, BIOME.forest)).toBe(baseCells(f, p))
+    expect(count(f, BIOME.desert) + count(f, BIOME.forest)).toBe(baseCells(f))
   })
 
   it('o deserto fica nas células mais secas e a floresta nas mais úmidas', () => {
@@ -130,16 +120,14 @@ describe('montanhas e neve por percentil', () => {
   it('a neve fica nas montanhas mais frias, na proporção do slider Neve', () => {
     for (const snow of [0, 25, 40, 80, 100]) {
       const p = params({ snow })
-      const { peaks, peakSnow } = snowSplit(generateField('Aldebaran', 128, p), p)
-      expect(peaks).toBe(count(generateField('Aldebaran', 128, p), BIOME.rockyMountain) + peakSnow)
+      const { peaks, peakSnow } = snowSplit(generateField('Aldebaran', 128, p))
       expect(Math.abs(peakSnow / peaks - snow / 100), `Neve ${snow}`).toBeLessThanOrEqual(0.01)
     }
     const f = generateField('Aldebaran', 128)
-    const mountain = mountainMask(f, DEFAULT_WORLD_PARAMS)
     let warmestSnow = -Infinity
     let coldestRock = Infinity
     for (let i = 0; i < f.biome.length; i++) {
-      if (f.biome[i] === BIOME.snow && mountain[i]) warmestSnow = Math.max(warmestSnow, f.temperature[i])
+      if (f.biome[i] === BIOME.snow) warmestSnow = Math.max(warmestSnow, f.temperature[i])
       if (f.biome[i] === BIOME.rockyMountain) coldestRock = Math.min(coldestRock, f.temperature[i])
     }
     expect(warmestSnow).toBeLessThanOrEqual(coldestRock)
@@ -148,7 +136,7 @@ describe('montanhas e neve por percentil', () => {
   it('Temperatura global mais baixa dá mais neve nas montanhas; mais alta, menos', () => {
     const peakSnowAt = (temperature: number) => {
       const p = params({ temperature })
-      return snowSplit(generateField('rpg-world', 128, p), p).peakSnow
+      return snowSplit(generateField('rpg-world', 128, p)).peakSnow
     }
     expect(peakSnowAt(0)).toBeGreaterThan(peakSnowAt(50))
     expect(peakSnowAt(50)).toBeGreaterThan(peakSnowAt(100))
@@ -157,7 +145,7 @@ describe('montanhas e neve por percentil', () => {
   it('mais Montanhas dá mais montanha', () => {
     const peaksAt = (mountains: number) => {
       const p = params({ mountains })
-      return snowSplit(generateField('rpg-world', 128, p), p).peaks
+      return snowSplit(generateField('rpg-world', 128, p)).peaks
     }
     expect(peaksAt(0)).toBe(0)
     expect(peaksAt(30)).toBeGreaterThan(0)
@@ -170,7 +158,7 @@ describe('campo gelado pela Temperatura global', () => {
     for (const seed of SEEDS) {
       const frozenAt = (temperature: number) => {
         const p = params({ temperature })
-        return snowSplit(generateField(seed, 128, p), p).frozen
+        return snowSplit(generateField(seed, 128, p)).frozen
       }
       expect(frozenAt(0), seed).toBeGreaterThan(frozenAt(50))
       expect(frozenAt(50), seed).toBeGreaterThanOrEqual(frozenAt(100))
@@ -192,15 +180,53 @@ describe('campo gelado pela Temperatura global', () => {
   it('o campo gelado fica nas células mais frias do campo', () => {
     const p = params({ temperature: 20 })
     const f = generateField('valdora', 128, p)
-    const mountain = mountainMask(f, p)
     let warmestFrozen = -Infinity
     let coldestField = Infinity
     for (let i = 0; i < f.biome.length; i++) {
-      if (f.biome[i] === BIOME.snow && !mountain[i]) warmestFrozen = Math.max(warmestFrozen, f.temperature[i])
+      if (f.biome[i] === BIOME.frozenField) warmestFrozen = Math.max(warmestFrozen, f.temperature[i])
       if (f.biome[i] === BIOME.grassland || f.biome[i] === BIOME.hill) coldestField = Math.min(coldestField, f.temperature[i])
     }
     expect(warmestFrozen).toBeGreaterThan(-Infinity)
     expect(warmestFrozen).toBeLessThan(coldestField)
+  })
+})
+
+describe('neve de montanha e campo gelado são biomas distintos (AC-F1-25)', () => {
+  it('a neve fica só nas montanhas e o campo gelado só fora delas, sem recalcular limiares', () => {
+    for (const seed of SEEDS) {
+      for (const over of [{}, { temperature: 0 }, { temperature: 20, snow: 80 }, { mountains: 70, temperature: 10 }]) {
+        const p = params(over)
+        const f = generateField(seed, 128, p)
+        // O teste recalcula os limiares só para conferir: quem lê o campo não precisa.
+        const mountain = mountainMask(f, p)
+        const label = `${seed} ${JSON.stringify(over)}`
+        for (let i = 0; i < f.biome.length; i++) {
+          if (f.biome[i] === BIOME.snow) expect(mountain[i], label).toBe(1)
+          if (f.biome[i] === BIOME.frozenField) expect(mountain[i], label).toBe(0)
+        }
+      }
+    }
+  })
+
+  it('com Neve em 0 não há neve de montanha, e o campo gelado continua identificável', () => {
+    for (const seed of SEEDS) {
+      const f = generateField(seed, 128, params({ snow: 0, temperature: 0 }))
+      expect(count(f, BIOME.snow), seed).toBe(0)
+      expect(count(f, BIOME.frozenField), seed).toBeGreaterThan(0)
+    }
+  })
+
+  it('o slider Neve só muda a neve das montanhas: o campo gelado fica igual', () => {
+    for (const seed of SEEDS) {
+      const at = (snow: number) => generateField(seed, 128, params({ snow, temperature: 20 }))
+      const base = at(40)
+      const frozen = (f: CoreField) => Uint8Array.from(f.biome, (b) => (b === BIOME.frozenField ? 1 : 0))
+      for (const snow of [0, 100]) {
+        const f = at(snow)
+        expect(frozen(f), `${seed} Neve ${snow}`).toEqual(frozen(base))
+        expect(count(f, BIOME.snow), `${seed} Neve ${snow}`).not.toBe(count(base, BIOME.snow))
+      }
+    }
   })
 })
 

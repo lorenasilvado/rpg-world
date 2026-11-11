@@ -36,11 +36,11 @@ describe('núcleo de geração (AC-M0-10)', () => {
   })
 
   it('com Montanhas em 0 não há montanha nem neve; com Neve em 0 não há neve', () => {
-    // Temperatura em 100: sem campo gelado, que também usa o bioma neve, toda neve seria de montanha.
-    const hot = { ...DEFAULT_WORLD_PARAMS, temperature: 100 }
-    const noMountains = generateField('rpg-world', 64, { ...hot, mountains: 0 })
+    // Temperatura em 0: o campo gelado (bioma próprio) não conta como neve.
+    const cold = { ...DEFAULT_WORLD_PARAMS, temperature: 0 }
+    const noMountains = generateField('rpg-world', 64, { ...cold, mountains: 0 })
     expect(noMountains.biome.filter((b) => b === BIOME.rockyMountain || b === BIOME.snow)).toHaveLength(0)
-    const noSnow = generateField('rpg-world', 64, { ...hot, snow: 0 })
+    const noSnow = generateField('rpg-world', 64, { ...cold, snow: 0 })
     expect(noSnow.biome.filter((b) => b === BIOME.snow)).toHaveLength(0)
     expect(noSnow.biome.filter((b) => b === BIOME.rockyMountain).length).toBeGreaterThan(0)
   })

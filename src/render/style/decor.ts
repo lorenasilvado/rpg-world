@@ -46,4 +46,5 @@ export const DECOR_BY_BIOME: Record<Biome, readonly DecorKind[]> = {
   hill: [],
   rockyMountain: ['mountain'],
   snow: ['snowMountain'],
+  frozenField: [],
 }
