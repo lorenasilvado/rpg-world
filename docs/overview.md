@@ -206,7 +206,10 @@ src/
    lago ocupa a depressão onde a descida fica presa. O traçado só depende da seed e da elevação,
    e o rio é cortado na costa atual. No código, este passo roda logo depois da elevação, porque o
    lago entra na classificação.
-8. **Decoração:** Poisson-disk gera posições de ícones por bioma (árvores, montanhas, picos, dunas).
+8. **Decoração:** em `src/core/decor/`, uma amostra de Poisson-disk do mapa, sorteada pela seed
+   (`seed#decor`) e igual em qualquer tamanho, dá as posições; cada ponto ganha o ícone do bioma da
+   sua célula, na chance daquele bioma (ondas, areia, tufos, árvores, dunas, cactos, colinas,
+   montanhas e montanhas nevadas), até 5.000 ícones.
 9. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
    RGBA única e os sprites de decoração.
 
@@ -247,7 +250,8 @@ type Road = { id: string; kind: 'road' | 'trail' | 'sea';
 type WorldField = { width: number; height: number;
   elevation: Float32Array; moisture: Float32Array;
   temperature: Float32Array; biome: Uint8Array; shade: Int8Array;
-  rivers: { u: number; v: number }[][] }; // polilinhas; lago é um bioma em `biome`
+  rivers: { u: number; v: number }[][]; // polilinhas; lago é um bioma em `biome`
+  decor: { u: Float32Array; v: Float32Array; kind: Uint8Array } }; // ícones, de cima para baixo
 ```
 
 > Pendente: como o `Pin` guarda a hierarquia (um pin pertence a outro, ex.: vila de um reino)? O

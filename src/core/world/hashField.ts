@@ -16,7 +16,8 @@ function mixUint32(h: number, w: number): number {
 
 /**
  * Hash do campo (FNV-1a de 32 bits, em hexadecimal): tamanho, os bits da elevação, da umidade e
- * da temperatura, o bioma e o hillshade de cada célula e os pontos dos rios. Lê os bits dos
+ * da temperatura, o bioma e o hillshade de cada célula, os pontos dos rios e os ícones da
+ * decoração. Lê os bits dos
  * `Float32Array` como inteiros, então não depende da ordem dos bytes da máquina. Dois campos com o
  * mesmo hash são, na prática, idênticos.
  */
@@ -39,5 +40,13 @@ export function hashField(field: CoreField): string {
       h = mixUint32(h, Math.round(v * field.height * 2))
     }
   }
+  // Decoração: os bits das posições (`Float32Array`) e o tipo de cada ícone.
+  const { decor } = field
+  h = mixUint32(h, decor.kind.length)
+  for (const values of [decor.u, decor.v]) {
+    const bits = new Uint32Array(values.buffer, values.byteOffset, values.length)
+    for (let i = 0; i < bits.length; i++) h = mixUint32(h, bits[i])
+  }
+  for (let i = 0; i < decor.kind.length; i++) h = mixByte(h, decor.kind[i])
   return h.toString(16).padStart(8, '0')
 }
