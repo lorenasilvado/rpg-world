@@ -2,9 +2,10 @@
 import { expect, test } from '@playwright/test'
 import type { BenchReport, Timing } from '../src/bench/report.ts'
 
-// Desempenho da geração (#9, #45; RNF-2): a página /bench.html gera no worker, com o pipeline
-// completo, e mede. Os tempos são medianas depois de uma geração de aquecimento; a máquina e os
-// números vão para as anotações do teste (e para o PR).
+// Desempenho da geração (#9, #45, #36; RNF-2): a página /bench.html gera no worker, com o pipeline
+// completo, e mede. Os tempos são medianas depois de uma geração de aquecimento, e também num
+// worker recém-criado, sem aquecimento; a máquina e os números vão para as anotações do teste (e
+// para o PR).
 //
 // As checagens de tempo só rodam fora do CI: o check `ci` é obrigatório e roda numa máquina
 // compartilhada, onde uma lentidão do runner travaria o merge. No CI ficam as checagens que não
@@ -24,6 +25,8 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
   const timing = (label: string, x: Timing) => ({ type: label, description: `mediana ${x.median} ms, máx. ${x.max} ms` })
   test.info().annotations.push(
     { type: 'máquina', description: `${report.machine.userAgent} · ${report.machine.cores} núcleos` },
+    timing('prévia 256², worker novo', report.coldPreview),
+    timing('mapa 1024², worker novo', report.coldMap),
     timing('prévia 256², seed nova', report.preview),
     timing('mapa 1024², seed nova', report.map),
     timing('prévia 256², slider de limiar', report.previewSlider),
@@ -33,6 +36,15 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
     { type: 'arrasto', description: `${report.drag.sent} pedidos, ${report.drag.duringDrag} prévias exibidas` },
   )
   expect(report.visible).toBe(true)
+
+  // #36: a primeira geração num worker recém-criado aparece no relatório, nos dois tamanhos.
+  expect(report.coldPreview.size).toBe(256)
+  expect(report.coldMap.size).toBe(1024)
+  for (const x of [report.coldPreview, report.coldMap]) {
+    expect(x.runs.length).toBeGreaterThan(0)
+    expect(x.median).toBeGreaterThan(0)
+    expect(x.workerMedian).toBeGreaterThan(0)
+  }
 
   // AC-F1-09: metas de tempo com o pipeline completo, e memória do mundo.
   if (CONFERE_TEMPO) {

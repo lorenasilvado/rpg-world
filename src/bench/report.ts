@@ -27,6 +27,13 @@ export type BenchReport = {
    */
   visible: boolean
   targets: typeof TARGETS
+  /**
+   * Worker recém-criado, sem aquecimento: cada geração cria um worker novo e mede do pedido ao
+   * resultado, com a carga do módulo do worker. É a primeira geração que o usuário espera ao abrir o
+   * app. A primeira de cada lista é a primeira carga do worker na página.
+   */
+  coldPreview: Timing
+  coldMap: Timing
   /** Seed nova a cada geração: o pipeline completo, sem nada no cache do worker. */
   preview: Timing
   map: Timing

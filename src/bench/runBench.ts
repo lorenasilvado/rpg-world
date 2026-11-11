@@ -1,21 +1,29 @@
 import { DEFAULT_WORLD_PARAMS, generateField, hashField, type WorldParams } from '../core'
 import { createWorldStore, type WorldState } from '../state/worldStore'
 import type { GenerateRequest } from '../workers/generatorApi'
-import type { Generator } from '../workers/generatorClient'
+import { createGenerator, type Generator } from '../workers/generatorClient'
 import { MAP_SIZE, PREVIEW_SIZE, TARGETS, type BenchReport, type Timing } from './report'
 
 /**
- * Medição de desempenho (#9, #45; RNF-2, AC-F1-09 a 11): tempos da prévia 256² e do mapa 1024²
- * com o pipeline completo no worker, sem cache e com o cache do ruído; memória do mundo;
+ * Medição de desempenho (#9, #45, #36; RNF-2, AC-F1-09 a 11): tempos da prévia 256² e do mapa 1024²
+ * com o pipeline completo num worker recém-criado (sem aquecimento) e no worker já aquecido, sem
+ * cache e com o cache do ruído; memória do mundo;
  * transferência sem cópia; o arrasto de um slider pelo `worldStore`; e se a UI continua
  * respondendo.
  */
 export { MAP_SIZE, PREVIEW_SIZE, TARGETS, type BenchReport, type Timing } from './report'
 
-export type BenchOptions = { previewRuns: number; mapRuns: number; dragRequests: number; mainThread: boolean }
+export type BenchOptions = {
+  /** Gerações num worker recém-criado, um worker por geração, em cada tamanho. */
+  coldRuns: number
+  previewRuns: number
+  mapRuns: number
+  dragRequests: number
+  mainThread: boolean
+}
 
-export const FULL: BenchOptions = { previewRuns: 10, mapRuns: 5, dragRequests: 40, mainThread: true }
-export const QUICK: BenchOptions = { previewRuns: 2, mapRuns: 1, dragRequests: 10, mainThread: false }
+export const FULL: BenchOptions = { coldRuns: 3, previewRuns: 10, mapRuns: 5, dragRequests: 40, mainThread: true }
+export const QUICK: BenchOptions = { coldRuns: 1, previewRuns: 2, mapRuns: 1, dragRequests: 10, mainThread: false }
 
 const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b)
@@ -58,6 +66,57 @@ type FrameMonitor = ReturnType<typeof createFrameMonitor>
 /** Maior memória do mundo vista nos resultados. */
 type Memory = BenchReport['memory']
 
+/** Guarda em `memory` a maior memória do mundo vista. */
+function trackMemory(memory: Memory, { cacheBytes, fieldBytes }: Pick<Memory, 'cacheBytes' | 'fieldBytes'>) {
+  if (cacheBytes + fieldBytes > memory.worldBytes) {
+    Object.assign(memory, { cacheBytes, fieldBytes, worldBytes: cacheBytes + fieldBytes })
+  }
+}
+
+function summarize(size: number, roundTrips: number[], inWorker: number[], frames: FrameMonitor): Timing {
+  return {
+    size,
+    runs: roundTrips.map(round),
+    median: round(median(roundTrips)),
+    max: round(Math.max(...roundTrips)),
+    workerMedian: round(median(inWorker)),
+    maxFrameGap: round(frames.maxGap),
+  }
+}
+
+/**
+ * Mede `runs` gerações, cada uma num worker recém-criado (`spawn`), sem aquecimento: o tempo inclui
+ * criar o worker e carregar o módulo dele. O worker é encerrado depois de cada geração.
+ */
+async function timeCold(
+  spawn: () => Generator,
+  frames: FrameMonitor,
+  memory: Memory,
+  runs: number,
+  request: (i: number) => GenerateRequest,
+): Promise<Timing> {
+  const roundTrips: number[] = []
+  const inWorker: number[] = []
+  await nextFrame()
+  frames.reset()
+  for (let i = 0; i < runs; i++) {
+    const gen = spawn()
+    try {
+      const start = performance.now()
+      const r = await gen.request(request(i))
+      roundTrips.push(performance.now() - start)
+      if (r) {
+        inWorker.push(r.result.workerMs)
+        trackMemory(memory, r.result.memory)
+      }
+    } finally {
+      gen.terminate()
+    }
+  }
+  await nextFrame()
+  return summarize(request(0).size, roundTrips, inWorker, frames)
+}
+
 /** Mede `runs` gerações, depois de uma de aquecimento (`warmup`), que não conta. */
 async function time(
   gen: Generator,
@@ -78,21 +137,11 @@ async function time(
     roundTrips.push(performance.now() - start)
     if (r) {
       inWorker.push(r.result.workerMs)
-      const { cacheBytes, fieldBytes } = r.result.memory
-      if (cacheBytes + fieldBytes > memory.worldBytes) {
-        Object.assign(memory, { cacheBytes, fieldBytes, worldBytes: cacheBytes + fieldBytes })
-      }
+      trackMemory(memory, r.result.memory)
     }
   }
   await nextFrame()
-  return {
-    size: request(0).size,
-    runs: roundTrips.map(round),
-    median: round(median(roundTrips)),
-    max: round(Math.max(...roundTrips)),
-    workerMedian: round(median(inWorker)),
-    maxFrameGap: round(frames.maxGap),
-  }
+  return summarize(request(0).size, roundTrips, inWorker, frames)
 }
 
 /** Espera o store sair de `generating` (o pedido mais novo chegou, ou falhou). */
@@ -166,10 +215,15 @@ async function onMainThread(frames: FrameMonitor): Promise<NonNullable<BenchRepo
   return { ms: round(ms), maxFrameGap: round(frames.maxGap) }
 }
 
+/**
+ * `spawn` cria os workers recém-criados da medição sem aquecimento; `gen` é o worker das outras
+ * medições, que podem reaproveitá-lo.
+ */
 export async function runBench(
   gen: Generator,
   options: BenchOptions,
   onStep: (step: string) => void = () => {},
+  spawn: () => Generator = createGenerator,
 ): Promise<BenchReport> {
   const frames = createFrameMonitor()
   let visible = document.visibilityState === 'visible'
@@ -179,6 +233,13 @@ export async function runBench(
   const P = DEFAULT_WORLD_PARAMS
   const req = (seed: string, size: number, params: WorldParams = P): GenerateRequest => ({ seed, size, params })
   try {
+    // Primeiro, antes de qualquer worker aquecer: a primeira geração da página é a primeira carga
+    // do módulo do worker, como ao abrir o app.
+    onStep(`Prévia ${PREVIEW_SIZE}², worker novo (${options.coldRuns}×)`)
+    const coldPreview = await timeCold(spawn, frames, memory, options.coldRuns, (i) => req(`frio-previa-${i}`, PREVIEW_SIZE))
+    onStep(`Mapa ${MAP_SIZE}², worker novo (${options.coldRuns}×)`)
+    const coldMap = await timeCold(spawn, frames, memory, options.coldRuns, (i) => req(`frio-mapa-${i}`, MAP_SIZE))
+
     onStep(`Prévia ${PREVIEW_SIZE}², seed nova (${options.previewRuns}×)`)
     const preview = await time(gen, frames, memory, req('previa-aquecimento', PREVIEW_SIZE), options.previewRuns, (i) =>
       req(`previa-${i}`, PREVIEW_SIZE),
@@ -213,6 +274,8 @@ export async function runBench(
       machine: { userAgent: navigator.userAgent, cores: navigator.hardwareConcurrency },
       visible,
       targets: TARGETS,
+      coldPreview,
+      coldMap,
       preview,
       map,
       previewSlider,

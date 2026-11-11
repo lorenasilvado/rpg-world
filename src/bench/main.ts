@@ -3,7 +3,7 @@ import { createGenerator } from '../workers/generatorClient'
 import { FULL, QUICK, runBench, TARGETS, type BenchReport, type Timing } from './runBench'
 
 /**
- * Página de medição de desempenho (#9, #45), em /bench.html. `?rapido` roda menos vezes
+ * Página de medição de desempenho (#9, #45, #36), em /bench.html. `?rapido` roda menos vezes
  * (usado pelo E2E do build).
  */
 const quick = new URLSearchParams(location.search).has('rapido')
@@ -65,6 +65,8 @@ function render(r: BenchReport) {
         <th></th>
       </tr></thead>
       <tbody>
+        ${timingRow(`Prévia ${r.coldPreview.size}², worker novo, sem aquecimento`, r.coldPreview, TARGETS.previewMs)}
+        ${timingRow(`Mapa ${r.coldMap.size}², worker novo, sem aquecimento`, r.coldMap, TARGETS.mapMs)}
         ${timingRow(`Prévia ${r.preview.size}², seed nova`, r.preview, TARGETS.previewMs)}
         ${timingRow(`Mapa ${r.map.size}², seed nova`, r.map, TARGETS.mapMs)}
         ${timingRow(`Prévia ${r.previewSlider.size}², slider de limiar`, r.previewSlider, TARGETS.previewMs)}
