@@ -1,9 +1,9 @@
 # 0008. Rios nascem na terra alta fixa, e depressões pequenas não viram lago
 
-- Status: Proposta
+- Status: Aceita
 - Data: 2026-11-11
 - Questão: de onde os rios nascem e o que acontece numa depressão pequena, sem quebrar a regra dos sliders do ADR 0006? (#43, `docs/specs/geracao-terreno.md`)
-- Substitui, quando aceita: [ADR 0006](0006-rios-com-sliders-de-forma.md)
+- Substitui: [ADR 0006](0006-rios-com-sliders-de-forma.md)
 
 ## Contexto
 
@@ -59,4 +59,3 @@ Este ADR repete a decisão do 0006 e ajusta só esses dois pontos.
   nível da água, sempre abaixo da nascente.
 - O tamanho mínimo e o máximo de lago, a faixa de terra alta e o número de rios são constantes do
   gerador: mudar exige subir `GENERATOR_VERSION`.
-- Ao ser aceita, o ADR 0006 passa a `Superada por 0008`.

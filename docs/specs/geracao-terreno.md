@@ -156,8 +156,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
   mapa).
-- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0006](../adr/0006-rios-com-sliders-de-forma.md),
-  com nascentes e depressões pequenas pelo [ADR 0008](../adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)):
+- O mapa tem rios e lagos, sem hidrologia e sem slider
+  ([ADR 0008](../adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)):
   os rios nascem na terra alta e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
   depressão grande onde a descida fica presa. O traçado não muda com os sete sliders de limiar:
   mexer no oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a

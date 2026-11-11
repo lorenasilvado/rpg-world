@@ -1,6 +1,6 @@
 # 0006. Rios e lagos com sliders de forma: o traçado acompanha Continente e Costa
 
-- Status: Aceita
+- Status: Superada por 0008
 - Data: 2026-11-10
 - Questão: como os rios ficam quando Tamanho do continente ou Rugosidade da costa mudam a elevação? (`docs/specs/geracao-terreno.md`)
 - Substitui: [ADR 0005](0005-rios-e-lagos-por-descida-de-gradiente.md)
