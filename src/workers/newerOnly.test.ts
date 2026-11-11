@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLatestOnly } from './latestOnly'
+import { createNewerOnly } from './newerOnly'
 
 /** Um "worker" falso: cada pedido fica parado até o teste chamar `finish`. */
 function fakeWorker() {
@@ -13,19 +13,19 @@ function fakeWorker() {
 
 const tick = () => new Promise((r) => setTimeout(r, 0))
 
-describe('cancelamento por versão (AC-M0-14)', () => {
+describe('ordem de entrega (AC-F1-10)', () => {
   it('um pedido sozinho chega com a sua versão', async () => {
     const w = fakeWorker()
-    const gen = createLatestOnly(w.run)
+    const gen = createNewerOnly(w.run)
     const p = gen.request('a')
     expect(gen.latestVersion()).toBe(1)
     w.started[0].finish()
     await expect(p).resolves.toEqual({ version: 1, result: 'campo a' })
   })
 
-  it('só o resultado mais novo chega: o em andamento é descartado e os da espera nem rodam', async () => {
+  it('o pedido em andamento chega mesmo com pedidos mais novos; os da espera são substituídos', async () => {
     const w = fakeWorker()
-    const gen = createLatestOnly(w.run)
+    const gen = createNewerOnly(w.run)
     const a = gen.request('a')
     const b = gen.request('b')
     const c = gen.request('c')
@@ -34,7 +34,7 @@ describe('cancelamento por versão (AC-M0-14)', () => {
     await expect(b).resolves.toBeNull()
 
     w.started[0].finish()
-    await expect(a).resolves.toBeNull()
+    await expect(a).resolves.toEqual({ version: 1, result: 'campo a' })
     await tick()
     expect(w.started.map((s) => s.req)).toEqual(['a', 'c'])
     expect(w.started[1].version).toBe(3)
@@ -43,21 +43,30 @@ describe('cancelamento por versão (AC-M0-14)', () => {
     await expect(c).resolves.toEqual({ version: 3, result: 'campo c' })
   })
 
-  it('numa rajada de pedidos, o worker roda no máximo dois e só o último chega', async () => {
+  it('no arrasto, o mapa continua atualizando: cada geração que termina chega, em ordem', async () => {
     const w = fakeWorker()
-    const gen = createLatestOnly(w.run)
-    const all = Array.from({ length: 20 }, (_, i) => gen.request(`s${i}`))
-    w.started[0].finish()
-    await tick()
-    w.started[1].finish()
-    const results = await Promise.all(all)
-    expect(w.started.map((s) => s.req)).toEqual(['s0', 's19'])
-    expect(results.filter((r) => r !== null)).toEqual([{ version: 20, result: 'campo s19' }])
+    const gen = createNewerOnly(w.run)
+    const delivered: number[] = []
+    const all: Promise<unknown>[] = []
+    // Pedidos mais rápidos que a geração: 5 pedidos por geração, durante 4 gerações.
+    for (let round = 0; round < 4; round++) {
+      for (let k = 0; k < 5; k++) {
+        all.push(gen.request(`s${round}-${k}`).then((r) => r && delivered.push(r.version)))
+      }
+      w.started[round].finish()
+      await tick()
+    }
+    w.started[4].finish()
+    await Promise.all(all)
+    // A 1ª geração é do 1º pedido; as outras, do último pedido de cada rodada.
+    expect(w.started.map((s) => s.req)).toEqual(['s0-0', 's0-4', 's1-4', 's2-4', 's3-4'])
+    // Toda entrega é mais nova que a anterior: um resultado velho nunca substitui um novo.
+    expect(delivered).toEqual([1, 5, 10, 15, 20])
   })
 
   it('um pedido que chega depois do anterior terminar roda normalmente', async () => {
     const w = fakeWorker()
-    const gen = createLatestOnly(w.run)
+    const gen = createNewerOnly(w.run)
     const a = gen.request('a')
     w.started[0].finish()
     await expect(a).resolves.not.toBeNull()
@@ -66,9 +75,9 @@ describe('cancelamento por versão (AC-M0-14)', () => {
     await expect(b).resolves.toEqual({ version: 2, result: 'campo b' })
   })
 
-  it('o erro do pedido mais novo chega; o de um pedido substituído vira null', async () => {
+  it('o erro do pedido mais novo chega; o de um pedido superado vira null', async () => {
     const w = fakeWorker()
-    const gen = createLatestOnly(w.run)
+    const gen = createNewerOnly(w.run)
     const a = gen.request('a')
     const b = gen.request('b')
     w.started[0].fail(new Error('falhou a'))

@@ -1,11 +1,11 @@
 import { placeDecor } from '../decor/decor'
 import { BIOME, type CoreField, type WorldParams } from '../types'
-import { composeTemperature, sampleClimateNoise } from './climate'
+import { composeTemperature, sampleClimateNoise, type ClimateNoise } from './climate'
 import { distanceToWater } from './coast'
 import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise } from './elevation'
 import { DEFAULT_WORLD_PARAMS, validateWorldParams } from './params'
 import { quantile, quantiles } from './quantile'
-import { cutRivers, traceHydrology, visibleLakes } from './rivers'
+import { cutRivers, traceHydrology, visibleLakes, type Hydrology } from './rivers'
 import { hillshade } from './shade'
 
 /**
@@ -49,15 +49,40 @@ export function generateField(
   size = 256,
   params: WorldParams = DEFAULT_WORLD_PARAMS,
 ): CoreField {
+  validateFieldRequest(size, params)
+  const elevation = composeElevation(sampleTerrainNoise(seed, size), params)
+  // Rios e lagos só dependem da seed e da elevação: os sliders de limiar não mudam o traçado.
+  const hydrology = traceHydrology(seed, elevation, size)
+  return classifyField(seed, size, params, { elevation, climate: sampleClimateNoise(seed, size), hydrology })
+}
+
+/** Confere o tamanho e os parâmetros de um pedido de campo. */
+export function validateFieldRequest(size: number, params: Readonly<WorldParams>): void {
   if (!Number.isInteger(size) || size < 2) throw new Error(`generateField: tamanho inválido (${size})`)
   validateWorldParams(params)
-  const elevation = composeElevation(sampleTerrainNoise(seed, size), params)
-  const climate = sampleClimateNoise(seed, size)
+}
+
+/**
+ * O que a classificação recebe pronto: a elevação (seed + Continente e Costa), o ruído do clima
+ * (só a seed) e o traçado dos rios e lagos (seed + elevação). É o que o cache do worker guarda
+ * (`fieldCache.ts`). Nenhum deles é alterado pela classificação.
+ */
+export type ShapedTerrain = { elevation: Float32Array; climate: ClimateNoise; hydrology: Hydrology }
+
+/**
+ * Classifica o terreno com os sete sliders de limiar: clima, biomas, praias, hillshade, o corte
+ * dos rios na costa e a decoração. O campo devolvido usa a `elevation` e a umidade de `terrain`
+ * sem copiar.
+ */
+export function classifyField(
+  seed: string,
+  size: number,
+  params: Readonly<WorldParams>,
+  { elevation, climate, hydrology }: ShapedTerrain,
+): CoreField {
   const temperature = composeTemperature(climate, elevation, params.temperature)
   const { moisture } = climate
   const n = size * size
-  // Rios e lagos só dependem da seed e da elevação: os sliders de limiar não mudam o traçado.
-  const hydrology = traceHydrology(seed, elevation, size)
 
   // 1. Água, por quantil da elevação: os sliders pedem frações, não limiares absolutos.
   const { deepLevel, seaLevel, hillLevel, mountainLevel } = elevationLevels(elevation, params)

@@ -10,8 +10,9 @@ Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; 
 o comportamento atualiza esta spec.
 
 > Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
-> (`src/core/world/`) e da decoração (`src/core/decor/`), sem UI; os rios e a decoração ainda não
-> são desenhados. O resto vem do material de design e do PRD.
+> (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
+> da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar, sem UI: nada
+> ainda é desenhado nem tem slider na tela. O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -149,6 +150,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células
   oceânicas. O alvo vale com o Oceano de 5% a 95%: a borda do mapa é sempre água, inclusive em 0%.
   Lagos não contam como oceano.
+- Geração no worker: o ruído da seed fica guardado entre os pedidos. Trocar a seed refaz tudo;
+  Tamanho do continente ou Rugosidade da costa refazem a elevação, os rios e a classificação; os
+  outros sete sliders refazem só a classificação. O mapa sai igual ao da geração do zero.
 - O ruído fica fixo pela seed. Os sete sliders de limiar (Oceano, Praias, Desertos, Florestas,
   Montanhas, Neve e Temperatura) só mudam limiares, não a elevação. Tamanho do continente e
   Rugosidade da costa mudam a elevação, mas só o peso com que as camadas de ruído da seed se combinam.

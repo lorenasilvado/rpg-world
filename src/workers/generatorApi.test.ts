@@ -1,14 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { generateField, hashField } from '../core'
+import { DEFAULT_WORLD_PARAMS, generateField, hashField } from '../core'
 import { generatorApi } from './generatorApi'
 
 describe('API do worker de geração', () => {
-  it('gera o mesmo campo do núcleo, com o tempo medido', () => {
+  it('gera o mesmo campo do núcleo, com o tempo e a memória medidos', () => {
     const r = generatorApi.generate({ seed: 'rpg-world', size: 64 })
     expect(r.seed).toBe('rpg-world')
+    expect(r.size).toBe(64)
+    expect(r.params).toEqual(DEFAULT_WORLD_PARAMS)
     expect(r.field.width).toBe(64)
     expect(hashField(r.field)).toBe(hashField(generateField('rpg-world', 64)))
     expect(r.workerMs).toBeGreaterThanOrEqual(0)
+    expect(r.memory.cacheBytes).toBeGreaterThan(0)
+    expect(r.memory.fieldBytes).toBeGreaterThan(0)
+  })
+
+  it('guarda o ruído da seed: um slider de limiar só reclassifica', () => {
+    generatorApi.generate({ seed: 'cache', size: 32 })
+    const params = { ...DEFAULT_WORLD_PARAMS, ocean: 60 }
+    const r = generatorApi.generate({ seed: 'cache', size: 32, params })
+    expect(r.recomputed).toBe('classification')
+    expect(hashField(r.field)).toBe(hashField(generateField('cache', 32, params)))
   })
 
   it('sem passar pelo postMessage, os buffers continuam no lugar (não transferidos)', () => {
