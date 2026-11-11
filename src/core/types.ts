@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 3
+export const GENERATOR_VERSION = 4
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -30,28 +30,34 @@ export const BIOME = {
 export type WorldParams = {
   /** Porcentagem do mapa coberta por água oceânica. */
   ocean: number
-  /** Largura da faixa costeira de areia. Ainda sem efeito: as praias entram na #42. */
+  /** Largura da faixa costeira de areia, medida pela distância da água. */
   beach: number
-  /** Fração da terra firme que vira deserto. Ainda sem efeito: entra na #42. */
+  /** Fração da terra firme sem praias e sem montanhas que vira deserto. */
   desert: number
-  /** Fração da terra firme coberta por mata. Ainda sem efeito: entra na #42. */
+  /** Fração da terra firme sem praias e sem montanhas coberta por floresta. */
   forest: number
   /** Quantidade de cordilheiras. */
   mountains: number
-  /** Proporção de picos nevados versus rochosos. */
+  /** Proporção de picos nevados versus rochosos (os mais frios ficam nevados). */
   snow: number
   /** De ilhas (0) a pangeia (100). */
   continentSize: number
   /** De costa lisa (0) a recortada (100). */
   coastRoughness: number
-  /** Temperatura global, de fria a quente. Ainda sem efeito: o clima entra na #42. */
+  /** Temperatura global, de fria a quente: desloca a temperatura de todas as células e muda a neve. */
   temperature: number
 }
 
-/** Campo gerado: elevação de 0 a 1 e bioma de cada célula, em ordem de linhas. */
+/**
+ * Campo gerado, em ordem de linhas: elevação de 0 a 1, umidade de 0 a 1, temperatura (sem corte, em
+ * torno de 0 a 1 com a Temperatura global em 50), bioma de cada célula e hillshade de -127 a 127.
+ */
 export type CoreField = {
   width: number
   height: number
   elevation: Float32Array
+  moisture: Float32Array
+  temperature: Float32Array
   biome: Uint8Array
+  shade: Int8Array
 }

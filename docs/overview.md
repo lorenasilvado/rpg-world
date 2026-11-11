@@ -190,13 +190,17 @@ src/
 2. **Elevação:** máscara continental + fBm com domain warp + cordilheiras por ridged noise. Com o
    Tamanho do continente abaixo de 50, estreitos separam a terra em ilhas. Perto da borda, o terreno
    afunda: uma queda circular arredonda o contorno, e uma faixa estreita afasta a terra da moldura.
-3. **Umidade e temperatura:** fBm deslocado; temperatura cai com a altitude e com a distância do
-   "equador" do mapa.
-4. **Classificação por quantis:** o nível do mar é o percentil igual ao slider de oceano. Entre a
-   terra firme, as células mais secas viram deserto até atingir o percentual pedido, e as mais
-   úmidas viram floresta. Montanhas e neve usam percentis de elevação e de temperatura.
-5. **Praias:** faixa de largura configurável a partir da costa, por distância, não por altura.
-6. **Sombreamento:** hillshade pela inclinação, guardado em `Int8Array`.
+3. **Umidade e temperatura:** fBm com gerador próprio da seed (`seed#clima`), amostrado numa grade
+   de 4 células e interpolado; a temperatura cai com a altitude e com a distância do "equador" do
+   mapa, e a Temperatura global a desloca por igual.
+4. **Classificação por quantis**, na ordem água → praia → montanha → deserto ou floresta → campo:
+   o nível do mar é o percentil igual ao slider de oceano. A praia vem da distância até a água
+   (passo 5). Montanhas usam o percentil da elevação, e a neve, o da temperatura entre as
+   montanhas. Sobre a terra que sobrou, as células mais áridas viram deserto até atingir o
+   percentual pedido, e as mais úmidas viram floresta; o campo alto vira colina, e o campo abaixo da geada fica gelado.
+5. **Praias:** faixa de largura configurável a partir da costa, por distância chanfrada até a água,
+   não por altura.
+6. **Sombreamento:** hillshade pela inclinação, com luz do noroeste, guardado em `Int8Array`.
 7. **Rios e lagos:** sem hidrologia ([ADR 0006](adr/0006-rios-com-sliders-de-forma.md)):
    rios descem pelo gradiente, de montanhas até o mar ou um lago; o lago ocupa a depressão onde a
    descida fica presa.
