@@ -114,9 +114,11 @@ describe('decoração do campo (AC-F1-08)', () => {
     expect(same / decor.kind.length).toBeGreaterThan(0.9)
   })
 
-  it('tem no máximo 5.000 ícones, com qualquer valor dos sliders', () => {
+  it('fica abaixo de 5.000 ícones mesmo com os sliders mais densos, sem precisar do corte', () => {
     expect(MAX_DECOR).toBe(5000)
-    // Floresta e montanhas no máximo, pouco oceano: o caso mais denso.
+    // Floresta e montanhas no máximo, pouco oceano: o caso mais denso. Com a distância mínima de
+    // `DECOR_SPACING`, a amostra inteira tem uns 3.600 pontos, então o mapa nunca chega ao limite
+    // e este caso não exercita o corte; quem o exercita é o teste seguinte, com o limite em 1.000.
     const dense = generateField('rpg-world', 256, {
       ...DEFAULT_WORLD_PARAMS,
       ocean: 5,
@@ -131,7 +133,7 @@ describe('decoração do campo (AC-F1-08)', () => {
     expect(dense.decor.v).toHaveLength(dense.decor.kind.length)
   })
 
-  it('acima do limite, fica uma fração uniforme dos ícones, no limite exato', () => {
+  it('corte no limite (forçado em 1.000): fica uma fração uniforme dos ícones, no limite exato', () => {
     const forest = new Uint8Array(64 * 64).fill(BIOME.forest)
     const all = placeDecor('cheio', forest, 64)
     const capped = placeDecor('cheio', forest, 64, 1000)
