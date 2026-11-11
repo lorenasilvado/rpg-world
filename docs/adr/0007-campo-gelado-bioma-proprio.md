@@ -1,6 +1,6 @@
 # 0007. O campo gelado é um bioma próprio, separado da neve de montanha
 
-- Status: Proposta
+- Status: Aceita
 - Data: 2026-11-11
 - Questão: como o campo gerado distingue a neve de montanha do campo gelado? (#68, `docs/specs/geracao-terreno.md`)
 
