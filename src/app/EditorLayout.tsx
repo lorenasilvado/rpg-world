@@ -1,5 +1,6 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import { useStore } from 'zustand'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
 import { useTheme } from './useTheme'
@@ -13,10 +14,11 @@ import { useTheme } from './useTheme'
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
  * O `world` é o estado do mundo (`worldStore.ts`); por enquanto o editor só mostra o toast de erro
- * da geração.
+ * da geração, e expõe o status dela em `data-generation-status` (os testes esperam por ele).
  */
 export function EditorLayout({ world }: { world: WorldStore }) {
   const { theme, toggle } = useTheme()
+  const generationStatus = useStore(world, (s) => s.status)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const anyOpen = sidebarOpen || drawerOpen
@@ -51,7 +53,7 @@ export function EditorLayout({ world }: { world: WorldStore }) {
   }, [anyOpen])
 
   return (
-    <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor">
+    <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
       <main aria-label="Mapa" data-testid="map" inert={anyOpen} className="absolute inset-0 bg-map-canvas" />
 
       {anyOpen && (

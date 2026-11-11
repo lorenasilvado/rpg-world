@@ -129,6 +129,20 @@ describe('falha do worker de geração (AC-F1-12)', () => {
     expect(spawned).toHaveLength(2)
   })
 
+  it('sem worker (antes do primeiro pedido ou depois de uma falha), lastResultTransferred rejeita sem criar um', async () => {
+    const broken = fakeWorker({ hang: true })
+    const { gen, spawned } = generatorWith(broken)
+    toClose.push(gen)
+    await expect(gen.lastResultTransferred()).rejects.toBeInstanceOf(GeneratorWorkerError)
+    expect(spawned).toHaveLength(0)
+
+    const pending = gen.request(req('a'))
+    broken.emit('error', new Event('error'))
+    await expect(pending).rejects.toBeInstanceOf(GeneratorWorkerError)
+    await expect(gen.lastResultTransferred()).rejects.toBeInstanceOf(GeneratorWorkerError)
+    expect(spawned).toHaveLength(1)
+  })
+
   it('um erro depois do worker descartado não afeta o worker novo', async () => {
     const broken = fakeWorker({ hang: true })
     const { gen, spawned } = generatorWith(broken)

@@ -29,7 +29,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await loaded
   await expect(toast).toBeHidden()
   // O mapa final termina sem falhar de novo.
-  await page.waitForTimeout(3000)
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 20_000 })
   await expect(toast).toBeHidden()
 })
 
@@ -57,7 +57,7 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de 
 
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
   await page.goto('/')
-  await page.waitForTimeout(3000)
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 20_000 })
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
 

@@ -13,7 +13,10 @@ import { createNewerOnly, type NewerOnly } from './newerOnly'
  * que "Tentar de novo" funciona depois de uma falha ao carregar.
  */
 export type Generator = NewerOnly<GenerateRequest, GenerateResult> & {
-  /** Se o último resultado veio por transferência, sem cópia (só o bench usa). */
+  /**
+   * Se o último resultado veio por transferência, sem cópia (só o bench usa). Rejeita com
+   * `GeneratorWorkerError` se ainda não há worker (nenhum pedido feito, ou o worker falhou).
+   */
   lastResultTransferred(): Promise<boolean>
   terminate(): void
 }
@@ -75,7 +78,12 @@ export function createGenerator(spawn: () => WorkerLike = createWorker): Generat
   const newer = createNewerOnly((req: GenerateRequest) => call((api) => api.generate(req)))
   return {
     ...newer,
-    lastResultTransferred: () => call((api) => api.lastResultTransferred()),
+    // Sem worker (antes do primeiro pedido ou depois de uma falha) não há último resultado: criar
+    // um worker só para perguntar daria `false`, uma resposta errada.
+    lastResultTransferred: () =>
+      conn
+        ? call((api) => api.lastResultTransferred())
+        : Promise.reject(new GeneratorWorkerError('o worker de geração não tem resultado: ainda não gerou ou falhou')),
     terminate() {
       if (!conn) return
       conn.api[releaseProxy]()
