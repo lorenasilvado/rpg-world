@@ -186,6 +186,7 @@ lista e o número não volta a ser usado.
 - AC-F1-22: o terreno é desenhado com a paleta posterizada, o contorno de costa, a água rasa e o hillshade do mockup aprovado
 - AC-F1-23: o mapa tem a decoração completa do design system (hachura, ondas, pontilhado de areia, tufos, árvores redondas e dunas)
 - AC-F1-24: mexer em Oceano, Praias, Desertos, Florestas, Montanhas, Neve ou Temperatura não muda a elevação gerada pela seed; só os limiares mudam. Tamanho do continente e Rugosidade da costa mudam a elevação só pelo peso com que as camadas de ruído da seed se combinam
+- AC-F1-25: o campo gerado distingue a neve de montanha do campo gelado sem recalcular limiares, e o slider Neve só muda a neve das montanhas
 
 ## Pendências
 
