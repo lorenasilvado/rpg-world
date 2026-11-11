@@ -161,8 +161,8 @@ export function visibleLakes(lake: Uint8Array, water: Uint8Array, size: number):
 /**
  * Corta cada rio na primeira célula de água oceânica ou de lago visível, ou onde ele encontra um
  * rio anterior (vira afluente). A célula do corte entra no rio, para ele tocar a água. O rio que
- * termina num resto de lago que voltou a ser terra segue por ele até o mar que ele encosta, sem
- * subir acima da nascente; se não dá, o rio não existe. Cada ponto é o centro da célula, de 0 a 1.
+ * termina num resto de lago que voltou a ser terra segue por ele até o mar que ele encosta (ou até
+ * outro rio, como afluente), sem subir acima da nascente; se não dá, o rio não existe. Cada ponto é o centro da célula, de 0 a 1.
  */
 export function cutRivers(
   hydrology: Hydrology,
@@ -185,7 +185,7 @@ export function cutRivers(
     }
     const last = cells[cells.length - 1]
     if (!stopped && hydrology.lake[last]) {
-      const way = toWater(last, hydrology.lake, water, elevation, elevation[cells[0]], size)
+      const way = toWater(last, hydrology.lake, water, onRiver, elevation, elevation[cells[0]], size)
       if (!way) continue
       cells = cells.concat(way)
     }
@@ -202,12 +202,14 @@ export function cutRivers(
 
 /**
  * Caminho por dentro do resto de lago, de `start` (sem ela) até a primeira célula de água que ele
- * encosta (inclusive), sem passar de `ceiling` de elevação; `null` se não há.
+ * encosta ou de outro rio, que vira o encontro (inclusive), sem passar de `ceiling` de elevação;
+ * `null` se não há.
  */
 function toWater(
   start: number,
   lake: Uint8Array,
   water: Uint8Array,
+  onRiver: Uint8Array,
   elevation: Float32Array,
   ceiling: number,
   size: number,
@@ -219,7 +221,7 @@ function toWater(
     let found = -1
     forEachNeighbor(c, size, (j) => {
       if (found >= 0 || from.has(j)) return
-      if (water[j]) found = j
+      if (water[j] || onRiver[j]) found = j
       else if (lake[j] && elevation[j] <= ceiling) {
         from.set(j, c)
         queue.push(j)

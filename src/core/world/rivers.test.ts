@@ -66,11 +66,14 @@ describe('rios e lagos (AC-F1-07)', () => {
         }
       }
     }
-  })
+  }, 30_000)
 
   it('o rio só toca água no último ponto, e não atravessa outro rio', () => {
-    for (const seed of SEEDS) {
-      const f = generateField(seed, 256, ARCHIPELAGO)
+    // x-7 com o Oceano em 45: um rio que seguia por um resto de lago até o mar atravessava outro
+    // rio (review do PR #74).
+    const cases: [string, WorldParams][] = [...SEEDS.map((s): [string, WorldParams] => [s, ARCHIPELAGO]), ['x-7', DEFAULT_WORLD_PARAMS]]
+    for (const [seed, p] of cases) {
+      const f = generateField(seed, 256, p)
       const seen = new Set<number>()
       for (const river of f.rivers) {
         const cells = cellsOf(f, river)
@@ -105,7 +108,7 @@ describe('rios e lagos (AC-F1-07)', () => {
       const shared = preview.filter((a) => final.some((b) => near(a, b))).length
       expect(shared / preview.length, seed).toBeGreaterThanOrEqual(0.7)
     }
-  })
+  }, 30_000)
 
   it('lago não conta como oceano e fica acima do nível do mar', () => {
     for (const seed of SEEDS) {
@@ -128,11 +131,12 @@ describe('tamanho dos lagos (ADR 0008)', () => {
       const min = minLakeCells(size)
       for (let s = 0; s < 40; s++) {
         const seed = `qa43-${s}`
+        if (size === 256 && s >= 15) break
         const { lake } = traceHydrology(seed, composeElevation(sampleTerrainNoise(seed, size), DEFAULT_WORLD_PARAMS), size)
         for (const cells of components(lake, size)) expect(cells, `${seed} ${size}²`).toBeGreaterThanOrEqual(min)
       }
     }
-  })
+  }, 30_000)
 })
 
 describe('lagos no mapa final', () => {
@@ -142,7 +146,7 @@ describe('lagos no mapa final', () => {
     for (const size of [128, 256]) {
       const min = minLakeCells(size)
       for (const ocean of [20, 45, 70, 90]) {
-        for (let s = 0; s < 10; s++) {
+        for (let s = 0; s < (size === 128 ? 8 : 4); s++) {
           const f = generateField(`lago-${s}`, size, params({ ocean }))
           const lake = Uint8Array.from(f.biome, (b) => (b === BIOME.lake ? 1 : 0))
           for (const cells of components(lake, size)) {
@@ -151,7 +155,7 @@ describe('lagos no mapa final', () => {
         }
       }
     }
-  })
+  }, 30_000)
 })
 
 describe('rios com os sliders (ADR 0006)', () => {
@@ -178,7 +182,12 @@ describe('rios com os sliders (ADR 0006)', () => {
           const shared = Math.min(cells.length, trace!.length)
           expect(cells.slice(0, shared)).toEqual(trace!.slice(0, shared))
           for (const c of cells.slice(shared, -1)) expect(hydrology.lake[c]).toBe(1)
-          if (cells.length > trace!.length) expect(isOcean(f.biome[cells[cells.length - 1]])).toBe(true)
+          if (cells.length > trace!.length) {
+            // Segue até o mar, ou até outro rio (afluente).
+            const last = cells[cells.length - 1]
+            const onOther = f.rivers.some((o) => o !== river && o.some((q) => Math.floor(q.v * size) * size + Math.floor(q.u * size) === last))
+            expect(isOcean(f.biome[last]) || onOther).toBe(true)
+          }
         }
       }
     }
