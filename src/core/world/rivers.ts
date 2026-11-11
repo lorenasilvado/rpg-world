@@ -42,7 +42,8 @@ export type Hydrology = {
   lake: Uint8Array
   /**
    * Células de cada rio, da nascente até a borda do mapa ou um lago. O rio sempre desce, exceto ao
-   * atravessar uma depressão pequena, onde segue no nível da água até o transbordo.
+   * atravessar uma depressão pequena, onde segue no nível da água até o transbordo; esse nível
+   * nunca passa da altura da nascente.
    */
   traces: Int32Array[]
 }
@@ -76,6 +77,7 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
     const path: number[] = [source]
     onPath[source] = stamp
     let i = source
+    let climbs = false
     // A borda é a célula mais baixa do mapa (e sempre oceano): o rio chega ao mar nela.
     while (surface[i] !== BORDER_ELEVATION && !lake[i]) {
       const next = lowestNeighbor(surface, size, i)
@@ -97,6 +99,11 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
         for (const c of basin.cells) if (surface[c] < basin.level) lake[c] = 1
         break
       }
+      if (basin.level > elevation[source]) {
+        // Para sair da depressão, o rio teria de subir acima da nascente: a nascente é descartada.
+        climbs = true
+        break
+      }
       // Depressão pequena: o rio a atravessa, da célula onde entrou nela até o transbordo.
       const entry = path.findIndex((c) => basins.contains(c))
       path.length = entry + 1
@@ -107,7 +114,7 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
       for (const c of basin.cells) if (surface[c] < basin.level) surface[c] = basin.level
       i = basin.outlet
     }
-    traces.push(Int32Array.from(path))
+    if (!climbs) traces.push(Int32Array.from(path))
   }
   return { lake, traces }
 }

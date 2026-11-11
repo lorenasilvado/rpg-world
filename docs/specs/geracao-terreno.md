@@ -166,8 +166,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   montanha, para o slider Montanhas não mudar os rios. A prévia e o mapa final sorteiam os mesmos
   pontos, então os rios ficam quase todos nos mesmos lugares.
 - Descida: cada passo vai para a vizinha mais baixa das 8. Uma depressão pequena (menos de 0,1% do
-  mapa) não vira lago: o rio a enche e segue pelo transbordo. Uma maior vira lago, até 0,4% do mapa,
-  e o rio termina nele. Um rio que encontra outro vira afluente e termina no encontro. O lago abaixo
+  mapa) não vira lago: o rio a enche e segue pelo transbordo. Se o transbordo fica acima da
+  nascente, o rio não existe: ele nunca sobe acima de onde nasce. Uma depressão maior vira lago, até
+  0,4% do mapa, e o rio termina nele. Um rio que encontra outro vira afluente e termina no encontro. O lago abaixo
   do nível do mar é oceano.
 - Rio é uma polilinha nos centros das células (de 0 a 1), da nascente até a primeira célula de mar
   ou de lago, ou até o encontro com outro rio. Lago é um bioma, com os tons da água rasa e sem

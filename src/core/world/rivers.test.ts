@@ -47,15 +47,19 @@ describe('rios e lagos (AC-F1-07)', () => {
   })
 
   it('desce: termina abaixo da nascente e nunca sobe acima dela, em passos entre células vizinhas', () => {
-    for (const seed of SEEDS) {
-      const f = generateField(seed, 256)
+    // Eldoria (256²) e qa43-10 e qa43-13 (128²) têm nascentes dentro de uma depressão pequena com o
+    // transbordo mais alto que elas: o rio subiria acima da nascente para sair (/qa da #43).
+    const cases: [string, number][] = [...SEEDS.map((s): [string, number] => [s, 256]), ['Eldoria', 256], ['qa43-10', 128], ['qa43-13', 128]]
+    for (let s = 0; s < 40; s++) cases.push([`qa43-${s}`, 128])
+    for (const [seed, size] of cases) {
+      const f = generateField(seed, size)
       for (const river of f.rivers) {
         const cells = cellsOf(f, river)
         expect(river.length).toBeGreaterThanOrEqual(2)
         const top = f.elevation[cells[0]]
         expect(f.elevation[cells[cells.length - 1]]).toBeLessThan(top)
         for (let k = 1; k < cells.length; k++) {
-          expect(f.elevation[cells[k]]).toBeLessThanOrEqual(top)
+          expect(f.elevation[cells[k]], `${seed} ${size}²: passo ${k}`).toBeLessThanOrEqual(top)
           const dx = Math.abs((cells[k] % f.width) - (cells[k - 1] % f.width))
           const dy = Math.abs(Math.floor(cells[k] / f.width) - Math.floor(cells[k - 1] / f.width))
           expect(Math.max(dx, dy), `${seed}: passo ${k}`).toBe(1)
