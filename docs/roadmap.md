@@ -100,7 +100,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 12 | #68 | [chore] Distinguir campo gelado da neve de montanha | done | specs/geracao-terreno.md | #72 |
 | 13 | #43 | [feat] Núcleo: rios e lagos | done | specs/geracao-terreno.md | #74 |
 | 14 | #44 | [feat] Núcleo: decoração por Poisson-disk | done | specs/geracao-terreno.md | #77 |
-| 15 | #45 | [feat] Worker de produção e prévia contínua | doing | specs/geracao-terreno.md | |
+| 15 | #45 | [feat] Worker de produção e prévia contínua | done | specs/geracao-terreno.md | |
 | 16 | #34 | [chore] Tratar falha ao carregar o worker de geração | todo | specs/geracao-terreno.md | |
 | 17 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | todo | — | |
 | 18 | #46 | [feat] Renderer: terreno em textura | todo | specs/geracao-terreno.md | |
