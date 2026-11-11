@@ -9,5 +9,5 @@ export { elevationLevels, generateField, type ElevationLevels } from './world/ge
 export { hashField } from './world/hashField'
 export { DEFAULT_WORLD_PARAMS } from './world/params'
 export { quantile, quantiles } from './world/quantile'
-export { cutRivers, traceHydrology, type Hydrology } from './world/rivers'
+export { cutRivers, minLakeCells, traceHydrology, visibleLakes, type Hydrology } from './world/rivers'
 export { hillshade } from './world/shade'

@@ -4,7 +4,7 @@ import { composeElevation, sampleTerrainNoise } from './elevation'
 import { elevationLevels, generateField } from './generateField'
 import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantile } from './quantile'
-import { traceHydrology } from './rivers'
+import { minLakeCells, traceHydrology } from './rivers'
 
 const SEEDS = ['rpg-world', 'Aldebaran', '42', 'valdora', 'mar do norte']
 const params = (over: Partial<WorldParams>): WorldParams => ({ ...DEFAULT_WORLD_PARAMS, ...over })
@@ -125,35 +125,29 @@ describe('tamanho dos lagos (ADR 0008)', () => {
     // Cada lago (células de lago ligadas) tem pelo menos 0,1% do mapa. Antes da correção do review
     // do PR #74, cerca de 10% dos lagos ficavam abaixo disso, alguns com uma célula só.
     for (const size of [128, 256]) {
-      const min = Math.floor(0.001 * size * size)
+      const min = minLakeCells(size)
       for (let s = 0; s < 40; s++) {
         const seed = `qa43-${s}`
         const { lake } = traceHydrology(seed, composeElevation(sampleTerrainNoise(seed, size), DEFAULT_WORLD_PARAMS), size)
-        const seen = new Uint8Array(lake.length)
-        for (let i = 0; i < lake.length; i++) {
-          if (!lake[i] || seen[i]) continue
-          let cells = 0
-          const stack = [i]
-          seen[i] = 1
-          while (stack.length > 0) {
-            const c = stack.pop()!
-            cells++
-            const x = c % size
-            const y = Math.floor(c / size)
-            for (let dy = -1; dy <= 1; dy++) {
-              for (let dx = -1; dx <= 1; dx++) {
-                const nx = x + dx
-                const ny = y + dy
-                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue
-                const j = ny * size + nx
-                if (lake[j] && !seen[j]) {
-                  seen[j] = 1
-                  stack.push(j)
-                }
-              }
-            }
+        for (const cells of components(lake, size)) expect(cells, `${seed} ${size}²`).toBeGreaterThanOrEqual(min)
+      }
+    }
+  })
+})
+
+describe('lagos no mapa final', () => {
+  it('o resto pequeno de um lago cortado pelo mar volta a ser terra: todo lago tem o tamanho mínimo', () => {
+    // Antes, com o Oceano em 45, de 25% a 36% dos lagos do mapa eram restos menores que 0,1% do
+    // mapa, encostados no mar (review do PR #74).
+    for (const size of [128, 256]) {
+      const min = minLakeCells(size)
+      for (const ocean of [20, 45, 70, 90]) {
+        for (let s = 0; s < 10; s++) {
+          const f = generateField(`lago-${s}`, size, params({ ocean }))
+          const lake = Uint8Array.from(f.biome, (b) => (b === BIOME.lake ? 1 : 0))
+          for (const cells of components(lake, size)) {
+            expect(cells, `lago-${s} ${size}² oceano ${ocean}`).toBeGreaterThanOrEqual(min)
           }
-          expect(cells, `${seed} ${size}²: lago na célula ${i}`).toBeGreaterThanOrEqual(min)
         }
       }
     }
@@ -165,7 +159,8 @@ describe('rios com os sliders (ADR 0006)', () => {
     for (const seed of SEEDS) {
       const size = 128
       const elevation = composeElevation(sampleTerrainNoise(seed, size), DEFAULT_WORLD_PARAMS)
-      const traces = traceHydrology(seed, elevation, size).traces.map((t) => [...t])
+      const hydrology = traceHydrology(seed, elevation, size)
+      const traces = hydrology.traces.map((t) => [...t])
       const base = generateField(seed, size)
       for (const over of [{ beach: 90 }, { desert: 60, forest: 10 }, { mountains: 80 }, { snow: 0 }, { temperature: 0 }]) {
         const f = generateField(seed, size, params(over))
@@ -174,11 +169,16 @@ describe('rios com os sliders (ADR 0006)', () => {
       }
       for (const ocean of [10, 45, 80]) {
         // Cada rio é um começo do traçado de uma nascente: mudar o oceano só muda onde ele termina.
-        for (const river of generateField(seed, size, params({ ocean })).rivers) {
+        // Se o traçado acaba num resto de lago que voltou a ser terra, o rio segue por ele até o mar.
+        const f = generateField(seed, size, params({ ocean }))
+        for (const river of f.rivers) {
           const cells = river.map((p) => Math.floor(p.v * size) * size + Math.floor(p.u * size))
           const trace = traces.find((t) => t[0] === cells[0])
           expect(trace, `${seed} oceano ${ocean}`).toBeDefined()
-          expect(cells).toEqual(trace!.slice(0, cells.length))
+          const shared = Math.min(cells.length, trace!.length)
+          expect(cells.slice(0, shared)).toEqual(trace!.slice(0, shared))
+          for (const c of cells.slice(shared, -1)) expect(hydrology.lake[c]).toBe(1)
+          if (cells.length > trace!.length) expect(isOcean(f.biome[cells[cells.length - 1]])).toBe(true)
         }
       }
     }
@@ -190,3 +190,35 @@ describe('rios com os sliders (ADR 0006)', () => {
     expect(generateField('rpg-world', 128, params({ coastRoughness: 95 })).rivers).not.toEqual(base)
   })
 })
+
+/** Tamanho de cada grupo de células marcadas, ligadas pelas 8 vizinhas. */
+function components(mask: Uint8Array, size: number): number[] {
+  const seen = new Uint8Array(mask.length)
+  const sizes: number[] = []
+  for (let i = 0; i < mask.length; i++) {
+    if (!mask[i] || seen[i]) continue
+    let cells = 0
+    const stack = [i]
+    seen[i] = 1
+    while (stack.length > 0) {
+      const c = stack.pop()!
+      cells++
+      const x = c % size
+      const y = Math.floor(c / size)
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx
+          const ny = y + dy
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue
+          const j = ny * size + nx
+          if (mask[j] && !seen[j]) {
+            seen[j] = 1
+            stack.push(j)
+          }
+        }
+      }
+    }
+    sizes.push(cells)
+  }
+  return sizes
+}

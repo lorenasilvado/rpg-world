@@ -64,7 +64,7 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
   const n = size * size
   const lake = new Uint8Array(n)
   const traces: Int32Array[] = []
-  const minLake = Math.max(2, Math.floor(MIN_LAKE_SHARE * n))
+  const minLake = minLakeCells(size)
   const maxLake = Math.max(minLake, Math.floor(MAX_LAKE_SHARE * n))
   // Nível da água: começa na elevação e sobe nas depressões que os rios atravessam, para o rio
   // seguinte (e o mesmo rio, depois do transbordo) não cair de novo nelas.
@@ -123,33 +123,127 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
   return { lake, traces }
 }
 
+/** Menor lago, em células: a depressão com menos células debaixo da água não vira lago. */
+export function minLakeCells(size: number): number {
+  return Math.max(2, Math.floor(MIN_LAKE_SHARE * size * size))
+}
+
 /**
- * Corta cada rio na primeira célula de água oceânica ou de lago, ou onde ele encontra um rio
- * anterior (vira afluente). A célula do corte entra no rio, para ele tocar a água. Cada ponto é o
- * centro da célula, de 0 a 1.
+ * Lagos que aparecem no mapa: as células de lago fora do oceano. A parte de um lago abaixo do
+ * nível do mar vira oceano; se o que sobra encosta no mar e fica abaixo do tamanho mínimo, volta a
+ * ser terra (`docs/specs/geracao-terreno.md`, Regras).
  */
-export function cutRivers(hydrology: Hydrology, water: Uint8Array, size: number): RiverPoint[][] {
+export function visibleLakes(lake: Uint8Array, water: Uint8Array, size: number): Uint8Array {
+  const n = size * size
+  const min = minLakeCells(size)
+  const visible = new Uint8Array(n)
+  const seen = new Uint8Array(n)
+  for (let start = 0; start < n; start++) {
+    if (!lake[start] || water[start] || seen[start]) continue
+    const cells = [start]
+    seen[start] = 1
+    let touchesWater = false
+    for (let head = 0; head < cells.length; head++) {
+      forEachNeighbor(cells[head], size, (j) => {
+        if (water[j]) touchesWater = true
+        else if (lake[j] && !seen[j]) {
+          seen[j] = 1
+          cells.push(j)
+        }
+      })
+    }
+    if (touchesWater && cells.length < min) continue
+    for (const c of cells) visible[c] = 1
+  }
+  return visible
+}
+
+/**
+ * Corta cada rio na primeira célula de água oceânica ou de lago visível, ou onde ele encontra um
+ * rio anterior (vira afluente). A célula do corte entra no rio, para ele tocar a água. O rio que
+ * termina num resto de lago que voltou a ser terra segue por ele até o mar que ele encosta, sem
+ * subir acima da nascente; se não dá, o rio não existe. Cada ponto é o centro da célula, de 0 a 1.
+ */
+export function cutRivers(
+  hydrology: Hydrology,
+  water: Uint8Array,
+  lakes: Uint8Array,
+  elevation: Float32Array,
+  size: number,
+): RiverPoint[][] {
   const onRiver = new Uint8Array(size * size)
   const rivers: RiverPoint[][] = []
   for (const trace of hydrology.traces) {
-    let end = trace.length
-    for (let k = 0; k < trace.length; k++) {
-      const i = trace[k]
-      if (water[i] || hydrology.lake[i] || onRiver[i]) {
-        end = k + 1
+    let cells: number[] = []
+    let stopped = false
+    for (const i of trace) {
+      cells.push(i)
+      if (water[i] || lakes[i] || onRiver[i]) {
+        stopped = true
         break
       }
     }
-    if (end < 2) continue
+    const last = cells[cells.length - 1]
+    if (!stopped && hydrology.lake[last]) {
+      const way = toWater(last, hydrology.lake, water, elevation, elevation[cells[0]], size)
+      if (!way) continue
+      cells = cells.concat(way)
+    }
+    if (cells.length < 2) continue
     const river: RiverPoint[] = []
-    for (let k = 0; k < end; k++) {
-      const i = trace[k]
+    for (const i of cells) {
       onRiver[i] = 1
       river.push({ u: ((i % size) + 0.5) / size, v: (Math.floor(i / size) + 0.5) / size })
     }
     rivers.push(river)
   }
   return rivers
+}
+
+/**
+ * Caminho por dentro do resto de lago, de `start` (sem ela) até a primeira célula de água que ele
+ * encosta (inclusive), sem passar de `ceiling` de elevação; `null` se não há.
+ */
+function toWater(
+  start: number,
+  lake: Uint8Array,
+  water: Uint8Array,
+  elevation: Float32Array,
+  ceiling: number,
+  size: number,
+): number[] | null {
+  const from = new Map<number, number>([[start, -1]])
+  const queue = [start]
+  for (let head = 0; head < queue.length; head++) {
+    const c = queue[head]
+    let found = -1
+    forEachNeighbor(c, size, (j) => {
+      if (found >= 0 || from.has(j)) return
+      if (water[j]) found = j
+      else if (lake[j] && elevation[j] <= ceiling) {
+        from.set(j, c)
+        queue.push(j)
+      }
+    })
+    if (found >= 0) {
+      const way = [found]
+      for (let k = c; k !== start; k = from.get(k)!) way.push(k)
+      return way.reverse()
+    }
+  }
+  return null
+}
+
+/** Chama `visit` para cada vizinha das 8, na ordem fixa de `NEIGHBORS`. */
+function forEachNeighbor(i: number, size: number, visit: (j: number) => void): void {
+  const x = i % size
+  const y = Math.floor(i / size)
+  for (const [dx, dy] of NEIGHBORS) {
+    const nx = x + dx
+    const ny = y + dy
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue
+    visit(ny * size + nx)
+  }
 }
 
 /**

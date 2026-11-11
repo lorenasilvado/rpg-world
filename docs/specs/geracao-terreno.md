@@ -171,7 +171,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   ela encosta antes de transbordar. Se a saída fica acima da nascente, o rio não existe: ele nunca
   sobe acima de onde nasce. Uma depressão maior vira lago, até
   0,4% do mapa, e o rio termina nele. Um rio que encontra outro vira afluente e termina no encontro. O lago abaixo
-  do nível do mar é oceano.
+  do nível do mar é oceano; se o que sobra encosta no mar e fica abaixo do tamanho mínimo, volta a
+  ser terra, e o rio que terminava nele segue até o mar.
 - Rio é uma polilinha nos centros das células (de 0 a 1), da nascente até a primeira célula de mar
   ou de lago, ou até o encontro com outro rio. Lago é um bioma, com os tons da água rasa e sem
   sombra.

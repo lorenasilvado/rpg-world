@@ -4,7 +4,7 @@ import { distanceToWater } from './coast'
 import { BORDER_ELEVATION, composeElevation, sampleTerrainNoise } from './elevation'
 import { DEFAULT_WORLD_PARAMS, validateWorldParams } from './params'
 import { quantile, quantiles } from './quantile'
-import { cutRivers, traceHydrology } from './rivers'
+import { cutRivers, traceHydrology, visibleLakes } from './rivers'
 import { hillshade } from './shade'
 
 /**
@@ -69,13 +69,13 @@ export function generateField(
     // dela (ver `composeElevation`). Por isso a borda é sempre água, com qualquer Oceano.
     if (e === BORDER_ELEVATION || e < deepLevel) biome[i] = BIOME.deepOcean
     else if (e < seaLevel) biome[i] = BIOME.shallowWater
-    else {
-      // O lago abaixo do nível do mar já é oceano; acima, é lago e sai da terra firme.
-      if (hydrology.lake[i]) biome[i] = BIOME.lake
-      continue
-    }
+    else continue
     water[i] = 1
   }
+  // Lago: o que fica fora do oceano, e sai da terra firme. O resto pequeno de um lago cortado pelo
+  // mar volta a ser terra.
+  const lakes = visibleLakes(hydrology.lake, water, size)
+  for (let i = 0; i < n; i++) if (lakes[i]) biome[i] = BIOME.lake
 
   // 2. Praia: a terra a até `beachWidth` células da água, pela distância, não pela altura.
   const beachWidth = params.beach > 0 ? Math.max(1, (params.beach / 100) * BEACH_MAX_WIDTH * size) : 0
@@ -129,7 +129,7 @@ export function generateField(
   const flat = new Uint8Array(n)
   for (let i = 0; i < n; i++) flat[i] = water[i] || biome[i] === BIOME.lake ? 1 : 0
   const shade = hillshade(elevation, flat, size)
-  const rivers = cutRivers(hydrology, water, size)
+  const rivers = cutRivers(hydrology, water, lakes, elevation, size)
   return { width: size, height: size, elevation, moisture, temperature, biome, shade, rivers }
 }
 
