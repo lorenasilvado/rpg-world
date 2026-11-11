@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 5
+export const GENERATOR_VERSION = 6
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -27,6 +27,8 @@ export const BIOME = {
   snow: 8,
   /** Campo gelado: o campo abaixo da geada (Temperatura global), fora das montanhas. */
   frozenField: 9,
+  /** Lago: a depressão onde a descida de um rio fica presa (ADR 0006); não conta como oceano. */
+  lake: 10,
 } as const
 
 /** Parâmetros do mundo: os valores dos sliders, de 0 a 100. */
@@ -51,9 +53,13 @@ export type WorldParams = {
   temperature: number
 }
 
+/** Ponto de um rio, de 0 a 1 no mapa (`u` da esquerda para a direita, `v` de cima para baixo). */
+export type RiverPoint = { u: number; v: number }
+
 /**
  * Campo gerado, em ordem de linhas: elevação de 0 a 1, umidade de 0 a 1, temperatura (sem corte, em
  * torno de 0 a 1 com a Temperatura global em 50), bioma de cada célula e hillshade de -127 a 127.
+ * Os rios são polilinhas, da nascente até o mar, um lago ou outro rio; o lago é um bioma.
  */
 export type CoreField = {
   width: number
@@ -63,4 +69,5 @@ export type CoreField = {
   temperature: Float32Array
   biome: Uint8Array
   shade: Int8Array
+  rivers: RiverPoint[][]
 }

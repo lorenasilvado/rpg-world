@@ -16,7 +16,7 @@ export const GOLDEN_SIZE = 256
  * `GENERATOR_VERSION`: trocar os hashes pede trocar esta versão junto, e ela só passa no teste
  * se `GENERATOR_VERSION` também subir.
  */
-export const GOLDEN_VERSION = 5
+export const GOLDEN_VERSION = 6
 
 /** Preset "Arquipélago": confere também os parâmetros longe do padrão. */
 const ARCHIPELAGO: WorldParams = {
@@ -33,8 +33,8 @@ const ARCHIPELAGO: WorldParams = {
 
 /** Sem `params`, o caso usa os parâmetros padrão. */
 export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; params?: WorldParams; hash: string }> = [
-  { seed: 'rpg-world', hash: 'd6d30192' },
-  { seed: 'Aldebaran', hash: '88d2965d' },
-  { seed: '42', hash: 'cde9b826' },
-  { seed: 'rpg-world', params: ARCHIPELAGO, hash: '9e981420' },
+  { seed: 'rpg-world', hash: '6e311234' },
+  { seed: 'Aldebaran', hash: 'caa688b7' },
+  { seed: '42', hash: '5658c6f3' },
+  { seed: 'rpg-world', params: ARCHIPELAGO, hash: 'd0f83bf6' },
 ]
