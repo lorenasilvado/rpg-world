@@ -156,11 +156,12 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Sliders e formulários navegáveis por teclado, com rótulos (RNF-8).
 - O mapa é limitado: ilha ou continente com oceano em todas as bordas (fundo `#1F4E79` fora do
   mapa).
-- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0006](../adr/0006-rios-com-sliders-de-forma.md)):
-  os rios nascem em montanhas e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
-  depressão onde a descida fica presa. O traçado não muda com os sete sliders de limiar: mexer no
-  oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a elevação,
-  e o traçado é refeito.
+- O mapa tem rios e lagos, sem hidrologia e sem slider ([ADR 0006](../adr/0006-rios-com-sliders-de-forma.md),
+  com nascentes e depressões pequenas pelo [ADR 0008](../adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)):
+  os rios nascem na terra alta e descem pelo gradiente até o mar ou um lago, e o lago ocupa a
+  depressão grande onde a descida fica presa. O traçado não muda com os sete sliders de limiar:
+  mexer no oceano só corta o rio na costa nova. Tamanho do continente e Rugosidade da costa mudam a
+  elevação, e o traçado é refeito.
 - Nascentes: até 24 por mapa, sorteadas pela seed na terra alta (os 6% mais altos do mapa, que com
   os sliders no padrão são a zona das montanhas), afastadas entre si. A zona é fixa, e não o bioma
   montanha, para o slider Montanhas não mudar os rios. A prévia e o mapa final sorteiam os mesmos

@@ -13,6 +13,7 @@ Cada arquivo `NNNN-<slug>.md` registra uma decisão técnica duradoura: por que 
 | [0005](0005-rios-e-lagos-por-descida-de-gradiente.md) | Rios por descida de gradiente e lagos nas depressões, sem hidrologia | Superada por 0006 | 2026-11-09 |
 | [0006](0006-rios-com-sliders-de-forma.md) | Rios e lagos com sliders de forma: o traçado acompanha Continente e Costa | Aceita | 2026-11-10 |
 | [0007](0007-campo-gelado-bioma-proprio.md) | O campo gelado é um bioma próprio, separado da neve de montanha | Aceita | 2026-11-11 |
+| [0008](0008-nascentes-na-terra-alta-e-depressoes-pequenas.md) | Rios nascem na terra alta fixa, e depressões pequenas não viram lago | Proposta | 2026-11-11 |
 
 Mantenha este índice em dia ao criar um ADR ou mudar o status de um.
 

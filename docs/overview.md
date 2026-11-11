@@ -201,7 +201,8 @@ src/
 5. **Praias:** faixa de largura configurável a partir da costa, por distância chanfrada até a água,
    não por altura.
 6. **Sombreamento:** hillshade pela inclinação, com luz do noroeste, guardado em `Int8Array`.
-7. **Rios e lagos:** sem hidrologia ([ADR 0006](adr/0006-rios-com-sliders-de-forma.md)),
+7. **Rios e lagos:** sem hidrologia ([ADR 0006](adr/0006-rios-com-sliders-de-forma.md) e
+   [ADR 0008](adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)),
    em `src/core/world/rivers.ts`: rios descem pelo gradiente, da terra alta até o mar ou um lago; o
    lago ocupa a depressão onde a descida fica presa. O traçado só depende da seed e da elevação,
    e o rio é cortado na costa atual. No código, este passo roda logo depois da elevação, porque o
