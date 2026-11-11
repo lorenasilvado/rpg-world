@@ -20,6 +20,7 @@
   --color-press: var(--press);
   --color-scrim: var(--scrim);
   --color-ok: var(--ok);
+  --color-brick: var(--brick);
   --color-map-canvas: var(--map-canvas);
   --font-sans: 'Nunito', system-ui, sans-serif;
   --font-title: 'Cinzel', serif;
@@ -54,10 +55,23 @@ body {
     0 0 0 4px var(--amber);
 }
 
+/* Toast entrando: 200 ms, ease (design-system.md → Movimento) */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.toast-in {
+  animation: toast-in 200ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
   }
 }

@@ -1,5 +1,7 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import type { WorldStore } from '../state/worldStore'
+import { GenerationErrorToast } from './GenerationErrorToast'
 import { useTheme } from './useTheme'
 
 /**
@@ -9,8 +11,11 @@ import { useTheme } from './useTheme'
  * o scrim cobre o mapa e a barra de ações, Esc fecha o painel, o foco vai para o botão de fechar
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
+ *
+ * O `world` é o estado do mundo (`worldStore.ts`); por enquanto o editor só mostra o toast de erro
+ * da geração.
  */
-export function EditorLayout() {
+export function EditorLayout({ world }: { world: WorldStore }) {
   const { theme, toggle } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -111,6 +116,8 @@ export function EditorLayout() {
           {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
         </IconButton>
       </div>
+
+      <GenerationErrorToast world={world} inert={anyOpen} />
 
       <aside
         aria-label="Detalhes"

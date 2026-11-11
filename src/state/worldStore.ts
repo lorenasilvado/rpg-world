@@ -63,7 +63,8 @@ export function createWorldStore(
             error: null,
           })
         },
-        // A falha do worker é tratada na #34; aqui só fica registrada no status.
+        // A falha (da geração ou do worker) do pedido mais novo vira `error`, e o editor mostra o
+        // toast de erro (AC-F1-12).
         (error) => {
           if (version === generator.latestVersion()) set({ status: 'error', error })
         },
