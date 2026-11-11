@@ -58,8 +58,10 @@ export function createFieldCache(): FieldCache {
       const { continentSize, coastRoughness } = params
       let shape = entry.shape
       if (!shape || shape.continentSize !== continentSize || shape.coastRoughness !== coastRoughness) {
-        // Solta a elevação antiga antes de criar a nova: as duas não ficam na memória juntas.
+        // Solta a elevação antiga antes de criar a nova: as duas não ficam na memória juntas. Nada
+        // mais pode apontar para a forma antiga, nem o `shape` local.
         entry.shape = null
+        shape = null
         const elevation = composeElevation(entry.terrain, params)
         shape = { continentSize, coastRoughness, elevation, hydrology: traceHydrology(seed, elevation, size) }
         entry.shape = shape
