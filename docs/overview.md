@@ -197,7 +197,7 @@ src/
    o nível do mar é o percentil igual ao slider de oceano. A praia vem da distância até a água
    (passo 5). Montanhas usam o percentil da elevação, e a neve, o da temperatura entre as
    montanhas. Sobre a terra que sobrou, as células mais áridas viram deserto até atingir o
-   percentual pedido, e as mais úmidas viram floresta; o campo alto vira colina.
+   percentual pedido, e as mais úmidas viram floresta; o campo alto vira colina, e o campo abaixo da geada fica gelado.
 5. **Praias:** faixa de largura configurável a partir da costa, por distância chanfrada até a água,
    não por altura.
 6. **Sombreamento:** hillshade pela inclinação, com luz do noroeste, guardado em `Int8Array`.

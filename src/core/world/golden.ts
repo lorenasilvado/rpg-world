@@ -33,8 +33,8 @@ const ARCHIPELAGO: WorldParams = {
 
 /** Sem `params`, o caso usa os parâmetros padrão. */
 export const GOLDEN_HASHES: ReadonlyArray<{ seed: string; params?: WorldParams; hash: string }> = [
-  { seed: 'rpg-world', hash: '427966b5' },
-  { seed: 'Aldebaran', hash: '36148091' },
-  { seed: '42', hash: '3a2db25f' },
-  { seed: 'rpg-world', params: ARCHIPELAGO, hash: 'd3a64076' },
+  { seed: 'rpg-world', hash: 'f7e7aa6b' },
+  { seed: 'Aldebaran', hash: '8f365261' },
+  { seed: '42', hash: '9a81fe8b' },
+  { seed: 'rpg-world', params: ARCHIPELAGO, hash: 'ff9ce805' },
 ]

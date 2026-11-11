@@ -11,8 +11,8 @@ import { hillshade } from './shade'
  *
  * Ordem de classificação fixa (`docs/specs/geracao-terreno.md`, Regras): água → praia → montanha
  * (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só olha as células que as
- * anteriores deixaram, então os sliders não brigam. A colina é um campo alto: não entra na base
- * de desertos e florestas como uma etapa à parte.
+ * anteriores deixaram, então os sliders não brigam. Colina (campo alto) e campo gelado (campo
+ * abaixo da geada, com o bioma neve) são variantes do campo: não são etapas à parte.
  *
  * As constantes de classificação deste arquivo também fazem parte do gerador: mudar qualquer uma
  * exige subir `GENERATOR_VERSION` e atualizar os hashes de `golden.ts`.
@@ -34,6 +34,12 @@ const BEACH_MAX_WIDTH = 0.02
 const SNOW_TEMPERATURE_SHIFT = 0.6
 /** Peso do calor na aridez que escolhe os desertos (o resto é a secura). */
 const DESERT_HEAT_WEIGHT = 0.35
+/**
+ * Temperatura abaixo da qual o campo fica gelado. É um limiar absoluto: é por ele que a Temperatura
+ * global muda o mapa fora das montanhas (mais fria, mais campo gelado; mais quente, nenhum). Não
+ * mexe em desertos e florestas, que vêm antes na ordem e mantêm o percentual pedido.
+ */
+const FROST_LEVEL = -0.1
 
 export function generateField(
   seed: string,
@@ -49,19 +55,7 @@ export function generateField(
   const n = size * size
 
   // 1. Água, por quantil da elevação: os sliders pedem frações, não limiares absolutos.
-  const ocean = params.ocean / 100
-  const mountains = (params.mountains / 100) * MOUNTAIN_SHARE
-  const hills = mountains + HILL_SHARE_BASE + (params.mountains / 100) * HILL_SHARE_RANGE
-  const landSpan = 1 - ocean
-  const [seaQuantile, deepLevel, hillLevel, mountainQuantile] = quantiles(elevation, [
-    ocean,
-    ocean * (1 - SHALLOW_SHARE),
-    ocean + landSpan * (1 - hills),
-    ocean + landSpan * (1 - mountains),
-  ])
-  // Em 100% (ou em 0% de montanha) o quantil cai na célula mais alta, que ficaria de fora do `e <`.
-  const seaLevel = ocean >= 1 ? Infinity : seaQuantile
-  const mountainLevel = mountains > 0 ? mountainQuantile : Infinity
+  const { deepLevel, seaLevel, hillLevel, mountainLevel } = elevationLevels(elevation, params)
 
   const biome = new Uint8Array(n)
   const water = new Uint8Array(n)
@@ -115,15 +109,47 @@ export function generateField(
   for (let k = 0; k < rest.length; k++) wetness[k] = moisture[rest[k]]
   const forestLevel = forestCount > 0 && rest.length > 0 ? valueAtRank(wetness, rest.length - forestCount) : Infinity
 
-  // 5. Campo: o resto; o campo alto é colina.
+  // 5. Campo: o resto; o campo alto é colina, e o campo abaixo da geada fica gelado (neve).
   for (let k = 0; k < rest.length; k++) {
     const i = rest[k]
     if (wetness[k] >= forestLevel) biome[i] = BIOME.forest
+    else if (temperature[i] < FROST_LEVEL) biome[i] = BIOME.snow
     else biome[i] = elevation[i] >= hillLevel ? BIOME.hill : BIOME.grassland
   }
 
   const shade = hillshade(elevation, water, size)
   return { width: size, height: size, elevation, moisture, temperature, biome, shade }
+}
+
+/** Limiares de elevação da classificação, por quantis da elevação. */
+export type ElevationLevels = { deepLevel: number; seaLevel: number; hillLevel: number; mountainLevel: number }
+
+/**
+ * Limiares de elevação: abaixo de `deepLevel` é oceano profundo, abaixo de `seaLevel` é água rasa;
+ * a partir de `mountainLevel`, a terra que não é praia é montanha, e o campo a partir de
+ * `hillLevel` é colina.
+ */
+export function elevationLevels(
+  elevation: Float32Array,
+  params: Pick<WorldParams, 'ocean' | 'mountains'>,
+): ElevationLevels {
+  const ocean = params.ocean / 100
+  const mountains = (params.mountains / 100) * MOUNTAIN_SHARE
+  const hills = mountains + HILL_SHARE_BASE + (params.mountains / 100) * HILL_SHARE_RANGE
+  const landSpan = 1 - ocean
+  const [seaQuantile, deepLevel, hillLevel, mountainQuantile] = quantiles(elevation, [
+    ocean,
+    ocean * (1 - SHALLOW_SHARE),
+    ocean + landSpan * (1 - hills),
+    ocean + landSpan * (1 - mountains),
+  ])
+  // Em 100% (ou em 0% de montanha) o quantil cai na célula mais alta, que ficaria de fora do `e <`.
+  return {
+    deepLevel,
+    seaLevel: ocean >= 1 ? Infinity : seaQuantile,
+    hillLevel,
+    mountainLevel: mountains > 0 ? mountainQuantile : Infinity,
+  }
 }
 
 /** Marca com `cold` a fração `share` das `cells` com menor temperatura. */

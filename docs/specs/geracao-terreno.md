@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -54,7 +54,7 @@ Cada slider vai de 0 a 100%:
 | Neve | Proporção de picos nevados versus rochosos | 40 |
 | Tamanho do continente (avançado) | Ilhas × pangeia | 50 |
 | Rugosidade da costa (avançado) | De costa lisa a recortada | 50 |
-| Temperatura global (avançado) | Esquenta ou esfria o mundo todo: mais fria dá mais neve nas montanhas, mais quente dá menos | 50 |
+| Temperatura global (avançado) | Esquenta ou esfria o mundo todo: mais fria dá mais neve nas montanhas e campos gelados nas regiões frias; mais quente, menos neve e nenhum campo gelado | 50 |
 
 Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam na seção recolhível
 "Avançado".
@@ -132,10 +132,13 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   Montanhas. Neve: as montanhas mais frias, na proporção do slider Neve; com a Temperatura global
   em 50 a proporção é a do slider, abaixo dela há mais neve e acima, menos.
 - Deserto: as células mais áridas da base (secas e quentes). Floresta: as mais úmidas do que
-  sobrou. Campo: o resto; o campo mais alto é colina.
+  sobrou. Campo: o resto; o campo mais alto é colina, e o campo abaixo de uma temperatura fixa de
+  geada fica gelado (desenhado como neve). Como o campo vem por último, o campo gelado não muda o
+  percentual de desertos e florestas.
 - Clima: a umidade vem de um ruído fixo pela seed. A temperatura cai com a distância do "equador"
   (a linha do meio do mapa) e com a altitude, e a Temperatura global soma o mesmo valor a todas as
-  células.
+  células. Por isso ela muda o mapa só onde há um limiar de temperatura: a neve das montanhas e o
+  campo gelado.
 - Hillshade: sombra pela inclinação, com luz do noroeste; a água não tem sombra.
 - Desertos e florestas disputam a terra firme: a soma nunca passa de 100%.
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células

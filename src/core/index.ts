@@ -5,7 +5,7 @@ export { BIOME, GENERATOR_VERSION, type CoreField, type WorldParams } from './ty
 export { composeTemperature, sampleClimateNoise, type ClimateNoise } from './world/climate'
 export { distanceToWater } from './world/coast'
 export { composeElevation, sampleTerrainNoise, type TerrainNoise } from './world/elevation'
-export { generateField } from './world/generateField'
+export { elevationLevels, generateField, type ElevationLevels } from './world/generateField'
 export { hashField } from './world/hashField'
 export { DEFAULT_WORLD_PARAMS } from './world/params'
 export { quantile, quantiles } from './world/quantile'
