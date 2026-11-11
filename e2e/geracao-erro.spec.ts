@@ -33,6 +33,28 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await expect(toast).toBeHidden()
 })
 
+test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route(WORKER, (route) => route.abort())
+  await page.goto('/')
+
+  const toast = page.getByRole('alert')
+  await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
+  // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
+  await expect
+    .poll(async () => {
+      const box = await toast.boundingBox()
+      return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
+    })
+    .toEqual([16, 390 - 16, 844 - 16])
+
+  await page.unroute(WORKER)
+  const loaded = page.waitForRequest(/generator\.worker/)
+  await toast.getByRole('button', { name: 'Tentar de novo' }).click()
+  await loaded
+  await expect(toast).toBeHidden()
+})
+
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
   await page.goto('/')
   await page.waitForTimeout(3000)
