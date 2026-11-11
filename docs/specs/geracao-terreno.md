@@ -11,8 +11,9 @@ o comportamento atualiza esta spec.
 
 > Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
-> da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar, sem UI: nada
-> ainda é desenhado nem tem slider na tela. O resto vem do material de design e do PRD.
+> da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
+> mapa final ao abrir e mostra o toast de erro se a geração ou o worker falhar; nada ainda é
+> desenhado nem tem slider na tela. O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -98,7 +99,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 |---|---|---|
 | Carregando / gerando | Um slider muda | "Distribuição do mapa" mostra "Gerando" e os valores novos; o mapa exibe uma prévia borrada (`blur(3px)` → nítido em 260 ms) até a geração terminar; pins e rotas continuam nítidos; o minimapa acompanha a prévia |
 | Slider recuou | Desertos + Florestas passaria de 100% | O outro slider recua sozinho e pisca (flash âmbar de 700 ms). Ex.: Desertos de 15% para 70% → Florestas de 35% para 30% |
-| Erro | A geração falha | Toast de erro "Não foi possível gerar o mapa", com a ação "Tentar de novo" |
+| Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
 | Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água" |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
 | Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso com os navegadores suportados. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)). TODO: texto do aviso |

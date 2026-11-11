@@ -185,7 +185,7 @@ export async function runBench(
     )
     onStep(`Mapa ${MAP_SIZE}², seed nova (${options.mapRuns}×)`)
     const map = await time(gen, frames, memory, req('mapa-aquecimento', MAP_SIZE), options.mapRuns, (i) => req(`mapa-${i}`, MAP_SIZE))
-    const transferred = await gen.api.lastResultTransferred()
+    const transferred = await gen.lastResultTransferred()
 
     // Com o cache: a mesma seed nos dois tamanhos, como no arrasto seguido do soltar.
     const seed = 'slider'

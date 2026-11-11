@@ -1,6 +1,11 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { createWorldStore, type WorldGenerator } from './state/worldStore'
+
+/** Um gerador que nunca responde: os testes de layout não dependem da geração. */
+const idleGenerator: WorldGenerator = { request: () => new Promise(() => {}), latestVersion: () => 0 }
+const world = () => createWorldStore(idleGenerator)
 
 // jsdom não tem matchMedia: este stub guarda os ouvintes para simular a troca de largura.
 let mediaListeners: Array<(e: { matches: boolean }) => void> = []
@@ -23,14 +28,14 @@ afterEach(() => {
 
 describe('Layout vazio do editor', () => {
   it('mostra a sidebar, o mapa e o drawer (AC-M0-01)', () => {
-    render(<App />)
+    render(<App world={world()} />)
     expect(screen.getByRole('complementary', { name: 'Gerar mundo' })).toBeTruthy()
     expect(screen.getByRole('main', { name: 'Mapa' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Detalhes' })).toBeTruthy()
   })
 
   it('alterna entre tema claro e escuro (AC-M0-03)', () => {
-    render(<App />)
+    render(<App world={world()} />)
     expect(document.documentElement.dataset.theme).toBe('light')
     fireEvent.click(screen.getByRole('button', { name: 'Usar tema escuro' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
@@ -39,7 +44,7 @@ describe('Layout vazio do editor', () => {
   })
 
   it('abre e fecha a sidebar e o drawer pelos botões (AC-M0-02)', () => {
-    render(<App />)
+    render(<App world={world()} />)
     const sidebar = screen.getByTestId('sidebar')
     const drawer = screen.getByTestId('drawer')
     expect(sidebar.dataset.open).toBe('false')
@@ -54,7 +59,7 @@ describe('Layout vazio do editor', () => {
   })
 
   it('Esc fecha o painel aberto e o foco volta ao botão que o abriu', () => {
-    render(<App />)
+    render(<App world={world()} />)
     const opener = screen.getByRole('button', { name: 'Abrir painel' })
     opener.focus()
     fireEvent.click(opener)
@@ -71,7 +76,7 @@ describe('Layout vazio do editor', () => {
   })
 
   it('com um painel aberto, o resto da tela fica inert', () => {
-    render(<App />)
+    render(<App world={world()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Abrir painel' }))
     expect(screen.getByTestId('actions').hasAttribute('inert')).toBe(true)
     expect(screen.getByTestId('map').hasAttribute('inert')).toBe(true)
@@ -82,7 +87,7 @@ describe('Layout vazio do editor', () => {
   })
 
   it('ao passar para 768 px ou mais, os painéis abertos fecham', () => {
-    render(<App />)
+    render(<App world={world()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
     expect(screen.getByTestId('drawer').dataset.open).toBe('true')
     act(() => mediaListeners.forEach((fn) => fn({ matches: true })))
