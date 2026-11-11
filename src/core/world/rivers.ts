@@ -93,26 +93,30 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
         continue
       }
       const basin = basins.fill(i, lake, maxLake)
-      if (basin.outlet < 0 || basin.cells.length >= minLake) {
-        // A descida ficou presa: a depressão vira lago e o rio termina nele.
-        lake[i] = 1
-        for (const c of basin.cells) if (surface[c] < basin.level) lake[c] = 1
+      // Só fica debaixo da água o que está abaixo do nível (a margem fica de fora); o fundo, sempre.
+      const flooded = basin.cells.filter((c) => c === i || surface[c] < basin.level)
+      // Por onde a água sai da depressão pequena: o transbordo ou um lago que ela encosta.
+      const exit = basin.outlet >= 0 ? basin.outlet : basin.lakeCell
+      if (flooded.length >= minLake || exit < 0) {
+        // A descida ficou presa numa depressão grande: ela vira lago e o rio termina nele.
+        for (const c of flooded) lake[c] = 1
         break
       }
-      if (basin.level > elevation[source]) {
+      if (Math.max(basin.level, elevation[exit]) > elevation[source]) {
         // Para sair da depressão, o rio teria de subir acima da nascente: a nascente é descartada.
         climbs = true
         break
       }
-      // Depressão pequena: o rio a atravessa, da célula onde entrou nela até o transbordo.
+      // Depressão pequena: não vira lago. O rio a atravessa, da célula onde entrou nela até a saída:
+      // segue pelo transbordo, ou termina no lago que ela encosta.
       const entry = path.findIndex((c) => basins.contains(c))
       path.length = entry + 1
-      for (const c of basins.route(path[entry], basin.outlet)) {
+      for (const c of basins.route(path[entry], exit)) {
         path.push(c)
         onPath[c] = stamp
       }
       for (const c of basin.cells) if (surface[c] < basin.level) surface[c] = basin.level
-      i = basin.outlet
+      i = exit
     }
     if (!climbs) traces.push(Int32Array.from(path))
   }
@@ -203,6 +207,8 @@ type Basin = {
   level: number
   /** Célula mais baixa que o nível, por onde a água sai, ou -1 (achou um lago ou passou do máximo). */
   outlet: number
+  /** Célula de um lago que já existe e que a depressão encostou antes do transbordo, ou -1. */
+  lakeCell: number
 }
 
 /**
@@ -237,9 +243,13 @@ class Basins {
     this.pushNeighbors(pit, stamp)
     let level = surface[pit]
     let outlet = -1
+    let lakeCell = -1
     while (heap.length > 0 && cells.length < maxCells) {
       const c = heap.pop(surface)
-      if (lake[c]) break
+      if (lake[c]) {
+        lakeCell = c
+        break
+      }
       if (surface[c] < level) {
         outlet = c
         break
@@ -249,7 +259,7 @@ class Basins {
       this.member[c] = stamp
       this.pushNeighbors(c, stamp)
     }
-    return { cells, level, outlet }
+    return { cells, level, outlet, lakeCell }
   }
 
   /** `true` se a célula está na última depressão cheia. */

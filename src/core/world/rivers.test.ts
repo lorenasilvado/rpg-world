@@ -120,6 +120,46 @@ describe('rios e lagos (AC-F1-07)', () => {
   })
 })
 
+describe('tamanho dos lagos (ADR 0008)', () => {
+  it('depressão pequena não vira lago, nem quando encosta num lago que já existe', () => {
+    // Cada lago (células de lago ligadas) tem pelo menos 0,1% do mapa. Antes da correção do review
+    // do PR #74, cerca de 10% dos lagos ficavam abaixo disso, alguns com uma célula só.
+    for (const size of [128, 256]) {
+      const min = Math.floor(0.001 * size * size)
+      for (let s = 0; s < 40; s++) {
+        const seed = `qa43-${s}`
+        const { lake } = traceHydrology(seed, composeElevation(sampleTerrainNoise(seed, size), DEFAULT_WORLD_PARAMS), size)
+        const seen = new Uint8Array(lake.length)
+        for (let i = 0; i < lake.length; i++) {
+          if (!lake[i] || seen[i]) continue
+          let cells = 0
+          const stack = [i]
+          seen[i] = 1
+          while (stack.length > 0) {
+            const c = stack.pop()!
+            cells++
+            const x = c % size
+            const y = Math.floor(c / size)
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx
+                const ny = y + dy
+                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue
+                const j = ny * size + nx
+                if (lake[j] && !seen[j]) {
+                  seen[j] = 1
+                  stack.push(j)
+                }
+              }
+            }
+          }
+          expect(cells, `${seed} ${size}²: lago na célula ${i}`).toBeGreaterThanOrEqual(min)
+        }
+      }
+    }
+  })
+})
+
 describe('rios com os sliders (ADR 0006)', () => {
   it('os sete sliders de limiar não mudam o traçado: o Oceano só corta o rio na costa nova', () => {
     for (const seed of SEEDS) {
