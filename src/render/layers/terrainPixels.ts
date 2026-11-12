@@ -19,10 +19,13 @@ export const TERRAIN_STYLE = {
   deepLight: 12,
   /** Oceano profundo: base até esta distância; mais longe, sombra. */
   deepBase: 56,
-  /** Água rasa e lago: luz até esta distância da terra; depois, base. */
-  shallowLight: 4,
-  /** Água rasa e lago: base até esta distância da terra; mais longe, sombra. */
-  shallowBase: 12,
+  /**
+   * Água rasa e lago: luz até esta distância do traço da costa (medida a partir de onde ele
+   * termina, para a faixa clara não ficar escondida debaixo dele); depois, base.
+   */
+  shallowLight: 6,
+  /** Água rasa e lago: base até esta distância do traço da costa; mais longe, sombra. */
+  shallowBase: 16,
   /** Praia: luz até esta distância da água. */
   beachLight: 1,
   /** Espessura da costa (água encostada na terra pintada com o traço da costa). */
@@ -72,7 +75,7 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
       return d <= s.deepLight ? 2 : d <= s.deepBase ? 1 : 0
     }
     if (b === BIOME.shallowWater || b === BIOME.lake) {
-      const d = toLand[i] / cells
+      const d = (toLand[i] - coastCells) / cells
       return d <= s.shallowLight ? 2 : d <= s.shallowBase ? 1 : 0
     }
     if (b === BIOME.beach) return toWater[i] / cells <= s.beachLight ? 2 : 1

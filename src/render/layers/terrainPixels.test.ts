@@ -90,18 +90,29 @@ describe('terreno em textura (AC-F1-22)', () => {
     expect(coastWidth(256)).toBe(1)
   })
 
-  it('a água rasa clareia perto da terra: luz junto da costa, base e sombra mais longe', () => {
+  it('a água rasa clareia junto do traço da costa: luz logo depois dele, base e sombra mais longe', () => {
     const size = REF_SIZE
     // Terra à direita; água rasa nas 160 colunas antes dela. A costa ocupa as 2 últimas (798 e 799).
     const f = field(size, (x) => (x >= 800 ? [BIOME.grassland, 0] : x >= 640 ? [BIOME.shallowWater, 0] : null))
     const rgba = terrainPixels(f)
     const [shadow, base, light] = tones('shallowWater')
     expect(hex(rgba, at(size, 798, 100))).toBe(COAST_STROKE.color)
+    // 6 células de luz depois da costa (797 a 792), base até 16 (791 a 782), depois sombra.
     expect(hex(rgba, at(size, 797, 100))).toBe(light)
-    expect(hex(rgba, at(size, 795, 100))).toBe(base)
-    expect(hex(rgba, at(size, 700, 100))).toBe(shadow)
+    expect(hex(rgba, at(size, 792, 100))).toBe(light)
+    expect(hex(rgba, at(size, 791, 100))).toBe(base)
+    expect(hex(rgba, at(size, 782, 100))).toBe(base)
+    expect(hex(rgba, at(size, 781, 100))).toBe(shadow)
     // O oceano profundo logo depois do anel fica com o tom de luz.
     expect(hex(rgba, at(size, 639, 100))).toBe(tones('deepOcean')[2])
+  })
+
+  it('na prévia 256², a faixa clara também aparece depois da costa', () => {
+    const size = 256
+    const f = field(size, (x) => (x >= 200 ? [BIOME.grassland, 0] : x >= 160 ? [BIOME.shallowWater, 0] : null))
+    const rgba = terrainPixels(f)
+    expect(hex(rgba, at(size, 199, 100))).toBe(COAST_STROKE.color)
+    expect(hex(rgba, at(size, 198, 100))).toBe(tones('shallowWater')[2])
   })
 
   it('o hillshade clareia a encosta virada para a luz e escurece a outra, mais forte no relevo', () => {

@@ -208,7 +208,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   do seu bioma (paleta posterizada): nas colinas, montanhas e neve, o tom vem do hillshade; nos
   outros biomas da terra, de manchas de baixa frequência sorteadas pela seed, com um pouco de
   hillshade. A água encostada na terra (mar e lagos) é pintada com o traço da costa (`#163A5C`, 2
-  células no mapa 1024²). A água rasa e o lago clareiam perto da terra, e o oceano profundo clareia
+  células no mapa 1024²). A água rasa e o lago clareiam logo depois do traço da costa (uma faixa de luz
+  medida a partir de onde o traço termina, para ele não a esconder), e o oceano profundo clareia
   junto da água rasa e escurece longe dela. A praia tem o tom de luz só junto da água. Os rios são
   pintados na textura, sobre a terra: miolo `#6BB8DD` com contorno fino `#163A5C`, mais finos na
   nascente; na água, a foz se funde com ela. As distâncias são frações da largura do mapa, então a
