@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-09
+updated: 2026-11-12
 ---
 
 # F2 · Câmera e navegação
@@ -9,7 +9,9 @@ updated: 2026-11-09
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Nada implementado ainda: o conteúdo abaixo vem do material de design e do PRD.
+> Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
+> reduzido). O resto (minimapa, escala, controles de zoom, barras, Camadas, Ajuda, medir distância)
+> ainda não existe: vem do material de design e do PRD.
 
 ## Resumo
 
@@ -63,10 +65,27 @@ barra inferior.
 
 ## Regras
 
-- Limites de zoom (0,4× a 4×) e de pan (o mapa não some da tela).
+- O zoom é relativo à área livre (a tela menos a sidebar e o drawer fixos, a partir de 768 px;
+  abaixo disso, a tela toda): 1× é o mapa inteiro, centrado na área livre. O editor abre em 1×, e
+  centralizar (0) volta para 1×. Um mapa novo (slider ou seed) não mexe na câmera.
+- Limites de zoom (0,4× a 4×) e de pan: o mapa não some da tela. Pelo menos o menor entre o mapa
+  inteiro e metade da área livre fica com mapa, em cada eixo: aproximado, o pan para quando a borda
+  do mapa chega ao meio da área livre; afastado, o mapa fica inteiro dentro dela. Ao bater no
+  limite, a inércia para.
+- Arrastar (mouse ou um dedo) faz pan e, ao soltar, a câmera continua com inércia e desacelera.
+  A roda faz zoom mantendo parado o ponto sob o cursor; a pinça (dois dedos, ou a pinça do touchpad,
+  que chega como roda com Ctrl) faz zoom.
+- Teclado: setas e WASD (pela posição da tecla, em qualquer layout) movem a câmera 20% do menor lado
+  da área livre por toque; + (ou =) e − aproximam e afastam 1,25× no centro da área livre; 0
+  centraliza. Os atalhos deslizam em 350 ms (`cubic-bezier(.4,0,.2,1)`), e toques seguidos somam a
+  partir do destino. Não valem com Ctrl, Alt ou Meta (o zoom do navegador), com o foco num campo
+  (input, textarea, select, conteúdo editável, slider, caixa de opções) nem com um painel
+  sobreposto aberto no celular.
+- Ao redimensionar a janela, o ponto no centro da área livre e o zoom relativo se mantêm.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
-- `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos).
+- `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
+  soltar o arrasto. Vale também se a preferência muda com o editor aberto.
 
 ## Critérios de aceite vigentes
 
