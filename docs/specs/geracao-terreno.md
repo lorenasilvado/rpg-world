@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -247,8 +247,15 @@ lista e o número não volta a ser usado.
 - AC-F1-23: o mapa tem a decoração completa do design system (hachura, ondas, pontilhado de areia, tufos, árvores redondas e dunas)
 - AC-F1-24: mexer em Oceano, Praias, Desertos, Florestas, Montanhas, Neve ou Temperatura não muda a elevação gerada pela seed; só os limiares mudam. Tamanho do continente e Rugosidade da costa mudam a elevação só pelo peso com que as camadas de ruído da seed se combinam
 - AC-F1-25: o campo gerado distingue a neve de montanha do campo gelado sem recalcular limiares, e o slider Neve só muda a neve das montanhas
+- AC-F1-26: nenhum trecho de rio é desenhado sobre montanha rochosa ou neve: o rio aparece a partir do pé da montanha
+- AC-F1-27: na foz, o rio alarga aos poucos e a cor passa suavemente para a da água do mar ou do lago, sem degrau nem linha
+- AC-F1-28: dentro do deserto, a única água é o oásis (lago pequeno com anel de vegetação e palmeiras, sorteado pela seed); o deserto recua dos rios e dos lagos, que ficam cercados de campo ou floresta
+- AC-F1-29: a água abaixo do nível do mar sem ligação com a borda do mapa é lago, não oceano, e nenhuma margem de lago tem praia, com qualquer valor do slider Praias
 
 ## Pendências
+
+> Pendente: quantos oásis por deserto e de que tamanho (AC-F1-28); decidido por print no PR que
+> implementa o oásis.
 
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 
