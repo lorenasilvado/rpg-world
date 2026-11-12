@@ -1,4 +1,5 @@
 import { BIOME, type CoreField, type RiverPoint } from '../../core/types'
+import { distanceToWater } from '../../core/world/coast'
 import { BIOMES, BIOME_TONES, COAST_STROKE, RIVER_STYLE, hexToRgb, type Tone } from '../style/palette'
 
 /**
@@ -61,9 +62,17 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
   const water = new Uint8Array(n)
   for (let i = 0; i < n; i++) water[i] = isWaterBiome(biome[i]) ? 1 : 0
 
-  const toLand = chebyshevDistance(w, h, (i) => !water[i])
-  const toWater = chebyshevDistance(w, h, (i) => water[i] === 1)
-  const toShallow = chebyshevDistance(w, h, (i) => biome[i] !== BIOME.deepOcean)
+  // Distância chanfrada 3-4 do núcleo (a diagonal vale 4/3): as faixas da água acompanham a costa,
+  // sem os degraus retangulares de uma distância de 8 vizinhos com passo 1.
+  const land = new Uint8Array(n)
+  const notDeep = new Uint8Array(n)
+  for (let i = 0; i < n; i++) {
+    land[i] = water[i] ? 0 : 1
+    notDeep[i] = biome[i] === BIOME.deepOcean ? 0 : 1
+  }
+  const toLand = distanceToWater(land, w)
+  const toWater = distanceToWater(water, w)
+  const toShallow = distanceToWater(notDeep, w)
   const patches = patchNoise(w, h, patchSeed)
   const s = TERRAIN_STYLE
   const coastCells = Math.max(1, Math.round(s.coast * cells))
@@ -96,43 +105,6 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
   }
   paintRivers(out, field.rivers, w, h, water)
   return out
-}
-
-/**
- * Distância de Chebyshev (passos de 8 vizinhos) de cada célula até a mais próxima com `isSource`.
- * Sem nenhuma fonte, todas ficam em `Infinity`.
- */
-export function chebyshevDistance(width: number, height: number, isSource: (i: number) => boolean): Float32Array {
-  const n = width * height
-  const dist = new Float32Array(n).fill(Infinity)
-  const queue = new Int32Array(n)
-  let head = 0
-  let tail = 0
-  for (let i = 0; i < n; i++) {
-    if (isSource(i)) {
-      dist[i] = 0
-      queue[tail++] = i
-    }
-  }
-  while (head < tail) {
-    const i = queue[head++]
-    const x = i % width
-    const y = (i - x) / width
-    const next = dist[i] + 1
-    for (let dy = -1; dy <= 1; dy++) {
-      const ny = y + dy
-      if (ny < 0 || ny >= height) continue
-      for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx
-        if (nx < 0 || nx >= width) continue
-        const j = ny * width + nx
-        if (dist[j] !== Infinity) continue
-        dist[j] = next
-        queue[tail++] = j
-      }
-    }
-  }
-  return dist
 }
 
 /**

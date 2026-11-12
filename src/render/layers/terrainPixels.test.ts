@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { BIOME, type CoreField } from '../../core/types'
 import { generateField } from '../../core/world/generateField'
 import { BIOMES, BIOME_TONES, COAST_STROKE, RIVER_STYLE } from '../style/palette'
-import { REF_SIZE, chebyshevDistance, terrainPixels } from './terrainPixels'
+import { REF_SIZE, terrainPixels } from './terrainPixels'
 
 /** Campo sintético: oceano profundo, com `paint` decidindo bioma e sombra de cada célula. */
 function field(size: number, paint: (x: number, y: number) => [number, number] | null = () => null): CoreField {
@@ -161,22 +161,19 @@ describe('terreno em textura (AC-F1-22)', () => {
     expect(width(110)).toBeLessThan(width(890))
   })
 
+  it('as faixas do oceano acompanham a forma da costa, sem degraus retangulares', () => {
+    // Uma célula de água rasa no meio do oceano: a faixa de luz em volta dela é arredondada, então
+    // na diagonal ela acaba antes do que na reta (numa distância de 8 vizinhos, seria um quadrado).
+    const size = REF_SIZE
+    const f = field(size, (x, y) => (x === 512 && y === 512 ? [BIOME.shallowWater, 0] : null))
+    const rgba = terrainPixels(f)
+    const [, base, light] = tones('deepOcean')
+    expect(hex(rgba, at(size, 512 + 11, 512))).toBe(light)
+    expect(hex(rgba, at(size, 512 + 11, 512 + 11))).toBe(base)
+  })
+
   it('é determinístico: mesmo campo e mesma seed dão os mesmos pixels', () => {
     const f = generateField('valdora', 64)
     expect(terrainPixels(f, 'valdora')).toEqual(terrainPixels(f, 'valdora'))
-  })
-})
-
-describe('distância de Chebyshev', () => {
-  it('conta passos de 8 vizinhos até a fonte mais próxima', () => {
-    const d = chebyshevDistance(5, 5, (i) => i === 12)
-    expect(d[12]).toBe(0)
-    expect(d[0]).toBe(2)
-    expect(d[6]).toBe(1)
-    expect(d[4]).toBe(2)
-  })
-
-  it('sem fonte, tudo fica em Infinity', () => {
-    expect([...chebyshevDistance(2, 2, () => false)]).toEqual([Infinity, Infinity, Infinity, Infinity])
   })
 })
