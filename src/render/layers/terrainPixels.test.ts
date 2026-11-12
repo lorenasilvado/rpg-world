@@ -42,7 +42,6 @@ describe('terreno em textura (AC-F1-22)', () => {
       ...BIOMES.flatMap((b) => BIOME_TONES[b]),
       COAST_STROKE.color,
       RIVER_STYLE.color,
-      RIVER_STYLE.outline,
     ])
     for (let i = 0; i < 128 * 128; i++) {
       expect(rgba[i * 4 + 3]).toBe(255)
@@ -155,7 +154,7 @@ describe('terreno em textura (AC-F1-22)', () => {
     expect(hex(rgba, at(size, 44, 20))).toBe(shadow)
   })
 
-  it('desenha os rios na terra, com o miolo e o contorno, e não por cima da água', () => {
+  it('desenha os rios na terra, sem contorno, e abre a costa na foz', () => {
     const size = REF_SIZE
     const f = field(size, (x) => (x >= 100 ? [BIOME.grassland, 0] : null))
     const y = 500.5 / size
@@ -163,12 +162,16 @@ describe('terreno em textura (AC-F1-22)', () => {
     const rgba = terrainPixels(f)
     expect(hex(rgba, at(size, 300, 500))).toBe(RIVER_STYLE.color)
     expect(hex(rgba, at(size, 300, 501))).toBe(RIVER_STYLE.color)
-    expect(hex(rgba, at(size, 300, 502))).toBe(RIVER_STYLE.outline)
-    expect(hex(rgba, at(size, 300, 498))).toBe(RIVER_STYLE.outline)
-    expect(tones('grassland')).toContain(hex(rgba, at(size, 300, 504)))
-    // Na água, o rio não é pintado.
-    expect(hex(rgba, at(size, 99, 500))).toBe(COAST_STROKE.color)
+    // Sem contorno: logo depois do miolo já é o campo.
+    expect(tones('grassland')).toContain(hex(rgba, at(size, 300, 502)))
+    expect(tones('grassland')).toContain(hex(rgba, at(size, 300, 498)))
+    // Na foz, o traço da costa dá lugar ao rio, que se junta à água; ao lado, a costa continua.
+    expect(hex(rgba, at(size, 99, 500))).toBe(RIVER_STYLE.color)
+    expect(hex(rgba, at(size, 98, 500))).toBe(RIVER_STYLE.color)
+    expect(hex(rgba, at(size, 99, 510))).toBe(COAST_STROKE.color)
+    // Fora da costa, a água não recebe o rio.
     expect(hex(rgba, at(size, 50, 500))).not.toBe(RIVER_STYLE.color)
+    expect(hex(rgba, at(size, 97, 500))).not.toBe(RIVER_STYLE.color)
   })
 
   it('o rio afina perto da nascente', () => {

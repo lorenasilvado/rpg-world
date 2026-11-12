@@ -49,7 +49,6 @@ const DIAGONAL_SLACK = 0.34
 const RGB = BIOMES.map((b) => BIOME_TONES[b].map(hexToRgb))
 const COAST = hexToRgb(COAST_STROKE.color)
 const RIVER = hexToRgb(RIVER_STYLE.color)
-const RIVER_OUTLINE = hexToRgb(RIVER_STYLE.outline)
 
 const isWaterBiome = (b: number) => b === BIOME.deepOcean || b === BIOME.shallowWater || b === BIOME.lake
 const isRelief = (b: number) => b === BIOME.hill || b === BIOME.rockyMountain || b === BIOME.snow
@@ -110,38 +109,40 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
     out[i * 4 + 2] = b
     out[i * 4 + 3] = 255
   }
-  paintRivers(out, field.rivers, w, h, water)
+  paintRivers(out, field.rivers, w, h, water, (i) => toLand[i] <= coastLimit)
   return out
 }
 
 /**
- * Pinta os rios por cima da terra: primeiro o contorno de todos, depois o miolo, para os afluentes
- * se juntarem sem contorno no encontro. Na água (mar e lago), o rio não é pintado: a foz se funde
- * com a água. A largura cresce da nascente até a foz.
+ * Pinta os rios, sem contorno, sobre a terra e sobre o traço da costa: na foz, o rio abre a costa e
+ * se junta à água do mar ou do lago, sem linha entre os dois. No resto da água, nada é pintado. A
+ * largura cresce da nascente até a foz.
  */
-function paintRivers(out: Uint8ClampedArray, rivers: RiverPoint[][], w: number, h: number, water: Uint8Array) {
+function paintRivers(
+  out: Uint8ClampedArray,
+  rivers: RiverPoint[][],
+  w: number,
+  h: number,
+  water: Uint8Array,
+  isCoast: (i: number) => boolean,
+) {
   const cells = w / REF_SIZE
-  // 0 = nada, 1 = contorno, 2 = miolo.
   const mask = new Uint8Array(w * h)
   const minHalf = 0.5
-  for (const pass of [1, 2] as const) {
-    for (const river of rivers) {
-      const last = river.length - 1
-      for (let k = 0; k < last; k++) {
-        const along = last > 0 ? k / last : 1
-        const scale = RIVER_STYLE.sourceScale + (1 - RIVER_STYLE.sourceScale) * along
-        const half = Math.max(minHalf, RIVER_STYLE.halfWidth * scale * cells)
-        const radius = pass === 2 ? half : half + Math.max(minHalf, RIVER_STYLE.outlineWidth * cells)
-        stampSegment(mask, w, h, river[k], river[k + 1], radius, pass)
-      }
+  for (const river of rivers) {
+    const last = river.length - 1
+    for (let k = 0; k < last; k++) {
+      const along = last > 0 ? k / last : 1
+      const scale = RIVER_STYLE.sourceScale + (1 - RIVER_STYLE.sourceScale) * along
+      const half = Math.max(minHalf, RIVER_STYLE.halfWidth * scale * cells)
+      stampSegment(mask, w, h, river[k], river[k + 1], half, 1)
     }
   }
   for (let i = 0; i < mask.length; i++) {
-    if (!mask[i] || water[i]) continue
-    const [r, g, b] = mask[i] === 2 ? RIVER : RIVER_OUTLINE
-    out[i * 4] = r
-    out[i * 4 + 1] = g
-    out[i * 4 + 2] = b
+    if (!mask[i] || (water[i] && !isCoast(i))) continue
+    out[i * 4] = RIVER[0]
+    out[i * 4 + 1] = RIVER[1]
+    out[i * 4 + 2] = RIVER[2]
   }
 }
 
@@ -153,7 +154,7 @@ function stampSegment(
   a: RiverPoint,
   b: RiverPoint,
   radius: number,
-  value: 1 | 2,
+  value: number,
 ) {
   // Em células, com o centro da célula x em x + 0,5.
   const ax = a.u * w

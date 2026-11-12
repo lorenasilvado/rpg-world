@@ -51,16 +51,14 @@ export function hexToRgb(hex: string): [number, number, number] {
 }
 
 /**
- * Rio (design-system.md → Traços): miolo `#6BB8DD` com contorno fino `#163A5C`. As larguras, em
- * células do mapa 1024² (a prévia usa a mesma fração da largura), foram aprovadas por print (#46).
- * O rio afina perto da nascente: `sourceScale` é a fração da largura no primeiro ponto.
+ * Rio (design-system.md → Traços): `#6BB8DD`, sem contorno; na foz, ele se junta à água. A meia
+ * largura é em células do mapa 1024² (a prévia usa a mesma fração da largura). O rio afina perto
+ * da nascente: `sourceScale` é a fração da largura no primeiro ponto. A largura é aprovada por
+ * print no PR da #46.
  */
 export const RIVER_STYLE = {
   color: '#6BB8DD',
-  outline: '#163A5C',
-  /** Meia largura do miolo na foz. */
-  halfWidth: 1.8,
-  /** Espessura do contorno, de cada lado. */
-  outlineWidth: 0.8,
+  /** Meia largura na foz. */
+  halfWidth: 2.2,
   sourceScale: 0.45,
 } as const
