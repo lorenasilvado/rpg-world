@@ -27,6 +27,14 @@ export type BenchReport = {
    */
   visible: boolean
   targets: typeof TARGETS
+  /**
+   * Worker recém-criado, sem aquecimento: cada geração cria um worker novo e mede do pedido ao
+   * resultado, com a criação do worker e a carga do módulo dele. É a geração que o usuário espera ao
+   * abrir o app. Só a primeira prévia do primeiro clique em "Medir" carrega o módulo do zero; nas
+   * outras (e no mapa, medido depois da prévia), o navegador já pode ter o módulo em cache.
+   */
+  coldPreview: Timing
+  coldMap: Timing
   /** Seed nova a cada geração: o pipeline completo, sem nada no cache do worker. */
   preview: Timing
   map: Timing
