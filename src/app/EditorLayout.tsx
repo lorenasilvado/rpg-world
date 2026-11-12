@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject }
 import { useStore } from 'zustand'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
+import { MapView, type CreateMapRenderer } from './MapView'
 import { useTheme } from './useTheme'
 
 /**
@@ -13,10 +14,11 @@ import { useTheme } from './useTheme'
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
- * O `world` é o estado do mundo (`worldStore.ts`); por enquanto o editor só mostra o toast de erro
- * da geração, e expõe o status dela em `data-generation-status` (os testes esperam por ele).
+ * O `world` é o estado do mundo (`worldStore.ts`): o mapa desenha o campo dele (`MapView`), o toast
+ * mostra o erro da geração, e o status dela fica em `data-generation-status` (os testes esperam por
+ * ele). `createRenderer` troca o renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  */
-export function EditorLayout({ world }: { world: WorldStore }) {
+export function EditorLayout({ world, createRenderer }: { world: WorldStore; createRenderer?: CreateMapRenderer }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -54,7 +56,7 @@ export function EditorLayout({ world }: { world: WorldStore }) {
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <main aria-label="Mapa" data-testid="map" inert={anyOpen} className="absolute inset-0 bg-map-canvas" />
+      <MapView world={world} inert={anyOpen} createRenderer={createRenderer} />
 
       {anyOpen && (
         <div

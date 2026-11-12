@@ -5,7 +5,7 @@ código de desenho.
 
 | Arquivo | O que guarda |
 |---|---|
-| `palette.ts` | 3 tons por bioma (sombra, base, luz), traço da costa e fundo do canvas, copiados de `docs/design/tokens.json → map` |
+| `palette.ts` | 3 tons por bioma (sombra, base, luz), traço da costa e fundo do canvas, copiados de `docs/design/tokens.json → map`; cores e larguras do rio (`RIVER_STYLE`), do `design-system.md → Traços` |
 | `decor.png` | Spritesheet inicial dos ícones decorativos: 4 quadros de 128 px (montanha, montanha nevada, pinheiro, cacto) |
 | `decor.ts` | Quadros do spritesheet, tamanho de cada ícone no mapa e quais ícones cada bioma usa |
 | `LICENSE-kenney-cartography-pack.txt` | Licença original do pacote dos ícones |
