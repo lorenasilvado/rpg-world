@@ -53,12 +53,17 @@ export function hexToRgb(hex: string): [number, number, number] {
 /**
  * Rio (design-system.md → Traços): `#6BB8DD`, sem contorno; na foz, ele se junta à água. A meia
  * largura é em células do mapa 1024² (a prévia usa a mesma fração da largura). O rio afina perto
- * da nascente: `sourceScale` é a fração da largura no primeiro ponto. A largura é aprovada por
- * print no PR da #46.
+ * de onde aparece (o pé da montanha): `sourceScale` é a fração da largura ali. Na foz, nos últimos
+ * `mouthLength` células, ele alarga até `mouthFlare` vezes a largura e a cor passa para a da água.
+ * A largura e a foz são aprovadas por print no PR.
  */
 export const RIVER_STYLE = {
   color: '#6BB8DD',
-  /** Meia largura na foz. */
+  /** Meia largura antes da foz. */
   halfWidth: 2.2,
   sourceScale: 0.45,
+  /** Comprimento da foz, em células do mapa 1024²: onde o rio alarga e a cor passa para a da água. */
+  mouthLength: 14,
+  /** Quantas vezes a largura cresce até a boca da foz. */
+  mouthFlare: 2,
 } as const

@@ -5,7 +5,8 @@ import { BIOMES, BIOME_TONES, COAST_STROKE, RIVER_STYLE, hexToRgb, type Tone } f
 /**
  * Converte o campo gerado na textura RGBA do terreno (uma célula = um pixel), no estilo do mockup
  * aprovado (#7): 3 tons chapados por bioma (paleta posterizada), o hillshade do núcleo nas
- * encostas, o anel de água rasa clareando perto da terra, o contorno da costa e os rios.
+ * encostas, o anel de água rasa clareando perto da terra, o contorno da costa e os rios (a partir do
+ * pé da montanha, com a foz alargando e passando para a cor da água).
  *
  * As distâncias são medidas em células do mapa 1024² (`REF_SIZE`): a prévia 256² tem o mesmo
  * desenho, só com menos detalhe. Nada aqui muda o campo; é só como ele é pintado.
@@ -109,66 +110,149 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
     out[i * 4 + 2] = b
     out[i * 4 + 3] = 255
   }
-  paintRivers(out, field.rivers, w, h, water, (i) => toLand[i] <= coastLimit)
+  const isCoast = (i: number) => toLand[i] <= coastLimit
+  // A cor da água em que o rio entra é a mais comum da água visível em volta da foz (já depois do
+  // traço da costa), num raio do tamanho da boca: a célula onde o rio termina fica debaixo do traço,
+  // e o tom dela, ou o de uma faixa fina de água rasa logo depois, pode não ser o que aparece em
+  // volta (oceano profundo encostado na costa).
+  const reach = coastCells + Math.ceil(RIVER_STYLE.halfWidth * RIVER_STYLE.mouthFlare * cells) + 1
+  const visibleWater = (end: number): readonly [number, number, number] => {
+    const ex = end % w
+    const ey = (end - ex) / w
+    const count = new Map<number, number>()
+    let best = -1
+    let bestCount = 0
+    for (let y = Math.max(0, ey - reach); y <= Math.min(h - 1, ey + reach); y++) {
+      for (let x = Math.max(0, ex - reach); x <= Math.min(w - 1, ex + reach); x++) {
+        const i = y * w + x
+        if (!water[i] || isCoast(i) || (x - ex) ** 2 + (y - ey) ** 2 > reach * reach) continue
+        const color = (out[i * 4] << 16) | (out[i * 4 + 1] << 8) | out[i * 4 + 2]
+        const c = (count.get(color) ?? 0) + 1
+        count.set(color, c)
+        if (c > bestCount) {
+          bestCount = c
+          best = color
+        }
+      }
+    }
+    if (best < 0) return RGB[biome[end]][tone(end)]
+    return [(best >> 16) & 255, (best >> 8) & 255, best & 255]
+  }
+  paintRivers(out, field.rivers, w, h, biome, water, isCoast, visibleWater)
   return out
 }
 
+/** Montanha rochosa e neve: o rio não é desenhado sobre elas (ele aparece a partir do pé da montanha). */
+const isPeak = (b: number) => b === BIOME.rockyMountain || b === BIOME.snow
+
+const smoothstep = (x: number) => {
+  const t = Math.max(0, Math.min(1, x))
+  return t * t * (3 - 2 * t)
+}
+
 /**
- * Pinta os rios, sem contorno, sobre a terra e sobre o traço da costa: na foz, o rio abre a costa e
- * se junta à água do mar ou do lago, sem linha entre os dois. No resto da água, nada é pintado. A
- * largura cresce da nascente até a foz.
+ * Pinta os rios, sem contorno, sobre a terra e sobre o traço da costa. O rio aparece a partir do
+ * pé da montanha: nada é pintado sobre montanha rochosa ou neve, e ele afina a partir do primeiro
+ * ponto fora delas. Na foz (o rio que termina no mar ou num lago), ele alarga aos poucos e a cor
+ * passa suavemente para a da água visível em que entra (`waterColor`), abrindo o traço da costa, sem
+ * degrau nem linha. O afluente, que termina em outro rio, não tem foz. No resto da água, nada é
+ * pintado.
  */
 function paintRivers(
   out: Uint8ClampedArray,
   rivers: RiverPoint[][],
   w: number,
   h: number,
+  biome: Uint8Array,
   water: Uint8Array,
   isCoast: (i: number) => boolean,
+  waterColor: (i: number) => readonly [number, number, number],
 ) {
   const cells = w / REF_SIZE
-  const mask = new Uint8Array(w * h)
+  const S = RIVER_STYLE
   const minHalf = 0.5
+  const mouthLength = Math.max(1, S.mouthLength * cells)
+  // Por pixel: quanto da cor da água entra (−1 = sem rio), de qual rio é a água e a distância ao
+  // eixo do trecho que o pintou (vale o mais próximo, para a mistura não escorrer rio acima pelas
+  // pontas arredondadas dos trechos vizinhos).
+  const blend = new Float32Array(w * h).fill(-1)
+  const axis = new Float32Array(w * h).fill(Infinity)
+  const owner = new Int32Array(w * h)
+  const targets: (readonly [number, number, number])[] = []
+  const cellOf = (p: RiverPoint) =>
+    Math.min(h - 1, Math.floor(p.v * h)) * w + Math.min(w - 1, Math.floor(p.u * w))
+
   for (const river of rivers) {
     const last = river.length - 1
-    for (let k = 0; k < last; k++) {
-      const along = last > 0 ? k / last : 1
-      const scale = RIVER_STYLE.sourceScale + (1 - RIVER_STYLE.sourceScale) * along
-      const half = Math.max(minHalf, RIVER_STYLE.halfWidth * scale * cells)
-      stampSegment(mask, w, h, river[k], river[k + 1], half, 1)
+    if (last < 1) continue
+    const idx = river.map(cellOf)
+    const k0 = idx.findIndex((i) => !isPeak(biome[i]))
+    // Sem nenhum trecho fora da montanha (ou só a célula da água), o rio não aparece.
+    if (k0 < 0 || (k0 === last && water[idx[last]])) continue
+    const first = Math.max(0, k0 - 1)
+    const mouth = water[idx[last]] === 1
+    const id = targets.length
+    targets.push(mouth ? waterColor(idx[last]) : RIVER)
+    // Comprimento ao longo do rio até a foz, em células deste mapa.
+    const toMouth = new Float64Array(river.length)
+    for (let k = last - 1; k >= 0; k--) {
+      const du = (river[k + 1].u - river[k].u) * w
+      const dv = (river[k + 1].v - river[k].v) * h
+      toMouth[k] = toMouth[k + 1] + Math.hypot(du, dv)
+    }
+    const span = last - first
+    const shape = (k: number, t: number) => {
+      const along = (k + t - first) / span
+      const m = toMouth[k] + (toMouth[k + 1] - toMouth[k]) * t
+      const near = mouth ? smoothstep(1 - m / mouthLength) : 0
+      const scale = S.sourceScale + (1 - S.sourceScale) * along
+      const half = Math.max(minHalf, S.halfWidth * scale * cells * (1 + (S.mouthFlare - 1) * near))
+      return { half, near }
+    }
+    const maxHalf = Math.max(minHalf, S.halfWidth * cells * (mouth ? S.mouthFlare : 1))
+    for (let k = first; k < last; k++) {
+      stampSegment(w, h, river[k], river[k + 1], maxHalf, (i, t, d2) => {
+        const { half, near } = shape(k, t)
+        if (d2 > half * half || d2 >= axis[i]) return
+        axis[i] = d2
+        blend[i] = near
+        owner[i] = id
+      })
     }
   }
-  for (let i = 0; i < mask.length; i++) {
-    if (!mask[i] || (water[i] && !isCoast(i))) continue
-    out[i * 4] = RIVER[0]
-    out[i * 4 + 1] = RIVER[1]
-    out[i * 4 + 2] = RIVER[2]
+  for (let i = 0; i < blend.length; i++) {
+    const b = blend[i]
+    if (b < 0 || isPeak(biome[i]) || (water[i] && !isCoast(i))) continue
+    const target = targets[owner[i]]
+    for (let c = 0; c < 3; c++) out[i * 4 + c] = Math.round(RIVER[c] + (target[c] - RIVER[c]) * b)
   }
 }
 
-/** Marca com `value` as células cujo centro fica a até `radius` (em células) do segmento a–b. */
+/**
+ * Chama `visit(i, t, d2)` para cada célula cujo centro fica a até `maxRadius` (em células) do
+ * segmento a–b, com `t` (0 a 1) a posição da projeção no segmento e `d2` a distância ao quadrado.
+ */
 function stampSegment(
-  mask: Uint8Array,
   w: number,
   h: number,
   a: RiverPoint,
   b: RiverPoint,
-  radius: number,
-  value: number,
+  maxRadius: number,
+  visit: (i: number, t: number, d2: number) => void,
 ) {
   // Em células, com o centro da célula x em x + 0,5.
   const ax = a.u * w
   const ay = a.v * h
   const bx = b.u * w
   const by = b.v * h
-  const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - radius))
-  const x1 = Math.min(w - 1, Math.ceil(Math.max(ax, bx) + radius))
-  const y0 = Math.max(0, Math.floor(Math.min(ay, by) - radius))
-  const y1 = Math.min(h - 1, Math.ceil(Math.max(ay, by) + radius))
+  const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - maxRadius))
+  const x1 = Math.min(w - 1, Math.ceil(Math.max(ax, bx) + maxRadius))
+  const y0 = Math.max(0, Math.floor(Math.min(ay, by) - maxRadius))
+  const y1 = Math.min(h - 1, Math.ceil(Math.max(ay, by) + maxRadius))
   const dx = bx - ax
   const dy = by - ay
   const len2 = dx * dx + dy * dy
-  const r2 = radius * radius
+  const r2 = maxRadius * maxRadius
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const px = x + 0.5 - ax
@@ -176,8 +260,8 @@ function stampSegment(
       const t = len2 > 0 ? Math.max(0, Math.min(1, (px * dx + py * dy) / len2)) : 0
       const ex = px - t * dx
       const ey = py - t * dy
-      const i = y * w + x
-      if (ex * ex + ey * ey <= r2 && mask[i] < value) mask[i] = value
+      const d2 = ex * ex + ey * ey
+      if (d2 <= r2) visit(y * w + x, t, d2)
     }
   }
 }
