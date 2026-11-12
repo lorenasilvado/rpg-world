@@ -33,7 +33,7 @@ const hex = (rgba: Uint8ClampedArray, i: number) =>
 const tones = (b: (typeof BIOMES)[number]) => BIOME_TONES[b]
 const at = (size: number, x: number, y: number) => y * size + x
 const rgbOf = (color: string) => [1, 3, 5].map((k) => Number.parseInt(color.slice(k, k + 2), 16))
-const WATER_TONES = [...BIOME_TONES.deepOcean, ...BIOME_TONES.shallowWater]
+const WATER_TONES = [...BIOME_TONES.deepOcean, ...BIOME_TONES.shallowWater, ...BIOME_TONES.lake]
 /** A cor fica entre a do rio e algum tom da água, canal a canal (com 1 de arredondamento). */
 const betweenRiverAndWater = (color: string) => {
   const c = rgbOf(color)
@@ -262,6 +262,47 @@ describe('terreno em textura (AC-F1-22)', () => {
       expect(gap(x)).toBeGreaterThanOrEqual(gap(x - 1))
       expect(gap(x) - gap(x - 1)).toBeLessThanOrEqual(12)
     }
+  })
+
+  it('no mar profundo encostado na costa, a foz passa para a cor do mar em volta, não a da água rasa fina junto da costa (AC-F1-27)', () => {
+    const size = REF_SIZE
+    // Campo de x 100 em diante; 3 colunas de água rasa (97 a 99): 98 e 99 ficam debaixo do traço da
+    // costa e só a 97 aparece, fina; depois, oceano profundo.
+    const f = field(size, (x) => (x >= 100 ? [BIOME.grassland, 0] : x >= 97 ? [BIOME.shallowWater, 0] : null))
+    const y = 500.5 / size
+    f.rivers = [Array.from({ length: 802 }, (_, k) => ({ u: (900.5 - k) / size, v: y }))]
+    const rgba = terrainPixels(f)
+    const sea = hex(rgba, at(size, 95, 500))
+    expect(tones('deepOcean')).toContain(sea)
+    expect(hex(rgba, at(size, 97, 520))).toBe(tones('shallowWater')[2])
+    expect(hex(rgba, at(size, 98, 500))).toBe(sea)
+    expect(hex(rgba, at(size, 99, 500))).toBe(sea)
+    expect(hex(rgba, at(size, 200, 500))).toBe(RIVER_STYLE.color)
+  })
+
+  it('no lago, a foz alarga e passa suavemente para a cor do lago, sem degrau (AC-F1-27)', () => {
+    const size = REF_SIZE
+    // Lago de x 300 a 399 no meio do campo; o rio vem da direita e termina na margem leste (x 399).
+    const f = field(size, (x, yy) =>
+      x >= 300 && x < 400 && yy >= 400 && yy < 600 ? [BIOME.lake, 0] : [BIOME.grassland, 0],
+    )
+    const y = 500.5 / size
+    f.rivers = [Array.from({ length: 502 }, (_, k) => ({ u: (900.5 - k) / size, v: y }))]
+    const rgba = terrainPixels(f)
+    const lake = hex(rgba, at(size, 396, 500))
+    expect(tones('lake')).toContain(lake)
+    expect(hex(rgba, at(size, 397, 500))).toBe(lake)
+    expect(hex(rgba, at(size, 398, 500))).toBe(lake)
+    expect(hex(rgba, at(size, 399, 500))).toBe(lake)
+    const land = tones('grassland')
+    expect(riverWidth(rgba, size, 402, 500, land)).toBeGreaterThan(riverWidth(rgba, size, 440, 500, land))
+    const target = rgbOf(lake)
+    const gap = (x: number) => rgbOf(hex(rgba, at(size, x, 500))).reduce((sum, v, k) => sum + Math.abs(v - target[k]), 0)
+    for (let x = 400; x < 430; x++) {
+      expect(gap(x)).toBeGreaterThanOrEqual(gap(x - 1))
+      expect(gap(x) - gap(x - 1)).toBeLessThanOrEqual(12)
+    }
+    expect(gap(440)).toBeGreaterThan(0)
   })
 
   it('o afluente, que termina em outro rio, não alarga nem muda de cor no encontro', () => {

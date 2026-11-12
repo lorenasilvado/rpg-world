@@ -214,7 +214,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   pintados na textura, sobre a terra: `#6BB8DD`, sem contorno. Nada do rio é pintado sobre
   montanha rochosa ou neve: ele aparece a partir do pé da montanha, mais fino ali. Na foz, nas
   últimas 14 células (mapa 1024²), o rio alarga aos poucos até o dobro da largura e a cor passa
-  suavemente para a da água do mar ou do lago em que entra; ele abre o traço da costa e se junta à
+  suavemente para a da água do mar ou do lago em que entra (o tom que aparece em volta da foz,
+  depois do traço da costa); ele abre o traço da costa e se junta à
   água sem degrau nem linha. O afluente, que termina em outro rio, não alarga. As distâncias são frações da largura do mapa, então a
   prévia tem o mesmo desenho, com menos detalhe.
 - Sem câmera, o mapa inteiro cabe na área livre e fica centrado: a partir de 768 px, entre a

@@ -110,7 +110,35 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
     out[i * 4 + 2] = b
     out[i * 4 + 3] = 255
   }
-  paintRivers(out, field.rivers, w, h, biome, water, (i) => toLand[i] <= coastLimit, (i) => RGB[biome[i]][tone(i)])
+  const isCoast = (i: number) => toLand[i] <= coastLimit
+  // A cor da água em que o rio entra é a mais comum da água visível em volta da foz (já depois do
+  // traço da costa), num raio do tamanho da boca: a célula onde o rio termina fica debaixo do traço,
+  // e o tom dela, ou o de uma faixa fina de água rasa logo depois, pode não ser o que aparece em
+  // volta (oceano profundo encostado na costa).
+  const reach = coastCells + Math.ceil(RIVER_STYLE.halfWidth * RIVER_STYLE.mouthFlare * cells) + 1
+  const visibleWater = (end: number): readonly [number, number, number] => {
+    const ex = end % w
+    const ey = (end - ex) / w
+    const count = new Map<number, number>()
+    let best = -1
+    let bestCount = 0
+    for (let y = Math.max(0, ey - reach); y <= Math.min(h - 1, ey + reach); y++) {
+      for (let x = Math.max(0, ex - reach); x <= Math.min(w - 1, ex + reach); x++) {
+        const i = y * w + x
+        if (!water[i] || isCoast(i) || (x - ex) ** 2 + (y - ey) ** 2 > reach * reach) continue
+        const color = (out[i * 4] << 16) | (out[i * 4 + 1] << 8) | out[i * 4 + 2]
+        const c = (count.get(color) ?? 0) + 1
+        count.set(color, c)
+        if (c > bestCount) {
+          bestCount = c
+          best = color
+        }
+      }
+    }
+    if (best < 0) return RGB[biome[end]][tone(end)]
+    return [(best >> 16) & 255, (best >> 8) & 255, best & 255]
+  }
+  paintRivers(out, field.rivers, w, h, biome, water, isCoast, visibleWater)
   return out
 }
 
@@ -126,7 +154,7 @@ const smoothstep = (x: number) => {
  * Pinta os rios, sem contorno, sobre a terra e sobre o traço da costa. O rio aparece a partir do
  * pé da montanha: nada é pintado sobre montanha rochosa ou neve, e ele afina a partir do primeiro
  * ponto fora delas. Na foz (o rio que termina no mar ou num lago), ele alarga aos poucos e a cor
- * passa suavemente para a da água em que entra (`waterColor`), abrindo o traço da costa, sem
+ * passa suavemente para a da água visível em que entra (`waterColor`), abrindo o traço da costa, sem
  * degrau nem linha. O afluente, que termina em outro rio, não tem foz. No resto da água, nada é
  * pintado.
  */
