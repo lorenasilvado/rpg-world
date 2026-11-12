@@ -1,0 +1,7 @@
+commit: 3cb8f79fee1e2e19524483c66597ba02a78ead8b
+ac-f1-22-detalhe-rios-costa-3x.png  1440x900  f8444eadae28e326bf2c88e549cefc5010ce9cadfbf9a9fc129d07bf7beafe9f
+ac-f1-22-previa-256-costa-8x.png  1440x900  ca0d45fb7394acb2aedcc8b090db5119cfc1bafed84cf8f07d72fcd67873f6a5
+ac-f1-22-referencia-mockup-aprovado-1440.png  1440x900  ee353d6e87019107a1d22a31d0a8d1077201addfa8571cc00de770441308d4cf
+ac-f1-22-terreno-editor-1440.png  1440x900  fc737023a26f3d97863bc0e0fb8860387ed06535137d7357e429c627910831de
+ac-f1-22-terreno-editor-celular-390.png  390x844  a63e00642c706054f4646e2b2a4b423fb26234cef115efee26aa9785f184eaee
+ac-f1-22-terreno-editor-tablet-1024.png  1024x768  9ff6eb7fcd9b1131470e56adf3d8e7e66b05494ed99b8fed3c5eb8ce8ec77c96
