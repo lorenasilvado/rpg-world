@@ -106,6 +106,12 @@ um na espera, e um pedido novo toma o lugar do que esperava (que recebe `null`).
 novo que o último entregue chega, então o mapa continua atualizando durante o arrasto, e um
 resultado velho nunca chega depois de um novo.
 
+O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi na área do mapa do
+editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno
+(`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`. A conversão do campo em RGBA
+(`layers/terrainPixels.ts`) é TS puro, testada no Vitest. Os testes do jsdom, sem WebGL, passam um
+renderer falso ao `App`.
+
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): seed, parâmetros, o campo exibido e o status da geração. Arrastar um slider
 (`dragParams`) pede a prévia 256²; soltar (`releaseParams`) e trocar a seed pedem o mapa 1024². O
@@ -184,8 +190,8 @@ src/
     generatorClient.ts  # cria o worker; entrega o mais novo (newerOnly.ts)
   render/
     MapRenderer.ts      # cria app Pixi + viewport
-    layers/             # TerrainLayer, DecorLayer, RoadLayer, PinLayer, LabelLayer
-    style/palette.ts    # cores e tons por bioma
+    layers/             # TerrainLayer (+ terrainPixels), DecorLayer, RoadLayer, PinLayer, LabelLayer
+    style/palette.ts    # cores e tons por bioma, costa e rio
   state/
     worldStore.ts       # seed, parâmetros, status da geração
     pinsStore.ts        # pins + undo

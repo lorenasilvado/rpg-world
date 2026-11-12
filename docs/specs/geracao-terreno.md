@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-11
+updated: 2026-11-12
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -12,8 +12,9 @@ o comportamento atualiza esta spec.
 > Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
 > da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
-> mapa final ao abrir e mostra o toast de erro se a geração ou o worker falhar; nada ainda é
-> desenhado nem tem slider na tela. O resto vem do material de design e do PRD.
+> mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
+> e mostra o toast de erro se a geração ou o worker falhar. Ainda não há câmera, ícones de
+> decoração nem slider na tela. O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -202,6 +203,18 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   | Neve de montanha | Montanha nevada | 75% |
 
   Água rasa, lago e campo gelado não têm decoração.
+- Desenho do terreno (`src/render/`): o renderer só lê o campo do `worldStore` e, a cada campo
+  novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
+  do seu bioma (paleta posterizada): nas colinas, montanhas e neve, o tom vem do hillshade; nos
+  outros biomas da terra, de manchas de baixa frequência sorteadas pela seed, com um pouco de
+  hillshade. A água encostada na terra (mar e lagos) é pintada com o traço da costa (`#163A5C`, 2
+  células no mapa 1024²). A água rasa e o lago clareiam perto da terra, e o oceano profundo clareia
+  junto da água rasa e escurece longe dela. A praia tem o tom de luz só junto da água. Os rios são
+  pintados na textura, sobre a terra: miolo `#6BB8DD` com contorno fino `#163A5C`, mais finos na
+  nascente; na água, a foz se funde com ela. As distâncias são frações da largura do mapa, então a
+  prévia tem o mesmo desenho, com menos detalhe.
+- Sem câmera, o mapa inteiro cabe na área livre e fica centrado: a partir de 768 px, entre a
+  sidebar e o drawer; abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`.
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
