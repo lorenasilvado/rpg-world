@@ -103,7 +103,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 15 | #45 | [feat] Worker de produção e prévia contínua | done | specs/geracao-terreno.md | #79 |
 | 16 | #34 | [chore] Tratar falha ao carregar o worker de geração | done | specs/geracao-terreno.md | #81 |
 | 17 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | done | — | #85 |
-| 18 | #46 | [feat] Renderer: terreno em textura | done | specs/geracao-terreno.md | |
+| 18 | #46 | [feat] Renderer: terreno em textura | done | specs/geracao-terreno.md | #89 |
 | 19 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | todo | specs/navegacao.md | |
 | 20 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
 | 21 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
