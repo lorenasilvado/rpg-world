@@ -86,9 +86,11 @@ function summarize(size: number, roundTrips: number[], inWorker: number[], frame
 
 /**
  * Mede `runs` gerações, cada uma num worker recém-criado (`spawn`), sem aquecimento: o tempo inclui
- * criar o worker e carregar o módulo dele. O worker é encerrado depois de cada geração.
+ * criar o worker e carregar o módulo dele. O worker é encerrado depois de cada geração. Cada worker
+ * recebe um único pedido, que nada substitui: se ele voltar sem resultado (`null`), a medição falha,
+ * em vez de sair com o tempo no worker vazio.
  */
-async function timeCold(
+export async function timeCold(
   spawn: () => Generator,
   frames: FrameMonitor,
   memory: Memory,
@@ -105,10 +107,9 @@ async function timeCold(
       const start = performance.now()
       const r = await gen.request(request(i))
       roundTrips.push(performance.now() - start)
-      if (r) {
-        inWorker.push(r.result.workerMs)
-        trackMemory(memory, r.result.memory)
-      }
+      if (!r) throw new Error(`a geração ${i + 1} num worker novo voltou sem resultado`)
+      inWorker.push(r.result.workerMs)
+      trackMemory(memory, r.result.memory)
     } finally {
       gen.terminate()
     }
