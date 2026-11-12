@@ -43,6 +43,9 @@ export const TERRAIN_STYLE = {
   patchFrequency: 14,
 } as const
 
+/** Folga para a vizinha diagonal (4/3 na distância chanfrada 3-4, guardada em Float32). */
+const DIAGONAL_SLACK = 0.34
+
 const RGB = BIOMES.map((b) => BIOME_TONES[b].map(hexToRgb))
 const COAST = hexToRgb(COAST_STROKE.color)
 const RIVER = hexToRgb(RIVER_STYLE.color)
@@ -76,6 +79,10 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
   const patches = patchNoise(w, h, patchSeed)
   const s = TERRAIN_STYLE
   const coastCells = Math.max(1, Math.round(s.coast * cells))
+  // Na distância chanfrada, a vizinha só na diagonal fica a 4/3: a folga a inclui nos limiares de
+  // 1 célula (a costa da prévia e a luz da praia), para o traço e a luz não falharem nas diagonais.
+  const coastLimit = coastCells + DIAGONAL_SLACK
+  const beachLimit = Math.max(1, s.beachLight * cells) + DIAGONAL_SLACK
 
   const tone = (i: number): Tone => {
     const b = biome[i]
@@ -87,7 +94,7 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
       const d = (toLand[i] - coastCells) / cells
       return d <= s.shallowLight ? 2 : d <= s.shallowBase ? 1 : 0
     }
-    if (b === BIOME.beach) return toWater[i] / cells <= s.beachLight ? 2 : 1
+    if (b === BIOME.beach) return toWater[i] <= beachLimit ? 2 : 1
     const relief = isRelief(b)
     const t =
       (shade[i] / 127) * (relief ? s.reliefShade : s.flatShade) +
@@ -97,7 +104,7 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
 
   const out = new Uint8ClampedArray(new ArrayBuffer(n * 4))
   for (let i = 0; i < n; i++) {
-    const [r, g, b] = water[i] && toLand[i] <= coastCells ? COAST : RGB[biome[i]][tone(i)]
+    const [r, g, b] = water[i] && toLand[i] <= coastLimit ? COAST : RGB[biome[i]][tone(i)]
     out[i * 4] = r
     out[i * 4 + 1] = g
     out[i * 4 + 2] = b

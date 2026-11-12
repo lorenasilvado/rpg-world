@@ -90,6 +90,31 @@ describe('terreno em textura (AC-F1-22)', () => {
     expect(coastWidth(256)).toBe(1)
   })
 
+  it('na prévia 256², a água que só encosta na terra pela diagonal também recebe a costa', () => {
+    const size = 256
+    // Uma célula de terra em (100, 100): a água em (101, 101) só a toca pela diagonal.
+    const f = field(size, (x, y) => (x === 100 && y === 100 ? [BIOME.beach, 0] : null))
+    const rgba = terrainPixels(f)
+    expect(hex(rgba, at(size, 101, 101))).toBe(COAST_STROKE.color)
+    expect(hex(rgba, at(size, 101, 100))).toBe(COAST_STROKE.color)
+    expect(hex(rgba, at(size, 102, 102))).not.toBe(COAST_STROKE.color)
+    // A praia junto da água fica com o tom de luz, na prévia e no mapa final.
+    expect(hex(rgba, at(size, 100, 100))).toBe(tones('beach')[2])
+  })
+
+  it('a praia que só toca a água pela diagonal tem o tom de luz', () => {
+    const size = REF_SIZE
+    // Bloco de praia de 10×10 com terra (campo) em volta, e uma célula de água no canto de fora.
+    const f = field(size, (x, y) => {
+      if (x === 509 && y === 509) return null
+      if (x >= 500 && x < 520 && y >= 500 && y < 520) return x >= 510 && y >= 510 ? [BIOME.beach, 0] : [BIOME.grassland, 0]
+      return [BIOME.grassland, 0]
+    })
+    const rgba = terrainPixels(f)
+    expect(hex(rgba, at(size, 510, 510))).toBe(tones('beach')[2])
+    expect(hex(rgba, at(size, 512, 512))).toBe(tones('beach')[1])
+  })
+
   it('a água rasa clareia junto do traço da costa: luz logo depois dele, base e sombra mais longe', () => {
     const size = REF_SIZE
     // Terra à direita; água rasa nas 160 colunas antes dela. A costa ocupa as 2 últimas (798 e 799).
