@@ -286,7 +286,7 @@ Cores chapadas, 3 tons por bioma (sombra, base, luz). Valores em `tokens.json �
 | Elemento | Estilo |
 |---|---|
 | Costa | 2 px `#163A5C` |
-| Rio | `#6BB8DD`, sem contorno; na foz, abre o traço da costa e se junta à água; a largura é aprovada por print no PR |
+| Rio | `#6BB8DD`, sem contorno; não é desenhado sobre montanha rochosa nem neve (aparece a partir do pé da montanha, fino ali); na foz, alarga aos poucos até o dobro, a cor passa suavemente para a da água e ele abre o traço da costa, sem degrau nem linha; largura e foz aprovadas por print no PR |
 | Estrada | 3,5 px `#7A5230` sobre 7 px `#F5EACB` |
 | Trilha | 3,2 px `#7A5230` pontilhada (1 / 7) |
 | Rota marítima | 2,5 px `#FFFFFF` tracejada (10 / 8) |

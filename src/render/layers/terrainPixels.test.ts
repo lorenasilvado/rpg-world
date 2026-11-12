@@ -32,6 +32,23 @@ const hex = (rgba: Uint8ClampedArray, i: number) =>
   '#' + [rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2]].map((c) => c.toString(16).padStart(2, '0').toUpperCase()).join('')
 const tones = (b: (typeof BIOMES)[number]) => BIOME_TONES[b]
 const at = (size: number, x: number, y: number) => y * size + x
+const rgbOf = (color: string) => [1, 3, 5].map((k) => Number.parseInt(color.slice(k, k + 2), 16))
+const WATER_TONES = [...BIOME_TONES.deepOcean, ...BIOME_TONES.shallowWater]
+/** A cor fica entre a do rio e algum tom da água, canal a canal (com 1 de arredondamento). */
+const betweenRiverAndWater = (color: string) => {
+  const c = rgbOf(color)
+  const r = rgbOf(RIVER_STYLE.color)
+  return WATER_TONES.some((tone) => {
+    const t = rgbOf(tone)
+    return c.every((v, k) => v >= Math.min(r[k], t[k]) - 1 && v <= Math.max(r[k], t[k]) + 1)
+  })
+}
+/** Largura do rio na coluna x (em volta da linha y), contando as células fora da cor do campo. */
+const riverWidth = (rgba: Uint8ClampedArray, size: number, x: number, y: number, land: readonly string[]) => {
+  let width = 0
+  for (let dy = -12; dy <= 12; dy++) if (!land.includes(hex(rgba, at(size, x, y + dy)))) width++
+  return width
+}
 
 describe('terreno em textura (AC-F1-22)', () => {
   it('desenha uma célula por pixel, opaca, só com as cores da paleta, da costa e dos rios', () => {
@@ -45,7 +62,9 @@ describe('terreno em textura (AC-F1-22)', () => {
     ])
     for (let i = 0; i < 128 * 128; i++) {
       expect(rgba[i * 4 + 3]).toBe(255)
-      expect(allowed.has(hex(rgba, i))).toBe(true)
+      // Na foz, a cor do rio passa para a da água: fica entre as duas, canal a canal.
+      const color = hex(rgba, i)
+      expect(allowed.has(color) || betweenRiverAndWater(color)).toBe(true)
     }
   })
 
@@ -165,10 +184,10 @@ describe('terreno em textura (AC-F1-22)', () => {
     // Sem contorno: logo depois do miolo já é o campo.
     expect(tones('grassland')).toContain(hex(rgba, at(size, 300, 502)))
     expect(tones('grassland')).toContain(hex(rgba, at(size, 300, 498)))
-    // Na foz, o traço da costa dá lugar ao rio, que se junta à água; ao lado, a costa continua.
-    expect(hex(rgba, at(size, 99, 500))).toBe(RIVER_STYLE.color)
-    expect(hex(rgba, at(size, 98, 500))).toBe(RIVER_STYLE.color)
-    expect(hex(rgba, at(size, 99, 510))).toBe(COAST_STROKE.color)
+    // Na foz, o traço da costa dá lugar ao rio, já com a cor da água; ao lado, a costa continua.
+    expect(hex(rgba, at(size, 99, 500))).toBe(hex(rgba, at(size, 97, 500)))
+    expect(hex(rgba, at(size, 98, 500))).toBe(hex(rgba, at(size, 97, 500)))
+    expect(hex(rgba, at(size, 99, 515))).toBe(COAST_STROKE.color)
     // Fora da costa, a água não recebe o rio.
     expect(hex(rgba, at(size, 50, 500))).not.toBe(RIVER_STYLE.color)
     expect(hex(rgba, at(size, 97, 500))).not.toBe(RIVER_STYLE.color)
@@ -187,6 +206,73 @@ describe('terreno em textura (AC-F1-22)', () => {
       return w
     }
     expect(width(110)).toBeLessThan(width(890))
+  })
+
+  it('não desenha rio sobre montanha rochosa nem neve: ele aparece a partir do pé da montanha (AC-F1-26)', () => {
+    const size = REF_SIZE
+    // Neve de x 800 em diante, montanha rochosa de 650 a 799, colina de 600 a 649, campo até a água.
+    const f = field(size, (x) =>
+      x >= 800 ? [BIOME.snow, 0] : x >= 650 ? [BIOME.rockyMountain, 0] : x >= 600 ? [BIOME.hill, 0] : x >= 100 ? [BIOME.grassland, 0] : null,
+    )
+    const y = 500.5 / size
+    f.rivers = [Array.from({ length: 851 }, (_, k) => ({ u: (950.5 - k) / size, v: y }))]
+    const rgba = terrainPixels(f)
+    const river = (x: number, yy: number) => hex(rgba, at(size, x, yy)) === RIVER_STYLE.color
+    for (let x = 650; x < size; x++) for (let dy = -6; dy <= 6; dy++) expect(river(x, 500 + dy)).toBe(false)
+    // Na colina, logo no pé da montanha, o rio já aparece, mais fino que perto da foz.
+    expect(river(648, 500)).toBe(true)
+    const land = [...tones('grassland'), ...tones('hill')]
+    expect(riverWidth(rgba, size, 645, 500, land)).toBeLessThan(riverWidth(rgba, size, 120, 500, land))
+  })
+
+  it('o rio que só passa por montanha e neve até a água não aparece (AC-F1-26)', () => {
+    const size = 256
+    const f = field(size, (x) => (x >= 100 ? [x >= 150 ? BIOME.snow : BIOME.rockyMountain, 0] : null))
+    const y = 100.5 / size
+    f.rivers = [Array.from({ length: 101 }, (_, k) => ({ u: (199.5 - k) / size, v: y }))]
+    const withRiver = terrainPixels(f)
+    f.rivers = []
+    expect(withRiver).toEqual(terrainPixels(f))
+  })
+
+  it('na foz, o rio alarga aos poucos e a cor passa suavemente para a da água, sem degrau (AC-F1-27)', () => {
+    const size = REF_SIZE
+    // Campo de x 100 em diante; água rasa antes, até o oceano profundo.
+    const f = field(size, (x) => (x >= 100 ? [BIOME.grassland, 0] : x >= 40 ? [BIOME.shallowWater, 0] : null))
+    const y = 500.5 / size
+    f.rivers = [Array.from({ length: 802 }, (_, k) => ({ u: (900.5 - k) / size, v: y }))]
+    const rgba = terrainPixels(f)
+    const land = tones('grassland')
+    // Largura: cresce aos poucos nas últimas células, sem saltos.
+    const widths = Array.from({ length: 20 }, (_, k) => riverWidth(rgba, size, 119 - k, 500, land))
+    for (let k = 1; k < widths.length; k++) {
+      expect(widths[k]).toBeGreaterThanOrEqual(widths[k - 1])
+      expect(widths[k] - widths[k - 1]).toBeLessThanOrEqual(2)
+    }
+    expect(widths[widths.length - 1]).toBeGreaterThan(widths[0])
+    // Cor: no miolo, longe da foz, é a do rio; até a costa, vai para a da água rasa clara, aos poucos.
+    expect(hex(rgba, at(size, 200, 500))).toBe(RIVER_STYLE.color)
+    const water = tones('shallowWater')[2]
+    expect(hex(rgba, at(size, 97, 500))).toBe(water)
+    expect(hex(rgba, at(size, 98, 500))).toBe(water)
+    expect(hex(rgba, at(size, 99, 500))).toBe(water)
+    const target = rgbOf(water)
+    const gap = (x: number) => rgbOf(hex(rgba, at(size, x, 500))).reduce((sum, v, k) => sum + Math.abs(v - target[k]), 0)
+    for (let x = 100; x < 130; x++) {
+      expect(gap(x)).toBeGreaterThanOrEqual(gap(x - 1))
+      expect(gap(x) - gap(x - 1)).toBeLessThanOrEqual(12)
+    }
+  })
+
+  it('o afluente, que termina em outro rio, não alarga nem muda de cor no encontro', () => {
+    const size = REF_SIZE
+    const f = field(size, () => [BIOME.grassland, 0])
+    const y = 500.5 / size
+    f.rivers = [Array.from({ length: 401 }, (_, k) => ({ u: (700.5 - k) / size, v: y }))]
+    const rgba = terrainPixels(f)
+    const land = tones('grassland')
+    expect(hex(rgba, at(size, 302, 500))).toBe(RIVER_STYLE.color)
+    expect(riverWidth(rgba, size, 305, 500, land)).toBe(riverWidth(rgba, size, 340, 500, land))
   })
 
   it('as faixas do oceano acompanham a forma da costa, sem degraus retangulares', () => {
