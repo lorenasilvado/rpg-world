@@ -233,8 +233,8 @@ export async function runBench(
   const P = DEFAULT_WORLD_PARAMS
   const req = (seed: string, size: number, params: WorldParams = P): GenerateRequest => ({ seed, size, params })
   try {
-    // Primeiro, antes de qualquer worker aquecer: a primeira geração da página é a primeira carga
-    // do módulo do worker, como ao abrir o app.
+    // Primeiro, antes de aquecer o worker `gen`. No primeiro clique em "Medir", a primeira prévia é
+    // a primeira carga do módulo do worker na página, como ao abrir o app.
     onStep(`Prévia ${PREVIEW_SIZE}², worker novo (${options.coldRuns}×)`)
     const coldPreview = await timeCold(spawn, frames, memory, options.coldRuns, (i) => req(`frio-previa-${i}`, PREVIEW_SIZE))
     onStep(`Mapa ${MAP_SIZE}², worker novo (${options.coldRuns}×)`)

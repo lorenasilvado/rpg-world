@@ -45,6 +45,12 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
     expect(x.median).toBeGreaterThan(0)
     expect(x.workerMedian).toBeGreaterThan(0)
   }
+  // E na tabela, nas duas primeiras linhas, com a mediana do relatório.
+  const rows = page.getByTestId('results').locator('tbody tr')
+  await expect(rows.nth(0)).toContainText('Prévia 256², worker novo, sem aquecimento')
+  await expect(rows.nth(0).locator('td').nth(1)).toHaveText(String(report.coldPreview.median))
+  await expect(rows.nth(1)).toContainText('Mapa 1024², worker novo, sem aquecimento')
+  await expect(rows.nth(1).locator('td').nth(1)).toHaveText(String(report.coldMap.median))
 
   // AC-F1-09: metas de tempo com o pipeline completo, e memória do mundo.
   if (CONFERE_TEMPO) {
