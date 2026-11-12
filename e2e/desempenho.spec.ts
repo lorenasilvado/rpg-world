@@ -51,6 +51,11 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
   await expect(rows.nth(0).locator('td').nth(1)).toHaveText(String(report.coldPreview.median))
   await expect(rows.nth(1)).toContainText('Mapa 1024², worker novo, sem aquecimento')
   await expect(rows.nth(1).locator('td').nth(1)).toHaveText(String(report.coldMap.median))
+  // Só informativas: sem meta e sem ✓/✗.
+  for (const k of [0, 1]) {
+    await expect(rows.nth(k).locator('td').nth(4)).toHaveText('—')
+    await expect(rows.nth(k).locator('td').nth(6)).toHaveText('')
+  }
 
   // AC-F1-09: metas de tempo com o pipeline completo, e memória do mundo.
   if (CONFERE_TEMPO) {

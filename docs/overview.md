@@ -114,7 +114,8 @@ campo só é trocado por um resultado de versão mais nova que a do exibido.
 A página de medição abre em `/bench.html`, no dev e no build
 (`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² com o
 pipeline completo, primeiro num worker recém-criado, sem aquecimento (um worker novo por geração,
-com a carga do módulo dele, como a primeira geração ao abrir o app), depois no mesmo worker
+com a carga do módulo dele, como a primeira geração ao abrir o app; esses tempos são só
+informativos, sem meta), depois no mesmo worker
 (medianas depois de uma geração de aquecimento), com uma seed nova a cada vez e
 com o cache (um slider de limiar, e o Tamanho do continente), a memória do mundo (cache do worker
 mais o campo entregue), simula pelo `worldStore` o arrasto de um slider e o soltar, e compara o

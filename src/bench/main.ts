@@ -36,20 +36,23 @@ requestAnimationFrame(animate)
 
 const ok = (pass: boolean) => (pass ? '✓' : '✗')
 
-function timingRow(label: string, t: Timing, target: number): string {
+/** Linha da tabela. Sem `target` (`null`), a linha é só informativa: meta "—" e sem ✓/✗. */
+function timingRow(label: string, t: Timing, target: number | null): string {
   return `<tr>
     <td class="py-1 pr-4">${label}</td>
     <td class="pr-4 text-right font-mono">${t.median}</td>
     <td class="pr-4 text-right font-mono">${t.max}</td>
     <td class="pr-4 text-right font-mono">${t.workerMedian}</td>
-    <td class="pr-4 text-right font-mono">${target}</td>
+    <td class="pr-4 text-right font-mono">${target ?? '—'}</td>
     <td class="pr-4 text-right font-mono">${t.maxFrameGap}</td>
-    <td>${ok(t.median <= target)}</td>
+    <td>${target === null ? '' : ok(t.median <= target)}</td>
   </tr>`
 }
 
 const mb = (bytes: number) => (bytes / 1e6).toFixed(1)
 
+// As metas do RNF-2 (AC-F1-09) valem para as gerações com o worker aquecido; as do worker novo
+// (#36) são só informativas.
 function render(r: BenchReport) {
   const d = r.drag
   const m = r.memory
@@ -65,8 +68,8 @@ function render(r: BenchReport) {
         <th></th>
       </tr></thead>
       <tbody>
-        ${timingRow(`Prévia ${r.coldPreview.size}², worker novo, sem aquecimento`, r.coldPreview, TARGETS.previewMs)}
-        ${timingRow(`Mapa ${r.coldMap.size}², worker novo, sem aquecimento`, r.coldMap, TARGETS.mapMs)}
+        ${timingRow(`Prévia ${r.coldPreview.size}², worker novo, sem aquecimento`, r.coldPreview, null)}
+        ${timingRow(`Mapa ${r.coldMap.size}², worker novo, sem aquecimento`, r.coldMap, null)}
         ${timingRow(`Prévia ${r.preview.size}², seed nova`, r.preview, TARGETS.previewMs)}
         ${timingRow(`Mapa ${r.map.size}², seed nova`, r.map, TARGETS.mapMs)}
         ${timingRow(`Prévia ${r.previewSlider.size}², slider de limiar`, r.previewSlider, TARGETS.previewMs)}
