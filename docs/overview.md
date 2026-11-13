@@ -110,8 +110,8 @@ O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi 
 editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno
 (`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`. A conversão do campo em RGBA
 (`layers/terrainPixels.ts`) é TS puro, testada no Vitest. A câmera (`MapCamera.ts`) usa o pixi-viewport; a
-matemática dela (enquadramento, limites, zoom no cursor, atalhos) fica em `camera.ts`, TS puro,
-testada no Vitest. Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
+matemática dela (enquadramento, limites, deslizamento, atalhos) fica em `camera.ts`, TS puro,
+testada no Vitest; o zoom no cursor é do próprio pixi-viewport. Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): seed, parâmetros, o campo exibido e o status da geração. Arrastar um slider

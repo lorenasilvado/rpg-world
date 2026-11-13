@@ -9,6 +9,10 @@ type Rect = { x: number; y: number; width: number; height: number }
 
 // Desktop 1440×900: a área livre fica entre a sidebar (320) e o drawer (400).
 const AREA = { x: 320, y: 0, width: 720, height: 900 }
+
+// Cada teste espera a câmera parar várias vezes, e no CI, sem GPU, os quadros são lentos.
+test.describe.configure({ timeout: 60_000 })
+
 const FIT: Rect = { x: 320, y: 90, width: 720, height: 720 }
 const CENTER = { x: AREA.x + AREA.width / 2, y: AREA.height / 2 }
 
@@ -16,7 +20,7 @@ async function open(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
   await page.goto('/')
   const map = page.getByTestId('map')
-  await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
   await expect(map).toHaveAttribute('data-map-rect', /.+/)
 }
 
@@ -27,16 +31,23 @@ async function rect(page: Page): Promise<Rect> {
 
 const zoom = async (page: Page) => Number(await page.getByTestId('map').getAttribute('data-zoom'))
 
-/** Espera a câmera parar (o retângulo igual em quadros seguidos) e devolve o retângulo. */
+/**
+ * Espera a câmera parar: o retângulo igual por pelo menos 400 ms (mais que os 350 ms do
+ * deslizamento). No CI, sem GPU, um quadro passa de 150 ms, e duas leituras seguidas iguais não
+ * bastam: podem cair no meio do deslizamento.
+ */
 async function settled(page: Page): Promise<Rect> {
   let last = ''
+  let since = 0
   await expect
     .poll(async () => {
       const now = (await page.getByTestId('map').getAttribute('data-map-rect')) ?? ''
-      const same = now === last
-      last = now
-      return same
-    }, { intervals: [150] })
+      if (now !== last) {
+        last = now
+        since = Date.now()
+      }
+      return Date.now() - since >= 400
+    }, { intervals: [100], timeout: 15_000 })
     .toBe(true)
   return rect(page)
 }
@@ -57,28 +68,36 @@ test('AC-F2-01: arrastar com o mouse faz pan, com inércia ao soltar', async ({ 
   await page.keyboard.press('+')
   const before = await settled(page)
 
-  // O gesto roda dentro da página, um movimento a cada 10 ms, e solta logo depois do último, sem
-  // esperar quadro: a inércia só mede a velocidade dos últimos 100 ms antes de soltar, e no CI um
-  // quadro (ou a ida e volta do Playwright) pode passar disso.
-  await page.evaluate(async ({ x, y }) => {
+  // A inércia mede a velocidade pelo registro mais antigo dos últimos 100 ms antes de soltar, com
+  // a hora de `performance.now()`. No CI (sem GPU) um quadro passa de 100 ms, então o tempo real
+  // não serve: o gesto roda de uma vez, na página, com o relógio avançando 10 ms por movimento, e o
+  // relógio real volta logo depois de soltar.
+  await page.evaluate(({ x, y }) => {
     const canvas = document.querySelector('[data-testid="map-canvas"]')!
     const fire = (type: string, px: number, py: number, buttons: number) =>
       (type === 'pointerdown' ? canvas : document).dispatchEvent(
         new PointerEvent(type, { clientX: px, clientY: py, buttons, button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true }),
       )
-    const wait = () => new Promise((r) => setTimeout(r, 10))
-    fire('pointerdown', x, y, 1)
-    for (let i = 1; i <= 10; i++) {
-      await wait()
-      fire('pointermove', x - i * 12, y - i * 8, 1)
+    const realNow = performance.now
+    let clock = realNow.call(performance)
+    performance.now = () => clock
+    try {
+      fire('pointerdown', x, y, 1)
+      for (let i = 1; i <= 10; i++) {
+        clock += 10
+        fire('pointermove', x - i * 12, y - i * 8, 1)
+      }
+      fire('pointerup', x - 120, y - 80, 0)
+    } finally {
+      performance.now = realNow
     }
-    fire('pointerup', x - 120, y - 80, 0)
   }, CENTER)
 
   // O arrasto sozinho leva o mapa 120 px para a esquerda (de 117 para −3; o limite é −85). Só a
   // inércia, depois de soltar, o leva além disso, na mesma direção, até parar.
   const after = await settled(page)
-  expect(after.x).toBeLessThan(before.x - 120 - 10)
+  // 120 px por 100 ms dá uma inércia bem maior que a margem de 20 px.
+  expect(after.x).toBeLessThan(before.x - 120 - 20)
   expect(after.width).toBe(before.width)
 })
 
@@ -206,29 +225,32 @@ test('AC-F2-04: com o foco num campo, o teclado não move o mapa', async ({ page
 })
 
 test('AC-F2-05: o zoom fica entre 0,4× e 4×, e o mapa não some da tela', async ({ page }) => {
+  // Muitos gestos seguidos: no CI, sem GPU, cada evento espera o quadro do Pixi.
+  test.slow()
   await open(page)
   await page.mouse.move(CENTER.x, CENTER.y)
-  for (let i = 0; i < 20; i++) await page.mouse.wheel(0, -400)
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -2000)
   await settled(page)
   expect(await zoom(page)).toBeCloseTo(4, 2)
 
   // Arrasta muito para um lado: a borda do mapa para na borda da área livre, sem mostrar o fundo.
-  // Vários arrastos dentro da área livre (fora dela, o mouse passa sobre o drawer, não o canvas).
-  for (let n = 0; n < 4; n++) {
-    await page.mouse.move(AREA.x + 20, 20)
+  // Os arrastos ficam dentro da área livre (fora dela, o mouse passa sobre o drawer, não o canvas):
+  // o primeiro leva o mapa até a borda, o segundo é contra ela.
+  for (let n = 0; n < 2; n++) {
+    await page.mouse.move(AREA.x + 10, 10)
     await page.mouse.down()
-    for (let i = 1; i <= 10; i++) await page.mouse.move(AREA.x + 20 + i * 68, 20 + i * 86)
+    for (let i = 1; i <= 4; i++) await page.mouse.move(AREA.x + 10 + i * 175, 10 + i * 220)
     await page.mouse.up()
     await settled(page)
   }
-  // Os últimos arrastos foram contra a borda: ao soltar, a inércia não joga o mapa de volta.
+  // Ao soltar contra a borda, a inércia não joga o mapa de volta.
   const far = await settled(page)
   expect(far.x).toBe(AREA.x)
   expect(far.y).toBe(AREA.y)
 
-  // O arrasto terminou fora da área livre: a roda volta para o meio dela.
+  // O arrasto terminou no canto da área livre: a roda volta para o meio dela.
   await page.mouse.move(CENTER.x, CENTER.y)
-  for (let i = 0; i < 30; i++) await page.mouse.wheel(0, 400)
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 3000)
   await settled(page)
   expect(await zoom(page)).toBeCloseTo(0.4, 2)
   // Afastado, o mapa pequeno fica inteiro dentro da área livre, mesmo empurrado para fora.
