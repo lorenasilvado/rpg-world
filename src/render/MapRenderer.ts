@@ -1,5 +1,7 @@
 import { Application } from 'pixi.js'
 import type { WorldStore } from '../state/worldStore'
+import { MapCamera } from './MapCamera'
+import { WORLD_SIZE, mapRect, type Area } from './camera'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { CANVAS_BACKGROUND } from './style/palette'
 
@@ -7,18 +9,20 @@ import { CANVAS_BACKGROUND } from './style/palette'
 export type MapInsets = { left: number; right: number; top: number; bottom: number }
 
 export type MapRenderer = {
-  /** Recalcula o enquadramento (ex.: os painéis mudaram). */
+  /** Recalcula a área livre (ex.: os painéis mudaram), mantendo o centro e o zoom. */
   refit(): void
   destroy(): void
 }
 
 /**
  * Renderer do mapa (PixiJS): cria o app no `host`, desenha o terreno e só lê o estado. Quando chega
- * um campo novo no `worldStore`, a textura do terreno é trocada. Fora do mapa fica o fundo do
- * canvas (`#1F4E79`). Sem câmera ainda: o mapa inteiro cabe na área livre, centrado.
+ * um campo novo no `worldStore`, a textura do terreno é trocada, sem mexer na câmera. Fora do mapa
+ * fica o fundo do canvas (`#1F4E79`). A câmera (`MapCamera`) abre com o mapa inteiro centrado na
+ * área livre (a tela menos os `insets`).
  *
- * Expõe no `host` o tamanho do campo desenhado em `data-terrain-size` e o retângulo do mapa na tela
- * em `data-map-rect` (x, y, largura, altura em px CSS), para os testes.
+ * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
+ * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
+ * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre).
  */
 export async function createMapRenderer(
   host: HTMLElement,
@@ -38,46 +42,58 @@ export async function createMapRenderer(
   app.canvas.dataset.testid = 'map-canvas'
   host.appendChild(app.canvas)
 
-  const terrain = new TerrainLayer()
-  app.stage.addChild(terrain.view)
-
-  const fit = () => {
-    if (!terrain.size) return
+  const freeArea = (): Area => {
     const pad = insets()
-    const w = Math.max(1, app.screen.width - pad.left - pad.right)
-    const h = Math.max(1, app.screen.height - pad.top - pad.bottom)
-    const side = Math.min(w, h)
-    const x = pad.left + (w - side) / 2
-    const y = pad.top + (h - side) / 2
-    terrain.view.position.set(x, y)
-    terrain.view.width = side
-    terrain.view.height = side
-    host.dataset.mapRect = [x, y, side, side].map((v) => Math.round(v)).join(',')
+    return {
+      x: pad.left,
+      y: pad.top,
+      width: Math.max(1, app.screen.width - pad.left - pad.right),
+      height: Math.max(1, app.screen.height - pad.top - pad.bottom),
+    }
   }
+
+  // Antes da câmera: a função de mudança dela lê o terreno.
+  const terrain = new TerrainLayer()
+  const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
+    if (!terrain.size) return
+    const rect = mapRect(t)
+    const value = [rect.x, rect.y, rect.width, rect.height].map((v) => Math.round(v)).join(',')
+    if (host.dataset.mapRect !== value) host.dataset.mapRect = value
+    const z = zoom.toFixed(3)
+    if (host.dataset.zoom !== z) host.dataset.zoom = z
+  })
+  app.stage.addChild(camera.viewport)
+  camera.viewport.addChild(terrain.view)
 
   const show = () => {
     const { field, seed } = world.getState()
     if (!field) return
     terrain.setField(field, seed)
+    // A prévia 256² e o mapa 1024² ocupam o mesmo quadrado do mundo.
+    terrain.view.width = WORLD_SIZE
+    terrain.view.height = WORLD_SIZE
     host.dataset.terrainSize = String(terrain.size)
-    fit()
+    camera.showWorld()
   }
 
   show()
   const unsubscribe = world.subscribe((state, prev) => {
     if (state.field !== prev.field) show()
   })
-  app.renderer.on('resize', fit)
+  const onResize = (w: number, h: number) => camera.resize(w, h)
+  app.renderer.on('resize', onResize)
 
   return {
-    refit: fit,
+    refit: () => camera.resize(app.screen.width, app.screen.height),
     destroy() {
       unsubscribe()
-      app.renderer.off('resize', fit)
+      app.renderer.off('resize', onResize)
+      camera.destroy()
       terrain.destroy()
       app.destroy({ removeView: true }, { children: true })
       delete host.dataset.terrainSize
       delete host.dataset.mapRect
+      delete host.dataset.zoom
     },
   }
 }

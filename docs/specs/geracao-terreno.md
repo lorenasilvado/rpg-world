@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-13
+updated: 2026-11-12
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -218,8 +218,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   depois do traço da costa); ele abre o traço da costa e se junta à
   água sem degrau nem linha. O afluente, que termina em outro rio, não alarga. As distâncias são frações da largura do mapa, então a
   prévia tem o mesmo desenho, com menos detalhe.
-- Sem câmera, o mapa inteiro cabe na área livre e fica centrado: a partir de 768 px, entre a
-  sidebar e o drawer; abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`.
+- O editor abre com o mapa inteiro na área livre, centrado: a partir de 768 px, entre a
+  sidebar e o drawer; abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`. Pan e zoom
+  estão em [navegacao.md](navegacao.md).
 - Dicas de boas-vindas no primeiro acesso (sliders, toolbar, adicionar pin), que podem ser puladas.
 
 ## Critérios de aceite vigentes
