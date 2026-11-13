@@ -57,32 +57,28 @@ test('AC-F2-01: arrastar com o mouse faz pan, com inércia ao soltar', async ({ 
   await page.keyboard.press('+')
   const before = await settled(page)
 
-  // O gesto roda dentro da página, a um movimento por quadro, e solta logo depois do último:
-  // pelo Playwright, com a máquina ocupada, a pausa entre o último movimento e o soltar passa de
-  // 100 ms, e aí a inércia (com razão) não tem velocidade.
-  const releaseX = await page.evaluate(async ({ x, y }) => {
+  // O gesto roda dentro da página, um movimento a cada 10 ms, e solta logo depois do último, sem
+  // esperar quadro: a inércia só mede a velocidade dos últimos 100 ms antes de soltar, e no CI um
+  // quadro (ou a ida e volta do Playwright) pode passar disso.
+  await page.evaluate(async ({ x, y }) => {
     const canvas = document.querySelector('[data-testid="map-canvas"]')!
-    const map = document.querySelector<HTMLElement>('[data-testid="map"]')!
     const fire = (type: string, px: number, py: number, buttons: number) =>
       (type === 'pointerdown' ? canvas : document).dispatchEvent(
         new PointerEvent(type, { clientX: px, clientY: py, buttons, button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true }),
       )
-    const frame = () => new Promise((r) => requestAnimationFrame(r))
+    const wait = () => new Promise((r) => setTimeout(r, 10))
     fire('pointerdown', x, y, 1)
     for (let i = 1; i <= 10; i++) {
-      await frame()
+      await wait()
       fire('pointermove', x - i * 12, y - i * 8, 1)
     }
-    await frame()
-    const atRelease = Number(map.dataset.mapRect!.split(',')[0])
     fire('pointerup', x - 120, y - 80, 0)
-    return atRelease
   }, CENTER)
-  expect(releaseX).toBeLessThan(before.x - 60)
 
-  // A inércia continua o movimento depois de soltar, na mesma direção, e para.
+  // O arrasto sozinho leva o mapa 120 px para a esquerda (de 117 para −3; o limite é −85). Só a
+  // inércia, depois de soltar, o leva além disso, na mesma direção, até parar.
   const after = await settled(page)
-  expect(after.x).toBeLessThan(releaseX)
+  expect(after.x).toBeLessThan(before.x - 120 - 10)
   expect(after.width).toBe(before.width)
 })
 
@@ -263,11 +259,79 @@ test('AC-F2-06: com movimento reduzido, a câmera salta direto e sem inércia', 
   await page.keyboard.press('0')
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
   expect(await rect(page)).toEqual(FIT)
+  // Mudando a preferência com o editor aberto, vale na hora: o atalho volta a deslizar.
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  // Os valores do zoom, quadro a quadro, mostram passos intermediários entre 1× e 1,25×.
+  const seen = await page.evaluate(async () => {
+    const map = document.querySelector<HTMLElement>('[data-testid="map"]')!
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true, cancelable: true }))
+    const values: number[] = []
+    const t0 = performance.now()
+    while (performance.now() - t0 < 1500) {
+      await new Promise((r) => requestAnimationFrame(r))
+      values.push(Number(map.dataset.zoom))
+    }
+    return values
+  })
+  expect(seen.some((v) => v > 1.01 && v < 1.24)).toBe(true)
+  expect(seen.at(-1)).toBeCloseTo(1.25, 2)
 })
 
-test('celular 390: abre com o mapa na largura toda, no zoom 1×', async ({ page }) => {
+test('celular 390: abre com o mapa na largura toda, e o dedo faz pan dentro dos limites', async ({ page }) => {
   await open(page, 390, 844)
-  const r = await rect(page)
-  expect(r).toEqual({ x: 0, y: 227, width: 390, height: 390 })
+  const fit = await rect(page)
+  expect(fit).toEqual({ x: 0, y: 227, width: 390, height: 390 })
   expect(await zoom(page)).toBe(1)
+
+  // No 1×, o mapa tem a largura da tela: o pan horizontal fica preso e o vertical anda dentro dela.
+  const cdp = await page.context().newCDPSession(page)
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number, y: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] })
+  await touch('touchStart', 195, 420)
+  for (let i = 1; i <= 8; i++) await touch('touchMove', 195 + i * 10, 420 + i * 10)
+  await touch('touchEnd', 0, 0)
+  const moved = await settled(page)
+  expect(moved.x).toBe(0)
+  expect(moved.y).toBeGreaterThan(fit.y + 50)
+  expect(moved.y + moved.height).toBeLessThanOrEqual(844)
+})
+
+test('celular 390: com um painel aberto, o teclado não move o mapa (AC-F2-04)', async ({ page }) => {
+  await open(page, 390, 844)
+  const fit = await rect(page)
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  await expect(page.getByTestId('map')).toHaveAttribute('inert', '')
+  // O foco está no botão de fechar do painel, não num campo: quem barra é o mapa inerte.
+  for (const k of ['+', 'ArrowRight', 'd', '0']) await page.keyboard.press(k)
+  await page.waitForTimeout(500)
+  expect(await rect(page)).toEqual(fit)
+  expect(await zoom(page)).toBe(1)
+
+  // O Esc fecha o painel, e os atalhos voltam a valer.
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('map')).not.toHaveAttribute('inert')
+  await page.keyboard.press('+')
+  await settled(page)
+  expect(await zoom(page)).toBeCloseTo(1.25, 2)
+})
+
+test('redimensionar a janela mantém o ponto no centro da área livre e o zoom', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('+')
+  await page.keyboard.press('+')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowDown')
+  const before = await settled(page)
+  const z = await zoom(page)
+  const center = worldAt(before, CENTER)
+
+  // 1600 × 1000: a área livre passa a 880 × 1000, entre a sidebar e o drawer.
+  await page.setViewportSize({ width: 1600, height: 1000 })
+  const newCenter = { x: 320 + 880 / 2, y: 500 }
+  await expect.poll(async () => (await rect(page)).width).not.toBe(before.width)
+  const after = await settled(page)
+  expect(await zoom(page)).toBeCloseTo(z, 2)
+  const now = worldAt(after, newCenter)
+  expect(Math.abs(now.x - center.x)).toBeLessThan(3)
+  expect(Math.abs(now.y - center.y)).toBeLessThan(3)
 })

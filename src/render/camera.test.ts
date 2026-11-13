@@ -14,7 +14,6 @@ import {
   relativeZoom,
   toTransform,
   toView,
-  zoomAt,
   type Area,
 } from './camera'
 
@@ -79,23 +78,6 @@ describe('limites (AC-F2-05)', () => {
   it('dentro dos limites, nada muda', () => {
     const t = toTransform(fitView(AREA), AREA)
     expect(clampTransform(t, AREA)).toEqual(t)
-  })
-})
-
-describe('zoom no cursor (AC-F2-02)', () => {
-  it('o ponto do mundo sob o cursor fica parado', () => {
-    const t = toTransform(fitView(AREA), AREA)
-    const cursor = { x: 500, y: 300 }
-    const world = { x: (cursor.x - t.x) / t.scale, y: (cursor.y - t.y) / t.scale }
-    const z = zoomAt(t, 2, cursor, AREA)
-    expect(z.scale).toBeCloseTo(t.scale * 2)
-    expect(z.x + world.x * z.scale).toBeCloseTo(cursor.x)
-    expect(z.y + world.y * z.scale).toBeCloseTo(cursor.y)
-  })
-
-  it('não passa do zoom máximo', () => {
-    const t = toTransform({ ...fitView(AREA), scale: fitScale(AREA) * 3.9 }, AREA)
-    expect(relativeZoom(zoomAt(t, 2, { x: 600, y: 400 }, AREA).scale, AREA)).toBeCloseTo(MAX_ZOOM)
   })
 })
 

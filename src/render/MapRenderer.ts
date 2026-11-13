@@ -52,6 +52,8 @@ export async function createMapRenderer(
     }
   }
 
+  // Antes da câmera: a função de mudança dela lê o terreno.
+  const terrain = new TerrainLayer()
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
     const rect = mapRect(t)
@@ -61,8 +63,6 @@ export async function createMapRenderer(
     if (host.dataset.zoom !== z) host.dataset.zoom = z
   })
   app.stage.addChild(camera.viewport)
-
-  const terrain = new TerrainLayer()
   camera.viewport.addChild(terrain.view)
 
   const show = () => {

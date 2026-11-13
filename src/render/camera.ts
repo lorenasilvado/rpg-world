@@ -83,14 +83,6 @@ export function clampTransform(t: Transform, area: Area, world = WORLD_SIZE): Tr
   }
 }
 
-/** Zoom por `factor` mantendo parado o ponto do mundo que está em `screen` (ex.: o cursor). */
-export function zoomAt(t: Transform, factor: number, screen: { x: number; y: number }, area: Area, world = WORLD_SIZE): Transform {
-  const scale = clampScale(t.scale * factor, area, world)
-  const wx = (screen.x - t.x) / t.scale
-  const wy = (screen.y - t.y) / t.scale
-  return { scale, x: screen.x - wx * scale, y: screen.y - wy * scale }
-}
-
 /** Retângulo do mapa na tela (x, y, largura, altura), em px CSS. */
 export function mapRect(t: Transform, world = WORLD_SIZE): Area {
   return { x: t.x, y: t.y, width: world * t.scale, height: world * t.scale }
