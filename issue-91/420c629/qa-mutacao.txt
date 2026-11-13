@@ -1,0 +1,14 @@
+commit: 420c629d986ef6d6eee06bd53c9b5f95ba11b70b
+== spec sem alteração
+  4 passed (14.1s)
+== com o erro: recuos aplicados em qualquer largura (min-width: 0px)
+[2/4] [app] › e2e\mapa.spec.ts:86:3 › tablet 1024: o mapa aparece inteiro na área livre (AC-F1-22)
+[4/4] [app] › e2e\mapa.spec.ts:86:3 › celular 390: o mapa aparece inteiro na área livre (AC-F1-22)
+  1) [app] › e2e\mapa.spec.ts:86:3 › celular 390: o mapa aparece inteiro na área livre (AC-F1-22) ──
+    -   "width": 390,
+    -   "x": 0,
+    +   "width": 1,
+    +   "x": 320,
+  1 failed
+    [app] › e2e\mapa.spec.ts:86:3 › celular 390: o mapa aparece inteiro na área livre (AC-F1-22) ───
+  3 passed (13.7s)
