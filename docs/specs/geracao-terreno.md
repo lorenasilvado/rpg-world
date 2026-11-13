@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -210,7 +210,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   hillshade. A água encostada na terra (mar e lagos) é pintada com o traço da costa (`#163A5C`, 2
   células no mapa 1024²). A água rasa e o lago clareiam logo depois do traço da costa (uma faixa de luz
   medida a partir de onde o traço termina, para ele não a esconder), e o oceano profundo clareia
-  junto da água rasa e escurece longe dela. A praia tem o tom de luz só junto da água. Os rios são
+  junto da água rasa e escurece longe dela e perto da borda do mapa: nas últimas 48 células (mapa
+  1024²), as faixas se curvam e terminam antes da borda, que fica no tom de sombra, a cor do fundo
+  fora do mapa (sem corte reto, com qualquer zoom). A praia tem o tom de luz só junto da água. Os rios são
   pintados na textura, sobre a terra: `#6BB8DD`, sem contorno. Nada do rio é pintado sobre
   montanha rochosa ou neve: ele aparece a partir do pé da montanha, mais fino ali. Na foz, nas
   últimas 14 células (mapa 1024²), o rio alarga aos poucos até o dobro da largura e a cor passa

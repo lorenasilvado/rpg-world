@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, type CoreField } from '../../core/types'
 import { generateField } from '../../core/world/generateField'
-import { BIOMES, BIOME_TONES, COAST_STROKE, RIVER_STYLE } from '../style/palette'
+import { BIOMES, BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE, RIVER_STYLE } from '../style/palette'
 import { REF_SIZE, terrainPixels } from './terrainPixels'
 
 /** Campo sintético: oceano profundo, com `paint` decidindo bioma e sombra de cada célula. */
@@ -325,6 +325,35 @@ describe('terreno em textura (AC-F1-22)', () => {
     const [, base, light] = tones('deepOcean')
     expect(hex(rgba, at(size, 512 + 11, 512))).toBe(light)
     expect(hex(rgba, at(size, 512 + 11, 512 + 11))).toBe(base)
+  })
+
+  it('perto da borda do mapa, as faixas do oceano se curvam e terminam antes dela, sem corte reto (#92)', () => {
+    // Uma coluna de água rasa de cima a baixo: longe da borda, a faixa de luz tem 12 células; perto
+    // da borda de cima ela afina, passa para a base e, na borda, o oceano fica no tom de sombra.
+    const size = REF_SIZE
+    const f = field(size, (x) => (x === 512 ? [BIOME.shallowWater, 0] : null))
+    const rgba = terrainPixels(f)
+    const [shadow, base, light] = tones('deepOcean')
+    expect(hex(rgba, at(size, 520, 500))).toBe(light)
+    expect(hex(rgba, at(size, 520, 48))).toBe(light)
+    expect(hex(rgba, at(size, 520, 30))).toBe(base)
+    expect(hex(rgba, at(size, 520, 0))).toBe(shadow)
+    expect(hex(rgba, at(size, 513, 0))).toBe(shadow)
+    expect(hex(rgba, at(size, 520, size - 1))).toBe(shadow)
+  })
+
+  it('a borda dos mapas gerados tem a cor do fundo fora do mapa, também na prévia (#92)', () => {
+    expect(tones('deepOcean')[0]).toBe(CANVAS_BACKGROUND)
+    for (const [seed, size] of [['valdora', 1024], ['valdora', 256], ['aurora', 256], ['kestrel', 256]] as const) {
+      const rgba = terrainPixels(generateField(seed, size), seed)
+      const off: string[] = []
+      for (let k = 0; k < size; k++) {
+        for (const i of [at(size, k, 0), at(size, k, size - 1), at(size, 0, k), at(size, size - 1, k)]) {
+          if (hex(rgba, i) !== CANVAS_BACKGROUND) off.push(`${seed}/${size}: ${i % size},${Math.floor(i / size)}`)
+        }
+      }
+      expect(off).toEqual([])
+    }
   })
 
   it('é determinístico: mesmo campo e mesma seed dão os mesmos pixels', () => {
