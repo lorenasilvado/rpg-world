@@ -30,3 +30,20 @@ describe('placeSprites', () => {
     expect(() => placeSprites(water, 'a', 1)).toThrow()
   })
 })
+
+describe('toDecor', () => {
+  it('converte os ícones do spike para o formato do núcleo', async () => {
+    const { toDecor } = await import('./scene')
+    const { DECOR } = await import('../core/types')
+    const d = toDecor(
+      [
+        { kind: 'pine', x: 512, y: 160 },
+        { kind: 'snowMountain', x: 256, y: 320 },
+      ],
+      { width: 1024, height: 640 },
+    )
+    expect([...d.u]).toEqual([0.5, 0.25])
+    expect([...d.v]).toEqual([0.25, 0.5])
+    expect([...d.kind]).toEqual([DECOR.tree, DECOR.snowPeak])
+  })
+})

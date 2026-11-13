@@ -16,7 +16,8 @@ import {
 import { createScene } from './scene'
 
 /**
- * Página do spike de 5.000 sprites (#10), em /sprites.html. `?rapido` mede por 2 s em vez de 30 s
+ * Página do spike de 5.000 sprites (#10), em /sprites.html, que desenha os ícones pela camada de
+ * decoração do editor, com culling e nível de detalhe (#48). `?rapido` mede por 2 s em vez de 30 s
  * (usado pelo E2E, que não confere fps: o navegador dele não tem GPU).
  */
 const SEED = 'valdora'
@@ -60,7 +61,7 @@ type Run = {
 async function start() {
   const terrain = generateMockTerrain(SEED, TERRAIN_WIDTH, TERRAIN_HEIGHT)
   const decor = placeSprites(terrain, SEED, SPRITE_COUNT)
-  const { app, viewport, world } = await createScene(stage, terrain, decor)
+  const { app, viewport, world, drawn } = await createScene(stage, terrain, decor)
   stage.dataset.sprites = String(decor.length)
 
   let run: Run | null = null
@@ -165,6 +166,7 @@ async function start() {
         stage.dataset.scale = String(viewport.scale.x)
         stage.dataset.x = String(viewport.x)
         stage.dataset.y = String(viewport.y)
+        stage.dataset.drawn = String(drawn())
       }
     },
     undefined,

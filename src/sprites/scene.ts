@@ -1,31 +1,47 @@
 import { Viewport } from 'pixi-viewport'
-import { Application, BufferImageSource, Container, ImageSource, Rectangle, Sprite, Texture } from 'pixi.js'
+import { Application, BufferImageSource, Sprite, Texture } from 'pixi.js'
+import type { Decor } from '../core/types'
 import { terrainPixels, type DecorPlacement } from '../mockup/drawMockup'
 import type { MockTerrain } from '../mockup/terrain'
-import { DECOR_FRAMES, DECOR_FRAME_SIZE, DECOR_SHEET_URL, DECOR_SIZE, type DecorKind } from '../render/style/decor'
+import { DecorLayer, loadDecorTextures } from '../render/layers/DecorLayer'
+import { worldView } from '../render/layers/decorCull'
+import { DECOR_FRAME_OF, type DecorKind } from '../render/style/decor'
 import { CANVAS_BACKGROUND } from '../render/style/palette'
 import { MAX_ZOOM, MIN_ZOOM } from './cameraPath'
 
 /** Pixels de mundo por célula do terreno. */
 const WORLD_SCALE = 2
 
-export type Scene = { app: Application; viewport: Viewport; world: { width: number; height: number } }
-
-function decorTextures(sheet: HTMLImageElement): Record<DecorKind, Texture> {
-  // Os quadros de 128 px aparecem com 26 a 48 px: sem mipmaps, os traços serrilham no zoom baixo.
-  const source = new ImageSource({ resource: sheet, autoGenerateMipmaps: true, scaleMode: 'linear' })
-  const entries = Object.entries(DECOR_FRAMES).map(([kind, f]) => [
-    kind,
-    new Texture({ source, frame: new Rectangle(f.x, f.y, DECOR_FRAME_SIZE, DECOR_FRAME_SIZE) }),
-  ])
-  return Object.fromEntries(entries) as Record<DecorKind, Texture>
+export type Scene = {
+  app: Application
+  viewport: Viewport
+  world: { width: number; height: number }
+  /** Ícones desenhados depois do culling e do nível de detalhe, no último quadro. */
+  drawn(): number
 }
 
-/** Cena do spike: uma textura de terreno e os sprites, todos do mesmo spritesheet, sem culling. */
+/** Tipo do núcleo de cada quadro do spritesheet (o inverso de `DECOR_FRAME_OF`). */
+const CORE_KIND = new Map([...DECOR_FRAME_OF].map(([core, frame]) => [frame, core]))
+
+/** Os ícones do spike no formato do núcleo (de 0 a 1 no terreno), para a `DecorLayer`. */
+export function toDecor(placements: readonly DecorPlacement[], terrain: { width: number; height: number }): Decor {
+  const n = placements.length
+  const decor: Decor = { u: new Float32Array(n), v: new Float32Array(n), kind: new Uint8Array(n) }
+  placements.forEach((d, i) => {
+    decor.u[i] = d.x / terrain.width
+    decor.v[i] = d.y / terrain.height
+    decor.kind[i] = CORE_KIND.get(d.kind as DecorKind)!
+  })
+  return decor
+}
+
+/**
+ * Cena da medição: uma textura de terreno e os ícones na camada de decoração do editor
+ * (`DecorLayer`), com o culling e o nível de detalhe dela (#48). O zoom relativo do nível de
+ * detalhe é o do editor: 1× é o terreno inteiro na tela.
+ */
 export async function createScene(host: HTMLElement, terrain: MockTerrain, decor: DecorPlacement[]): Promise<Scene> {
-  const sheet = new Image()
-  sheet.src = DECOR_SHEET_URL
-  await sheet.decode()
+  const textures = await loadDecorTextures()
 
   const app = new Application()
   await app.init({
@@ -72,19 +88,16 @@ export async function createScene(host: HTMLElement, terrain: MockTerrain, decor
   ground.scale.set(WORLD_SCALE)
   viewport.addChild(ground)
 
-  // Grupo de render: mover a câmera só muda a transformação do grupo, sem recalcular cada sprite.
-  const icons = new Container({ isRenderGroup: true })
-  const textures = decorTextures(sheet)
-  for (const d of decor) {
-    const sprite = new Sprite(textures[d.kind])
-    sprite.anchor.set(0.5, 1)
-    sprite.position.set(d.x * WORLD_SCALE, d.y * WORLD_SCALE)
-    sprite.scale.set(DECOR_SIZE[d.kind] / DECOR_FRAME_SIZE)
-    icons.addChild(sprite)
-  }
-  viewport.addChild(icons)
+  const icons = new DecorLayer(textures)
+  icons.setDecor(toDecor(decor, terrain), world.width, world.height)
+  viewport.addChild(icons.view)
+  viewport.on('frame-end', () => {
+    const scale = viewport.scale.x
+    const fit = Math.min(app.screen.width / world.width, app.screen.height / world.height)
+    icons.update(worldView({ x: viewport.x, y: viewport.y, scale }, app.screen), scale / fit)
+  })
 
   viewport.fitWorld(true)
   viewport.moveCenter(world.width / 2, world.height / 2)
-  return { app, viewport, world }
+  return { app, viewport, world, drawn: () => icons.drawn }
 }

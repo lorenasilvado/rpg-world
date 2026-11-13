@@ -1,6 +1,7 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
 import { MapView, type CreateMapRenderer } from './MapView'
@@ -16,9 +17,17 @@ import { useTheme } from './useTheme'
  *
  * O `world` é o estado do mundo (`worldStore.ts`): o mapa desenha o campo dele (`MapView`), o toast
  * mostra o erro da geração, e o status dela fica em `data-generation-status` (os testes esperam por
- * ele). `createRenderer` troca o renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
+ * ele). O `ui` guarda as camadas do mapa ligadas (`uiStore.ts`). `createRenderer` troca o renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  */
-export function EditorLayout({ world, createRenderer }: { world: WorldStore; createRenderer?: CreateMapRenderer }) {
+export function EditorLayout({
+  world,
+  ui,
+  createRenderer,
+}: {
+  world: WorldStore
+  ui: UiStore
+  createRenderer?: CreateMapRenderer
+}) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -56,7 +65,7 @@ export function EditorLayout({ world, createRenderer }: { world: WorldStore; cre
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} inert={anyOpen} createRenderer={createRenderer} />
+      <MapView world={world} ui={ui} inert={anyOpen} createRenderer={createRenderer} />
 
       {anyOpen && (
         <div

@@ -41,6 +41,9 @@ test('5.000 sprites, medição concluída e relatório com a máquina (AC-M0-17)
   const errors: string[] = []
   await open(page, errors)
   await expect(page.getByTestId('stage')).toHaveAttribute('data-sprites', '5000')
+  // Os ícones passam pela camada de decoração do editor (#48): culling e nível de detalhe.
+  await expect.poll(async () => Number(await page.getByTestId('stage').getAttribute('data-drawn'))).toBeGreaterThan(0)
+  expect(Number(await page.getByTestId('stage').getAttribute('data-drawn'))).toBeLessThanOrEqual(5000)
 
   const before = await camera(page)
   await page.getByRole('button', { name: 'Medir automático' }).click()
