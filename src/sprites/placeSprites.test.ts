@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { generateMockTerrain, type MockTerrain } from '../mockup/terrain'
 import { DECOR_BY_BIOME } from '../render/style/decor'
 import { BIOMES } from '../render/style/palette'
+import { DECOR } from '../core/types'
 import { placeSprites } from './placeSprites'
+import { toDecor } from './scene'
 
 const terrain = generateMockTerrain('valdora', 200, 125)
 
@@ -32,9 +34,7 @@ describe('placeSprites', () => {
 })
 
 describe('toDecor', () => {
-  it('converte os ícones do spike para o formato do núcleo', async () => {
-    const { toDecor } = await import('./scene')
-    const { DECOR } = await import('../core/types')
+  it('converte os ícones do spike para o formato do núcleo', () => {
     const d = toDecor(
       [
         { kind: 'pine', x: 512, y: 160 },
