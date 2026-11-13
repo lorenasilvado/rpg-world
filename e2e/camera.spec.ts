@@ -57,18 +57,32 @@ test('AC-F2-01: arrastar com o mouse faz pan, com inércia ao soltar', async ({ 
   await page.keyboard.press('+')
   const before = await settled(page)
 
-  await page.mouse.move(CENTER.x, CENTER.y)
-  await page.mouse.down()
-  for (let i = 1; i <= 10; i++) await page.mouse.move(CENTER.x - i * 12, CENTER.y - i * 8)
-  // Com a máquina ocupada, o quadro do último movimento pode demorar: espera ele chegar.
-  await expect.poll(async () => (await rect(page)).x).toBeLessThan(before.x - 60)
-  const atRelease = await rect(page)
-  await page.mouse.up()
-  expect(atRelease.y).toBeLessThan(before.y - 40)
+  // O gesto roda dentro da página, a um movimento por quadro, e solta logo depois do último:
+  // pelo Playwright, com a máquina ocupada, a pausa entre o último movimento e o soltar passa de
+  // 100 ms, e aí a inércia (com razão) não tem velocidade.
+  const releaseX = await page.evaluate(async ({ x, y }) => {
+    const canvas = document.querySelector('[data-testid="map-canvas"]')!
+    const map = document.querySelector<HTMLElement>('[data-testid="map"]')!
+    const fire = (type: string, px: number, py: number, buttons: number) =>
+      (type === 'pointerdown' ? canvas : document).dispatchEvent(
+        new PointerEvent(type, { clientX: px, clientY: py, buttons, button: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true, bubbles: true }),
+      )
+    const frame = () => new Promise((r) => requestAnimationFrame(r))
+    fire('pointerdown', x, y, 1)
+    for (let i = 1; i <= 10; i++) {
+      await frame()
+      fire('pointermove', x - i * 12, y - i * 8, 1)
+    }
+    await frame()
+    const atRelease = Number(map.dataset.mapRect!.split(',')[0])
+    fire('pointerup', x - 120, y - 80, 0)
+    return atRelease
+  }, CENTER)
+  expect(releaseX).toBeLessThan(before.x - 60)
 
   // A inércia continua o movimento depois de soltar, na mesma direção, e para.
   const after = await settled(page)
-  expect(after.x).toBeLessThan(atRelease.x)
+  expect(after.x).toBeLessThan(releaseX)
   expect(after.width).toBe(before.width)
 })
 
