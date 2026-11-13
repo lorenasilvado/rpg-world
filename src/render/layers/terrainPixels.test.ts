@@ -354,7 +354,8 @@ describe('terreno em textura (AC-F1-22)', () => {
       }
       expect(off).toEqual([])
     }
-  })
+    // Gera um mapa 1024²: com a suíte inteira rodando em paralelo, passa dos 5 s padrão.
+  }, 30_000)
 
   it('é determinístico: mesmo campo e mesma seed dão os mesmos pixels', () => {
     const f = generateField('valdora', 64)
