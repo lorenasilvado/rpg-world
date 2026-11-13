@@ -74,17 +74,18 @@ test('a costa tem o traço #163A5C entre a terra e a água (AC-F1-22)', async ({
   expect(colors.filter((c) => near(c, COAST_STROKE.color)).length).toBeGreaterThan(20)
 })
 
-for (const [label, width, height] of [
-  ['tablet 1024', 1024, 768],
-  ['celular 390', 390, 844],
+// O retângulo exato em cada largura (#91): a partir de 768 px o mapa cabe entre a sidebar (320) e
+// o drawer (400); abaixo disso os painéis são sobrepostos e o mapa usa a largura toda. Um erro em
+// `panelInsets` que aplicasse os recuos no celular deixaria a área livre negativa e falharia aqui.
+for (const [label, width, height, expected] of [
+  // Área livre 1024 − 320 − 400 = 304 px de largura: o mapa 304², centrado na altura (768 − 304) / 2.
+  ['tablet 1024', 1024, 768, { x: 320, y: 232, width: 304, height: 304 }],
+  // Sem recuos: o mapa 390², centrado na altura (844 − 390) / 2.
+  ['celular 390', 390, 844, { x: 0, y: 227, width: 390, height: 390 }],
 ] as const) {
   test(`${label}: o mapa aparece inteiro na área livre (AC-F1-22)`, async ({ page }) => {
     const { rect, errors } = await openMap(page, width, height)
-    expect(rect.width).toBeGreaterThan(100)
-    expect(rect.x).toBeGreaterThanOrEqual(0)
-    expect(rect.y).toBeGreaterThanOrEqual(0)
-    expect(rect.x + rect.width).toBeLessThanOrEqual(width)
-    expect(rect.y + rect.height).toBeLessThanOrEqual(height)
+    expect(rect).toEqual(expected)
     const colors = await sampleColors(page, rect, 12)
     expect(colors.some((c) => c !== CANVAS_BACKGROUND)).toBe(true)
     expect(errors).toEqual([])
