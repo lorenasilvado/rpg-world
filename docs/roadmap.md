@@ -105,7 +105,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 17 | #36 | [chore] Medir o worker novo, sem aquecimento, no bench | done | — | #85 |
 | 18 | #46 | [feat] Renderer: terreno em textura | done | specs/geracao-terreno.md | #89 |
 | 19 | #93 | [feat] Renderer: rios a partir do pé da montanha e foz suave | done | specs/geracao-terreno.md | #96 |
-| 20 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | doing | specs/navegacao.md | |
+| 20 | #47 | [feat] Câmera: pan, zoom, pinça e teclado | done | specs/navegacao.md | |
 | 21 | #91 | [chore] E2E do mapa: conferir o enquadramento no celular e no tablet | todo | specs/geracao-terreno.md | |
 | 22 | #92 | [chore] Borda do mapa sem corte reto nas faixas do oceano | todo | specs/navegacao.md | |
 | 23 | #48 | [feat] Camada de decoração com culling e nível de detalhe | todo | specs/navegacao.md | |
