@@ -65,15 +65,14 @@ export function fitView(area: Area, world = WORLD_SIZE): View {
 
 /** Um eixo do limite de pan: `pos` é a borda do mapa na tela, `size` o tamanho dele. */
 function clampAxis(pos: number, size: number, start: number, length: number): number {
-  // O mapa nunca some: fica visível na área livre pelo menos o menor entre o mapa inteiro e
-  // metade da área livre.
-  const overlap = Math.min(size, length / 2)
-  const min = start + overlap - size
-  const max = start + length - overlap
-  return Math.min(max, Math.max(min, pos))
+  // Maior que a área livre: o mapa a cobre toda, sem mostrar o fundo além da borda. Menor: o
+  // mapa fica inteiro dentro dela.
+  const a = start
+  const b = start + length - size
+  return Math.min(Math.max(a, b), Math.max(Math.min(a, b), pos))
 }
 
-/** Limita o pan e o zoom: zoom de 0,4× a 4×, e o mapa não sai da área livre. */
+/** Limita o pan e o zoom: zoom de 0,4× a 4×, e o mapa não sai da área livre nem mostra o fundo além da borda quando a cobre. */
 export function clampTransform(t: Transform, area: Area, world = WORLD_SIZE): Transform {
   const scale = clampScale(t.scale, area, world)
   const size = world * scale

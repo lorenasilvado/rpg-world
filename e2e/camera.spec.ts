@@ -60,9 +60,10 @@ test('AC-F2-01: arrastar com o mouse faz pan, com inércia ao soltar', async ({ 
   await page.mouse.move(CENTER.x, CENTER.y)
   await page.mouse.down()
   for (let i = 1; i <= 10; i++) await page.mouse.move(CENTER.x - i * 12, CENTER.y - i * 8)
+  // Com a máquina ocupada, o quadro do último movimento pode demorar: espera ele chegar.
+  await expect.poll(async () => (await rect(page)).x).toBeLessThan(before.x - 60)
   const atRelease = await rect(page)
   await page.mouse.up()
-  expect(atRelease.x).toBeLessThan(before.x - 60)
   expect(atRelease.y).toBeLessThan(before.y - 40)
 
   // A inércia continua o movimento depois de soltar, na mesma direção, e para.
@@ -141,6 +142,8 @@ test('AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza', asyn
   const mid = worldAt(zoomed, CENTER)
   expect(Math.abs(mid.x - 512)).toBeLessThan(2)
   expect(Math.abs(mid.y - 512)).toBeLessThan(2)
+  // Mais um +: o mapa (1125 px) passa da área livre nos dois eixos e tem espaço de pan.
+  await page.keyboard.press('+')
 
   // → mostra o que está à direita: o mapa vai para a esquerda.
   for (const [k, axis, sign] of [
@@ -159,6 +162,9 @@ test('AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza', asyn
     expect(Math.sign(after[axis] - before[axis]), k).toBe(sign)
   }
 
+  await page.keyboard.press('-')
+  await settled(page)
+  expect(await zoom(page)).toBeCloseTo(1.25, 2)
   await page.keyboard.press('-')
   await settled(page)
   expect(await zoom(page)).toBeCloseTo(1, 2)
@@ -196,13 +202,19 @@ test('AC-F2-05: o zoom fica entre 0,4× e 4×, e o mapa não some da tela', asyn
   await settled(page)
   expect(await zoom(page)).toBeCloseTo(4, 2)
 
-  // Arrasta muito para um lado: pelo menos metade da área livre continua com mapa.
-  await page.mouse.down()
-  for (let i = 1; i <= 20; i++) await page.mouse.move(CENTER.x + i * 100, CENTER.y + i * 100)
-  await page.mouse.up()
+  // Arrasta muito para um lado: a borda do mapa para na borda da área livre, sem mostrar o fundo.
+  // Vários arrastos dentro da área livre (fora dela, o mouse passa sobre o drawer, não o canvas).
+  for (let n = 0; n < 4; n++) {
+    await page.mouse.move(AREA.x + 20, 20)
+    await page.mouse.down()
+    for (let i = 1; i <= 10; i++) await page.mouse.move(AREA.x + 20 + i * 68, 20 + i * 86)
+    await page.mouse.up()
+    await settled(page)
+  }
+  // Os últimos arrastos foram contra a borda: ao soltar, a inércia não joga o mapa de volta.
   const far = await settled(page)
-  expect(far.x).toBeLessThanOrEqual(CENTER.x + 1)
-  expect(far.y).toBeLessThanOrEqual(CENTER.y + 1)
+  expect(far.x).toBe(AREA.x)
+  expect(far.y).toBe(AREA.y)
 
   // O arrasto terminou fora da área livre: a roda volta para o meio dela.
   await page.mouse.move(CENTER.x, CENTER.y)

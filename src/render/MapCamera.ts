@@ -73,6 +73,7 @@ export class MapCamera {
     this.viewport.on('drag-start', cancel)
     this.viewport.on('pinch-start', cancel)
     this.viewport.on('wheel-start', cancel)
+    this.viewport.on('moved', this.clamp)
     this.viewport.on('frame-end', this.frame)
     document.addEventListener('keydown', this.onKeyDown)
   }
@@ -103,6 +104,7 @@ export class MapCamera {
   destroy() {
     document.removeEventListener('keydown', this.onKeyDown)
     this.reducedMotion.removeEventListener('change', this.applyMotion)
+    this.viewport.off('moved', this.clamp)
     this.viewport.off('frame-end', this.frame)
     // Antes do app: o viewport tira a própria função do ticker, que o app.destroy apaga.
     this.viewport.removeFromParent()
@@ -153,14 +155,28 @@ export class MapCamera {
       this.set(toTransform(lerpView(from, to, easeCamera(k)), this.area))
       if (k >= 1) this.tween = null
     }
+    const clamped = this.clamp()
+    this.onChange(clamped, relativeZoom(clamped.scale, this.area))
+  }
+
+  /**
+   * Aplica os limites. Também roda no `moved` do arrasto e da pinça, antes de a inércia guardar a
+   * posição: senão ela mede a velocidade com posições além do limite e, ao soltar contra a borda,
+   * joga o mapa para o lado oposto.
+   */
+  private clamp = (): Transform => {
     const now = { x: this.viewport.x, y: this.viewport.y, scale: this.viewport.scale.x }
     const clamped = clampTransform(now, this.area)
     if (clamped.x !== now.x || clamped.y !== now.y || clamped.scale !== now.scale) {
       this.set(clamped)
-      // Bateu no limite: a inércia para, em vez de empurrar a borda.
-      this.viewport.plugins.get('decelerate')?.reset()
+      // Bateu no limite: a inércia para nesse eixo, em vez de empurrar a borda; no outro, continua.
+      const decelerate = this.viewport.plugins.get('decelerate', true)
+      if (decelerate) {
+        if (clamped.x !== now.x) decelerate.x = 0
+        if (clamped.y !== now.y) decelerate.y = 0
+      }
     }
-    this.onChange(clamped, relativeZoom(clamped.scale, this.area))
+    return clamped
   }
 
   private onKeyDown = (e: KeyboardEvent) => {

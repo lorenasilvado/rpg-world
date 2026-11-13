@@ -68,10 +68,10 @@ barra inferior.
 - O zoom é relativo à área livre (a tela menos a sidebar e o drawer fixos, a partir de 768 px;
   abaixo disso, a tela toda): 1× é o mapa inteiro, centrado na área livre. O editor abre em 1×, e
   centralizar (0) volta para 1×. Um mapa novo (slider ou seed) não mexe na câmera.
-- Limites de zoom (0,4× a 4×) e de pan: o mapa não some da tela. Pelo menos o menor entre o mapa
-  inteiro e metade da área livre fica com mapa, em cada eixo: aproximado, o pan para quando a borda
-  do mapa chega ao meio da área livre; afastado, o mapa fica inteiro dentro dela. Ao bater no
-  limite, a inércia para.
+- Limites de zoom (0,4× a 4×) e de pan: o mapa não some da tela. Em cada eixo, se o mapa é maior
+  que a área livre, ele a cobre toda: o pan para quando a borda do mapa chega à borda da área, sem
+  mostrar o fundo além dela. Se é menor, o mapa fica inteiro dentro da área livre. Ao bater no
+  limite, a inércia para naquele eixo (no outro, continua), sem jogar o mapa de volta.
 - Arrastar (mouse ou um dedo) faz pan e, ao soltar, a câmera continua com inércia e desacelera.
   A roda faz zoom mantendo parado o ponto sob o cursor; a pinça (dois dedos, ou a pinça do touchpad,
   que chega como roda com Ctrl) faz zoom.

@@ -48,16 +48,24 @@ describe('limites (AC-F2-05)', () => {
     expect(relativeZoom(far.scale, AREA)).toBeCloseTo(MIN_ZOOM)
   })
 
-  it('aproximado, pelo menos metade da área livre fica com mapa', () => {
+  it('aproximado, o mapa cobre a área livre toda: a borda dele para na borda da área', () => {
     const scale = fit * 3
     const size = WORLD_SIZE * scale
-    // Pan muito para a direita e para baixo: o mapa sairia pela borda de cima e da esquerda.
+    // Pan muito para a direita e para baixo: a borda de cima e a da esquerda param na área livre.
     const t = clampTransform({ x: 5000, y: 5000, scale }, AREA)
-    expect(t.x).toBe(AREA.x + AREA.width / 2)
-    expect(t.y).toBe(AREA.y + AREA.height / 2)
+    expect(t.x).toBe(AREA.x)
+    expect(t.y).toBe(AREA.y)
     const t2 = clampTransform({ x: -1e6, y: -1e6, scale }, AREA)
-    expect(t2.x + size).toBe(AREA.x + AREA.width / 2)
-    expect(t2.y + size).toBe(AREA.y + AREA.height / 2)
+    expect(t2.x + size).toBe(AREA.x + AREA.width)
+    expect(t2.y + size).toBe(AREA.y + AREA.height)
+  })
+
+  it('no 1×, o eixo em que o mapa é maior que a área fica preso, e o outro anda dentro dela', () => {
+    // Área 720 × 900: o mapa tem 720, a largura toda.
+    const t = toTransform(fitView(AREA), AREA)
+    const moved = clampTransform({ ...t, x: t.x + 100, y: t.y + 1000 }, AREA)
+    expect(moved.x).toBe(AREA.x)
+    expect(moved.y + WORLD_SIZE * t.scale).toBe(AREA.y + AREA.height)
   })
 
   it('afastado, o mapa pequeno fica inteiro dentro da área livre', () => {
