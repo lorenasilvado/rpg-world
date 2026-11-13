@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # F2 · Câmera e navegação
@@ -83,6 +83,9 @@ barra inferior.
   dele) que seja input, textarea, select ou conteúdo editável, ou cujo `role` mais próximo seja
   textbox, searchbox, combobox, listbox, option, slider, spinbutton, menu, menuitem, radiogroup,
   tablist ou tab: controles que usam as setas ou digitam.
+- A borda do mapa não mostra corte reto quando o fundo aparece (mapa inteiro ou afastado): o
+  oceano escurece até a cor do fundo perto dela (ver o desenho do terreno em
+  [geracao-terreno.md](geracao-terreno.md)).
 - Ao redimensionar a janela, o ponto no centro da área livre e o zoom relativo se mantêm.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.

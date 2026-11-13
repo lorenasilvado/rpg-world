@@ -22,6 +22,12 @@ export const TERRAIN_STYLE = {
   /** Oceano profundo: base até esta distância; mais longe, sombra. */
   deepBase: 56,
   /**
+   * Oceano profundo perto da borda do mapa: até esta distância da borda, a distância da água rasa
+   * ganha um acréscimo que cresce até a borda (passa de `deepBase` nela). As faixas se curvam e
+   * terminam antes da borda, que fica no tom de sombra, a cor do fundo fora do mapa.
+   */
+  edgeFade: 48,
+  /**
    * Água rasa e lago: luz até esta distância do traço da costa (medida a partir de onde ele
    * termina, para a faixa clara não ficar escondida debaixo dele); depois, base.
    */
@@ -83,11 +89,22 @@ export function terrainPixels(field: CoreField, patchSeed = ''): Uint8ClampedArr
   // 1 célula (a costa da prévia e a luz da praia), para o traço e a luz não falharem nas diagonais.
   const coastLimit = coastCells + DIAGONAL_SLACK
   const beachLimit = Math.max(1, s.beachLight * cells) + DIAGONAL_SLACK
+  // Acréscimo à distância da água rasa perto da borda (em células 1024²): quadrático, de 0 em
+  // `edgeFade` até um pouco mais que `deepBase` na borda, para as faixas terminarem em curva.
+  const edgePeak = s.deepBase + 1
+  const edgeBoost = (i: number) => {
+    const x = i % w
+    const y = (i - x) / w
+    const e = Math.min(x, y, w - 1 - x, h - 1 - y) / cells
+    if (e >= s.edgeFade) return 0
+    const t = 1 - e / s.edgeFade
+    return edgePeak * t * t
+  }
 
   const tone = (i: number): Tone => {
     const b = biome[i]
     if (b === BIOME.deepOcean) {
-      const d = toShallow[i] / cells
+      const d = toShallow[i] / cells + edgeBoost(i)
       return d <= s.deepLight ? 2 : d <= s.deepBase ? 1 : 0
     }
     if (b === BIOME.shallowWater || b === BIOME.lake) {
