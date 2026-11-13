@@ -79,8 +79,10 @@ barra inferior.
   da área livre por toque; + (ou =) e − aproximam e afastam 1,25× no centro da área livre; 0
   centraliza. Os atalhos deslizam em 350 ms (`cubic-bezier(.4,0,.2,1)`), e toques seguidos somam a
   partir do destino. Não valem com Ctrl, Alt ou Meta (o zoom do navegador), com o foco num campo
-  (input, textarea, select, conteúdo editável, slider, caixa de opções) nem com um painel
-  sobreposto aberto no celular.
+  nem com um painel sobreposto aberto no celular. Campo é o elemento com o foco (ou um ancestral
+  dele) que seja input, textarea, select ou conteúdo editável, ou cujo `role` mais próximo seja
+  textbox, searchbox, combobox, listbox, option, slider, spinbutton, menu, menuitem, radiogroup,
+  tablist ou tab: controles que usam as setas ou digitam.
 - Ao redimensionar a janela, o ponto no centro da área livre e o zoom relativo se mantêm.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
