@@ -1,0 +1,5 @@
+commit: 7877e0b4fc70c1802db8b478bd0713481d6b4e6d
+ac-f2-07-decoracao-zoom-0-4x-nivel-de-detalhe.png  1280x800  e8a4949d3449750ba7a63e77c894fb3e435ee5b81e6e27fca69f1744ec0669ee
+ac-f2-07-decoracao-zoom-1x.png  1280x800  4c920d1af724ccfd007f9c0dd2d7e658e920e6015a7d8096d08d212436a92227
+ac-f2-07-decoracao-zoom-4x-culling.png  1280x800  1c3078e31d581eaa68a56b3a5e10d58871ce267e6761eed4a968efc680374c58
+ac-f2-07-sprites-5000-relatorio-2s.png  1280x800  0e5f5ee3c1f03d5cada24d0c21cef82ceac4fed51de1c23107cfa179a5ac5f2a
