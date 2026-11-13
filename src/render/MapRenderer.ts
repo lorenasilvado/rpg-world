@@ -20,10 +20,11 @@ export type MapRenderer = {
 /**
  * Renderer do mapa (PixiJS): cria o app no `host`, desenha o terreno e os ícones decorativos e só
  * lê o estado. Quando chega um campo novo no `worldStore`, a textura do terreno e os ícones são
- * trocados, sem mexer na câmera. A cada quadro, a decoração passa pelo culling e pelo nível de
- * detalhe (`DecorLayer`), pela área livre (a sidebar e o drawer fixos cobrem o resto), e a camada aparece ou some conforme `layers.decor` do `ui`. Fora do mapa
- * fica o fundo do canvas (`#1F4E79`). A câmera (`MapCamera`) abre com o mapa inteiro centrado na
- * área livre (a tela menos os `insets`).
+ * trocados, sem mexer na câmera. A cada quadro, a decoração passa pelo culling (pela área livre:
+ * a sidebar e o drawer fixos cobrem o resto) e pelo nível de detalhe (`DecorLayer`), e a camada
+ * aparece ou some conforme `layers.decor` do `ui`. Fora do mapa fica o fundo do canvas
+ * (`#1F4E79`). A câmera (`MapCamera`) abre com o mapa inteiro centrado na área livre (a tela menos
+ * os `insets`).
  *
  * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
@@ -68,7 +69,8 @@ export async function createMapRenderer(
   const decor = new DecorLayer(textures)
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
-    decor.update(worldView(t, freeArea()), zoom)
+    // Desligada, a camada não recalcula: ao religar, o próximo quadro confere a janela de novo.
+    if (decor.visible) decor.update(worldView(t, freeArea()), zoom)
     const drawn = String(decor.visible ? decor.drawn : 0)
     if (host.dataset.decorDrawn !== drawn) host.dataset.decorDrawn = drawn
     const layer = decor.visible ? 'on' : 'off'

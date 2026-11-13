@@ -17,7 +17,8 @@ import { useTheme } from './useTheme'
  *
  * O `world` é o estado do mundo (`worldStore.ts`): o mapa desenha o campo dele (`MapView`), o toast
  * mostra o erro da geração, e o status dela fica em `data-generation-status` (os testes esperam por
- * ele). O `ui` guarda as camadas do mapa ligadas (`uiStore.ts`). `createRenderer` troca o renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
+ * ele). O `ui` guarda as camadas do mapa ligadas (`uiStore.ts`). `createRenderer` troca o
+ * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  */
 export function EditorLayout({
   world,
