@@ -2,7 +2,8 @@ import { Texture } from 'pixi.js'
 import { describe, expect, it } from 'vitest'
 import { DECOR, type Decor } from '../../core/types'
 import { DECOR_FRAMES, DECOR_FRAME_SIZE, type DecorKind } from '../style/decor'
-import { DecorLayer } from './DecorLayer'
+import { createUiStore } from '../../state/uiStore'
+import { DecorLayer, bindDecorLayer, writeDecorState } from './DecorLayer'
 
 // Sem WebGL no jsdom: os sprites existem, mas nada é desenhado. Aqui fica quais ficam visíveis.
 const textures = Object.fromEntries(Object.keys(DECOR_FRAMES).map((k) => [k, Texture.WHITE as Texture])) as Record<
@@ -94,5 +95,42 @@ describe('DecorLayer', () => {
     expect(layer.view.visible).toBe(false)
     layer.visible = true
     expect(layer.view.visible).toBe(true)
+  })
+})
+
+describe('camada pelo estado da interface', () => {
+  it('layers.decor do uiStore esconde e mostra a camada, e o host mostra o estado', () => {
+    const ui = createUiStore()
+    const layer = new DecorLayer(textures)
+    layer.setDecor(decor([[0.1, 0.1, DECOR.tree], [0.5, 0.5, DECOR.peak]]))
+    layer.update(WHOLE, 1)
+    const host = document.createElement('main')
+    const unbind = bindDecorLayer(ui, layer)
+    writeDecorState(host, layer)
+    expect(layer.view.visible).toBe(true)
+    expect(host.dataset).toMatchObject({ decorLayer: 'on', decorDrawn: '2' })
+
+    ui.getState().setLayer('decor', false)
+    writeDecorState(host, layer)
+    expect(layer.view.visible).toBe(false)
+    expect(host.dataset).toMatchObject({ decorLayer: 'off', decorDrawn: '0' })
+
+    ui.getState().setLayer('decor', true)
+    writeDecorState(host, layer)
+    expect(layer.view.visible).toBe(true)
+    expect(host.dataset).toMatchObject({ decorLayer: 'on', decorDrawn: '2' })
+
+    // Desfeita a ligação, o estado não mexe mais na camada.
+    unbind()
+    ui.getState().setLayer('decor', false)
+    expect(layer.view.visible).toBe(true)
+  })
+
+  it('abre escondida se a camada já está desligada no estado', () => {
+    const ui = createUiStore()
+    ui.getState().setLayer('decor', false)
+    const layer = new DecorLayer(textures)
+    bindDecorLayer(ui, layer)
+    expect(layer.view.visible).toBe(false)
   })
 })

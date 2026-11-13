@@ -1,5 +1,6 @@
 import { Container, ImageSource, Rectangle, Sprite, Texture } from 'pixi.js'
 import { DECOR, type Decor } from '../../core/types'
+import type { UiStore } from '../../state/uiStore'
 import { WORLD_SIZE } from '../camera'
 import {
   DECOR_FRAMES,
@@ -120,4 +121,27 @@ export class DecorLayer {
     for (const t of textures) t.destroy()
     textures[0]?.source.destroy()
   }
+}
+
+/**
+ * Liga a camada ao estado da interface: `layers.decor` do `ui` mostra ou esconde os ícones, já ao
+ * ligar e a cada mudança. Devolve a função que desfaz a ligação.
+ */
+export function bindDecorLayer(ui: UiStore, decor: DecorLayer): () => void {
+  decor.visible = ui.getState().layers.decor
+  return ui.subscribe((state, prev) => {
+    if (state.layers !== prev.layers) decor.visible = state.layers.decor
+  })
+}
+
+/**
+ * Escreve no `host`, para os testes, a camada (`data-decor-layer`, `on` ou `off`) e os ícones
+ * desenhados (`data-decor-drawn`, 0 com a camada desligada). Roda a cada quadro: no StrictMode, o
+ * renderer descartado apaga esses atributos, e o quadro seguinte do outro os escreve de novo.
+ */
+export function writeDecorState(host: HTMLElement, decor: DecorLayer) {
+  const drawn = String(decor.visible ? decor.drawn : 0)
+  if (host.dataset.decorDrawn !== drawn) host.dataset.decorDrawn = drawn
+  const layer = decor.visible ? 'on' : 'off'
+  if (host.dataset.decorLayer !== layer) host.dataset.decorLayer = layer
 }

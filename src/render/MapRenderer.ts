@@ -3,7 +3,7 @@ import { createUiStore, type UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
 import { WORLD_SIZE, mapRect, type Area } from './camera'
-import { DecorLayer, loadDecorTextures } from './layers/DecorLayer'
+import { DecorLayer, bindDecorLayer, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { worldView } from './layers/decorCull'
 import { CANVAS_BACKGROUND } from './style/palette'
@@ -71,10 +71,7 @@ export async function createMapRenderer(
     if (!terrain.size) return
     // Desligada, a camada não recalcula: ao religar, o próximo quadro confere a janela de novo.
     if (decor.visible) decor.update(worldView(t, freeArea()), zoom)
-    const drawn = String(decor.visible ? decor.drawn : 0)
-    if (host.dataset.decorDrawn !== drawn) host.dataset.decorDrawn = drawn
-    const layer = decor.visible ? 'on' : 'off'
-    if (host.dataset.decorLayer !== layer) host.dataset.decorLayer = layer
+    writeDecorState(host, decor)
     const rect = mapRect(t)
     const value = [rect.x, rect.y, rect.width, rect.height].map((v) => Math.round(v)).join(',')
     if (host.dataset.mapRect !== value) host.dataset.mapRect = value
@@ -84,10 +81,7 @@ export async function createMapRenderer(
   app.stage.addChild(camera.viewport)
   camera.viewport.addChild(terrain.view, decor.view)
 
-  const showLayers = () => {
-    decor.visible = ui.getState().layers.decor
-  }
-  showLayers()
+  const unsubscribeUi = bindDecorLayer(ui, decor)
 
   const show = () => {
     const { field, seed } = world.getState()
@@ -105,9 +99,6 @@ export async function createMapRenderer(
   show()
   const unsubscribe = world.subscribe((state, prev) => {
     if (state.field !== prev.field) show()
-  })
-  const unsubscribeUi = ui.subscribe((state, prev) => {
-    if (state.layers !== prev.layers) showLayers()
   })
   const onResize = (w: number, h: number) => camera.resize(w, h)
   app.renderer.on('resize', onResize)
