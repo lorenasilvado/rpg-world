@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # F2 · Câmera e navegação
@@ -10,8 +10,9 @@ Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; 
 o comportamento atualiza esta spec.
 
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
-> reduzido). O resto (minimapa, escala, controles de zoom, barras, Camadas, Ajuda, medir distância)
-> ainda não existe: vem do material de design e do PRD.
+> reduzido) e a camada de decoração, com culling e nível de detalhe, ligada e desligada pelo estado
+> (sem interruptor na tela). O resto (minimapa, escala, controles de zoom, barras, Camadas, Ajuda,
+> medir distância) ainda não existe: vem do material de design e do PRD.
 
 ## Resumo
 
@@ -87,6 +88,15 @@ barra inferior.
   oceano escurece até a cor do fundo perto dela (ver o desenho do terreno em
   [geracao-terreno.md](geracao-terreno.md)).
 - Ao redimensionar a janela, o ponto no centro da área livre e o zoom relativo se mantêm.
+- Decoração: os ícones do campo com quadro no spritesheet (`src/render/style/`: árvore, cacto,
+  montanha e montanha nevada) são desenhados por cima do terreno, com o pé no ponto do núcleo;
+  onda, areia, tufo, duna e colina não têm quadro e não aparecem. Só são desenhados os ícones perto
+  da área livre (culling, com uma folga de 25% de cada lado). Abaixo de 0,8× de zoom, aparece metade
+  dos ícones, e abaixo de 0,55×, um quarto; o nível de detalhe nunca tira montanhas e montanhas
+  nevadas (o culling, sim, quando estão longe da área livre). Afastar só tira ícones, e aproximar
+  devolve os mesmos. A camada liga e desliga pelo estado da interface
+  (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não carrega, o mapa aparece só com o
+  terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao

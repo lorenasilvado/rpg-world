@@ -1,4 +1,5 @@
 import decorUrl from './decor.png'
+import { DECOR, type DecorKind as CoreDecorKind } from '../../core/types'
 import type { Biome } from './palette'
 
 /**
@@ -48,4 +49,35 @@ export const DECOR_BY_BIOME: Record<Biome, readonly DecorKind[]> = {
   snow: ['snowMountain'],
   frozenField: [],
   lake: [],
+}
+
+/**
+ * Quadro do spritesheet de cada ícone do núcleo (`DECOR` em `core/types.ts`). Os tipos fora da
+ * lista (onda, areia, tufo, duna e colina) não têm quadro e não são desenhados.
+ */
+export const DECOR_FRAME_OF: ReadonlyMap<CoreDecorKind, DecorKind> = new Map([
+  [DECOR.tree, 'pine'],
+  [DECOR.cactus, 'cactus'],
+  [DECOR.peak, 'mountain'],
+  [DECOR.snowPeak, 'snowMountain'],
+])
+
+/**
+ * Cópia de `DECOR_FRAME_OF` com a chave como número, porque `Decor.kind` é um `Uint8Array`: o
+ * `get` aceita qualquer byte do campo e devolve `undefined` para os que não têm quadro.
+ */
+const FRAME_BY_NUMBER: ReadonlyMap<number, DecorKind> = new Map<number, DecorKind>(DECOR_FRAME_OF)
+
+/** Quadro do spritesheet do ícone `kind` do núcleo, ou `undefined` se ele não tem quadro. */
+export function decorFrame(kind: number): DecorKind | undefined {
+  return FRAME_BY_NUMBER.get(kind)
+}
+
+/**
+ * Tamanho de um ícone no mundo do renderer (o quadrado de 1024 unidades, uma por célula do mapa
+ * 1024²): metade do `DECOR_SIZE`, a mesma proporção do mockup e do spike, em que o mapa tinha
+ * 2 px por célula.
+ */
+export function decorWorldSize(kind: DecorKind): number {
+  return DECOR_SIZE[kind] / 2
 }

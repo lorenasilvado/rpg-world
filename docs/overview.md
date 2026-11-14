@@ -111,7 +111,10 @@ editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terr
 (`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`. A conversão do campo em RGBA
 (`layers/terrainPixels.ts`) é TS puro, testada no Vitest. A câmera (`MapCamera.ts`) usa o pixi-viewport; a
 matemática dela (enquadramento, limites, deslizamento, atalhos) fica em `camera.ts`, TS puro,
-testada no Vitest; o zoom no cursor é do próprio pixi-viewport. Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
+testada no Vitest; o zoom no cursor é do próprio pixi-viewport. Os ícones decorativos ficam na
+`layers/DecorLayer.ts`, um sprite por ícone do spritesheet de `style/` num grupo de render; o
+culling pela área livre e o nível de detalhe pelo zoom ficam em `layers/decorCull.ts`, TS puro,
+testado no Vitest. A camada liga e desliga pelo `src/state/uiStore.ts` (camadas do mapa). Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): seed, parâmetros, o campo exibido e o status da geração. Arrastar um slider
@@ -135,7 +138,8 @@ memória, a transferência sem cópia e a ordem de entrega.
 
 O spike dos 5.000 sprites (M0) fica em `src/sprites/` e abre em `/sprites.html`, no dev e no build
 (`http://localhost:5173/sprites.html`): terreno em textura única, 5.000 ícones do mesmo spritesheet
-num grupo de render do Pixi, sem culling, e pixi-viewport com pan, zoom no cursor e pinça. O botão
+na camada de decoração do editor (`DecorLayer`, com culling e nível de detalhe; a página serve para
+medir o AC-F2-07), e pixi-viewport com pan, zoom no cursor e pinça. O botão
 "Medir automático" roda 30 s de câmera roteirizada, igual em toda máquina; "Medir manual" conta os
 30 s enquanto a pessoa faz pan e zoom, e não vale se faltar um dos dois gestos. O fps mínimo é o da
 pior janela de 1 s, e o relatório traz o
@@ -197,7 +201,7 @@ src/
     worldStore.ts       # seed, parâmetros, status da geração
     pinsStore.ts        # pins + undo
     roadsStore.ts
-    uiStore.ts          # ferramenta ativa, pin selecionado
+    uiStore.ts          # camadas do mapa, ferramenta ativa, pin selecionado
   features/
     sidebar/  pins/  roads/  worlds/
   persistence/

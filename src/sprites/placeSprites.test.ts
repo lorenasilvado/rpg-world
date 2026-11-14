@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { DECOR } from '../core/types'
 import { generateMockTerrain, type MockTerrain } from '../mockup/terrain'
 import { DECOR_BY_BIOME } from '../render/style/decor'
 import { BIOMES } from '../render/style/palette'
 import { placeSprites } from './placeSprites'
+import { toDecor } from './scene'
 
 const terrain = generateMockTerrain('valdora', 200, 125)
 
@@ -28,5 +30,20 @@ describe('placeSprites', () => {
   it('falha em vez de travar quando não há bioma com decoração', () => {
     const water: MockTerrain = { ...terrain, biome: new Uint8Array(terrain.biome.length) }
     expect(() => placeSprites(water, 'a', 1)).toThrow()
+  })
+})
+
+describe('toDecor', () => {
+  it('converte os ícones do spike para o formato do núcleo', () => {
+    const d = toDecor(
+      [
+        { kind: 'pine', x: 512, y: 160 },
+        { kind: 'snowMountain', x: 256, y: 320 },
+      ],
+      { width: 1024, height: 640 },
+    )
+    expect([...d.u]).toEqual([0.5, 0.25])
+    expect([...d.v]).toEqual([0.25, 0.5])
+    expect([...d.kind]).toEqual([DECOR.tree, DECOR.snowPeak])
   })
 })

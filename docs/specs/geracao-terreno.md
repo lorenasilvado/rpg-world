@@ -13,8 +13,9 @@ o comportamento atualiza esta spec.
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
 > da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
 > mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
-> e mostra o toast de erro se a geração ou o worker falhar. Ainda não há câmera, ícones de
-> decoração nem slider na tela. O resto vem do material de design e do PRD.
+> e mostra o toast de erro se a geração ou o worker falhar. A câmera e os ícones de decoração
+> estão em [navegacao.md](navegacao.md). Ainda não há slider na tela. O resto vem do material de
+> design e do PRD.
 
 ## Resumo
 
