@@ -102,9 +102,9 @@ export async function createMapRenderer(
   const unsubscribeUi = decor ? bindDecorLayer(ui, decor) : () => {}
 
   const show = () => {
-    const { field, seed } = world.getState()
-    if (!field) return
-    terrain.setField(field, seed)
+    const { field, terrainRgba } = world.getState()
+    if (!field || !terrainRgba) return
+    terrain.setField(field, terrainRgba)
     // A prévia 256² e o mapa 1024² ocupam o mesmo quadrado do mundo.
     terrain.view.width = WORLD_SIZE
     terrain.view.height = WORLD_SIZE

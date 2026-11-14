@@ -13,7 +13,7 @@ function fakeSpawn(answer: () => unknown) {
   return { spawn, terminated, spawned: () => n }
 }
 
-const delivered = { version: 1, result: { workerMs: 12, memory: { cacheBytes: 10, fieldBytes: 5 } } }
+const delivered = { version: 1, result: { workerMs: 12, terrainMs: 3, memory: { cacheBytes: 10, fieldBytes: 5 } } }
 const req = (i: number) => ({ seed: `s${i}`, size: 256, params: {} as never })
 
 describe('timeCold (#36)', () => {
@@ -33,6 +33,7 @@ describe('timeCold (#36)', () => {
     expect(t.size).toBe(256)
     expect(t.runs).toHaveLength(3)
     expect(t.workerMedian).toBe(12)
+    expect(t.terrainMedian).toBe(3)
     expect(memory.worldBytes).toBe(15)
   })
 

@@ -104,12 +104,16 @@ sliders refazem só a classificação. O campo gerado com o cache é o mesmo da 
 hash). Cada pedido ganha um número de versão (`newerOnly.ts`): fica no máximo um pedido no worker e
 um na espera, e um pedido novo toma o lugar do que esperava (que recebe `null`). Todo resultado mais
 novo que o último entregue chega, então o mapa continua atualizando durante o arrasto, e um
-resultado velho nunca chega depois de um novo.
+resultado velho nunca chega depois de um novo. Depois da geração, o worker também monta o RGBA da
+textura do terreno (`terrainPixels`, de `src/render/layers/`, com a paleta de `src/render/style/`;
+os dois são TS puro, sem Pixi) e o transfere junto com o campo: no mapa 1024², a conversão travaria
+a thread principal.
 
 O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi na área do mapa do
 editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno
-(`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`. A conversão do campo em RGBA
-(`layers/terrainPixels.ts`) é TS puro, testada no Vitest. A câmera (`MapCamera.ts`) usa o pixi-viewport; a
+(`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`, com o RGBA que já vem pronto do
+worker (`terrainRgba`): na thread principal, ele só é enviado para a GPU. A conversão do campo em
+RGBA (`layers/terrainPixels.ts`) é TS puro, testada no Vitest, e roda no worker. A câmera (`MapCamera.ts`) usa o pixi-viewport; a
 matemática dela (enquadramento, limites, deslizamento, atalhos) fica em `camera.ts`, TS puro,
 testada no Vitest; o zoom no cursor é do próprio pixi-viewport. Os ícones decorativos ficam na
 `layers/DecorLayer.ts`, um sprite por ícone do spritesheet de `style/` num grupo de render; o
@@ -117,7 +121,8 @@ culling pela área livre e o nível de detalhe pelo zoom ficam em `layers/decorC
 testado no Vitest. A camada liga e desliga pelo `src/state/uiStore.ts` (camadas do mapa). Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
-React): seed, parâmetros, o campo exibido e o status da geração. Arrastar um slider
+React): seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
+status da geração. Arrastar um slider
 (`dragParams`) pede a prévia 256²; soltar (`releaseParams`) e trocar a seed pedem o mapa 1024². O
 campo só é trocado por um resultado de versão mais nova que a do exibido.
 

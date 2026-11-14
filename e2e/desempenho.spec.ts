@@ -2,7 +2,7 @@
 import { expect, test } from '@playwright/test'
 import type { BenchReport, Timing } from '../src/bench/report.ts'
 
-// Desempenho da geração (#9, #45, #36; RNF-2): a página /bench.html gera no worker, com o pipeline
+// Desempenho da geração (#9, #45, #36, #90; RNF-2): a página /bench.html gera no worker, com o pipeline
 // completo, e mede. Os tempos são medianas depois de uma geração de aquecimento, e também num
 // worker recém-criado, sem aquecimento; a máquina e os números vão para as anotações do teste (e
 // para o PR).
@@ -22,7 +22,10 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
   const report = JSON.parse((await page.getByTestId('report').textContent()) ?? '') as BenchReport
   const t = report.targets
 
-  const timing = (label: string, x: Timing) => ({ type: label, description: `mediana ${x.median} ms, máx. ${x.max} ms` })
+  const timing = (label: string, x: Timing) => ({
+    type: label,
+    description: `mediana ${x.median} ms, máx. ${x.max} ms, textura ${x.terrainMedian} ms`,
+  })
   test.info().annotations.push(
     { type: 'máquina', description: `${report.machine.userAgent} · ${report.machine.cores} núcleos` },
     timing('prévia 256², worker novo', report.coldPreview),
@@ -53,8 +56,18 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
   await expect(rows.nth(1).locator('td').nth(1)).toHaveText(String(report.coldMap.median))
   // Só informativas: sem meta e sem ✓/✗.
   for (const k of [0, 1]) {
-    await expect(rows.nth(k).locator('td').nth(4)).toHaveText('—')
-    await expect(rows.nth(k).locator('td').nth(6)).toHaveText('')
+    await expect(rows.nth(k).locator('td').nth(5)).toHaveText('—')
+    await expect(rows.nth(k).locator('td').nth(7)).toHaveText('')
+  }
+
+  // #90: o tempo de `terrainPixels` (a textura do terreno, montada no worker) aparece na prévia
+  // 256² e no mapa 1024², no relatório e na coluna Textura da tabela. A ida e volta já o inclui,
+  // então as metas do AC-F1-09 abaixo valem com a textura.
+  await expect(page.getByTestId('results').locator('thead th').nth(4)).toHaveText('Textura (ms)')
+  for (const [k, x] of [report.preview, report.map].map((x, i) => [i + 2, x] as const)) {
+    expect(x.terrainMedian).toBeGreaterThan(0)
+    expect(x.terrainMedian).toBeLessThanOrEqual(x.median)
+    await expect(rows.nth(k).locator('td').nth(4)).toHaveText(String(x.terrainMedian))
   }
 
   // AC-F1-09: metas de tempo com o pipeline completo, e memória do mundo.

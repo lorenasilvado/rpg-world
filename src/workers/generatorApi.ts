@@ -7,6 +7,7 @@ import {
   type RecomputedStage,
   type WorldParams,
 } from '../core'
+import { terrainPixels } from '../render/layers/terrainPixels'
 
 /**
  * API que o worker de geração expõe pelo Comlink (`generator.worker.ts`). Fica num módulo à parte
@@ -15,6 +16,9 @@ import {
  *
  * O worker guarda o ruído da seed (`createFieldCache`): mudar um slider de limiar só reclassifica,
  * e Continente ou Costa refazem a elevação e os rios sem amostrar ruído de novo.
+ *
+ * O RGBA da textura do terreno (`terrainPixels`, só núcleo e paleta, sem Pixi) também é montado
+ * aqui (#90): no mapa 1024² ele leva da ordem de 200 ms, e na thread principal travaria a UI.
  */
 export type GenerateRequest = { seed: string; size: number; params?: WorldParams }
 
@@ -23,11 +27,15 @@ export type GenerateResult = {
   size: number
   params: WorldParams
   field: CoreField
-  /** Tempo da geração dentro do worker, em ms (sem a ida e a volta das mensagens). */
+  /** RGBA da textura do terreno (`terrainPixels` com a seed nas manchas), `size × size × 4` bytes. */
+  terrainRgba: Uint8ClampedArray<ArrayBuffer>
+  /** Tempo da geração dentro do worker, em ms (sem a textura e sem a ida e a volta das mensagens). */
   workerMs: number
+  /** Tempo de `terrainPixels` dentro do worker, em ms. */
+  terrainMs: number
   /** A primeira etapa refeita: `noise` (sem cache), `elevation` ou só `classification`. */
   recomputed: RecomputedStage
-  /** Memória do mundo, em bytes: o cache do worker e os arrays do campo entregue. */
+  /** Memória do mundo, em bytes: o cache do worker e os arrays entregues (o campo e o RGBA). */
   memory: { cacheBytes: number; fieldBytes: number }
 }
 
@@ -41,7 +49,10 @@ export const generatorApi = {
     const start = performance.now()
     const { field, recomputed } = cache.generate(seed, size, params)
     const workerMs = performance.now() - start
-    const memory = { cacheBytes: cache.bytes(), fieldBytes: fieldBytes(field) }
+    const terrainStart = performance.now()
+    const terrainRgba = terrainPixels(field, seed)
+    const terrainMs = performance.now() - terrainStart
+    const memory = { cacheBytes: cache.bytes(), fieldBytes: fieldBytes(field) + terrainRgba.byteLength }
     const { decor } = field
     lastBuffers = [
       field.elevation,
@@ -52,10 +63,14 @@ export const generatorApi = {
       decor.u,
       decor.v,
       decor.kind,
+      terrainRgba,
     ].map((a) => a.buffer as ArrayBuffer)
     // Os arrays vão para a thread principal por transferência: o worker perde o acesso a eles
     // (o buffer fica com 0 bytes) e nada é copiado. O cache não divide arrays com o campo.
-    return transfer({ seed, size, params: { ...params }, field, workerMs, recomputed, memory }, lastBuffers)
+    return transfer(
+      { seed, size, params: { ...params }, field, terrainRgba, workerMs, terrainMs, recomputed, memory },
+      lastBuffers,
+    )
   },
 
   /** `true` se os buffers do último resultado saíram do worker (transferidos, sem cópia). */

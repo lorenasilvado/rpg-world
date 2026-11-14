@@ -5,9 +5,9 @@ import { createGenerator, type Generator } from '../workers/generatorClient'
 import { MAP_SIZE, PREVIEW_SIZE, TARGETS, type BenchReport, type Timing } from './report'
 
 /**
- * Medição de desempenho (#9, #45, #36; RNF-2, AC-F1-09 a 11): tempos da prévia 256² e do mapa 1024²
+ * Medição de desempenho (#9, #45, #36, #90; RNF-2, AC-F1-09 a 11): tempos da prévia 256² e do mapa 1024²
  * com o pipeline completo num worker recém-criado (sem aquecimento) e no worker já aquecido, sem
- * cache e com o cache do ruído; memória do mundo;
+ * cache e com o cache do ruído, com o tempo da textura do terreno (`terrainPixels`, no worker); memória do mundo;
  * transferência sem cópia; o arrasto de um slider pelo `worldStore`; e se a UI continua
  * respondendo.
  */
@@ -73,13 +73,14 @@ function trackMemory(memory: Memory, { cacheBytes, fieldBytes }: Pick<Memory, 'c
   }
 }
 
-function summarize(size: number, roundTrips: number[], inWorker: number[], frames: FrameMonitor): Timing {
+function summarize(size: number, roundTrips: number[], inWorker: number[], terrain: number[], frames: FrameMonitor): Timing {
   return {
     size,
     runs: roundTrips.map(round),
     median: round(median(roundTrips)),
     max: round(Math.max(...roundTrips)),
     workerMedian: round(median(inWorker)),
+    terrainMedian: round(median(terrain)),
     maxFrameGap: round(frames.maxGap),
   }
 }
@@ -99,6 +100,7 @@ export async function timeCold(
 ): Promise<Timing> {
   const roundTrips: number[] = []
   const inWorker: number[] = []
+  const terrain: number[] = []
   await nextFrame()
   frames.reset()
   for (let i = 0; i < runs; i++) {
@@ -109,13 +111,14 @@ export async function timeCold(
       roundTrips.push(performance.now() - start)
       if (!r) throw new Error(`a geração ${i + 1} num worker novo voltou sem resultado`)
       inWorker.push(r.result.workerMs)
+      terrain.push(r.result.terrainMs)
       trackMemory(memory, r.result.memory)
     } finally {
       gen.terminate()
     }
   }
   await nextFrame()
-  return summarize(request(0).size, roundTrips, inWorker, frames)
+  return summarize(request(0).size, roundTrips, inWorker, terrain, frames)
 }
 
 /** Mede `runs` gerações, depois de uma de aquecimento (`warmup`), que não conta. */
@@ -130,6 +133,7 @@ async function time(
   await gen.request(warmup)
   const roundTrips: number[] = []
   const inWorker: number[] = []
+  const terrain: number[] = []
   await nextFrame()
   frames.reset()
   for (let i = 0; i < runs; i++) {
@@ -138,11 +142,12 @@ async function time(
     roundTrips.push(performance.now() - start)
     if (r) {
       inWorker.push(r.result.workerMs)
+      terrain.push(r.result.terrainMs)
       trackMemory(memory, r.result.memory)
     }
   }
   await nextFrame()
-  return summarize(request(0).size, roundTrips, inWorker, frames)
+  return summarize(request(0).size, roundTrips, inWorker, terrain, frames)
 }
 
 /** Espera o store sair de `generating` (o pedido mais novo chegou, ou falhou). */

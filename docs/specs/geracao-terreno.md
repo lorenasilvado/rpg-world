@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -156,6 +156,10 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Geração no worker: o ruído da seed fica guardado entre os pedidos. Trocar a seed refaz tudo;
   Tamanho do continente ou Rugosidade da costa refazem a elevação, os rios e a classificação; os
   outros sete sliders refazem só a classificação. O mapa sai igual ao da geração do zero.
+  O RGBA da textura do terreno também é montado no worker, depois da geração, e vai para a thread
+  principal por transferência, junto com o campo: a thread principal só o envia para a GPU. A
+  medição (`/bench.html`) mostra o tempo dele em cada tamanho (coluna Textura), e a memória do
+  mundo conta o RGBA.
 - O ruído fica fixo pela seed. Os sete sliders de limiar (Oceano, Praias, Desertos, Florestas,
   Montanhas, Neve e Temperatura) só mudam limiares, não a elevação. Tamanho do continente e
   Rugosidade da costa mudam a elevação, mas só o peso com que as camadas de ruído da seed se combinam.
@@ -204,8 +208,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   | Neve de montanha | Montanha nevada | 75% |
 
   Água rasa, lago e campo gelado não têm decoração.
-- Desenho do terreno (`src/render/`): o renderer só lê o campo do `worldStore` e, a cada campo
-  novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
+- Desenho do terreno (`src/render/`): o renderer só lê o campo e o RGBA do `worldStore` e, a cada
+  campo novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
   do seu bioma (paleta posterizada): nas colinas, montanhas e neve, o tom vem do hillshade; nos
   outros biomas da terra, de manchas de baixa frequência sorteadas pela seed, com um pouco de
   hillshade. A água encostada na terra (mar e lagos) é pintada com o traço da costa (`#163A5C`, 2
