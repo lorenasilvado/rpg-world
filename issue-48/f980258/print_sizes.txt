@@ -1,4 +1,6 @@
 commit: f980258fc16bfa6ba0d33986c4b3589f2b2ab655
+ac-f2-07-decoracao-celular-zoom-1x.png  390x844  bad6d99b54250dfdae97d50ec27cee0e78bb2bbcce6dfac69cbd97887808e0b7
+ac-f2-07-decoracao-celular-zoom-4x-culling.png  390x844  881aa72ccc8e202cc19d38c645c5f887001fbf5d0fc5fcb11326a974361f1865
 ac-f2-07-decoracao-zoom-0-4x-nivel-de-detalhe.png  1280x800  e8a4949d3449750ba7a63e77c894fb3e435ee5b81e6e27fca69f1744ec0669ee
 ac-f2-07-decoracao-zoom-1x.png  1280x800  4c920d1af724ccfd007f9c0dd2d7e658e920e6015a7d8096d08d212436a92227
 ac-f2-07-decoracao-zoom-4x-culling.png  1280x800  1c3078e31d581eaa68a56b3a5e10d58871ce267e6761eed4a968efc680374c58
