@@ -24,6 +24,8 @@ export type WorldState = {
   params: WorldParams
   /** Campo exibido: o resultado mais novo entregue até agora (`null` antes do primeiro). */
   field: CoreField | null
+  /** RGBA da textura do terreno do `field`, montado no worker (`null` sem campo). */
+  terrainRgba: Uint8ClampedArray<ArrayBuffer> | null
   /** Versão do pedido que gerou o `field` (0 sem campo). */
   fieldVersion: number
   /** `generating` enquanto o pedido mais novo não chegou; `error` se ele falhou. */
@@ -58,6 +60,7 @@ export function createWorldStore(
           if (!delivered || delivered.version <= get().fieldVersion) return
           set({
             field: delivered.result.field,
+            terrainRgba: delivered.result.terrainRgba,
             fieldVersion: delivered.version,
             status: delivered.version === generator.latestVersion() ? 'idle' : 'generating',
             error: null,
@@ -75,6 +78,7 @@ export function createWorldStore(
       seed: initial.seed ?? DEFAULT_SEED,
       params: { ...(initial.params ?? DEFAULT_WORLD_PARAMS) },
       field: null,
+      terrainRgba: null,
       fieldVersion: 0,
       status: 'idle',
       error: null,

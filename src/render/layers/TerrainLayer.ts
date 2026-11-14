@@ -1,11 +1,11 @@
 import { BufferImageSource, Sprite, Texture } from 'pixi.js'
 import type { CoreField } from '../../core/types'
-import { terrainPixels } from './terrainPixels'
 
 /**
  * Terreno numa textura única na GPU (ADR 0001): um sprite com o RGBA do campo, uma célula por
  * pixel. A textura é trocada a cada campo novo, e a anterior é destruída. Aproximar mostra as
- * células nítidas (como no mockup); afastar suaviza, com mipmaps.
+ * células nítidas (como no mockup); afastar suaviza, com mipmaps. O RGBA (`terrainPixels`) vem
+ * pronto do worker de geração (#90): aqui só é enviado para a GPU.
  */
 export class TerrainLayer {
   readonly view = new Sprite()
@@ -16,10 +16,11 @@ export class TerrainLayer {
     return this.texture ? this.texture.width : 0
   }
 
-  setField(field: CoreField, patchSeed: string) {
+  /** `rgba`: o RGBA do campo (`terrainPixels`), `width × height × 4` bytes. */
+  setField(field: Pick<CoreField, 'width' | 'height'>, rgba: Uint8ClampedArray<ArrayBuffer>) {
     const texture = new Texture({
       source: new BufferImageSource({
-        resource: terrainPixels(field, patchSeed),
+        resource: rgba,
         width: field.width,
         height: field.height,
         format: 'rgba8unorm',

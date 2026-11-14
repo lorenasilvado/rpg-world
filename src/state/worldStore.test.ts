@@ -21,7 +21,9 @@ function fakeGenerator() {
               size: req.size,
               params: req.params ?? DEFAULT_WORLD_PARAMS,
               field: field(req),
+              terrainRgba: new Uint8ClampedArray(0),
               workerMs: 0,
+              terrainMs: 0,
               recomputed: 'classification',
               memory: { cacheBytes: 0, fieldBytes: 0 },
             }),
@@ -41,6 +43,7 @@ describe('worldStore (AC-F1-10, AC-F1-11)', () => {
     expect(s.seed).toBe('rpg-world')
     expect(s.params).toEqual(DEFAULT_WORLD_PARAMS)
     expect(s.field).toBeNull()
+    expect(s.terrainRgba).toBeNull()
     expect(s.status).toBe('idle')
   })
 
@@ -52,6 +55,8 @@ describe('worldStore (AC-F1-10, AC-F1-11)', () => {
     expect(store.getState().status).toBe('generating')
     started[0].finish()
     await tick()
+    // O RGBA do terreno chega do worker junto com o campo.
+    expect(store.getState().terrainRgba).toBeInstanceOf(Uint8ClampedArray)
     store.getState().releaseParams({ ocean: 32 })
     await tick()
     expect(started[1].req).toEqual({ seed: 'rpg-world', size: MAP_SIZE, params: { ...DEFAULT_WORLD_PARAMS, ocean: 32 } })

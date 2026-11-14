@@ -13,8 +13,13 @@ export type Timing = {
   runs: number[]
   median: number
   max: number
-  /** Mediana do tempo de geração dentro do worker, em ms. */
+  /** Mediana do tempo de geração dentro do worker, em ms (sem a textura). */
   workerMedian: number
+  /**
+   * Mediana do tempo de `terrainPixels` (o RGBA da textura do terreno), em ms (#90). Roda no
+   * worker, depois da geração; a ida e volta (`median`) já o inclui.
+   */
+  terrainMedian: number
   /** Maior intervalo entre dois quadros da UI durante as gerações, em ms. */
   maxFrameGap: number
 }
@@ -64,6 +69,9 @@ export type BenchReport = {
     /** Ao soltar: o mapa final substitui a prévia (AC-F1-11). */
     release: { size: number; version: number; lastVersion: number; matches: boolean }
   }
-  /** Referência: a mesma geração 1024² na thread principal, como no RPG-land (null no modo rápido). */
+  /**
+   * `memory.fieldBytes` conta o campo e o RGBA do terreno, que também vai para a thread principal.
+   * Referência: a mesma geração 1024² na thread principal, como no RPG-land (null no modo rápido).
+   */
   mainThread: { ms: number; maxFrameGap: number } | null
 }

@@ -3,7 +3,7 @@ import { createGenerator } from '../workers/generatorClient'
 import { FULL, QUICK, runBench, TARGETS, type BenchReport, type Timing } from './runBench'
 
 /**
- * Página de medição de desempenho (#9, #45, #36), em /bench.html. `?rapido` roda menos vezes
+ * Página de medição de desempenho (#9, #45, #36, #90), em /bench.html. `?rapido` roda menos vezes
  * (usado pelo E2E do build).
  */
 const quick = new URLSearchParams(location.search).has('rapido')
@@ -43,6 +43,7 @@ function timingRow(label: string, t: Timing, target: number | null): string {
     <td class="pr-4 text-right font-mono">${t.median}</td>
     <td class="pr-4 text-right font-mono">${t.max}</td>
     <td class="pr-4 text-right font-mono">${t.workerMedian}</td>
+    <td class="pr-4 text-right font-mono">${t.terrainMedian}</td>
     <td class="pr-4 text-right font-mono">${target ?? '—'}</td>
     <td class="pr-4 text-right font-mono">${t.maxFrameGap}</td>
     <td>${target === null ? '' : ok(t.median <= target)}</td>
@@ -63,6 +64,7 @@ function render(r: BenchReport) {
         <th class="pr-4 text-right font-normal">Mediana (ms)</th>
         <th class="pr-4 text-right font-normal">Máx. (ms)</th>
         <th class="pr-4 text-right font-normal">No worker (ms)</th>
+        <th class="pr-4 text-right font-normal">Textura (ms)</th>
         <th class="pr-4 text-right font-normal">Meta (ms)</th>
         <th class="pr-4 text-right font-normal">Maior quadro (ms)</th>
         <th></th>
@@ -80,7 +82,7 @@ function render(r: BenchReport) {
     <ul class="mt-3 space-y-1 text-sm">
       ${r.visible ? '' : '<li>✗ A aba ficou escondida durante a medição: o maior quadro e o arrasto não valem. Meça de novo com a aba à vista.</li>'}
       <li>${ok(m.worldBytes <= TARGETS.worldBytes)} Memória do mundo: ${mb(m.worldBytes)} MB
-        (cache do worker ${mb(m.cacheBytes)} MB + campo ${mb(m.fieldBytes)} MB; meta ${mb(TARGETS.worldBytes)} MB)</li>
+        (cache do worker ${mb(m.cacheBytes)} MB + campo e textura ${mb(m.fieldBytes)} MB; meta ${mb(TARGETS.worldBytes)} MB)</li>
       <li>${ok(r.transferred)} Arrays transferidos sem cópia (buffers vazios no worker depois do envio)</li>
       <li>${ok(d.duringDrag > 1 && d.inOrder && d.previewMatches)}
         Arrasto: ${d.sent} pedidos de prévia, ${d.duringDrag} prévias exibidas durante o arrasto, sempre da mais
