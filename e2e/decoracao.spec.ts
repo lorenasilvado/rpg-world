@@ -115,3 +115,25 @@ async function countAtEdge(page: Page, key: string, n: number): Promise<number> 
     .toBe(true)
   return attr(page, 'data-decor-drawn')
 }
+
+test('sem o spritesheet dos ícones, o mapa aparece só com o terreno', async ({ page }) => {
+  const errors: string[] = []
+  const warnings: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('console', (m) => {
+    if (m.type() === 'warning') warnings.push(m.text())
+  })
+  // Só a imagem: no dev, o `import` do `decor.png` também é um pedido (um módulo JS com a URL).
+  await page.route('**/decor.png*', (route) =>
+    route.request().resourceType() === 'image' ? route.fulfill({ status: 404, body: '' }) : route.continue(),
+  )
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
+  await expect(page.getByTestId('map-canvas')).toBeVisible()
+  await expect(map(page)).toHaveAttribute('data-decor-total', '0')
+  await expect(map(page)).toHaveAttribute('data-decor-layer', 'off')
+  await expect(map(page)).toHaveAttribute('data-decor-drawn', '0')
+  expect(warnings.some((w) => w.includes('ícones da decoração'))).toBe(true)
+  expect(errors).toEqual([])
+})

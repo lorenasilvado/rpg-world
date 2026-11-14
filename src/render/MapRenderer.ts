@@ -30,7 +30,8 @@ export type MapRenderer = {
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
  * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre); da decoração, os ícones com quadro
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
- * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`).
+ * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não carrega,
+ * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, e o console avisa.
  */
 export async function createMapRenderer(
   host: HTMLElement,
@@ -40,7 +41,11 @@ export async function createMapRenderer(
 ): Promise<MapRenderer> {
   const app = new Application()
   const [textures] = await Promise.all([
-    loadDecorTextures(),
+    // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
+    loadDecorTextures().catch((error: unknown) => {
+      console.warn('Não foi possível carregar os ícones da decoração; o mapa segue sem eles', error)
+      return null
+    }),
     app.init({
       preference: 'webgl',
       resizeTo: host,
@@ -66,11 +71,16 @@ export async function createMapRenderer(
 
   // Antes da câmera: a função de mudança dela lê o terreno.
   const terrain = new TerrainLayer()
-  const decor = new DecorLayer(textures)
+  const decor = textures ? new DecorLayer(textures) : null
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
-    decor.frame(worldView(t, freeArea()), zoom)
-    writeDecorState(host, decor)
+    if (decor) {
+      decor.frame(worldView(t, freeArea()), zoom)
+      writeDecorState(host, decor)
+    } else {
+      if (host.dataset.decorLayer !== 'off') host.dataset.decorLayer = 'off'
+      if (host.dataset.decorDrawn !== '0') host.dataset.decorDrawn = '0'
+    }
     const rect = mapRect(t)
     const value = [rect.x, rect.y, rect.width, rect.height].map((v) => Math.round(v)).join(',')
     if (host.dataset.mapRect !== value) host.dataset.mapRect = value
@@ -78,9 +88,10 @@ export async function createMapRenderer(
     if (host.dataset.zoom !== z) host.dataset.zoom = z
   })
   app.stage.addChild(camera.viewport)
-  camera.viewport.addChild(terrain.view, decor.view)
+  camera.viewport.addChild(terrain.view)
+  if (decor) camera.viewport.addChild(decor.view)
 
-  const unsubscribeUi = bindDecorLayer(ui, decor)
+  const unsubscribeUi = decor ? bindDecorLayer(ui, decor) : () => {}
 
   const show = () => {
     const { field, seed } = world.getState()
@@ -89,8 +100,8 @@ export async function createMapRenderer(
     // A prévia 256² e o mapa 1024² ocupam o mesmo quadrado do mundo.
     terrain.view.width = WORLD_SIZE
     terrain.view.height = WORLD_SIZE
-    decor.setDecor(field.decor)
-    host.dataset.decorTotal = String(decor.count)
+    decor?.setDecor(field.decor)
+    host.dataset.decorTotal = String(decor?.count ?? 0)
     host.dataset.terrainSize = String(terrain.size)
     camera.showWorld()
   }
@@ -110,7 +121,7 @@ export async function createMapRenderer(
       app.renderer.off('resize', onResize)
       camera.destroy()
       terrain.destroy()
-      decor.destroy()
+      decor?.destroy()
       app.destroy({ removeView: true }, { children: true })
       delete host.dataset.terrainSize
       delete host.dataset.mapRect

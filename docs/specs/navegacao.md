@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # F2 · Câmera e navegação
@@ -94,7 +94,8 @@ barra inferior.
   da área livre (culling, com uma folga de 25% de cada lado). Abaixo de 0,8× de zoom, aparece metade
   dos ícones, e abaixo de 0,55×, um quarto; montanhas e montanhas nevadas aparecem sempre. Afastar
   só tira ícones, e aproximar devolve os mesmos. A camada liga e desliga pelo estado da interface
-  (`uiStore`, ligada ao abrir).
+  (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não carrega, o mapa aparece só com o
+  terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
