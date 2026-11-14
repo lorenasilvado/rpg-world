@@ -18,6 +18,8 @@ export type Scene = {
   world: { width: number; height: number }
   /** Ícones desenhados depois do culling e do nível de detalhe, no último quadro. */
   drawn(): number
+  /** Zoom relativo do último quadro (1× = o terreno inteiro na tela), o que o nível de detalhe usa. */
+  zoom(): number
 }
 
 /** Tipo do núcleo de cada quadro do spritesheet (o inverso de `DECOR_FRAME_OF`). */
@@ -91,13 +93,15 @@ export async function createScene(host: HTMLElement, terrain: MockTerrain, decor
   const icons = new DecorLayer(textures)
   icons.setDecor(toDecor(decor, terrain), world.width, world.height)
   viewport.addChild(icons.view)
+  let zoom = 1
   viewport.on('frame-end', () => {
     const scale = viewport.scale.x
     const fit = Math.min(app.screen.width / world.width, app.screen.height / world.height)
-    icons.update(worldView({ x: viewport.x, y: viewport.y, scale }, app.screen), scale / fit)
+    zoom = scale / fit
+    icons.update(worldView({ x: viewport.x, y: viewport.y, scale }, app.screen), zoom)
   })
 
   viewport.fitWorld(true)
   viewport.moveCenter(world.width / 2, world.height / 2)
-  return { app, viewport, world, drawn: () => icons.drawn }
+  return { app, viewport, world, drawn: () => icons.drawn, zoom: () => zoom }
 }

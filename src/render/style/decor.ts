@@ -62,6 +62,14 @@ export const DECOR_FRAME_OF: ReadonlyMap<CoreDecorKind, DecorKind> = new Map([
   [DECOR.snowPeak, 'snowMountain'],
 ])
 
+/** O mesmo mapa, consultado pelo número do campo (`Decor.kind` é um `Uint8Array`). */
+const FRAME_BY_NUMBER: ReadonlyMap<number, DecorKind> = DECOR_FRAME_OF
+
+/** Quadro do spritesheet do ícone `kind` do núcleo, ou `undefined` se ele não tem quadro. */
+export function decorFrame(kind: number): DecorKind | undefined {
+  return FRAME_BY_NUMBER.get(kind)
+}
+
 /**
  * Tamanho de um ícone no mundo do renderer (o quadrado de 1024 unidades, uma por célula do mapa
  * 1024²): metade do `DECOR_SIZE`, a mesma proporção do mockup e do spike, em que o mapa tinha

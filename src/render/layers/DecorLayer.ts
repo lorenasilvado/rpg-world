@@ -4,9 +4,9 @@ import type { UiStore } from '../../state/uiStore'
 import { WORLD_SIZE } from '../camera'
 import {
   DECOR_FRAMES,
-  DECOR_FRAME_OF,
   DECOR_FRAME_SIZE,
   DECOR_SHEET_URL,
+  decorFrame,
   decorWorldSize,
   type DecorKind,
 } from '../style/decor'
@@ -31,6 +31,9 @@ export async function loadDecorTextures(): Promise<Record<DecorKind, Texture>> {
  * de render (mover a câmera só muda a transformação do grupo). A cada quadro, `update` aplica o
  * culling e o nível de detalhe (`decorCull.ts`); os sprites só mudam quando a janela de culling
  * deixa de servir (`stale`) ou o nível muda. `visible` liga e desliga a camada inteira.
+ *
+ * A camada passa a ser dona das texturas que recebe (as de `loadDecorTextures`): o `destroy` as
+ * destrói, junto com o spritesheet delas. Quem cria a camada não deve reaproveitá-las depois.
  */
 export class DecorLayer {
   readonly view = new Container({ isRenderGroup: true })
@@ -67,15 +70,15 @@ export class DecorLayer {
   setDecor(decor: Decor, width = WORLD_SIZE, height = width) {
     const scale = width / WORLD_SIZE
     const kept: number[] = []
-    for (let i = 0; i < decor.kind.length; i++) if (DECOR_FRAME_OF.has(decor.kind[i] as never)) kept.push(i)
+    for (let i = 0; i < decor.kind.length; i++) if (decorFrame(decor.kind[i])) kept.push(i)
     const n = kept.length
     const icons: DecorIcons = { x: new Float32Array(n), y: new Float32Array(n), size: new Float32Array(n), always: new Uint8Array(n) }
 
     while (this.sprites.length > n) this.sprites.pop()!.destroy()
     for (let j = 0; j < n; j++) {
       const i = kept[j]
-      const core = decor.kind[i] as never
-      const frame = DECOR_FRAME_OF.get(core)!
+      const core = decor.kind[i]
+      const frame = decorFrame(core)!
       const size = decorWorldSize(frame) * scale
       icons.x[j] = decor.u[i] * width
       icons.y[j] = decor.v[i] * height
@@ -123,6 +126,7 @@ export class DecorLayer {
     this.marks = after
   }
 
+  /** Destrói os sprites, as texturas recebidas e o spritesheet delas (a camada é a dona). */
   destroy() {
     this.view.destroy({ children: true })
     this.sprites = []

@@ -83,9 +83,11 @@ test('celular 390×844: os ícones aparecem em 1× e o culling tira os de fora e
   expect(await attr(page, 'data-decor-drawn')).toBe(total)
   await zoomTo(page, 'Equal', 8, (z) => z > 3.9)
 
-  // Em 4×, a área livre mostra 1/4 da largura do mapa (256 de 1024 unidades). Na borda esquerda, a
-  // janela de culling vai até 320; na direita, começa em 704: as duas não se cruzam, então a soma
-  // dos ícones desenhados nas duas bordas não passa do total, seja qual for o mapa gerado.
+  // Em 4×, a área livre mostra 1/4 da largura do mapa (256 de 1024 unidades), e a janela de culling
+  // tem 1,5× essa largura (384). A janela cobre a vista, mas pode ter sido calculada durante o pan:
+  // na borda esquerda, ela termina no máximo em 384; na direita, começa no mínimo em 640. As duas
+  // não se cruzam, então a soma dos ícones desenhados nas duas bordas não passa do total, seja qual
+  // for o mapa gerado.
   const left = await countAtEdge(page, 'ArrowLeft', 10)
   const right = await countAtEdge(page, 'ArrowRight', 20)
   expect(left + right).toBeLessThanOrEqual(total)
