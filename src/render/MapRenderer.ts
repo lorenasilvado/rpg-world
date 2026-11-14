@@ -3,7 +3,7 @@ import { createUiStore, type UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
 import { WORLD_SIZE, mapRect, type Area } from './camera'
-import { DecorLayer, bindDecorLayer, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
+import { DecorLayer, bindDecorLayer, destroyDecorTextures, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { worldView } from './layers/decorCull'
 import { CANVAS_BACKGROUND } from './style/palette'
@@ -31,7 +31,8 @@ export type MapRenderer = {
  * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre); da decoração, os ícones com quadro
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
  * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não carrega,
- * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, e o console avisa.
+ * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, mesmo com `layers.decor`
+ * ligada no `ui`, e o console avisa.
  */
 export async function createMapRenderer(
   host: HTMLElement,
@@ -40,21 +41,28 @@ export async function createMapRenderer(
   ui: UiStore = createUiStore(),
 ): Promise<MapRenderer> {
   const app = new Application()
-  const [textures] = await Promise.all([
-    // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
-    loadDecorTextures().catch((error: unknown) => {
-      console.warn('Não foi possível carregar os ícones da decoração; o mapa segue sem eles', error)
-      return null
-    }),
-    app.init({
+  // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
+  const loading = loadDecorTextures().catch((error: unknown) => {
+    console.warn('Não foi possível carregar os ícones da decoração; o mapa segue sem eles', error)
+    return null
+  })
+  try {
+    await app.init({
       preference: 'webgl',
       resizeTo: host,
       background: CANVAS_BACKGROUND,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
       antialias: false,
-    }),
-  ])
+    })
+  } catch (error) {
+    // Sem renderer não há mapa: libera o que já foi carregado e repassa o erro.
+    const loaded = await loading
+    if (loaded) destroyDecorTextures(loaded)
+    app.destroy()
+    throw error
+  }
+  const textures = await loading
   app.canvas.classList.add('block')
   app.canvas.dataset.testid = 'map-canvas'
   host.appendChild(app.canvas)

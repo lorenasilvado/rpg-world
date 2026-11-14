@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { DECOR } from '../core/types'
 import { generateMockTerrain, type MockTerrain } from '../mockup/terrain'
 import { DECOR_BY_BIOME } from '../render/style/decor'
 import { BIOMES } from '../render/style/palette'
-import { DECOR } from '../core/types'
 import { placeSprites } from './placeSprites'
 import { toDecor } from './scene'
 

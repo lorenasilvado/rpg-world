@@ -18,7 +18,7 @@ export type Scene = {
   world: { width: number; height: number }
   /** Ícones desenhados depois do culling e do nível de detalhe, no último quadro. */
   drawn(): number
-  /** Zoom relativo do último quadro (1× = o terreno inteiro na tela), o que o nível de detalhe usa. */
+  /** Zoom relativo do último quadro, na base do editor: o que o nível de detalhe usa. */
   zoom(): number
 }
 
@@ -40,7 +40,9 @@ export function toDecor(placements: readonly DecorPlacement[], terrain: { width:
 /**
  * Cena da medição: uma textura de terreno e os ícones na camada de decoração do editor
  * (`DecorLayer`), com o culling e o nível de detalhe dela (#48). O zoom relativo do nível de
- * detalhe é o do editor: 1× é o terreno inteiro na tela.
+ * detalhe tem a mesma base do editor: em 1×, um quadrado com a largura do terreno cabe no menor
+ * lado da tela, como o mapa quadrado do editor na área livre. Assim os ícones têm o mesmo tamanho
+ * na tela nas duas páginas em cada zoom, e os degraus do nível de detalhe caem no mesmo lugar.
  */
 export async function createScene(host: HTMLElement, terrain: MockTerrain, decor: DecorPlacement[]): Promise<Scene> {
   const textures = await loadDecorTextures()
@@ -96,7 +98,8 @@ export async function createScene(host: HTMLElement, terrain: MockTerrain, decor
   let zoom = 1
   viewport.on('frame-end', () => {
     const scale = viewport.scale.x
-    const fit = Math.min(app.screen.width / world.width, app.screen.height / world.height)
+    // Base do editor (`fitScale` em camera.ts): a largura do mundo no menor lado da tela.
+    const fit = Math.min(app.screen.width, app.screen.height) / world.width
     zoom = scale / fit
     icons.update(worldView({ x: viewport.x, y: viewport.y, scale }, app.screen), zoom)
   })

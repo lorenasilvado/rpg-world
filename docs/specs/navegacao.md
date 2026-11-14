@@ -92,8 +92,9 @@ barra inferior.
   montanha e montanha nevada) são desenhados por cima do terreno, com o pé no ponto do núcleo;
   onda, areia, tufo, duna e colina não têm quadro e não aparecem. Só são desenhados os ícones perto
   da área livre (culling, com uma folga de 25% de cada lado). Abaixo de 0,8× de zoom, aparece metade
-  dos ícones, e abaixo de 0,55×, um quarto; montanhas e montanhas nevadas aparecem sempre. Afastar
-  só tira ícones, e aproximar devolve os mesmos. A camada liga e desliga pelo estado da interface
+  dos ícones, e abaixo de 0,55×, um quarto; o nível de detalhe nunca tira montanhas e montanhas
+  nevadas (o culling, sim, quando estão longe da área livre). Afastar só tira ícones, e aproximar
+  devolve os mesmos. A camada liga e desliga pelo estado da interface
   (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não carrega, o mapa aparece só com o
   terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).

@@ -162,7 +162,7 @@ async function start() {
         lastHud = now
         fpsNow.textContent = String(recent.length - 1)
         if (run) fpsMin.textContent = summarizeFrames(run.times).minFps.toFixed(1)
-        // O zoom relativo, o mesmo do editor e do nível de detalhe (1× = o terreno inteiro na tela).
+        // O zoom relativo, na base do editor: o que o nível de detalhe usa.
         zoom.textContent = `${relativeZoom().toFixed(2)}×`
         stage.dataset.scale = String(viewport.scale.x)
         stage.dataset.x = String(viewport.x)

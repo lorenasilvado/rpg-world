@@ -27,7 +27,7 @@ export const LOD_LEVELS: ReadonlyArray<{ minZoom: number; keep: number }> = [
 export const CULL_MARGIN = 0.25
 
 /** Aproximar mais que este fator desde o último cálculo refaz a janela, menor. */
-export const CULL_REZOOM = 1.5
+export const CULL_REZOOM = 1.25
 
 /** Nível de detalhe (índice em `LOD_LEVELS`) para o zoom relativo. */
 export function lodLevel(zoom: number): number {

@@ -26,6 +26,13 @@ export async function loadDecorTextures(): Promise<Record<DecorKind, Texture>> {
   return Object.fromEntries(entries) as Record<DecorKind, Texture>
 }
 
+/** Destrói as texturas de `loadDecorTextures` e o spritesheet delas. */
+export function destroyDecorTextures(textures: Record<DecorKind, Texture>) {
+  const all = Object.values(textures)
+  for (const t of all) t.destroy()
+  all[0]?.source.destroy()
+}
+
 /**
  * Ícones decorativos do mapa: um sprite por ícone do campo que tem quadro no spritesheet, num grupo
  * de render (mover a câmera só muda a transformação do grupo). A cada quadro, `update` aplica o
@@ -43,11 +50,15 @@ export class DecorLayer {
   private marks = new Uint8Array(0)
   private window: Rect | null = null
   private level = -1
-  /** Ícones desenhados depois do culling e do nível de detalhe. */
-  drawn = 0
+  private drawnCount = 0
 
   constructor(textures: Record<DecorKind, Texture>) {
     this.textures = textures
+  }
+
+  /** Ícones desenhados depois do culling e do nível de detalhe. */
+  get drawn(): number {
+    return this.drawnCount
   }
 
   /** Ícones com quadro no spritesheet. */
@@ -99,7 +110,7 @@ export class DecorLayer {
     }
     this.icons = icons
     this.marks = new Uint8Array(n).fill(1)
-    this.drawn = n
+    this.drawnCount = n
     this.window = null
     this.level = -1
   }
@@ -121,7 +132,7 @@ export class DecorLayer {
     this.window = cullWindow(view)
     const before = this.marks
     const after = new Uint8Array(before.length)
-    this.drawn = markVisible(this.icons, this.window, LOD_LEVELS[level].keep, after)
+    this.drawnCount = markVisible(this.icons, this.window, LOD_LEVELS[level].keep, after)
     for (let i = 0; i < after.length; i++) if (after[i] !== before[i]) this.sprites[i].visible = after[i] === 1
     this.marks = after
   }
@@ -130,9 +141,7 @@ export class DecorLayer {
   destroy() {
     this.view.destroy({ children: true })
     this.sprites = []
-    const textures = Object.values(this.textures)
-    for (const t of textures) t.destroy()
-    textures[0]?.source.destroy()
+    destroyDecorTextures(this.textures)
   }
 }
 

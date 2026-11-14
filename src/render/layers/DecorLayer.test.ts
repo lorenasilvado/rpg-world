@@ -1,8 +1,8 @@
 import { Texture } from 'pixi.js'
 import { describe, expect, it } from 'vitest'
 import { DECOR, type Decor } from '../../core/types'
-import { DECOR_FRAMES, DECOR_FRAME_SIZE, type DecorKind } from '../style/decor'
 import { createUiStore } from '../../state/uiStore'
+import { DECOR_FRAMES, DECOR_FRAME_SIZE, type DecorKind } from '../style/decor'
 import { DecorLayer, bindDecorLayer, writeDecorState } from './DecorLayer'
 
 // Sem WebGL no jsdom: os sprites existem, mas nada é desenhado. Aqui fica quais ficam visíveis.

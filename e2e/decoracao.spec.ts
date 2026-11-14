@@ -20,8 +20,8 @@ async function open(page: Page, width = 1440, height = 900) {
 
 /**
  * Em 4×, a janela de culling depende do zoom intermediário em que foi calculada (ela só encolhe
- * depois de aproximar 1,5×, então pode vir de até 4/1,5 ≈ 2,7×, com o dobro da largura da vista
- * mais a folga). Cinco passos de pan para a direita (uma área livre inteira) tiram a vista de
+ * depois de aproximar 1,25×, então pode vir de até 4/1,25 = 3,2×, com 1,5× a largura daquela
+ * vista). Cinco passos de pan para a direita (uma área livre inteira) tiram a vista de
  * qualquer uma dessas janelas, e ela é refeita já em 4×: a contagem não depende da velocidade dos
  * quadros.
  */
@@ -83,11 +83,12 @@ test('celular 390×844: os ícones aparecem em 1× e o culling tira os de fora e
   expect(await attr(page, 'data-decor-drawn')).toBe(total)
   await zoomTo(page, 'Equal', 8, (z) => z > 3.9)
 
-  // Em 4×, a área livre mostra 1/4 da largura do mapa (256 de 1024 unidades), e a janela de culling
-  // tem 1,5× essa largura (384). A janela cobre a vista, mas pode ter sido calculada durante o pan:
-  // na borda esquerda, ela termina no máximo em 384; na direita, começa no mínimo em 640. As duas
-  // não se cruzam, então a soma dos ícones desenhados nas duas bordas não passa do total, seja qual
-  // for o mapa gerado.
+  // Em 4×, a área livre mostra 1/4 da largura do mapa (256 de 1024 unidades). A janela de culling
+  // tem 1,5× a largura da vista em que foi calculada, e só é refeita depois de aproximar 1,25×:
+  // ela pode vir de 3,2× (vista de 320, janela de 480) e ter sido calculada durante o pan. Na borda
+  // esquerda, ela termina no máximo em 480; na direita, começa no mínimo em 544. As duas não se
+  // cruzam, então a soma dos ícones desenhados nas duas bordas não passa do total, seja qual for o
+  // mapa gerado.
   const left = await countAtEdge(page, 'ArrowLeft', 10)
   const right = await countAtEdge(page, 'ArrowRight', 20)
   expect(left + right).toBeLessThanOrEqual(total)
