@@ -82,9 +82,34 @@ test('celular 390×844: os ícones aparecem em 1× e o culling tira os de fora e
   expect(total).toBeGreaterThan(200)
   expect(await attr(page, 'data-decor-drawn')).toBe(total)
   await zoomTo(page, 'Equal', 8, (z) => z > 3.9)
-  await panOutOfWindow(page)
-  // Em retrato, a janela em 4× cobre 81% da altura do mapa (e 37% da largura): depois do pan,
-  // sobre a cordilheira e a floresta do leste, ficam perto de 60% dos ícones, não menos da metade.
-  await expect.poll(() => attr(page, 'data-decor-drawn')).toBeLessThan(total * 0.75)
-  expect(await attr(page, 'data-decor-drawn')).toBeGreaterThan(0)
+
+  // Em 4×, a área livre mostra 1/4 da largura do mapa (256 de 1024 unidades). Na borda esquerda, a
+  // janela de culling vai até 320; na direita, começa em 704: as duas não se cruzam, então a soma
+  // dos ícones desenhados nas duas bordas não passa do total, seja qual for o mapa gerado.
+  const left = await countAtEdge(page, 'ArrowLeft', 10)
+  const right = await countAtEdge(page, 'ArrowRight', 20)
+  expect(left + right).toBeLessThanOrEqual(total)
+  expect(left + right).toBeGreaterThan(0)
 })
+
+/** Leva a câmera até a borda com `n` toques (o pan para no limite) e conta os ícones desenhados. */
+async function countAtEdge(page: Page, key: string, n: number): Promise<number> {
+  for (let i = 0; i < n; i++) await page.keyboard.press(key)
+  // Espera a câmera parar: o retângulo do mapa igual por 400 ms (mais que os 350 ms do deslizamento).
+  let last = ''
+  let since = 0
+  await expect
+    .poll(
+      async () => {
+        const now = (await map(page).getAttribute('data-map-rect')) ?? ''
+        if (now !== last) {
+          last = now
+          since = Date.now()
+        }
+        return Date.now() - since >= 400
+      },
+      { intervals: [100], timeout: 15_000 },
+    )
+    .toBe(true)
+  return attr(page, 'data-decor-drawn')
+}
