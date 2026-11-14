@@ -110,7 +110,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 22 | #92 | [chore] Borda do mapa sem corte reto nas faixas do oceano | done | specs/navegacao.md | #106 |
 | 23 | #48 | [feat] Camada de decoração com culling e nível de detalhe | done | specs/navegacao.md | #110 |
 | 24 | #90 | [chore] Medir o custo da textura do terreno (terrainPixels) | done | specs/geracao-terreno.md | #111 |
-| 25 | #27 | [chore] Decoração do mapa: traços do design system | todo | specs/geracao-terreno.md | |
+| 25 | #27 | [chore] Decoração do mapa: traços do design system | doing | specs/geracao-terreno.md | |
 | 26 | #94 | [feat] Núcleo: deserto com oásis e água interior como lago | todo | specs/geracao-terreno.md | |
 | 27 | #49 | [feat] Sidebar: seções e sliders | todo | specs/geracao-terreno.md | |
 | 28 | #50 | [feat] Sidebar: seed, presets e restaurar | todo | specs/geracao-terreno.md | |

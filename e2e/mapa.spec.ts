@@ -6,6 +6,7 @@ import { BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE } from '../src/render/styl
 // aprovado é por print no PR; aqui fica que o mapa aparece, no lugar certo, com as cores da paleta.
 
 const LAND = ['beach', 'grassland', 'forest', 'desert', 'hill', 'rockyMountain', 'snow'] as const
+const WATER = ['deepOcean', 'shallowWater', 'lake'] as const
 
 /** Abre o editor e espera o mapa final 1024² desenhado. */
 async function openMap(page: Page, width: number, height: number) {
@@ -56,9 +57,13 @@ test('desktop 1440×900: o mapa gerado aparece entre a sidebar e o drawer, com a
 
   const colors = await sampleColors(page, rect)
   const land = new Set<string>(LAND.flatMap((b) => BIOME_TONES[b]))
-  const landShare = colors.filter((c) => land.has(c)).length / colors.length
-  // Com Oceano em 45, perto de metade do mapa é terra.
-  expect(landShare).toBeGreaterThan(0.3)
+  const water = new Set<string>(WATER.flatMap((b) => BIOME_TONES[b]))
+  const onLand = colors.filter((c) => land.has(c)).length
+  const onWater = colors.filter((c) => water.has(c)).length
+  // Os pontos que caem num ícone da decoração (ou no traço da costa) não têm a cor da paleta: a
+  // proporção conta só os que caem no terreno. Com Oceano em 45, perto de metade do mapa é terra.
+  expect(onLand + onWater).toBeGreaterThan(colors.length / 2)
+  expect(onLand / (onLand + onWater)).toBeGreaterThan(0.3)
   expect(colors).toContain(BIOME_TONES.deepOcean[0])
   expect(errors).toEqual([])
 })

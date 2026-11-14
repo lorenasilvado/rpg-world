@@ -116,7 +116,8 @@ worker (`terrainRgba`): na thread principal, ele só é enviado para a GPU. A co
 RGBA (`layers/terrainPixels.ts`) é TS puro, testada no Vitest, e roda no worker. A câmera (`MapCamera.ts`) usa o pixi-viewport; a
 matemática dela (enquadramento, limites, deslizamento, atalhos) fica em `camera.ts`, TS puro,
 testada no Vitest; o zoom no cursor é do próprio pixi-viewport. Os ícones decorativos ficam na
-`layers/DecorLayer.ts`, um sprite por ícone do spritesheet de `style/` num grupo de render; o
+`layers/DecorLayer.ts`, um sprite por ícone num grupo de render, com o spritesheet desenhado num
+canvas ao abrir, no estilo Medieval do design system (`style/decorInk.ts`); o
 culling pela área livre e o nível de detalhe pelo zoom ficam em `layers/decorCull.ts`, TS puro,
 testado no Vitest. A camada liga e desliga pelo `src/state/uiStore.ts` (camadas do mapa). Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 

@@ -88,15 +88,15 @@ barra inferior.
   oceano escurece até a cor do fundo perto dela (ver o desenho do terreno em
   [geracao-terreno.md](geracao-terreno.md)).
 - Ao redimensionar a janela, o ponto no centro da área livre e o zoom relativo se mantêm.
-- Decoração: os ícones do campo com quadro no spritesheet (`src/render/style/`: árvore, cacto,
-  montanha e montanha nevada) são desenhados por cima do terreno, com o pé no ponto do núcleo;
-  onda, areia, tufo, duna e colina não têm quadro e não aparecem. Só são desenhados os ícones perto
+- Decoração: todos os ícones do campo (onda, areia, tufo, árvore, duna, cacto, colina, montanha e
+  montanha nevada) são desenhados por cima do terreno, com o pé no ponto do núcleo, no estilo
+  Medieval do design system (desenho em [geracao-terreno.md](geracao-terreno.md)). Só são desenhados os ícones perto
   da área livre (culling, com uma folga de 25% de cada lado). Abaixo de 0,8× de zoom, aparece metade
   dos ícones, e abaixo de 0,55×, um quarto; o nível de detalhe nunca tira montanhas e montanhas
   nevadas (o culling, sim, quando estão longe da área livre). Afastar só tira ícones, e aproximar
   devolve os mesmos. A camada liga e desliga pelo estado da interface
-  (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não carrega, o mapa aparece só com o
-  terreno, sem decoração.
+  (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
+  2D), o mapa aparece só com o terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao

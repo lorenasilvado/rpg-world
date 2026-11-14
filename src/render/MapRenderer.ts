@@ -28,9 +28,9 @@ export type MapRenderer = {
  *
  * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
- * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre); da decoração, os ícones com quadro
+ * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre); da decoração, os ícones com desenho
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
- * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não carrega,
+ * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não é desenhado,
  * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, mesmo com `layers.decor`
  * ligada no `ui`, e o console avisa.
  */

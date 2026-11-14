@@ -1,15 +1,14 @@
-import { Texture } from 'pixi.js'
+import { Texture, type Sprite } from 'pixi.js'
 import { describe, expect, it } from 'vitest'
 import { DECOR, type Decor } from '../../core/types'
 import { createUiStore } from '../../state/uiStore'
-import { DECOR_FRAMES, DECOR_FRAME_SIZE, type DecorKind } from '../style/decor'
-import { DecorLayer, bindDecorLayer, writeDecorState } from './DecorLayer'
+import { DECOR_VARIANTS, DECOR_WORLD_SIZE, INK_ANCHOR, INK_FRAME_PX, INK_KINDS } from '../style/decorInk'
+import { DecorLayer, bindDecorLayer, writeDecorState, type DecorTextures } from './DecorLayer'
 
 // Sem WebGL no jsdom: os sprites existem, mas nada é desenhado. Aqui fica quais ficam visíveis.
-const textures = Object.fromEntries(Object.keys(DECOR_FRAMES).map((k) => [k, Texture.WHITE as Texture])) as Record<
-  DecorKind,
-  Texture
->
+const textures: DecorTextures = new Map(
+  INK_KINDS.map((k) => [k, Array.from({ length: DECOR_VARIANTS }, () => new Texture({ source: Texture.WHITE.source }))]),
+)
 
 function decor(items: Array<[u: number, v: number, kind: number]>): Decor {
   return {
@@ -23,23 +22,35 @@ const visible = (layer: DecorLayer) => layer.view.children.filter((c) => c.visib
 const WHOLE = { x: 0, y: 0, width: 1024, height: 1024 }
 
 describe('DecorLayer', () => {
-  it('desenha só os ícones com quadro no spritesheet, na posição do pé', () => {
+  it('desenha todos os tipos do design system, com o pé na âncora do quadro', () => {
     const layer = new DecorLayer(textures)
     layer.setDecor(
       decor([
         [0.5, 0.25, DECOR.tree],
-        [0.1, 0.5, DECOR.wave],
         [0.25, 0.75, DECOR.peak],
+        [0.1, 0.5, DECOR.wave],
         [0.9, 0.9, DECOR.tuft],
+        [0.3, 0.3, DECOR.sand],
+        [0.4, 0.4, DECOR.dune],
+        [0.6, 0.6, DECOR.hill],
+        [0.7, 0.7, 255],
       ]),
     )
-    expect(layer.count).toBe(2)
-    const [tree, peak] = layer.view.children
+    // O tipo sem desenho (255) fica de fora.
+    expect(layer.count).toBe(7)
+    const [tree, peak] = layer.view.children as Sprite[]
     expect([tree.x, tree.y]).toEqual([512, 256])
     expect([peak.x, peak.y]).toEqual([256, 768])
-    // Quadros de 128 px: montanha 48 px no mockup → 24 unidades; pinheiro 28 → 14.
-    expect(peak.scale.y * DECOR_FRAME_SIZE).toBeCloseTo(24)
-    expect(tree.scale.y * DECOR_FRAME_SIZE).toBeCloseTo(14)
+    expect([peak.anchor.x, peak.anchor.y]).toEqual([INK_ANCHOR.x, INK_ANCHOR.y])
+    expect(peak.scale.y * INK_FRAME_PX).toBeCloseTo(DECOR_WORLD_SIZE)
+  })
+
+  it('cada ícone usa a textura do seu tipo, numa das variações', () => {
+    const layer = new DecorLayer(textures)
+    layer.setDecor(decor([[0.1, 0.2, DECOR.hill], [0.5, 0.5, DECOR.tree]]))
+    const [hill, tree] = layer.view.children as Sprite[]
+    expect(textures.get(DECOR.hill)).toContain(hill.texture)
+    expect(textures.get(DECOR.tree)).toContain(tree.texture)
   })
 
   it('esconde os ícones fora da janela de culling e os devolve ao voltar', () => {

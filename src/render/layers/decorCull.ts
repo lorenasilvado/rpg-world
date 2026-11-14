@@ -81,10 +81,11 @@ export function stale(window: Rect, view: Rect, margin = CULL_MARGIN): boolean {
 }
 
 /**
- * Marca em `out` (1 = desenha) os ícones que ficam no nível `keep` e cruzam a `window`, com o pé
- * na base central do quadrado. Devolve quantos ficaram.
+ * Marca em `out` (1 = desenha) os ícones que ficam no nível `keep` e cruzam a `window`. O pé fica
+ * no centro da largura do quadrado e a `anchorY` da altura (1 = na base; uma fração menor deixa
+ * parte do quadro abaixo do pé). Devolve quantos ficaram.
  */
-export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: Uint8Array): number {
+export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: Uint8Array, anchorY = 1): number {
   const left = window.x
   const right = window.x + window.width
   const top = window.y
@@ -98,8 +99,8 @@ export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: 
       (icons.always[i] === 1 || decorRank(i) < keep) &&
       x + s / 2 >= left &&
       x - s / 2 <= right &&
-      y >= top &&
-      y - s <= bottom
+      y + s * (1 - anchorY) >= top &&
+      y - s * anchorY <= bottom
     out[i] = show ? 1 : 0
     if (show) count++
   }

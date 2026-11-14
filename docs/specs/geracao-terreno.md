@@ -208,6 +208,14 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   | Neve de montanha | Montanha nevada | 75% |
 
   Água rasa, lago e campo gelado não têm decoração.
+- Desenho dos ícones (`src/render/style/decorInk.ts`): estilo Medieval do design system, a
+  nanquim e com o traço levemente trêmulo, na escala do editor do protótipo. A montanha e a
+  montanha nevada têm uma face iluminada e uma sombreada, com hachura na sombreada e contorno
+  `#3A2A1C` aberto na base. Os demais usam a tinta `#1C1511`: traço de onda no oceano profundo,
+  pontilhado de areia na praia, tufos no campo, um grupo de 2 ou 3 árvores na floresta (pinheiros
+  e uma árvore redonda), dunas a traço e cactos no deserto e colinas a traço com hachura na encosta.
+  Cada ícone tem 4 variações (tamanho, forma e, na floresta, quantas árvores), escolhidas pela
+  posição do ponto, então a prévia e o mapa final mostram o mesmo desenho no mesmo ponto.
 - Desenho do terreno (`src/render/`): o renderer só lê o campo e o RGBA do `worldStore` e, a cada
   campo novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
   do seu bioma (paleta posterizada): nas colinas, montanhas e neve, o tom vem do hillshade; nos
