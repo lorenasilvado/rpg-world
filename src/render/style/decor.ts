@@ -62,8 +62,11 @@ export const DECOR_FRAME_OF: ReadonlyMap<CoreDecorKind, DecorKind> = new Map([
   [DECOR.snowPeak, 'snowMountain'],
 ])
 
-/** O mesmo mapa, consultado pelo número do campo (`Decor.kind` é um `Uint8Array`). */
-const FRAME_BY_NUMBER: ReadonlyMap<number, DecorKind> = DECOR_FRAME_OF
+/**
+ * Cópia de `DECOR_FRAME_OF` com a chave como número, porque `Decor.kind` é um `Uint8Array`: o
+ * `get` aceita qualquer byte do campo e devolve `undefined` para os que não têm quadro.
+ */
+const FRAME_BY_NUMBER: ReadonlyMap<number, DecorKind> = new Map<number, DecorKind>(DECOR_FRAME_OF)
 
 /** Quadro do spritesheet do ícone `kind` do núcleo, ou `undefined` se ele não tem quadro. */
 export function decorFrame(kind: number): DecorKind | undefined {
