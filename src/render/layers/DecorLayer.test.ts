@@ -126,6 +126,28 @@ describe('camada pelo estado da interface', () => {
     expect(layer.view.visible).toBe(true)
   })
 
+  it('pan com a camada desligada: ao religar, o culling segue a vista nova', () => {
+    const ui = createUiStore()
+    const layer = new DecorLayer(textures)
+    layer.setDecor(decor([[0.1, 0.1, DECOR.tree], [0.9, 0.9, DECOR.tree]]))
+    bindDecorLayer(ui, layer)
+    const topLeft = { x: 0, y: 0, width: 200, height: 200 }
+    const bottomRight = { x: 824, y: 824, width: 200, height: 200 }
+    layer.frame(topLeft, 4)
+    expect(layer.view.children.map((c) => c.visible)).toEqual([true, false])
+
+    // Desligada, os quadros do pan não recalculam nada.
+    ui.getState().setLayer('decor', false)
+    layer.frame(bottomRight, 4)
+    expect(layer.view.children.map((c) => c.visible)).toEqual([true, false])
+
+    // Religada, o primeiro quadro refaz o culling na vista onde a câmera parou.
+    ui.getState().setLayer('decor', true)
+    layer.frame(bottomRight, 4)
+    expect(layer.view.children.map((c) => c.visible)).toEqual([false, true])
+    expect(layer.drawn).toBe(1)
+  })
+
   it('abre escondida se a camada já está desligada no estado', () => {
     const ui = createUiStore()
     ui.getState().setLayer('decor', false)

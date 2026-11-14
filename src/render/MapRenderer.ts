@@ -69,8 +69,7 @@ export async function createMapRenderer(
   const decor = new DecorLayer(textures)
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
-    // Desligada, a camada não recalcula: ao religar, o próximo quadro confere a janela de novo.
-    if (decor.visible) decor.update(worldView(t, freeArea()), zoom)
+    decor.frame(worldView(t, freeArea()), zoom)
     writeDecorState(host, decor)
     const rect = mapRect(t)
     const value = [rect.x, rect.y, rect.width, rect.height].map((v) => Math.round(v)).join(',')

@@ -101,6 +101,15 @@ export class DecorLayer {
     this.level = -1
   }
 
+  /**
+   * O quadro da câmera: com a camada ligada, aplica `update`; desligada, não recalcula nada. Ao
+   * religar, o primeiro quadro confere a janela de culling contra a vista daquele momento, então um
+   * pan feito com a camada desligada não deixa ícones errados à vista.
+   */
+  frame(view: Rect, zoom: number) {
+    if (this.visible) this.update(view, zoom)
+  }
+
   /** Culling pela parte do mundo à vista (`view`) e nível de detalhe pelo zoom relativo. */
   update(view: Rect, zoom: number) {
     const level = lodLevel(zoom)
