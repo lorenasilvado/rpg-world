@@ -5,6 +5,7 @@ import {
   DECOR_UNIT,
   DECOR_VARIANTS,
   INK_BOXES,
+  INK_GUTTER,
   INK_KINDS,
   INK_PX,
   INK_SHEET,
@@ -172,13 +173,21 @@ describe('ícones no estilo Medieval', () => {
 })
 
 describe('spritesheet', () => {
-  it('uma coluna por tipo, lado a lado e sem sobrepor, e uma linha por variação', () => {
+  it('uma coluna por tipo e uma linha por variação, com a margem transparente entre os quadros', () => {
+    const gap = INK_GUTTER * INK_PX
     const frames = INK_KINDS.flatMap((k) => Array.from({ length: DECOR_VARIANTS }, (_, v) => inkFrame(k, v)))
     for (const [i, a] of frames.entries()) {
-      expect(a.x + a.width).toBeLessThanOrEqual(INK_SHEET.width)
-      expect(a.y + a.height).toBeLessThanOrEqual(INK_SHEET.height)
+      // A margem também separa os quadros da borda do canvas.
+      expect(a.x).toBeGreaterThanOrEqual(gap)
+      expect(a.y).toBeGreaterThanOrEqual(gap)
+      expect(a.x + a.width + gap).toBeLessThanOrEqual(INK_SHEET.width)
+      expect(a.y + a.height + gap).toBeLessThanOrEqual(INK_SHEET.height)
       for (const b of frames.slice(i + 1)) {
-        const apart = a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y
+        const apart =
+          a.x + a.width + gap <= b.x ||
+          b.x + b.width + gap <= a.x ||
+          a.y + a.height + gap <= b.y ||
+          b.y + b.height + gap <= a.y
         expect(apart).toBe(true)
       }
     }

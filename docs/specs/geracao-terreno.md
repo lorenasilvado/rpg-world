@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-14
+updated: 2026-11-16
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -214,8 +214,11 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   `#3A2A1C` aberto na base. Os demais usam a tinta `#1C1511`: traço de onda no oceano profundo,
   pontilhado de areia na praia, tufos no campo, um grupo de 2 ou 3 árvores na floresta (pinheiros
   e uma árvore redonda), dunas a traço e cactos no deserto e colinas a traço com hachura na encosta.
-  Cada ícone tem 4 variações (tamanho, forma e, na floresta, quantas árvores), escolhidas pela
-  posição do ponto, então a prévia e o mapa final mostram o mesmo desenho no mesmo ponto.
+  Cada ícone tem 4 variações, escolhidas pela posição do ponto, então a prévia e o mapa final
+  mostram o mesmo desenho no mesmo ponto. Na montanha, na montanha nevada e no cacto, a variação
+  muda o tamanho e a forma; na floresta, também quantas árvores; na areia, onde caem os pontos.
+  Na onda, no tufo, na duna e na colina, só o tremido do traço muda. Os pontos de areia são maiores
+  e mais escuros que no protótipo, que mal apareciam na faixa estreita de praia.
 - Desenho do terreno (`src/render/`): o renderer só lê o campo e o RGBA do `worldStore` e, a cada
   campo novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
   do seu bioma (paleta posterizada): nas colinas, montanhas e neve, o tom vem do hillshade; nos

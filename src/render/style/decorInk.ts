@@ -438,12 +438,15 @@ function wave(ctx: Ink, x: number, y: number, s: number) {
   )
 }
 
-/** Pontilhado de areia: quatro pontos a nanquim, espalhados conforme a variação `r`. */
+/**
+ * Pontilhado de areia: quatro pontos a nanquim, espalhados conforme a variação `r`. Maiores e mais
+ * escuros que no protótipo (raio 0,6 e 60%): na faixa estreita de praia, aqueles mal apareciam.
+ */
 function sand(ctx: Ink, x: number, y: number, s: number, r: number) {
-  ctx.fillStyle = 'rgba(28,21,17,.6)'
+  ctx.fillStyle = 'rgba(28,21,17,.85)'
   for (let i = 0; i < 4; i++) {
     ctx.beginPath()
-    ctx.arc(x + (hash(r * 1000, i, 5) - 0.5) * 7 * s, y + (hash(i, r * 1000, 6) - 0.5) * 4 * s, 0.6 * s, 0, 2 * Math.PI)
+    ctx.arc(x + (hash(r * 1000, i, 5) - 0.5) * 7 * s, y + (hash(i, r * 1000, 6) - 0.5) * 4 * s, 0.9 * s, 0, 2 * Math.PI)
     ctx.fill()
   }
 }
@@ -490,7 +493,7 @@ export type InkBox = { readonly left: number; readonly right: number; readonly u
  */
 export const INK_BOXES: ReadonlyMap<number, InkBox> = new Map<number, InkBox>([
   [DECOR.wave, { left: 9, right: 7, up: 4, down: 2 }],
-  [DECOR.sand, { left: 6, right: 5, up: 4, down: 4 }],
+  [DECOR.sand, { left: 6, right: 5, up: 4, down: 5 }],
   [DECOR.tuft, { left: 7, right: 7, up: 7, down: 2 }],
   [DECOR.tree, { left: 11, right: 13, up: 17, down: 11 }],
   [DECOR.dune, { left: 11, right: 9, up: 5, down: 6 }],
@@ -510,25 +513,35 @@ export const INK_PX = 4
  */
 export const DECOR_UNIT = (1024 / 1600) * 1.15
 
+/**
+ * Margem transparente em volta de cada quadro do spritesheet, em unidades do protótipo (16 px). No
+ * zoom baixo, a GPU lê os mipmaps, em que cada px mistura vários do spritesheet: sem a margem, a
+ * borda de um ícone puxaria a tinta do vizinho.
+ */
+export const INK_GUTTER = 4
+
 /** Altura de uma linha do spritesheet, em unidades do protótipo: a do quadro mais alto. */
 const ROW = Math.max(...[...INK_BOXES.values()].map((b) => b.up + b.down))
 
-/** Coluna de cada tipo no spritesheet (borda esquerda, em unidades do protótipo), lado a lado. */
+/** Coluna de cada tipo no spritesheet (borda esquerda, em unidades do protótipo), com a margem. */
 const COLUMN: ReadonlyMap<number, number> = (() => {
   const out = new Map<number, number>()
-  let x = 0
+  let x = INK_GUTTER
   for (const kind of INK_KINDS) {
     out.set(kind, x)
     const b = INK_BOXES.get(kind)!
-    x += b.left + b.right
+    x += b.left + b.right + INK_GUTTER
   }
   return out
 })()
 
+/** Borda de cima da linha da variação `variant`, em unidades do protótipo, com a margem. */
+const rowTop = (variant: number) => INK_GUTTER + variant * (ROW + INK_GUTTER)
+
 /** Tamanho do spritesheet, em px: uma coluna por tipo (`INK_KINDS`), uma linha por variação. */
 export const INK_SHEET = {
-  width: [...INK_BOXES.values()].reduce((w, b) => w + b.left + b.right, 0) * INK_PX,
-  height: DECOR_VARIANTS * ROW * INK_PX,
+  width: [...INK_BOXES.values()].reduce((w, b) => w + b.left + b.right + INK_GUTTER, INK_GUTTER) * INK_PX,
+  height: rowTop(DECOR_VARIANTS) * INK_PX,
 } as const
 
 /** Quadro do tipo `kind` na variação `variant`, em px do spritesheet. */
@@ -536,7 +549,7 @@ export function inkFrame(kind: number, variant: number): { x: number; y: number;
   const b = INK_BOXES.get(kind)!
   return {
     x: COLUMN.get(kind)! * INK_PX,
-    y: variant * ROW * INK_PX,
+    y: rowTop(variant) * INK_PX,
     width: (b.left + b.right) * INK_PX,
     height: (b.up + b.down) * INK_PX,
   }
@@ -569,7 +582,7 @@ export function drawDecorSheet(ctx: Ink) {
     const b = INK_BOXES.get(kind)!
     for (let v = 0; v < DECOR_VARIANTS; v++) {
       // Cada quadro num lugar diferente do canvas: o tremido do traço muda de um para outro.
-      drawDecorIcon(ctx, kind, COLUMN.get(kind)! + b.left, v * ROW + b.up, 1, variantShape(v))
+      drawDecorIcon(ctx, kind, COLUMN.get(kind)! + b.left, rowTop(v) + b.up, 1, variantShape(v))
     }
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0)
