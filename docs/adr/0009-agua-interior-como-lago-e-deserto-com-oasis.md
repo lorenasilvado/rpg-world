@@ -72,8 +72,10 @@ sliders que não mudam o traçado) continua valendo.
 - O oásis depende do slider Desertos (e dos que mudam o deserto): ele é o único lago que muda sem
   mexer na elevação. Os lagos dos rios e a água interior continuam só dependendo da elevação e do
   Oceano.
-- Quantos oásis e de que tamanho é decidido por print no PR (pendência da spec); as constantes do
-  oásis, a margem do deserto e a regra da água interior fazem parte do gerador: mudar exige subir
+- Quantos oásis e de que tamanho foi aprovado por print no PR #121: um para cada 2% do mapa em
+  deserto, até 6, com lago de 0,8% e anel até 1,6% da largura do mapa. As constantes do oásis, a
+  margem do deserto e a regra da água interior fazem parte do gerador: mudar exige subir
   `GENERATOR_VERSION`.
-- Ao aceitar este ADR, o 0008 continua `Aceita` no que não foi substituído, com a nota de que a água
-  abaixo do nível do mar segue este ADR.
+- O ADR 0008 continua `Aceita` e não muda: ADR aceito é imutável. Quem lê o 0008 chega a este pelo
+  índice (`docs/adr/README.md`) e pela spec; o que este ADR substitui está na linha "Substitui em
+  parte" do topo.

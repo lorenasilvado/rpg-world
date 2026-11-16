@@ -301,10 +301,6 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-> Pendente: quantos oásis por deserto e de que tamanho (AC-F1-28); decidido por print no PR que
-> implementa o oásis. Valores em teste: um para cada 2% do mapa em deserto, até 6; lago de 0,8% e
-> anel até 1,6% da largura do mapa.
-
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 
 Dicas de boas-vindas: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
