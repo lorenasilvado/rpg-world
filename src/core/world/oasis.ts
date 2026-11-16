@@ -6,10 +6,12 @@ import { BIOME } from '../types'
  * anel de vegetação (campo) em volta e algumas palmeiras no anel.
  *
  * Os centros são sorteados pela seed (`seed#oasis`) em coordenadas de 0 a 1, e os raios são frações
- * da largura do mapa: a prévia e o mapa final sorteiam os mesmos pontos e desenham o mesmo oásis,
- * com menos detalhe na prévia. Um ponto só vira oásis se todo o disco de `CLEAR_RADIUS` em volta é
- * deserto, longe dos outros oásis; o mapa tem um oásis para cada `DESERT_PER_OASIS` do mapa em
- * deserto, até `MAX_OASES`.
+ * da largura do mapa: a prévia e o mapa final sorteiam os mesmos pontos e desenham o oásis do mesmo
+ * tamanho, com menos detalhe na prévia. Um ponto só vira oásis se todo o disco de `CLEAR_RADIUS` em
+ * volta é deserto, longe dos outros oásis; o mapa tem um oásis para cada `DESERT_PER_OASIS` do mapa
+ * em deserto, até `MAX_OASES`. Esse aceite olha o deserto do tamanho gerado, que muda um pouco da
+ * prévia para o mapa final: os oásis são quase sempre os mesmos (cerca de 80% medidos na #94), mas
+ * ao soltar o slider um oásis pode sumir, aparecer ou trocar de lugar.
  *
  * Só aritmética exata (RNF-4): o disco é medido pelo quadrado da distância, e as palmeiras ficam em
  * direções fixas, sem seno nem cosseno. As constantes fazem parte do gerador: mudar qualquer uma

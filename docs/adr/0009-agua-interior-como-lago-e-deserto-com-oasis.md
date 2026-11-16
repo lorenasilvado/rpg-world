@@ -38,7 +38,10 @@ areia em volta. Até a versão 7 do gerador:
   e 2 ou 3 palmeiras (ícone novo da decoração). Os centros são sorteados pela seed em coordenadas
   de 0 a 1, só onde um disco inteiro em volta é deserto, afastados entre si, um para cada fração
   fixa do mapa em deserto. Os raios são frações da largura do mapa, então a prévia e o mapa final
-  sorteiam e desenham os mesmos oásis. O oásis vem depois do deserto na ordem de classificação.
+  sorteiam os mesmos pontos e desenham oásis do mesmo tamanho. O aceite olha o deserto de cada
+  tamanho, que muda um pouco: os oásis são quase sempre os mesmos (cerca de 80% medidos na #94), e
+  ao soltar o slider um oásis pode sumir, aparecer ou trocar de lugar. O oásis vem depois do
+  deserto na ordem de classificação.
 - **Determinismo:** só operações exatas, como no resto do núcleo. O gerador sobe para a versão 8.
 
 O resto do ADR 0008 (nascentes na terra alta fixa, depressões pequenas, tamanho dos lagos dos rios,
@@ -55,6 +58,9 @@ sliders que não mudam o traçado) continua valendo.
   a usuária pediu para não ter.
 - **Deixar o deserto em volta da água e trocar só a cor da margem** — não muda o bioma, e a barra
   "Distribuição do mapa" contaria deserto onde se vê vegetação.
+- **Aceitar o oásis por uma resolução fixa do deserto, para a prévia e o mapa final terem sempre
+  os mesmos oásis** — exigiria classificar o deserto também numa grade fixa a cada mapa final, só
+  para isso; a diferença medida (cerca de 20% dos oásis) fica registrada na spec.
 - **Guardar o transbordo inteiro no cache** — 4 bytes por célula passaram o teto de 64 MB do mundo
   (AC-F1-09); só as depressões cabem.
 

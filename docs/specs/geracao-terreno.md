@@ -153,7 +153,9 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   um anel de campo até 1,6% e 2 ou 3 palmeiras no anel (nunca embaixo do lago). Os centros são
   sorteados pela seed em coordenadas de 0 a 1; um ponto só vira oásis se o disco de 2,2% em volta
   dele é todo deserto, a pelo menos 12% da largura de outro oásis. O mapa tem um oásis para cada 2%
-  do mapa em deserto, até 6. A prévia e o mapa final sorteiam os mesmos pontos. O oásis vem depois
+  do mapa em deserto, até 6. A prévia e o mapa final sorteiam os mesmos pontos, mas o aceite olha o
+  deserto de cada tamanho, que muda um pouco: os oásis são quase sempre os mesmos (cerca de 80%), e
+  ao soltar o slider um oásis pode sumir, aparecer ou trocar de lugar. O oásis vem depois
   do deserto: ele tira do deserto as células do lago e do anel. Campo: o resto; o campo mais alto é colina, e o campo abaixo de uma temperatura fixa de
   geada fica gelado. Como o campo vem por último, o campo gelado não muda o percentual de desertos
   e florestas.
@@ -270,7 +272,7 @@ lista e o número não volta a ser usado.
 
 - AC-F1-01: o hash do pipeline completo, para a mesma seed, parâmetros e `generatorVersion`, é igual no Chrome, no Firefox e no WebKit
 - AC-F1-02: com o Oceano em 30, o mapa tem 30% ± 2% de água oceânica, em várias seeds
-- AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas
+- AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas; o deserto só fica abaixo do pedido quando acaba a terra longe dos rios e dos lagos (AC-F1-28)
 - AC-F1-05: cada um dos 9 sliders muda o mapa de forma visível e na direção descrita na tabela de sliders
 - AC-F1-06: o mapa tem oceano em todas as bordas, com qualquer valor dos sliders
 - AC-F1-07: todo rio desce do ponto onde nasce até o mar ou um lago

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, DECOR, type CoreField, type WorldParams } from '../types'
 import { distanceToWater } from './coast'
+import { composeElevation, sampleTerrainNoise } from './elevation'
 import { DESERT_WATER_MARGIN, generateField } from './generateField'
 import { OASIS_LAKE_RADIUS, OASIS_RING_RADIUS } from './oasis'
 import { DEFAULT_WORLD_PARAMS } from './params'
@@ -125,6 +126,24 @@ describe('água interior como lago (AC-F1-29)', () => {
         }
       }
     }
+  }, 30_000)
+
+  it('o cache guarda o transbordo só nas depressões, uma fração pequena do mapa mesmo com a Costa em 100 (AC-F1-09)', () => {
+    // Cada célula em depressão custa 8 bytes no cache (índice e nível). Medido no review do PR
+    // #121: de 11% a 19% do mapa, o maior com a Costa em 100; acima de 25% a memória do mundo
+    // ficaria perto do teto de 64 MB.
+    let worst = 0
+    for (const seed of SEEDS) {
+      for (const over of [{}, { coastRoughness: 100 }, { coastRoughness: 100, continentSize: 0 }, { coastRoughness: 100, continentSize: 100 }]) {
+        const size = 256
+        const elevation = composeElevation(sampleTerrainNoise(seed, size), params(over))
+        const { cells, level } = depressions(elevation, size)
+        expect(level).toHaveLength(cells.length)
+        worst = Math.max(worst, cells.length / (size * size))
+      }
+    }
+    expect(worst).toBeGreaterThan(0)
+    expect(worst).toBeLessThan(0.25)
   }, 30_000)
 
   it('com Praias no máximo, ainda há praia no oceano', () => {
