@@ -2,7 +2,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Camada de decoração (#48): os ícones aparecem, o culling tira os que ficam fora da tela e o nível
-// de detalhe tira parte deles no zoom baixo. O renderer expõe no mapa os ícones com quadro no
+// de detalhe tira parte deles no zoom baixo. O renderer expõe no mapa os ícones com desenho no
 // spritesheet (`data-decor-total`) e os desenhados (`data-decor-drawn`). O fps (AC-F2-07) é medido à
 // mão, em /sprites.html: o Chrome do teste não usa a GPU.
 
@@ -41,7 +41,7 @@ test('os ícones decorativos aparecem no mapa, com a camada ligada', async ({ pa
   await open(page)
   await expect(map(page)).toHaveAttribute('data-decor-layer', 'on')
   const total = await attr(page, 'data-decor-total')
-  // Com os parâmetros padrão, o núcleo põe perto de 900 ícones; parte deles tem quadro no spritesheet.
+  // Com os parâmetros padrão, o núcleo põe perto de 900 ícones, todos com desenho no spritesheet.
   expect(total).toBeGreaterThan(200)
   // No zoom 1×, o mapa inteiro está à vista: todos são desenhados.
   expect(await attr(page, 'data-decor-drawn')).toBe(total)
@@ -117,17 +117,21 @@ async function countAtEdge(page: Page, key: string, n: number): Promise<number> 
   return attr(page, 'data-decor-drawn')
 }
 
-test('sem o spritesheet dos ícones, o mapa aparece só com o terreno', async ({ page }) => {
+test('sem como desenhar o spritesheet dos ícones, o mapa aparece só com o terreno', async ({ page }) => {
   const errors: string[] = []
   const warnings: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => {
     if (m.type() === 'warning') warnings.push(m.text())
   })
-  // Só a imagem: no dev, o `import` do `decor.png` também é um pedido (um módulo JS com a URL).
-  await page.route('**/decor.png*', (route) =>
-    route.request().resourceType() === 'image' ? route.fulfill({ status: 404, body: '' }) : route.continue(),
-  )
+  // O spritesheet é desenhado num `OffscreenCanvas` (o Pixi não usa um): sem o contexto 2D dele,
+  // a decoração não tem ícones.
+  await page.addInitScript(() => {
+    const getContext = OffscreenCanvas.prototype.getContext
+    OffscreenCanvas.prototype.getContext = function (this: OffscreenCanvas, type: string, ...rest: unknown[]) {
+      return type === '2d' ? null : getContext.call(this, type as '2d', ...(rest as []))
+    } as typeof getContext
+  })
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })

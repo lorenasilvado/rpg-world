@@ -3,38 +3,64 @@ import { DECOR, type Decor } from '../../core/types'
 import type { UiStore } from '../../state/uiStore'
 import { WORLD_SIZE } from '../camera'
 import {
-  DECOR_FRAMES,
-  DECOR_FRAME_SIZE,
-  DECOR_SHEET_URL,
-  decorFrame,
-  decorWorldSize,
-  type DecorKind,
-} from '../style/decor'
+  DECOR_UNIT,
+  DECOR_VARIANTS,
+  INK_KINDS,
+  INK_PX,
+  INK_SHEET,
+  decorVariant,
+  drawDecorSheet,
+  inkAnchor,
+  inkFrame,
+  inkWorldBox,
+  type Ink,
+} from '../style/decorInk'
 import { LOD_LEVELS, cullWindow, lodLevel, markVisible, stale, type DecorIcons, type Rect } from './decorCull'
 
-/** Carrega o spritesheet dos ícones (`src/render/style/decor.png`), com mipmaps. */
-export async function loadDecorTextures(): Promise<Record<DecorKind, Texture>> {
-  const sheet = new Image()
-  sheet.src = DECOR_SHEET_URL
-  await sheet.decode()
-  // Os quadros de 128 px aparecem bem menores: sem mipmaps, os traços serrilham no zoom baixo.
-  const source = new ImageSource({ resource: sheet, autoGenerateMipmaps: true, scaleMode: 'linear' })
-  const entries = Object.entries(DECOR_FRAMES).map(([kind, f]) => [
-    kind,
-    new Texture({ source, frame: new Rectangle(f.x, f.y, DECOR_FRAME_SIZE, DECOR_FRAME_SIZE) }),
-  ])
-  return Object.fromEntries(entries) as Record<DecorKind, Texture>
+/** Texturas dos ícones: para cada tipo do núcleo (`DECOR`), uma por variação. */
+export type DecorTextures = ReadonlyMap<number, readonly Texture[]>
+
+/** Canvas do spritesheet: `OffscreenCanvas` onde existe, senão um `<canvas>` fora da página. */
+function sheetCanvas(): OffscreenCanvas | HTMLCanvasElement {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(INK_SHEET.width, INK_SHEET.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = INK_SHEET.width
+  canvas.height = INK_SHEET.height
+  return canvas
+}
+
+/**
+ * Desenha o spritesheet dos ícones no estilo Medieval (`style/decorInk.ts`) num canvas e o envia
+ * para a GPU, com mipmaps. Sem o contexto 2D do canvas, a promessa é rejeitada.
+ */
+export async function loadDecorTextures(): Promise<DecorTextures> {
+  const canvas = sheetCanvas()
+  const ctx = canvas.getContext('2d') as Ink | null
+  if (!ctx) throw new Error('sem o contexto 2D para desenhar os ícones')
+  drawDecorSheet(ctx)
+  // Os quadros aparecem bem menores: sem mipmaps, os traços serrilham no zoom baixo.
+  const source = new ImageSource({ resource: canvas, autoGenerateMipmaps: true, scaleMode: 'linear' })
+  const textures = new Map<number, Texture[]>()
+  for (const kind of INK_KINDS) {
+    const variants: Texture[] = []
+    for (let v = 0; v < DECOR_VARIANTS; v++) {
+      const f = inkFrame(kind, v)
+      variants.push(new Texture({ source, frame: new Rectangle(f.x, f.y, f.width, f.height) }))
+    }
+    textures.set(kind, variants)
+  }
+  return textures
 }
 
 /** Destrói as texturas de `loadDecorTextures` e o spritesheet delas. */
-export function destroyDecorTextures(textures: Record<DecorKind, Texture>) {
-  const all = Object.values(textures)
+export function destroyDecorTextures(textures: DecorTextures) {
+  const all = [...textures.values()].flat()
   for (const t of all) t.destroy()
   all[0]?.source.destroy()
 }
 
 /**
- * Ícones decorativos do mapa: um sprite por ícone do campo que tem quadro no spritesheet, num grupo
+ * Ícones decorativos do mapa: um sprite por ícone do campo que tem desenho no spritesheet, num grupo
  * de render (mover a câmera só muda a transformação do grupo). A cada quadro, `update` aplica o
  * culling e o nível de detalhe (`decorCull.ts`); os sprites só mudam quando a janela de culling
  * deixa de servir (`stale`) ou o nível muda. `visible` liga e desliga a camada inteira.
@@ -44,7 +70,7 @@ export function destroyDecorTextures(textures: Record<DecorKind, Texture>) {
  */
 export class DecorLayer {
   readonly view = new Container({ isRenderGroup: true })
-  private textures: Record<DecorKind, Texture>
+  private textures: DecorTextures
   private sprites: Sprite[] = []
   private icons: DecorIcons = { x: new Float32Array(0), y: new Float32Array(0), size: new Float32Array(0), always: new Uint8Array(0) }
   private marks = new Uint8Array(0)
@@ -52,7 +78,7 @@ export class DecorLayer {
   private level = -1
   private drawnCount = 0
 
-  constructor(textures: Record<DecorKind, Texture>) {
+  constructor(textures: DecorTextures) {
     this.textures = textures
   }
 
@@ -61,7 +87,7 @@ export class DecorLayer {
     return this.drawnCount
   }
 
-  /** Ícones com quadro no spritesheet. */
+  /** Ícones com desenho no spritesheet. */
   get count(): number {
     return this.sprites.length
   }
@@ -81,31 +107,41 @@ export class DecorLayer {
   setDecor(decor: Decor, width = WORLD_SIZE, height = width) {
     const scale = width / WORLD_SIZE
     const kept: number[] = []
-    for (let i = 0; i < decor.kind.length; i++) if (decorFrame(decor.kind[i])) kept.push(i)
+    for (let i = 0; i < decor.kind.length; i++) if (this.textures.has(decor.kind[i])) kept.push(i)
     const n = kept.length
-    const icons: DecorIcons = { x: new Float32Array(n), y: new Float32Array(n), size: new Float32Array(n), always: new Uint8Array(n) }
+    const icons: DecorIcons = {
+      x: new Float32Array(n),
+      y: new Float32Array(n),
+      size: new Float32Array(n),
+      always: new Uint8Array(n),
+      down: new Float32Array(n),
+    }
+    // Px do spritesheet → unidades do mundo: a mesma escala para todos os quadros.
+    const sheetToWorld = (DECOR_UNIT / INK_PX) * scale
 
     while (this.sprites.length > n) this.sprites.pop()!.destroy()
     for (let j = 0; j < n; j++) {
       const i = kept[j]
       const core = decor.kind[i]
-      const frame = decorFrame(core)!
-      const size = decorWorldSize(frame) * scale
+      const box = inkWorldBox(core)
       icons.x[j] = decor.u[i] * width
       icons.y[j] = decor.v[i] * height
-      icons.size[j] = size
+      icons.size[j] = box.size * scale
+      icons.down![j] = box.down * scale
       icons.always[j] = core === DECOR.peak || core === DECOR.snowPeak ? 1 : 0
 
       let sprite = this.sprites[j]
       if (!sprite) {
         sprite = new Sprite()
-        sprite.anchor.set(0.5, 1)
         this.sprites.push(sprite)
         this.view.addChild(sprite)
       }
-      sprite.texture = this.textures[frame]
+      // Cada tipo tem o seu quadro: a âncora muda com o tipo, e o sprite reaproveitado pode trocar.
+      const anchor = inkAnchor(core)
+      sprite.anchor.set(anchor.x, anchor.y)
+      sprite.texture = this.textures.get(core)![decorVariant(decor.u[i], decor.v[i])]
       sprite.position.set(icons.x[j], icons.y[j])
-      sprite.scale.set(size / DECOR_FRAME_SIZE)
+      sprite.scale.set(sheetToWorld)
       sprite.visible = true
     }
     this.icons = icons

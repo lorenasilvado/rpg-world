@@ -1,11 +1,11 @@
 import { Viewport } from 'pixi-viewport'
 import { Application, BufferImageSource, Sprite, Texture } from 'pixi.js'
-import type { Decor } from '../core/types'
+import { DECOR, type Decor } from '../core/types'
 import { terrainPixels, type DecorPlacement } from '../mockup/drawMockup'
 import type { MockTerrain } from '../mockup/terrain'
 import { DecorLayer, loadDecorTextures } from '../render/layers/DecorLayer'
 import { worldView } from '../render/layers/decorCull'
-import { DECOR_FRAME_OF, type DecorKind } from '../render/style/decor'
+import type { DecorKind } from '../render/style/decor'
 import { CANVAS_BACKGROUND } from '../render/style/palette'
 import { MAX_ZOOM, MIN_ZOOM } from './cameraPath'
 
@@ -22,8 +22,13 @@ export type Scene = {
   zoom(): number
 }
 
-/** Tipo do núcleo de cada quadro do spritesheet (o inverso de `DECOR_FRAME_OF`). */
-const CORE_KIND = new Map([...DECOR_FRAME_OF].map(([core, frame]) => [frame, core]))
+/** Tipo do núcleo de cada ícone do spike: a camada do editor os desenha no estilo Medieval. */
+const CORE_KIND: ReadonlyMap<DecorKind, number> = new Map<DecorKind, number>([
+  ['mountain', DECOR.peak],
+  ['snowMountain', DECOR.snowPeak],
+  ['pine', DECOR.tree],
+  ['cactus', DECOR.cactus],
+])
 
 /** Os ícones do spike no formato do núcleo (de 0 a 1 no terreno), para a `DecorLayer`. */
 export function toDecor(placements: readonly DecorPlacement[], terrain: { width: number; height: number }): Decor {

@@ -6,8 +6,9 @@ código de desenho.
 | Arquivo | O que guarda |
 |---|---|
 | `palette.ts` | 3 tons por bioma (sombra, base, luz), traço da costa e fundo do canvas, copiados de `docs/design/tokens.json → map`; cores e larguras do rio (`RIVER_STYLE`), do `design-system.md → Traços` |
-| `decor.png` | Spritesheet inicial dos ícones decorativos: 4 quadros de 128 px (montanha, montanha nevada, pinheiro, cacto) |
-| `decor.ts` | Quadros do spritesheet, tamanho de cada ícone no mapa e quais ícones cada bioma usa |
+| `decorInk.ts` | Ícones decorativos do editor no estilo Medieval do design system (desenho em canvas portado do protótipo, `RPG_MEDIEVAL_V2B`): o spritesheet é desenhado ao abrir, com 4 variações de cada tipo do núcleo |
+| `decor.png` | Spritesheet inicial dos ícones, só do mockup do spike visual: 4 quadros de 128 px (montanha, montanha nevada, pinheiro, cacto) |
+| `decor.ts` | Quadros do `decor.png` e tamanho de cada ícone no mockup; quais ícones cada bioma usa no mockup e na carga do spike dos sprites (que os desenha com o `decorInk.ts`) |
 | `LICENSE-kenney-cartography-pack.txt` | Licença original do pacote dos ícones |
 
 ## Origem dos ícones
