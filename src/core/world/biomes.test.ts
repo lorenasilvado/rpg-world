@@ -3,7 +3,8 @@ import { BIOME, type CoreField, type WorldParams } from '../types'
 import { composeTemperature, sampleClimateNoise } from './climate'
 import { distanceToWater } from './coast'
 import { composeElevation, sampleTerrainNoise } from './elevation'
-import { elevationLevels, generateField } from './generateField'
+import { DESERT_WATER_MARGIN, elevationLevels, generateField } from './generateField'
+import { OASIS_RING_RADIUS } from './oasis'
 import { DEFAULT_WORLD_PARAMS } from './params'
 import { hillshade } from './shade'
 
@@ -23,6 +24,30 @@ function snowSplit(f: CoreField) {
 }
 /** Base de desertos e florestas: a terra firme que não virou praia nem montanha (o campo gelado entra). */
 const baseCells = (f: CoreField) => count(f, BIOME.grassland, BIOME.hill, BIOME.forest, BIOME.desert, BIOME.frozenField)
+/** 1 nas células dos oásis (o lago e o anel de vegetação). */
+function oasisMask(f: CoreField): Uint8Array {
+  return Uint8Array.from(f.biome, (_, i) =>
+    f.oases.some((o) => {
+      const du = ((i % f.width) + 0.5) / f.width - o.u
+      const dv = (Math.floor(i / f.width) + 0.5) / f.height - o.v
+      return Math.sqrt(du * du + dv * dv) <= OASIS_RING_RADIUS
+    })
+      ? 1
+      : 0,
+  )
+}
+/**
+ * 1 na base junto da água doce (lagos fora dos oásis e rios), que nunca é deserto: o deserto recua
+ * dela (AC-F1-28).
+ */
+function nearFreshWater(f: CoreField): Uint8Array {
+  const oasis = oasisMask(f)
+  const fresh = Uint8Array.from(f.biome, (b, i) => (b === BIOME.lake && !oasis[i] ? 1 : 0))
+  for (const river of f.rivers) for (const p of river) fresh[Math.floor(p.v * f.height) * f.width + Math.floor(p.u * f.width)] = 1
+  const distance = distanceToWater(fresh, f.width)
+  const margin = Math.max(1.5, DESERT_WATER_MARGIN * f.width)
+  return Uint8Array.from(f.biome, (_, i) => (distance[i] <= margin ? 1 : 0))
+}
 
 describe('desertos e florestas por quantil (AC-F1-03)', () => {
   it('atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas, em várias seeds', () => {
@@ -40,7 +65,12 @@ describe('desertos e florestas por quantil (AC-F1-03)', () => {
         const f = generateField(seed, 128, p)
         const base = baseCells(f)
         const label = `${seed} ${JSON.stringify(over)}`
-        expect(Math.abs(count(f, BIOME.desert) / base - p.desert / 100), label).toBeLessThanOrEqual(0.02)
+        // A terra junto dos rios e dos lagos nunca é deserto: o deserto pedido é tirado do resto, e
+        // só fica abaixo do pedido quando esse resto acaba (Desertos perto de 100).
+        const near = nearFreshWater(f)
+        const dry = f.biome.filter((b, i) => !near[i] && [BIOME.grassland, BIOME.hill, BIOME.forest, BIOME.desert, BIOME.frozenField].includes(b as never)).length
+        const wanted = Math.min(p.desert / 100, dry / base)
+        expect(Math.abs(count(f, BIOME.desert) / base - wanted), label).toBeLessThanOrEqual(0.02)
         expect(Math.abs(count(f, BIOME.forest) / base - p.forest / 100), label).toBeLessThanOrEqual(0.02)
       }
     }
@@ -54,7 +84,14 @@ describe('desertos e florestas por quantil (AC-F1-03)', () => {
   it('a soma acima de 100% não quebra: a floresta fica com o que sobrou', () => {
     const p = params({ desert: 80, forest: 80 })
     const f = generateField('rpg-world', 64, p)
-    expect(count(f, BIOME.desert) + count(f, BIOME.forest)).toBe(baseCells(f))
+    // Fora o anel dos oásis e a terra junto da água doce (onde não pode haver deserto), toda a base
+    // é deserto ou floresta.
+    const oasis = oasisMask(f)
+    const near = nearFreshWater(f)
+    const left = f.biome.filter((b, i) => b !== BIOME.desert && b !== BIOME.forest && !oasis[i] && !near[i] &&
+      [BIOME.grassland, BIOME.hill, BIOME.frozenField].includes(b as never)).length
+    expect(left).toBe(0)
+    expect(count(f, BIOME.desert) + count(f, BIOME.forest)).toBeGreaterThan(0.9 * baseCells(f))
   })
 
   it('o deserto fica nas células mais secas e a floresta nas mais úmidas', () => {

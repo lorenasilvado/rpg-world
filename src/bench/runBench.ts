@@ -264,9 +264,11 @@ export async function runBench(
     const mapSlider = await time(gen, frames, memory, req(seed, MAP_SIZE), options.mapRuns, (i) =>
       req(seed, MAP_SIZE, { ...P, ocean: 30 + i }),
     )
-    onStep(`Mapa ${MAP_SIZE}², Tamanho do continente (${options.mapRuns}×)`)
+    // Com a Rugosidade da costa em 100: a elevação com mais depressões, o pior caso da memória do
+    // cache (ADR 0009 guarda o transbordo só nas depressões).
+    onStep(`Mapa ${MAP_SIZE}², Tamanho do continente, Costa em 100 (${options.mapRuns}×)`)
     const mapShape = await time(gen, frames, memory, req(seed, MAP_SIZE), options.mapRuns, (i) =>
-      req(seed, MAP_SIZE, { ...P, continentSize: 40 + i }),
+      req(seed, MAP_SIZE, { ...P, continentSize: 40 + i, coastRoughness: 100 }),
     )
 
     onStep(`Arrasto: ${options.dragRequests} pedidos de prévia e o mapa final ao soltar`)

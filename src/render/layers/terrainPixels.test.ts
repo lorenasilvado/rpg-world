@@ -24,6 +24,7 @@ function field(size: number, paint: (x: number, y: number) => [number, number] |
     biome,
     shade,
     rivers: [],
+    oases: [],
     decor: { u: new Float32Array(0), v: new Float32Array(0), kind: new Uint8Array(0) },
   }
 }

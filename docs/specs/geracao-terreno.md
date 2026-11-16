@@ -9,7 +9,7 @@ updated: 2026-11-16
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios e lagos
+> Hoje existe o núcleo de elevação, clima, biomas, praias, hillshade, rios, lagos e oásis
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
 > da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
 > mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
@@ -127,18 +127,36 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 ## Regras
 
 - Ordem de classificação fixa, para que os sliders não briguem: água → lago → praia → montanha
-  (rochosa ou nevada) → deserto ou floresta → campo. Cada etapa só recebe as células que as
+  (rochosa ou nevada) → deserto ou floresta → campo → oásis. Cada etapa só recebe as células que as
   anteriores deixaram: montanha vale mais que bioma, e o percentual de desertos e florestas é
   medido sobre a terra firme sem montanhas (e sem os lagos e as praias, que vêm antes na ordem).
-- Praia: a terra a até uma certa distância da água oceânica, medida em frações da largura do mapa
+- Oceano e água interior ([ADR 0009](../adr/0009-agua-interior-como-lago-e-deserto-com-oasis.md)):
+  só a água ligada à borda do mapa (pelas 8 vizinhas) é oceano. A água abaixo do nível do mar sem
+  ligação com a borda é lago, não oceano; um grupo dela menor que o lago mínimo dos rios (0,1% do
+  mapa) volta a ser terra. O nível do mar é escolhido para o oceano ligado à borda ficar no alvo do
+  slider Oceano.
+- Praia: a terra a até uma certa distância do oceano, medida em frações da largura do mapa
   (a mesma na prévia e no mapa final). Praias em 0 não tem praia; acima de 0, a faixa tem pelo
-  menos uma célula.
+  menos uma célula. A margem de lago nunca é praia, com qualquer valor de Praias: a terra que
+  encosta num lago (também na diagonal), ou que fica mais perto de um lago que do oceano, não é
+  praia.
 - Montanha: as células mais altas da terra, por percentil da elevação, na quantidade do slider
   Montanhas. Neve: as montanhas mais frias, na proporção do slider Neve; com a Temperatura global
   em 50 a proporção é a do slider, abaixo dela há mais neve e acima, menos. Com Neve em 0 não há
   neve de montanha.
-- Deserto: as células mais áridas da base (secas e quentes). Floresta: as mais úmidas do que
-  sobrou. Campo: o resto; o campo mais alto é colina, e o campo abaixo de uma temperatura fixa de
+- Deserto: as células mais áridas da base (secas e quentes), longe dos rios e dos lagos. O deserto
+  recua da água doce: a terra a até 0,6% da largura do mapa (pelo menos as vizinhas, também na
+  diagonal) de um rio ou de um lago nunca é deserto, e fica para a floresta ou o campo. O deserto
+  pedido sai do resto da base; com Desertos perto de 100, quando esse resto acaba, o deserto fica
+  abaixo do pedido. Floresta: as mais úmidas do que sobrou.
+- Oásis: a única água dentro do deserto. É um lago redondo de 0,8% da largura do mapa de raio, com
+  um anel de campo até 1,6% e 2 ou 3 palmeiras no anel (nunca embaixo do lago). Os centros são
+  sorteados pela seed em coordenadas de 0 a 1; um ponto só vira oásis se o disco de 2,2% em volta
+  dele é todo deserto, a pelo menos 12% da largura de outro oásis. O mapa tem um oásis para cada 2%
+  do mapa em deserto, até 6. A prévia e o mapa final sorteiam os mesmos pontos, mas o aceite olha o
+  deserto de cada tamanho, que muda um pouco: os oásis são quase sempre os mesmos (cerca de 80%), e
+  ao soltar o slider um oásis pode sumir, aparecer ou trocar de lugar. O oásis vem depois
+  do deserto: ele tira do deserto as células do lago e do anel. Campo: o resto; o campo mais alto é colina, e o campo abaixo de uma temperatura fixa de
   geada fica gelado. Como o campo vem por último, o campo gelado não muda o percentual de desertos
   e florestas.
 - Neve de montanha e campo gelado são biomas distintos no campo gerado (`snow` e `frozenField`,
@@ -152,7 +170,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 - Desertos e florestas disputam a terra firme: a soma nunca passa de 100%.
 - Sliders por percentual alvo (quantis): definir 30% de oceano resulta em 30% ± 2% de células
   oceânicas. O alvo vale com o Oceano de 5% a 95%: a borda do mapa é sempre água, inclusive em 0%.
-  Lagos não contam como oceano.
+  Lagos não contam como oceano, nem a água interior. Uma bacia que fica cheia exatamente no nível
+  do mar entra inteira no oceano ou fica inteira de fora, o que ficar mais perto do alvo.
 - Geração no worker: o ruído da seed fica guardado entre os pedidos. Trocar a seed refaz tudo;
   Tamanho do continente ou Rugosidade da costa refazem a elevação, os rios e a classificação; os
   outros sete sliders refazem só a classificação. O mapa sai igual ao da geração do zero.
@@ -181,13 +200,13 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   mapa debaixo da água) não vira lago: o rio a enche e segue pelo transbordo, ou termina no lago que
   ela encosta antes de transbordar. Se a saída fica acima da nascente, o rio não existe: ele nunca
   sobe acima de onde nasce. Uma depressão maior vira lago, até 0,4% do mapa, e o rio termina nele.
-  Um rio que encontra outro vira afluente e termina no encontro. O lago abaixo do nível do mar é
-  oceano; se o que sobra encosta no mar e fica abaixo do tamanho mínimo, volta a ser terra, e o rio
-  que terminava nele segue pelo resto até o mar (ou até outro rio, como afluente). Se esse caminho
-  passaria acima da nascente, o rio não existe.
+  Um rio que encontra outro vira afluente e termina no encontro. A parte do lago abaixo do nível do
+  mar que tem ligação com a borda é oceano; se o que sobra encosta no mar e fica abaixo do tamanho
+  mínimo, volta a ser terra, e o rio que terminava nele segue pelo resto até o mar (ou até outro
+  rio, como afluente). Se esse caminho passaria acima da nascente, o rio não existe.
 - Rio é uma polilinha nos centros das células (de 0 a 1), da nascente até a primeira célula de mar
-  ou de lago, ou até o encontro com outro rio. Lago é um bioma, com os tons da água rasa e sem
-  sombra.
+  ou de lago, ou até o encontro com outro rio. Lago é um bioma (o dos rios, a água interior e o
+  oásis), com os tons da água rasa e sem sombra.
 - Decoração: o núcleo entrega as posições e os tipos dos ícones, e o renderer só desenha o que
   recebe. As posições vêm de uma amostra de Poisson-disk do mapa inteiro, sorteada pela seed, com
   distância mínima de 1,3% da largura entre dois ícones; cada ponto fica com um ícone na chance do
@@ -207,17 +226,22 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   | Montanha rochosa | Montanha | 70% |
   | Neve de montanha | Montanha nevada | 75% |
 
-  Água rasa, lago e campo gelado não têm decoração.
+  Água rasa, lago e campo gelado não têm decoração. As palmeiras não saem da amostra: cada oásis
+  tem as suas 2 ou 3 no anel, e nenhum ponto da amostra a até 2,6% da largura do centro do oásis
+  ganha ícone (o lago e o anel ficam limpos, e as palmeiras guardam a distância mínima dos outros
+  ícones).
 - Desenho dos ícones (`src/render/style/decorInk.ts`): estilo Medieval do design system, a
   nanquim e com o traço levemente trêmulo, na escala do editor do protótipo. A montanha e a
   montanha nevada têm uma face iluminada e uma sombreada, com hachura na sombreada e contorno
   `#3A2A1C` aberto na base. Os demais usam a tinta `#1C1511`: traço de onda no oceano profundo,
   pontilhado de areia na praia, tufos no campo, um grupo de 2 ou 3 árvores na floresta (pinheiros
-  e uma árvore redonda), dunas a traço e cactos no deserto e colinas a traço com hachura na encosta.
+  e uma árvore redonda), dunas a traço e cactos no deserto, colinas a traço com hachura na encosta e,
+  no oásis, palmeiras de tronco curvo com anéis a traço e copa de cinco folhas no verde das árvores.
   Cada ícone tem 4 variações, escolhidas pela posição do ponto, então a prévia e o mapa final
   mostram o mesmo desenho no mesmo ponto. Na montanha, na montanha nevada e no cacto, a variação
   muda o tamanho e a forma; na floresta, também quantas árvores; na areia, onde caem os pontos.
-  Na onda, no tufo, na duna e na colina, só o tremido do traço muda. Os pontos de areia são maiores
+  Na palmeira, a inclinação e a altura. Na onda, no tufo, na duna e na colina, só o tremido do traço
+  muda. Os pontos de areia são maiores
   e mais escuros que no protótipo, que mal apareciam na faixa estreita de praia.
 - Desenho do terreno (`src/render/`): o renderer só lê o campo e o RGBA do `worldStore` e, a cada
   campo novo, troca uma textura única na GPU, com uma célula por pixel. Cada célula recebe um dos 3 tons
@@ -248,7 +272,7 @@ lista e o número não volta a ser usado.
 
 - AC-F1-01: o hash do pipeline completo, para a mesma seed, parâmetros e `generatorVersion`, é igual no Chrome, no Firefox e no WebKit
 - AC-F1-02: com o Oceano em 30, o mapa tem 30% ± 2% de água oceânica, em várias seeds
-- AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas
+- AC-F1-03: Desertos e Florestas atingem o percentual pedido, ± 2%, sobre a terra firme sem montanhas; o deserto só fica abaixo do pedido quando acaba a terra longe dos rios e dos lagos (AC-F1-28)
 - AC-F1-05: cada um dos 9 sliders muda o mapa de forma visível e na direção descrita na tabela de sliders
 - AC-F1-06: o mapa tem oceano em todas as bordas, com qualquer valor dos sliders
 - AC-F1-07: todo rio desce do ponto onde nasce até o mar ou um lago
@@ -276,9 +300,6 @@ lista e o número não volta a ser usado.
 - AC-F1-29: a água abaixo do nível do mar sem ligação com a borda do mapa é lago, não oceano, e nenhuma margem de lago tem praia, com qualquer valor do slider Praias
 
 ## Pendências
-
-> Pendente: quantos oásis por deserto e de que tamanho (AC-F1-28); decidido por print no PR que
-> implementa o oásis.
 
 > Pendente: qual o tamanho máximo de mapa desejado (1024² basta?)
 

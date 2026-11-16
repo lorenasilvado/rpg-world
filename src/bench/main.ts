@@ -76,7 +76,7 @@ function render(r: BenchReport) {
         ${timingRow(`Mapa ${r.map.size}², seed nova`, r.map, TARGETS.mapMs)}
         ${timingRow(`Prévia ${r.previewSlider.size}², slider de limiar`, r.previewSlider, TARGETS.previewMs)}
         ${timingRow(`Mapa ${r.mapSlider.size}², slider de limiar`, r.mapSlider, TARGETS.mapMs)}
-        ${timingRow(`Mapa ${r.mapShape.size}², Tamanho do continente`, r.mapShape, TARGETS.mapMs)}
+        ${timingRow(`Mapa ${r.mapShape.size}², Tamanho do continente, Costa em 100`, r.mapShape, TARGETS.mapMs)}
       </tbody>
     </table>
     <ul class="mt-3 space-y-1 text-sm">

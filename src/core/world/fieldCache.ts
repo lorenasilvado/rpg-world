@@ -87,7 +87,8 @@ export function createFieldCache(): FieldCache {
           total += a.byteLength
         }
         if (shape) {
-          total += shape.elevation.byteLength + shape.hydrology.lake.byteLength
+          const { cells, level } = shape.hydrology.depressions
+          total += shape.elevation.byteLength + shape.hydrology.lake.byteLength + cells.byteLength + level.byteLength
           for (const t of shape.hydrology.traces) total += t.byteLength
         }
       }

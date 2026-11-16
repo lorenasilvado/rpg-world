@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME, type CoreField, type RiverPoint, type WorldParams } from '../types'
 import { composeElevation, sampleTerrainNoise } from './elevation'
-import { elevationLevels, generateField } from './generateField'
+import { generateField } from './generateField'
+import { OASIS_RING_RADIUS } from './oasis'
 import { DEFAULT_WORLD_PARAMS } from './params'
 import { quantile } from './quantile'
 import { minLakeCells, traceHydrology } from './rivers'
@@ -22,6 +23,17 @@ const CASES: WorldParams[] = [
 const isOcean = (b: number) => b === BIOME.deepOcean || b === BIOME.shallowWater
 const cellOf = (f: CoreField, p: RiverPoint) => Math.floor(p.v * f.height) * f.width + Math.floor(p.u * f.width)
 const cellsOf = (f: CoreField, river: RiverPoint[]) => river.map((p) => cellOf(f, p))
+/** Lagos fora dos oásis: o lago do oásis vem do deserto, não dos rios (ADR 0009). */
+const riverLakes = (f: CoreField) =>
+  Uint8Array.from(f.biome, (b, i) => {
+    if (b !== BIOME.lake) return 0
+    const near = f.oases.some((o) => {
+      const du = ((i % f.width) + 0.5) / f.width - o.u
+      const dv = (Math.floor(i / f.width) + 0.5) / f.height - o.v
+      return Math.sqrt(du * du + dv * dv) <= OASIS_RING_RADIUS
+    })
+    return near ? 0 : 1
+  })
 
 describe('rios e lagos (AC-F1-07)', () => {
   it('todo rio desce da nascente até o mar ou um lago, direto ou como afluente de outro rio', () => {
@@ -110,15 +122,12 @@ describe('rios e lagos (AC-F1-07)', () => {
     }
   }, 30_000)
 
-  it('lago não conta como oceano e fica acima do nível do mar', () => {
+  it('lago não conta como oceano: com lagos, o oceano continua no alvo', () => {
     for (const seed of SEEDS) {
       const f = generateField(seed, 128, params({ ocean: 30 }))
+      expect(f.biome.includes(BIOME.lake), seed).toBe(true)
       const ocean = f.biome.filter(isOcean).length / f.biome.length
       expect(Math.abs(ocean - 0.3), seed).toBeLessThanOrEqual(0.02)
-      const { seaLevel } = elevationLevels(f.elevation, params({ ocean: 30 }))
-      f.biome.forEach((b, i) => {
-        if (b === BIOME.lake) expect(f.elevation[i]).toBeGreaterThanOrEqual(seaLevel)
-      })
     }
   })
 })
@@ -148,8 +157,7 @@ describe('lagos no mapa final', () => {
       for (const ocean of [20, 45, 70, 90]) {
         for (let s = 0; s < (size === 128 ? 8 : 4); s++) {
           const f = generateField(`lago-${s}`, size, params({ ocean }))
-          const lake = Uint8Array.from(f.biome, (b) => (b === BIOME.lake ? 1 : 0))
-          for (const cells of components(lake, size)) {
+          for (const cells of components(riverLakes(f), size)) {
             expect(cells, `lago-${s} ${size}² oceano ${ocean}`).toBeGreaterThanOrEqual(min)
           }
         }
@@ -169,7 +177,8 @@ describe('rios com os sliders (ADR 0006)', () => {
       for (const over of [{ beach: 90 }, { desert: 60, forest: 10 }, { mountains: 80 }, { snow: 0 }, { temperature: 0 }]) {
         const f = generateField(seed, size, params(over))
         expect(f.rivers, `${seed} ${JSON.stringify(over)}`).toEqual(base.rivers)
-        expect(f.biome.map((b) => (b === BIOME.lake ? 1 : 0))).toEqual(base.biome.map((b) => (b === BIOME.lake ? 1 : 0)))
+        // Os lagos ficam iguais; só o oásis depende do deserto.
+        expect(riverLakes(f)).toEqual(riverLakes(base))
       }
       for (const ocean of [10, 45, 80]) {
         // Cada rio é um começo do traçado de uma nascente: mudar o oceano só muda onde ele termina.

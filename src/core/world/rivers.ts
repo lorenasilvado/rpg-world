@@ -2,6 +2,7 @@ import { createRandom } from '../rng/random'
 import type { RiverPoint } from '../types'
 import { BORDER_ELEVATION } from './elevation'
 import { quantile } from './quantile'
+import { depressions, type Depressions } from './water'
 
 /**
  * Rios e lagos, sem hidrologia (ADR 0006): os rios nascem nas terras altas e descem pelo gradiente
@@ -38,7 +39,7 @@ const MAX_LAKE_SHARE = 0.004
 
 /** Traçado dos rios e lagos, antes do corte na costa. */
 export type Hydrology = {
-  /** 1 nas células de lago. Um lago abaixo do nível do mar é oceano na classificação. */
+  /** 1 nas células de lago. A parte de um lago que fica no oceano (`water.ts`) é oceano na classificação. */
   lake: Uint8Array
   /**
    * Células de cada rio, da nascente até a borda do mapa ou um lago. O rio sempre desce, exceto ao
@@ -46,6 +47,11 @@ export type Hydrology = {
    * nunca passa da altura da nascente.
    */
   traces: Int32Array[]
+  /**
+   * Depressões do nível de transbordo até a borda (`depressions`), que separam o oceano da água
+   * interior na classificação. Ficam aqui porque, como o traçado, só dependem da elevação.
+   */
+  depressions: Depressions
 }
 
 /** Vizinhança de 8 células, em ordem fixa (empates de elevação ficam com o primeiro vizinho). */
@@ -120,7 +126,7 @@ export function traceHydrology(seed: string, elevation: Float32Array, size: numb
     }
     if (!climbs) traces.push(Int32Array.from(path))
   }
-  return { lake, traces }
+  return { lake, traces, depressions: depressions(elevation, size) }
 }
 
 /** Menor lago, em células: a depressão com menos células debaixo da água não vira lago. */
@@ -129,9 +135,9 @@ export function minLakeCells(size: number): number {
 }
 
 /**
- * Lagos que aparecem no mapa: as células de lago fora do oceano. A parte de um lago abaixo do
- * nível do mar vira oceano; se o que sobra encosta no mar e fica abaixo do tamanho mínimo, volta a
- * ser terra (`docs/specs/geracao-terreno.md`, Regras).
+ * Lagos que aparecem no mapa: as células de lago fora do oceano (`water`, só a água ligada à
+ * borda). A parte de um lago no oceano é oceano; se o que sobra encosta no mar e fica abaixo do
+ * tamanho mínimo, volta a ser terra (`docs/specs/geracao-terreno.md`, Regras).
  */
 export function visibleLakes(lake: Uint8Array, water: Uint8Array, size: number): Uint8Array {
   const n = size * size

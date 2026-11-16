@@ -34,7 +34,7 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
     timing('mapa 1024², seed nova', report.map),
     timing('prévia 256², slider de limiar', report.previewSlider),
     timing('mapa 1024², slider de limiar', report.mapSlider),
-    timing('mapa 1024², Tamanho do continente', report.mapShape),
+    timing('mapa 1024², Tamanho do continente, Costa em 100', report.mapShape),
     { type: 'memória do mundo', description: `${report.memory.worldBytes} bytes` },
     { type: 'arrasto', description: `${report.drag.sent} pedidos, ${report.drag.duringDrag} prévias exibidas` },
   )

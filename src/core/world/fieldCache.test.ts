@@ -58,7 +58,7 @@ describe('cache do ruído da seed (#45)', () => {
     expect(() => cache.generate('a', SIZE, { ...P, ocean: 120 })).toThrow(/ocean inválido/)
   })
 
-  it('conta a memória: 6 camadas de ruído, 2 de clima, a elevação e os lagos por tamanho', () => {
+  it('conta a memória: 6 camadas de ruído, 2 de clima, a elevação, os lagos e as depressões por tamanho', () => {
     const cache = createFieldCache()
     expect(cache.bytes()).toBe(0)
     const { field } = cache.generate('d', SIZE, P)
