@@ -1,0 +1,7 @@
+commit: f8fb8309a85cbd718ed102a2c2385121fba7f424
+ac-f1-28-deserto-arido-praias-100-mapa-1440.png  1440x900  7e471f14cde6e30e4e5cb07cddc938499a70d622b305917ac1db42a70001502d
+ac-f1-28-oasis-zoom-4x.png  1440x900  8825e1a7342186555b8cdf796010a011f7944bbeebda09d847e657c8bf2416c8
+ac-f1-28-rio-no-deserto-faixa-verde-zoom-4x.png  1440x900  c36212c3699df12977bbac558ce2a5a90d848e089be94c5d2681cf0399fd50bc
+ac-f1-29-lago-perto-da-costa-sem-praia-zoom-4x.png  1440x900  a26da8ab94e5d02a7eebf2ae59cd845619257d39a084d920ac8ae16a7759b6d9
+ac-f1-29-lago-sem-praia-detalhe-5x.png  1440x900  cd4ce6c24f85cd646a9dacd81f6510513671ab466e4d1e9768a48cc55dd050d0
+ac-f1-29-padrao-praias-100-mapa-1440.png  1440x900  97ed96c35334abecf225bf4f3689c7ca665bdfb6cecd72ebd99efae26ef3e515
