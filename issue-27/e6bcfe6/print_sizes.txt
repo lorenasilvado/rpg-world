@@ -1,0 +1,9 @@
+commit: e6bcfe6a8f5858ee7419d9e74fb20dd88589977a
+ac-f1-23-icones-spritesheet.png  1368x648  2d50ff749d97a06727faf33b3721d70dea61f521813ddf0c251d6dff59ed239b
+ac-f1-23-mapa-inteiro-1280.png  1280x800  28902b60659f9894f31436bd751a0d1008c734938d7d08880e8276a573c87473
+ac-f1-23-mapa-inteiro-1440.png  1440x900  1fcbf77579eb8c5f8fb77d9119498ae4d61f52dc5eb790e22af7fc04c0d5c261
+ac-f1-23-referencia-prototipo-1440.png  1440x900  98a181e7e91e82f779937f51640549dd3924d7e9118eaa9b54b7df2b1b1d8c51
+ac-f1-23-zoom-4x-costa-ondas-praia-tufos.png  1440x900  d85dac68e054b442f4106cb23f9b064f529fbc5acd86e71d572e8e55e1ba1368
+ac-f1-23-zoom-4x-deserto-dunas-cactos.png  1440x900  10f9571faaeec49c54d0495adaececb3f689728ad2ab07879e8c98307dadb1de
+ac-f1-23-zoom-4x-floresta-pinheiros-arvore-redonda.png  1440x900  b032dccaaec9def4645b4c65129c97f21e48cd0902216e6eb8d9c66e4b6323b2
+ac-f1-23-zoom-4x-montanhas-neve-hachura.png  1440x900  c6c4263317b33506dcb8ef67edede86fb6040b4723d8e60729c6a8a9442103df
