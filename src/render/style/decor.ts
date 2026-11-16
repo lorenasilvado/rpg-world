@@ -3,8 +3,9 @@ import type { Biome } from './palette'
 
 /**
  * Spritesheet inicial dos ícones decorativos (`decor.png`, 512×128: quadros de 128 px lado a lado,
- * com o pé do ícone na borda de baixo), do mockup do spike visual (M0) e da carga do spike dos
- * sprites. O editor desenha os ícones no estilo Medieval do design system (`decorInk.ts`).
+ * com o pé do ícone na borda de baixo), só do mockup do spike visual (M0). O editor e o spike dos
+ * sprites desenham os ícones no estilo Medieval do design system (`decorInk.ts`); o spike usa daqui
+ * só quais ícones cada bioma recebe (`DECOR_BY_BIOME`), para sortear a carga.
  * Origem: Kenney "Cartography Pack", CC0 (LICENSE-kenney-cartography-pack.txt e README.md desta pasta).
  */
 export const DECOR_SHEET_URL = decorUrl
