@@ -4,17 +4,16 @@ import { DECOR } from '../../core/types'
 import {
   DECOR_UNIT,
   DECOR_VARIANTS,
-  DECOR_WORLD_SIZE,
-  INK_CELL,
-  INK_CELL_SIZE,
-  INK_FRAME_PX,
+  INK_BOXES,
   INK_KINDS,
   INK_PX,
   INK_SHEET,
   decorVariant,
   drawDecorIcon,
   drawDecorSheet,
+  inkAnchor,
   inkFrame,
+  inkWorldBox,
   variantShape,
   type Ink,
 } from './decorInk'
@@ -98,6 +97,15 @@ function recorder() {
 /** Folga para a meia largura do traço mais grosso (2,3 unidades) e o tremido. */
 const PAD = 1.5
 
+/** Lugares onde os desenhos são conferidos (a origem e pontos espalhados, como no spritesheet). */
+const AT: ReadonlyArray<readonly [number, number]> = [
+  [0, 0],
+  [37, 91],
+  [250, 12],
+  [600, 70],
+  [1100, 300],
+]
+
 describe('ícones no estilo Medieval', () => {
   it('todo tipo que o núcleo gera tem desenho', () => {
     const generated = new Set(DECOR_RULES.flatMap((r) => r.kinds.map((k) => k.kind)))
@@ -105,17 +113,31 @@ describe('ícones no estilo Medieval', () => {
     expect(INK_KINDS).toHaveLength(Object.keys(DECOR).length)
   })
 
-  it.each(Object.entries(DECOR))('%s desenha dentro do quadro, em toda variação', (_, kind) => {
-    for (let v = 0; v < DECOR_VARIANTS; v++) {
-      const rec = recorder()
-      drawDecorIcon(rec.ctx, kind, 0, 0, 1, variantShape(v))
-      expect(rec.marks()).toBeGreaterThan(0)
-      expect(rec.depth()).toBe(0)
-      const b = rec.bounds()
-      expect(b.left).toBeGreaterThanOrEqual(-INK_CELL.left + PAD)
-      expect(b.right).toBeLessThanOrEqual(INK_CELL.right - PAD)
-      expect(b.top).toBeGreaterThanOrEqual(-INK_CELL.up + PAD)
-      expect(b.bottom).toBeLessThanOrEqual(INK_CELL.down - PAD)
+  it.each(Object.entries(DECOR))('%s desenha dentro do seu quadro, justo, em toda variação', (_, kind) => {
+    const box = INK_BOXES.get(kind)!
+    const used = { left: 0, right: 0, up: 0, down: 0 }
+    // Em vários lugares: o tremido do traço vem da posição e muda um pouco os limites.
+    for (const [x, y] of AT) {
+      for (let v = 0; v < DECOR_VARIANTS; v++) {
+        const rec = recorder()
+        drawDecorIcon(rec.ctx, kind, x, y, 1, variantShape(v))
+        expect(rec.marks()).toBeGreaterThan(0)
+        expect(rec.depth()).toBe(0)
+        const b = rec.bounds()
+        expect(b.left - x).toBeGreaterThanOrEqual(-box.left + PAD)
+        expect(b.right - x).toBeLessThanOrEqual(box.right - PAD)
+        expect(b.top - y).toBeGreaterThanOrEqual(-box.up + PAD)
+        expect(b.bottom - y).toBeLessThanOrEqual(box.down - PAD)
+        used.left = Math.max(used.left, x - b.left)
+        used.right = Math.max(used.right, b.right - x)
+        used.up = Math.max(used.up, y - b.top)
+        used.down = Math.max(used.down, b.bottom - y)
+      }
+    }
+    // Justo: além da folga do traço, sobra no máximo 1 unidade de cada lado (uma margem
+    // transparente também é desenhada e custa caro sem GPU).
+    for (const side of ['left', 'right', 'up', 'down'] as const) {
+      expect(box[side] - Math.max(0, used[side])).toBeLessThanOrEqual(PAD + 1)
     }
   })
 
@@ -150,25 +172,40 @@ describe('ícones no estilo Medieval', () => {
 })
 
 describe('spritesheet', () => {
-  it('uma coluna por tipo e uma linha por variação, em quadros quadrados', () => {
-    expect(INK_CELL.up + INK_CELL.down).toBe(INK_CELL_SIZE)
-    expect(INK_SHEET).toEqual({ width: INK_KINDS.length * INK_FRAME_PX, height: DECOR_VARIANTS * INK_FRAME_PX })
-    expect(INK_FRAME_PX).toBe(INK_CELL_SIZE * INK_PX)
-    expect(inkFrame(INK_KINDS[2], 3)).toEqual({ x: 2 * INK_FRAME_PX, y: 3 * INK_FRAME_PX })
+  it('uma coluna por tipo, lado a lado e sem sobrepor, e uma linha por variação', () => {
+    const frames = INK_KINDS.flatMap((k) => Array.from({ length: DECOR_VARIANTS }, (_, v) => inkFrame(k, v)))
+    for (const [i, a] of frames.entries()) {
+      expect(a.x + a.width).toBeLessThanOrEqual(INK_SHEET.width)
+      expect(a.y + a.height).toBeLessThanOrEqual(INK_SHEET.height)
+      for (const b of frames.slice(i + 1)) {
+        const apart = a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y
+        expect(apart).toBe(true)
+      }
+    }
+    const tree = INK_BOXES.get(DECOR.tree)!
+    expect(inkFrame(DECOR.tree, 2)).toMatchObject({
+      width: (tree.left + tree.right) * INK_PX,
+      height: (tree.up + tree.down) * INK_PX,
+    })
+    expect(inkAnchor(DECOR.tree)).toEqual({
+      x: tree.left / (tree.left + tree.right),
+      y: tree.up / (tree.up + tree.down),
+    })
   })
 
-  it('cada ícone fica dentro do seu quadro', () => {
-    for (const [col, kind] of INK_KINDS.entries()) {
+  it('cada ícone fica dentro do seu quadro no spritesheet', () => {
+    for (const kind of INK_KINDS) {
+      const box = INK_BOXES.get(kind)!
       for (let v = 0; v < DECOR_VARIANTS; v++) {
+        const f = inkFrame(kind, v)
         const rec = recorder()
         rec.ctx.setTransform(INK_PX, 0, 0, INK_PX, 0, 0)
-        drawDecorIcon(rec.ctx, kind, col * INK_CELL_SIZE + INK_CELL.left, v * INK_CELL_SIZE + INK_CELL.up, 1, variantShape(v))
+        drawDecorIcon(rec.ctx, kind, f.x / INK_PX + box.left, f.y / INK_PX + box.up, 1, variantShape(v))
         const b = rec.bounds()
-        const f = inkFrame(kind, v)
         expect(b.left).toBeGreaterThanOrEqual(f.x)
-        expect(b.right).toBeLessThanOrEqual(f.x + INK_FRAME_PX)
+        expect(b.right).toBeLessThanOrEqual(f.x + f.width)
         expect(b.top).toBeGreaterThanOrEqual(f.y)
-        expect(b.bottom).toBeLessThanOrEqual(f.y + INK_FRAME_PX)
+        expect(b.bottom).toBeLessThanOrEqual(f.y + f.height)
       }
     }
   })
@@ -186,9 +223,15 @@ describe('spritesheet', () => {
     expect(rec.points).toEqual([[1, 1]])
   })
 
-  it('o quadro no mundo segue a escala dos ícones do protótipo no editor', () => {
+  it('a caixa no mundo cobre o quadro, na escala dos ícones do protótipo no editor', () => {
     expect(DECOR_UNIT).toBeCloseTo((1024 / 1600) * 1.15)
-    expect(DECOR_WORLD_SIZE).toBeCloseTo(INK_CELL_SIZE * DECOR_UNIT)
+    for (const kind of INK_KINDS) {
+      const box = INK_BOXES.get(kind)!
+      const world = inkWorldBox(kind)
+      expect(world.size / 2).toBeGreaterThanOrEqual(Math.max(box.left, box.right) * DECOR_UNIT - 1e-9)
+      expect(world.size).toBeGreaterThanOrEqual(box.up * DECOR_UNIT - 1e-9)
+      expect(world.down).toBeCloseTo(box.down * DECOR_UNIT)
+    }
   })
 
   it('a variação só depende da posição e usa todas as linhas', () => {

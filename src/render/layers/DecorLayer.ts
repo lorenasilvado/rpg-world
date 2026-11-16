@@ -3,15 +3,16 @@ import { DECOR, type Decor } from '../../core/types'
 import type { UiStore } from '../../state/uiStore'
 import { WORLD_SIZE } from '../camera'
 import {
+  DECOR_UNIT,
   DECOR_VARIANTS,
-  DECOR_WORLD_SIZE,
-  INK_ANCHOR,
-  INK_FRAME_PX,
   INK_KINDS,
+  INK_PX,
   INK_SHEET,
   decorVariant,
   drawDecorSheet,
+  inkAnchor,
   inkFrame,
+  inkWorldBox,
   type Ink,
 } from '../style/decorInk'
 import { LOD_LEVELS, cullWindow, lodLevel, markVisible, stale, type DecorIcons, type Rect } from './decorCull'
@@ -44,7 +45,7 @@ export async function loadDecorTextures(): Promise<DecorTextures> {
     const variants: Texture[] = []
     for (let v = 0; v < DECOR_VARIANTS; v++) {
       const f = inkFrame(kind, v)
-      variants.push(new Texture({ source, frame: new Rectangle(f.x, f.y, INK_FRAME_PX, INK_FRAME_PX) }))
+      variants.push(new Texture({ source, frame: new Rectangle(f.x, f.y, f.width, f.height) }))
     }
     textures.set(kind, variants)
   }
@@ -108,28 +109,39 @@ export class DecorLayer {
     const kept: number[] = []
     for (let i = 0; i < decor.kind.length; i++) if (this.textures.has(decor.kind[i])) kept.push(i)
     const n = kept.length
-    const icons: DecorIcons = { x: new Float32Array(n), y: new Float32Array(n), size: new Float32Array(n), always: new Uint8Array(n) }
-    const size = DECOR_WORLD_SIZE * scale
+    const icons: DecorIcons = {
+      x: new Float32Array(n),
+      y: new Float32Array(n),
+      size: new Float32Array(n),
+      always: new Uint8Array(n),
+      down: new Float32Array(n),
+    }
+    // Px do spritesheet → unidades do mundo: a mesma escala para todos os quadros.
+    const sheetToWorld = (DECOR_UNIT / INK_PX) * scale
 
     while (this.sprites.length > n) this.sprites.pop()!.destroy()
     for (let j = 0; j < n; j++) {
       const i = kept[j]
       const core = decor.kind[i]
+      const box = inkWorldBox(core)
       icons.x[j] = decor.u[i] * width
       icons.y[j] = decor.v[i] * height
-      icons.size[j] = size
+      icons.size[j] = box.size * scale
+      icons.down![j] = box.down * scale
       icons.always[j] = core === DECOR.peak || core === DECOR.snowPeak ? 1 : 0
 
       let sprite = this.sprites[j]
       if (!sprite) {
         sprite = new Sprite()
-        sprite.anchor.set(INK_ANCHOR.x, INK_ANCHOR.y)
         this.sprites.push(sprite)
         this.view.addChild(sprite)
       }
+      // Cada tipo tem o seu quadro: a âncora muda com o tipo, e o sprite reaproveitado pode trocar.
+      const anchor = inkAnchor(core)
+      sprite.anchor.set(anchor.x, anchor.y)
       sprite.texture = this.textures.get(core)![decorVariant(decor.u[i], decor.v[i])]
       sprite.position.set(icons.x[j], icons.y[j])
-      sprite.scale.set(size / INK_FRAME_PX)
+      sprite.scale.set(sheetToWorld)
       sprite.visible = true
     }
     this.icons = icons
@@ -156,7 +168,7 @@ export class DecorLayer {
     this.window = cullWindow(view)
     const before = this.marks
     const after = new Uint8Array(before.length)
-    this.drawnCount = markVisible(this.icons, this.window, LOD_LEVELS[level].keep, after, INK_ANCHOR.y)
+    this.drawnCount = markVisible(this.icons, this.window, LOD_LEVELS[level].keep, after)
     for (let i = 0; i < after.length; i++) if (after[i] !== before[i]) this.sprites[i].visible = after[i] === 1
     this.marks = after
   }

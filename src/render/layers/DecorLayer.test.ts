@@ -2,7 +2,7 @@ import { Texture, type Sprite } from 'pixi.js'
 import { describe, expect, it } from 'vitest'
 import { DECOR, type Decor } from '../../core/types'
 import { createUiStore } from '../../state/uiStore'
-import { DECOR_VARIANTS, DECOR_WORLD_SIZE, INK_ANCHOR, INK_FRAME_PX, INK_KINDS } from '../style/decorInk'
+import { DECOR_UNIT, DECOR_VARIANTS, INK_KINDS, INK_PX, inkAnchor } from '../style/decorInk'
 import { DecorLayer, bindDecorLayer, writeDecorState, type DecorTextures } from './DecorLayer'
 
 // Sem WebGL no jsdom: os sprites existem, mas nada é desenhado. Aqui fica quais ficam visíveis.
@@ -41,8 +41,19 @@ describe('DecorLayer', () => {
     const [tree, peak] = layer.view.children as Sprite[]
     expect([tree.x, tree.y]).toEqual([512, 256])
     expect([peak.x, peak.y]).toEqual([256, 768])
-    expect([peak.anchor.x, peak.anchor.y]).toEqual([INK_ANCHOR.x, INK_ANCHOR.y])
-    expect(peak.scale.y * INK_FRAME_PX).toBeCloseTo(DECOR_WORLD_SIZE)
+    // Cada tipo com a âncora do seu quadro; todos na mesma escala (px do spritesheet → mundo).
+    expect([peak.anchor.x, peak.anchor.y]).toEqual([inkAnchor(DECOR.peak).x, inkAnchor(DECOR.peak).y])
+    expect([tree.anchor.x, tree.anchor.y]).toEqual([inkAnchor(DECOR.tree).x, inkAnchor(DECOR.tree).y])
+    expect(peak.scale.y).toBeCloseTo(DECOR_UNIT / INK_PX)
+    expect(tree.scale.y).toBeCloseTo(DECOR_UNIT / INK_PX)
+  })
+
+  it('o sprite reaproveitado para outro tipo troca de âncora', () => {
+    const layer = new DecorLayer(textures)
+    layer.setDecor(decor([[0.5, 0.5, DECOR.tree]]))
+    layer.setDecor(decor([[0.5, 0.5, DECOR.wave]]))
+    const [wave] = layer.view.children as Sprite[]
+    expect([wave.anchor.x, wave.anchor.y]).toEqual([inkAnchor(DECOR.wave).x, inkAnchor(DECOR.wave).y])
   })
 
   it('cada ícone usa a textura do seu tipo, numa das variações', () => {

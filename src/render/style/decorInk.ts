@@ -270,7 +270,8 @@ function trees(ctx: Ink, x: number, y: number, s: number, r: number) {
   spots
     .slice(0, 2 + Math.floor(r * 2))
     .sort((a, b) => a[1] - b[1])
-    .forEach(([dx, dy], i) => (i === round ? roundTree : pine)(ctx, x + dx * s, y + dy * s, s * 0.9, hash(x + i, y - i, 1)))
+    // O tamanho de cada árvore vem da variação, não da posição: o quadro do spritesheet é justo.
+    .forEach(([dx, dy], i) => (i === round ? roundTree : pine)(ctx, x + dx * s, y + dy * s, s * 0.9, hash(i, r * 1000, 1)))
   if (r > 0.5) caret(ctx, x + 9 * s, y + 4 * s, s)
 }
 
@@ -437,12 +438,12 @@ function wave(ctx: Ink, x: number, y: number, s: number) {
   )
 }
 
-/** Pontilhado de areia: quatro pontos a nanquim. */
-function sand(ctx: Ink, x: number, y: number, s: number) {
+/** Pontilhado de areia: quatro pontos a nanquim, espalhados conforme a variação `r`. */
+function sand(ctx: Ink, x: number, y: number, s: number, r: number) {
   ctx.fillStyle = 'rgba(28,21,17,.6)'
   for (let i = 0; i < 4; i++) {
     ctx.beginPath()
-    ctx.arc(x + (hash(x, i, 5) - 0.5) * 7 * s, y + (hash(i, y, 6) - 0.5) * 4 * s, 0.6 * s, 0, 2 * Math.PI)
+    ctx.arc(x + (hash(r * 1000, i, 5) - 0.5) * 7 * s, y + (hash(i, r * 1000, 6) - 0.5) * 4 * s, 0.6 * s, 0, 2 * Math.PI)
     ctx.fill()
   }
 }
@@ -479,19 +480,28 @@ export function drawDecorIcon(ctx: Ink, kind: number, x: number, y: number, s: n
 /** Variações de cada ícone no spritesheet (a variação de cada ponto vem de `decorVariant`). */
 export const DECOR_VARIANTS = 4
 
+/** Quadro de um ícone em volta do pé, em unidades do protótipo (para a esquerda, a direita, cima e baixo). */
+export type InkBox = { readonly left: number; readonly right: number; readonly up: number; readonly down: number }
+
 /**
- * Quadro de cada ícone, em unidades do protótipo, em volta do pé: cabe o maior desenho (a
- * montanha alta sobe 23 unidades; o tronco da árvore redonda desce 10).
+ * Quadro de cada tipo, do tamanho do desenho (as 4 variações, com folga para a espessura do traço):
+ * uma margem transparente maior também é desenhada, e sem GPU o custo cresce com a área. O teste
+ * confere que cada desenho cabe no seu quadro.
  */
-export const INK_CELL = { left: 19, right: 19, up: 26, down: 12 } as const
-export const INK_CELL_SIZE = INK_CELL.left + INK_CELL.right
-/** Pé do ícone no quadro, em fração da largura e da altura (a âncora do sprite). */
-export const INK_ANCHOR = { x: INK_CELL.left / INK_CELL_SIZE, y: INK_CELL.up / INK_CELL_SIZE } as const
+export const INK_BOXES: ReadonlyMap<number, InkBox> = new Map<number, InkBox>([
+  [DECOR.wave, { left: 9, right: 7, up: 4, down: 2 }],
+  [DECOR.sand, { left: 6, right: 5, up: 4, down: 4 }],
+  [DECOR.tuft, { left: 7, right: 7, up: 7, down: 2 }],
+  [DECOR.tree, { left: 11, right: 13, up: 17, down: 11 }],
+  [DECOR.dune, { left: 11, right: 9, up: 5, down: 6 }],
+  [DECOR.cactus, { left: 8, right: 8, up: 16, down: 3 }],
+  [DECOR.hill, { left: 11, right: 11, up: 7, down: 4 }],
+  [DECOR.peak, { left: 16, right: 17, up: 24, down: 4 }],
+  [DECOR.snowPeak, { left: 16, right: 17, up: 24, down: 4 }],
+])
 
 /** Pixels do spritesheet por unidade do protótipo: nítido no zoom máximo, com folga para telas 2×. */
 export const INK_PX = 4
-/** Lado de um quadro do spritesheet, em px. */
-export const INK_FRAME_PX = INK_CELL_SIZE * INK_PX
 
 /**
  * Unidades do mundo do renderer (o quadrado de 1024, uma por célula do mapa 1024²) por unidade do
@@ -500,15 +510,51 @@ export const INK_FRAME_PX = INK_CELL_SIZE * INK_PX
  */
 export const DECOR_UNIT = (1024 / 1600) * 1.15
 
-/** Lado do quadro de um ícone no mundo do renderer (mapa de 1024 unidades). */
-export const DECOR_WORLD_SIZE = INK_CELL_SIZE * DECOR_UNIT
+/** Altura de uma linha do spritesheet, em unidades do protótipo: a do quadro mais alto. */
+const ROW = Math.max(...[...INK_BOXES.values()].map((b) => b.up + b.down))
 
-/** Tamanho do spritesheet: uma coluna por tipo (`INK_KINDS`), uma linha por variação. */
-export const INK_SHEET = { width: INK_KINDS.length * INK_FRAME_PX, height: DECOR_VARIANTS * INK_FRAME_PX } as const
+/** Coluna de cada tipo no spritesheet (borda esquerda, em unidades do protótipo), lado a lado. */
+const COLUMN: ReadonlyMap<number, number> = (() => {
+  const out = new Map<number, number>()
+  let x = 0
+  for (const kind of INK_KINDS) {
+    out.set(kind, x)
+    const b = INK_BOXES.get(kind)!
+    x += b.left + b.right
+  }
+  return out
+})()
 
-/** Canto do quadro do tipo `kind` na variação `variant`, em px do spritesheet. */
-export function inkFrame(kind: number, variant: number): { x: number; y: number } {
-  return { x: INK_KINDS.indexOf(kind) * INK_FRAME_PX, y: variant * INK_FRAME_PX }
+/** Tamanho do spritesheet, em px: uma coluna por tipo (`INK_KINDS`), uma linha por variação. */
+export const INK_SHEET = {
+  width: [...INK_BOXES.values()].reduce((w, b) => w + b.left + b.right, 0) * INK_PX,
+  height: DECOR_VARIANTS * ROW * INK_PX,
+} as const
+
+/** Quadro do tipo `kind` na variação `variant`, em px do spritesheet. */
+export function inkFrame(kind: number, variant: number): { x: number; y: number; width: number; height: number } {
+  const b = INK_BOXES.get(kind)!
+  return {
+    x: COLUMN.get(kind)! * INK_PX,
+    y: variant * ROW * INK_PX,
+    width: (b.left + b.right) * INK_PX,
+    height: (b.up + b.down) * INK_PX,
+  }
+}
+
+/** Pé do ícone `kind` no quadro, em fração da largura e da altura (a âncora do sprite). */
+export function inkAnchor(kind: number): { x: number; y: number } {
+  const b = INK_BOXES.get(kind)!
+  return { x: b.left / (b.left + b.right), y: b.up / (b.up + b.down) }
+}
+
+/**
+ * Caixa do ícone `kind` no mundo do renderer (mapa de 1024 unidades) em volta do pé: o lado de um
+ * quadrado que cobre o desenho acima do pé e para os lados, e o que desce abaixo dele (o culling).
+ */
+export function inkWorldBox(kind: number): { size: number; down: number } {
+  const b = INK_BOXES.get(kind)!
+  return { size: Math.max(b.left, b.right, b.up / 2) * 2 * DECOR_UNIT, down: b.down * DECOR_UNIT }
 }
 
 /** Variação `r` desenhada na linha `variant`: o centro de cada faixa de 0 a 1. */
@@ -519,14 +565,13 @@ export function variantShape(variant: number): number {
 /** Desenha o spritesheet inteiro no contexto (de `INK_SHEET.width` × `INK_SHEET.height` px). */
 export function drawDecorSheet(ctx: Ink) {
   ctx.setTransform(INK_PX, 0, 0, INK_PX, 0, 0)
-  INK_KINDS.forEach((kind, col) => {
+  for (const kind of INK_KINDS) {
+    const b = INK_BOXES.get(kind)!
     for (let v = 0; v < DECOR_VARIANTS; v++) {
       // Cada quadro num lugar diferente do canvas: o tremido do traço muda de um para outro.
-      const x = col * INK_CELL_SIZE + INK_CELL.left
-      const y = v * INK_CELL_SIZE + INK_CELL.up
-      drawDecorIcon(ctx, kind, x, y, 1, variantShape(v))
+      drawDecorIcon(ctx, kind, COLUMN.get(kind)! + b.left, v * ROW + b.up, 1, variantShape(v))
     }
-  })
+  }
   ctx.setTransform(1, 0, 0, 1, 0, 0)
 }
 

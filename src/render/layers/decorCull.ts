@@ -13,8 +13,11 @@
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
-/** Ícones em unidades do mundo, com o pé em (x, y) e o tamanho do quadrado de cada um. */
-export type DecorIcons = { x: Float32Array; y: Float32Array; size: Float32Array; always: Uint8Array }
+/**
+ * Ícones em unidades do mundo, com o pé em (x, y) na base central de um quadrado de lado `size` que
+ * cobre o desenho acima do pé; `down` (opcional, 0 se não vier) é quanto o desenho desce abaixo do pé.
+ */
+export type DecorIcons = { x: Float32Array; y: Float32Array; size: Float32Array; always: Uint8Array; down?: Float32Array }
 
 /** Níveis de detalhe, do mais perto ao mais longe: a partir de `minZoom`, fica a fração `keep`. */
 export const LOD_LEVELS: ReadonlyArray<{ minZoom: number; keep: number }> = [
@@ -81,11 +84,10 @@ export function stale(window: Rect, view: Rect, margin = CULL_MARGIN): boolean {
 }
 
 /**
- * Marca em `out` (1 = desenha) os ícones que ficam no nível `keep` e cruzam a `window`. O pé fica
- * no centro da largura do quadrado e a `anchorY` da altura (1 = na base; uma fração menor deixa
- * parte do quadro abaixo do pé). Devolve quantos ficaram.
+ * Marca em `out` (1 = desenha) os ícones que ficam no nível `keep` e cruzam a `window`, com o pé
+ * na base central do quadrado e a parte abaixo do pé (`down`). Devolve quantos ficaram.
  */
-export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: Uint8Array, anchorY = 1): number {
+export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: Uint8Array): number {
   const left = window.x
   const right = window.x + window.width
   const top = window.y
@@ -99,8 +101,8 @@ export function markVisible(icons: DecorIcons, window: Rect, keep: number, out: 
       (icons.always[i] === 1 || decorRank(i) < keep) &&
       x + s / 2 >= left &&
       x - s / 2 <= right &&
-      y + s * (1 - anchorY) >= top &&
-      y - s * anchorY <= bottom
+      y + (icons.down ? icons.down[i] : 0) >= top &&
+      y - s <= bottom
     out[i] = show ? 1 : 0
     if (show) count++
   }

@@ -151,4 +151,18 @@ describe('culling', () => {
     markVisible(icons, { x: 0, y: 0, width: 100, height: 100 }, 1, out)
     expect([...out]).toEqual([1, 0])
   })
+
+  it('o ícone com o pé acima da janela, mas a parte de baixo dentro dela, é desenhado', () => {
+    // Os dois com o pé 6 unidades acima da janela; só o primeiro desce 8 abaixo do pé.
+    const icons: DecorIcons = {
+      x: new Float32Array([50, 60]),
+      y: new Float32Array([-6, -6]),
+      size: new Float32Array([10, 10]),
+      always: new Uint8Array(2),
+      down: new Float32Array([8, 0]),
+    }
+    const out = new Uint8Array(2)
+    markVisible(icons, { x: 0, y: 0, width: 100, height: 100 }, 1, out)
+    expect([...out]).toEqual([1, 0])
+  })
 })
