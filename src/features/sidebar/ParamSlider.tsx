@@ -32,16 +32,31 @@ export function ParamSlider({
 }) {
   const labelId = useId()
   const [dragging, setDragging] = useState(false)
-  // O estado só muda no próximo render; o ref vale já no mesmo evento do ponteiro.
+  // O estado só muda no próximo render; os refs valem já no mesmo evento do ponteiro.
   const pointerDown = useRef(false)
+  /** Se o arrasto atual já pediu alguma prévia (`onChange`) sem o commit depois. */
+  const pendingCommit = useRef(false)
+  /** O último valor do arrasto atual. */
+  const dragValue = useRef(value)
+  const commitRef = useRef(onCommit)
+  useEffect(() => {
+    commitRef.current = onCommit
+  }, [onCommit])
   const Icon = def.icon
 
-  // O Radix só chama `onValueCommit` se o valor mudou: soltar sem mudar também encerra o arrasto.
+  // O Radix só chama `onValueCommit` se o valor final é diferente do inicial. Soltar de volta no
+  // valor de partida também encerra o arrasto e, se ele pediu prévias, pede o mapa final aqui: o
+  // `pointerup` do Radix roda no slider antes deste, no `document`, então o commit dele, quando
+  // existe, já chegou.
   useEffect(() => {
     if (!dragging) return
     const end = () => {
       pointerDown.current = false
       setDragging(false)
+      if (pendingCommit.current) {
+        pendingCommit.current = false
+        commitRef.current(dragValue.current)
+      }
     }
     document.addEventListener('pointerup', end)
     document.addEventListener('pointercancel', end)
@@ -83,13 +98,19 @@ export function ParamSlider({
         value={[value]}
         onPointerDown={() => {
           pointerDown.current = true
+          pendingCommit.current = false
+          dragValue.current = value
           setDragging(true)
         }}
         onValueChange={([v]) => {
-          if (pointerDown.current) onChange(v)
+          if (!pointerDown.current) return
+          pendingCommit.current = true
+          dragValue.current = v
+          onChange(v)
         }}
         onValueCommit={([v]) => {
           pointerDown.current = false
+          pendingCommit.current = false
           setDragging(false)
           onCommit(v)
         }}

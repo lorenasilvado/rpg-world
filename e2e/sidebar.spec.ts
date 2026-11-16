@@ -98,6 +98,26 @@ test('arrastar Desertos mostra a prévia, e Florestas recua e pisca; soltar gera
   await expect(page.getByTestId('slider-forest')).toHaveAttribute('data-flash', 'false')
 })
 
+test('arrastar e soltar de volta no valor inicial também gera o mapa final (AC-F1-11)', async ({ page }) => {
+  await openEditor(page)
+  const desert = page.getByRole('slider', { name: 'Desertos' })
+  const forest = page.getByRole('slider', { name: 'Florestas' })
+  const track = (await page.getByTestId('slider-desert').locator('span[data-orientation]').first().boundingBox())!
+  const thumb = (await desert.boundingBox())!
+  const start = { x: thumb.x + thumb.width / 2, y: thumb.y + thumb.height / 2 }
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(track.x + track.width * 0.7, start.y, { steps: 10 })
+  await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '256')
+  await expect(forest).toHaveAttribute('aria-valuenow', /^(29|30|31)$/)
+  // De volta ao valor de partida: Desertos volta a 15 (Florestas fica onde recuou). O ponteiro
+  // vai à posição de 15% do trilho (o Radix desenha o thumb um pouco para dentro nas pontas).
+  await page.mouse.move(track.x + track.width * 0.15, start.y, { steps: 10 })
+  await expect(desert).toHaveAttribute('aria-valuenow', '15')
+  await page.mouse.up()
+  await waitFinalMap(page)
+})
+
 test('as seções recolhem e abrem, e o painel recolhe a 48 px e abre pela tecla [ (AC-F1-21)', async ({ page }) => {
   await openEditor(page)
   const terreno = page.getByRole('button', { name: 'Terreno' })
