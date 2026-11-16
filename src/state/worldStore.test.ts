@@ -131,3 +131,21 @@ describe('worldStore (AC-F1-10, AC-F1-11)', () => {
     expect(store.getState().field).toBe(field)
   })
 })
+
+describe('worldStore: Desertos + Florestas (AC-F1-14)', () => {
+  it('arrastar Desertos acima do que sobra faz Florestas recuar, e a prévia já usa o recuo', () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen)
+    expect(store.getState().dragParams({ desert: 70 })).toBe('forest')
+    expect(store.getState().params).toMatchObject({ desert: 70, forest: 30 })
+    expect(started[0].req.params).toMatchObject({ desert: 70, forest: 30 })
+  })
+
+  it('soltar também respeita o limite e diz qual recuou', () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen)
+    expect(store.getState().releaseParams({ forest: 90 })).toBe('desert')
+    expect(started[0].req).toMatchObject({ size: MAP_SIZE, params: { forest: 90, desert: 10 } })
+    expect(store.getState().releaseParams({ ocean: 20 })).toBeNull()
+  })
+})

@@ -17,4 +17,17 @@ describe('uiStore', () => {
     ui.getState().setLayer('decor', true)
     expect(ui.getState().layers.decor).toBe(true)
   })
+
+  it('abre com a sidebar aberta; recolhe e abre, e só avisa quando muda (AC-F1-21)', () => {
+    const ui = createUiStore()
+    expect(ui.getState().sidebarCollapsed).toBe(false)
+    const listener = vi.fn()
+    ui.subscribe(listener)
+    ui.getState().setSidebarCollapsed(true)
+    ui.getState().setSidebarCollapsed(true)
+    expect(ui.getState().sidebarCollapsed).toBe(true)
+    expect(listener).toHaveBeenCalledTimes(1)
+    ui.getState().setSidebarCollapsed(false)
+    expect(ui.getState().sidebarCollapsed).toBe(false)
+  })
 })

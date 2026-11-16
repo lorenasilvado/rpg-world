@@ -1,6 +1,7 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
@@ -15,9 +16,14 @@ import { useTheme } from './useTheme'
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
- * O `world` é o estado do mundo (`worldStore.ts`): o mapa desenha o campo dele (`MapView`), o toast
- * mostra o erro da geração, e o status dela fica em `data-generation-status` (os testes esperam por
- * ele). O `ui` guarda as camadas do mapa ligadas (`uiStore.ts`). `createRenderer` troca o
+ * A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
+ * recolhe a 48 px e abre de novo pelo botão ou pela tecla `[`; abaixo disso, a tecla abre e fecha o
+ * painel sobreposto. A tecla não vale com o foco num campo de texto nem com Ctrl, Alt ou Meta.
+ *
+ * O `world` é o estado do mundo (`worldStore.ts`): o mapa desenha o campo dele (`MapView`), a
+ * sidebar muda os parâmetros dele, o toast mostra o erro da geração, e o status dela fica em
+ * `data-generation-status` (os testes esperam por ele). O `ui` guarda as camadas do mapa ligadas e
+ * a sidebar recolhida (`uiStore.ts`). `createRenderer` troca o
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  */
 export function EditorLayout({
@@ -33,6 +39,8 @@ export function EditorLayout({
   const generationStatus = useStore(world, (s) => s.status)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const desktop = useDesktop()
+  const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -54,6 +62,22 @@ export function EditorLayout({
     desktop.addEventListener('change', onChange)
     return () => desktop.removeEventListener('change', onChange)
   }, [])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '[' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented || isTextField(e.target)) return
+      e.preventDefault()
+      if (window.matchMedia('(min-width: 768px)').matches) {
+        const { sidebarCollapsed, setSidebarCollapsed } = ui.getState()
+        setSidebarCollapsed(!sidebarCollapsed)
+      } else {
+        setDrawerOpen(false)
+        setSidebarOpen((open) => !open)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [ui])
 
   useEffect(() => {
     if (!anyOpen) return
@@ -81,20 +105,24 @@ export function EditorLayout({
         aria-label="Gerar mundo"
         data-testid="sidebar"
         data-open={sidebarOpen}
+        data-collapsed={sidebarCollapsed}
         inert={drawerOpen}
         className={[
-          'absolute inset-y-0 left-0 z-20 flex w-[min(var(--sidebar-width),100vw)] flex-col',
+          'absolute inset-y-0 left-0 z-20 flex w-[min(var(--sidebar-width),100vw)] flex-col overflow-hidden',
           'bg-paper-solid shadow-[4px_0_24px_rgba(43,30,15,0.18)]',
-          'transition-transform duration-200 ease-[var(--ease-panel)]',
+          'transition-[transform,width] duration-200 ease-[var(--ease-panel)]',
           sidebarOpen ? 'translate-x-0' : 'invisible -translate-x-full',
-          'md:visible md:w-[var(--sidebar-width)] md:translate-x-0',
+          'md:visible md:translate-x-0',
+          sidebarCollapsed ? 'md:w-[var(--sidebar-collapsed-width)]' : 'md:w-[var(--sidebar-width)]',
         ].join(' ')}
       >
-        <header className="flex h-[var(--editor-header-height)] shrink-0 items-center gap-3 border-b border-line px-3">
-          <span className="grid size-8 place-items-center rounded-control bg-amber text-on-amber">
+        <header
+          className={`flex h-[var(--editor-header-height)] shrink-0 items-center gap-3 border-b border-line ${sidebarCollapsed ? 'px-2' : 'px-3'}`}
+        >
+          <span className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
             <Compass size={20} aria-hidden="true" />
           </span>
-          <span className="font-title text-base/5 font-semibold">RPG World Builder</span>
+          {!sidebarCollapsed && <span className="font-title text-base/5 font-semibold whitespace-nowrap">RPG World Builder</span>}
           <IconButton
             ref={sidebarClose}
             label="Fechar painel"
@@ -103,10 +131,12 @@ export function EditorLayout({
             <X size={20} aria-hidden="true" />
           </IconButton>
         </header>
-        <div className="flex h-11 items-center border-b border-line px-4 text-xs font-extrabold tracking-[0.08em] text-ink-2 uppercase">
-          Gerar mundo
-        </div>
-        <div className="flex-1" />
+        <GenerateSidebar
+          world={world}
+          collapsed={sidebarCollapsed}
+          canCollapse={desktop}
+          onCollapsedChange={(collapsed) => ui.getState().setSidebarCollapsed(collapsed)}
+        />
       </aside>
 
       <div
@@ -155,6 +185,25 @@ export function EditorLayout({
       </aside>
     </div>
   )
+}
+
+/** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */
+function useDesktop() {
+  const query = '(min-width: 768px)'
+  const [desktop, setDesktop] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const onChange = (e: { matches: boolean }) => setDesktop(e.matches)
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
+  return desktop
+}
+
+/** Foco num campo de texto: aí a tecla `[` é do campo. */
+function isTextField(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || target.closest('input, textarea, select') !== null
 }
 
 /** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */

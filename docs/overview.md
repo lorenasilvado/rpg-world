@@ -125,7 +125,15 @@ O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", l
 React): seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
 status da geração. Arrastar um slider
 (`dragParams`) pede a prévia 256²; soltar (`releaseParams`) e trocar a seed pedem o mapa 1024². O
-campo só é trocado por um resultado de versão mais nova que a do exibido.
+campo só é trocado por um resultado de versão mais nova que a do exibido. As duas ações passam a
+mudança por `applyParamChange` (`src/state/params.ts`), que não deixa Desertos + Florestas passar
+de 100% e diz qual slider recuou.
+
+A sidebar de geração fica em `src/features/sidebar/`: `GenerateSidebar.tsx` (seções recolhíveis
+e o trilho de 48 px), `ParamSlider.tsx` (o slider do Radix, `@radix-ui/react-slider`, com o
+estilo do design system) e `sliders.ts` (os 9 sliders por seção, com ícone e amostra de cor). A
+sidebar recolhida fica no `uiStore` (`sidebarCollapsed`): o `MapView` a lê para calcular a área
+livre do mapa e chama o `refit` do renderer quando ela muda.
 
 A página de medição abre em `/bench.html`, no dev e no build
 (`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² com o
@@ -207,7 +215,8 @@ src/
     worldStore.ts       # seed, parâmetros, status da geração
     pinsStore.ts        # pins + undo
     roadsStore.ts
-    uiStore.ts          # camadas do mapa, ferramenta ativa, pin selecionado
+    params.ts           # limite Desertos + Florestas (applyParamChange)
+    uiStore.ts          # camadas do mapa, sidebar recolhida, ferramenta ativa, pin selecionado
   features/
     sidebar/  pins/  roads/  worlds/
   persistence/
