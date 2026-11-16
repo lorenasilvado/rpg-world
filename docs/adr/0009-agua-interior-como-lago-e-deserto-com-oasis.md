@@ -1,6 +1,6 @@
 # 0009. A água interior é lago, e o deserto só tem água no oásis
 
-- Status: Proposta
+- Status: Aceita
 - Data: 2026-11-16
 - Questão: o que é oceano e o que é lago, e que água pode ficar dentro do deserto? (#94, `docs/specs/geracao-terreno.md`)
 - Substitui em parte: [ADR 0008](0008-nascentes-na-terra-alta-e-depressoes-pequenas.md) (a água abaixo do nível do mar e o deserto)
