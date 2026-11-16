@@ -8,7 +8,7 @@
  */
 
 /** Versão do gerador: muda sempre que o mesmo pedido passa a gerar outro campo. */
-export const GENERATOR_VERSION = 7
+export const GENERATOR_VERSION = 8
 
 /**
  * Biomas do campo, no valor guardado no `Uint8Array`. Mesma ordem de `BIOMES` em
@@ -27,7 +27,10 @@ export const BIOME = {
   snow: 8,
   /** Campo gelado: o campo abaixo da geada (Temperatura global), fora das montanhas. */
   frozenField: 9,
-  /** Lago: a depressão onde a descida de um rio fica presa (ADR 0006); não conta como oceano. */
+  /**
+   * Lago: a depressão onde a descida de um rio fica presa (ADR 0008), a água abaixo do nível do mar
+   * sem ligação com a borda e o oásis (ADR 0009); não conta como oceano.
+   */
   lake: 10,
 } as const
 
@@ -76,6 +79,8 @@ export const DECOR = {
   peak: 7,
   /** Montanha nevada com hachura, na neve de montanha. */
   snowPeak: 8,
+  /** Palmeira, no anel de vegetação do oásis. */
+  palm: 9,
 } as const
 
 export type DecorKind = (typeof DECOR)[keyof typeof DECOR]
@@ -105,5 +110,10 @@ export type CoreField = {
   biome: Uint8Array
   shade: Int8Array
   rivers: RiverPoint[][]
+  /** Centro de cada oásis, de 0 a 1 no mapa (o lago e o anel já estão no bioma). */
+  oases: OasisPoint[]
   decor: Decor
 }
+
+/** Centro de um oásis, de 0 a 1 no mapa. */
+export type OasisPoint = { u: number; v: number }

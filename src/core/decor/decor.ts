@@ -51,10 +51,14 @@ export const DECOR_RULES: ReadonlyArray<{ biome: number; kinds: ReadonlyArray<{ 
   { biome: BIOME.snow, kinds: [{ kind: DECOR.snowPeak, chance: 0.75 }] },
 ]
 
-/** Biomas em que cada ícone pode cair. */
-export const DECOR_BIOMES: ReadonlyMap<DecorKind, number> = new Map(
-  DECOR_RULES.flatMap(({ biome, kinds }) => kinds.map(({ kind }) => [kind, biome] as const)),
-)
+/**
+ * Biomas em que cada ícone pode cair. A palmeira não sai da amostra: fica no anel de vegetação
+ * (campo) de cada oásis (`placeOases`).
+ */
+export const DECOR_BIOMES: ReadonlyMap<DecorKind, number> = new Map([
+  ...DECOR_RULES.flatMap(({ biome, kinds }) => kinds.map(({ kind }) => [kind, biome] as const)),
+  [DECOR.palm, BIOME.grassland] as const,
+])
 
 /** Sem ícone. */
 const NONE = 255
@@ -133,18 +137,35 @@ export function poissonDisk(random: () => number, spacing: number): number[] {
 }
 
 /**
- * Decoração do campo: os ícones por bioma, a partir da seed e dos biomas (`size` × `size`), de
- * cima para baixo e com no máximo `max` ícones (`MAX_DECOR`; outro valor só nos testes).
+ * Raio em volta do centro do oásis sem ícones da amostra, em frações da largura: o lago, o anel e
+ * as palmeiras ficam limpos (o tufo do campo do anel encavalaria as palmeiras).
  */
-export function placeDecor(seed: string, biome: Uint8Array, size: number, max = MAX_DECOR): Decor {
+const OASIS_CLEAR = 0.026
+
+/**
+ * Decoração do campo: os ícones por bioma, a partir da seed e dos biomas (`size` × `size`), mais as
+ * palmeiras dos `oases`, de cima para baixo e com no máximo `max` ícones (`MAX_DECOR`; outro valor
+ * só nos testes).
+ */
+export function placeDecor(
+  seed: string,
+  biome: Uint8Array,
+  size: number,
+  max = MAX_DECOR,
+  oases: ReadonlyArray<{ u: number; v: number; palms: ReadonlyArray<{ u: number; v: number }> }> = [],
+): Decor {
   const random = createRandom(`${seed}#decor`)
   const points = poissonDisk(random, DECOR_SPACING)
   const kept: { u: number; v: number; kind: DecorKind }[] = []
+  for (const o of oases) for (const p of o.palms) kept.push({ u: p.u, v: p.v, kind: DECOR.palm })
+  const nearOasis = (u: number, v: number) =>
+    oases.some((o) => (o.u - u) * (o.u - u) + (o.v - v) * (o.v - v) < OASIS_CLEAR * OASIS_CLEAR)
   for (let p = 0; p < points.length; p += 2) {
     const u = points[p]
     const v = points[p + 1]
     // O sorteio da chance vem da seed, ponto a ponto: não depende do bioma nem do tamanho.
     const roll = random()
+    if (oases.length > 0 && nearOasis(u, v)) continue
     const b = biome[Math.min(size - 1, Math.floor(v * size)) * size + Math.min(size - 1, Math.floor(u * size))]
     let kind: number = NONE
     for (const band of TABLE[b]) {

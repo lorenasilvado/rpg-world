@@ -92,7 +92,8 @@ describe('decoração do campo (AC-F1-08)', () => {
 
   it('tem os ícones de todos os biomas decorados, mais densos na floresta e nas montanhas', () => {
     const c = counts(decor)
-    for (const kind of Object.values(DECOR)) expect(c.get(kind) ?? 0, `tipo ${kind}`).toBeGreaterThan(0)
+    // A palmeira só aparece no oásis, que tem o teste dele logo abaixo.
+    for (const kind of Object.values(DECOR)) if (kind !== DECOR.palm) expect(c.get(kind) ?? 0, `tipo ${kind}`).toBeGreaterThan(0)
     // Densidade por célula do bioma: a floresta tem mais árvores por área que o campo tem tufos.
     const cells = (b: number) => field.biome.filter((x) => x === b).length
     expect(c.get(DECOR.tree)! / cells(BIOME.forest)).toBeGreaterThan((3 * c.get(DECOR.tuft)!) / cells(BIOME.grassland))
@@ -100,6 +101,20 @@ describe('decoração do campo (AC-F1-08)', () => {
 
   it('nenhum par de ícones fica mais perto que a distância mínima (Poisson-disk)', () => {
     expect(minDistance(decor.u, decor.v)).toBeGreaterThanOrEqual(DECOR_SPACING * (1 - 1e-6))
+  })
+
+  it('as palmeiras dos oásis ficam no anel de campo e também respeitam a distância mínima', () => {
+    const arid = generateField('rpg-world', 256, {
+      ...DEFAULT_WORLD_PARAMS,
+      ocean: 32, beach: 25, desert: 62, forest: 10, mountains: 34, snow: 12, continentSize: 74, coastRoughness: 45, temperature: 85,
+    })
+    const c = counts(arid.decor)
+    expect(c.get(DECOR.palm) ?? 0).toBeGreaterThanOrEqual(2 * arid.oases.length)
+    for (let i = 0; i < arid.decor.kind.length; i++) {
+      const b = biomeAt(arid.biome, 256, arid.decor.u[i], arid.decor.v[i])
+      expect(DECOR_BIOMES.get(arid.decor.kind[i] as never), `ícone ${i}`).toBe(b)
+    }
+    expect(minDistance(arid.decor.u, arid.decor.v)).toBeGreaterThanOrEqual(DECOR_SPACING * (1 - 1e-6))
   })
 
   it('sai de cima para baixo, a ordem de desenho', () => {

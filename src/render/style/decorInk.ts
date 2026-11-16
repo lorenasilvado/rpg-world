@@ -397,6 +397,100 @@ function cactus(ctx: Ink, x: number, y: number, s: number, r: number) {
   )
 }
 
+/** Folhas da palmeira: a ponta de cada uma, a partir do topo do tronco, em unidades do protótipo. */
+const FRONDS: readonly Point[] = [
+  [-7, 2.5],
+  [-4.5, -2.8],
+  [0.5, -4.2],
+  [5, -2.5],
+  [7.5, 2.5],
+]
+
+/**
+ * Palmeira do oásis: tronco curvo e levemente inclinado (a variação `r` muda a inclinação e a
+ * altura), com anéis a traço, e uma copa de cinco folhas no verde das árvores.
+ */
+function palm(ctx: Ink, x: number, y: number, s: number, r: number) {
+  const H = (12 + r * 3) * s
+  const lean = ((r - 0.5) * 3 + 1.5) * s
+  const tx = x + lean
+  const ty = y - H
+  const bend = x + lean * 0.2
+  // Tronco.
+  ctx.beginPath()
+  ctx.moveTo(x - 1.1 * s, y)
+  ctx.quadraticCurveTo(bend - 0.8 * s, y - H * 0.55, tx - 0.6 * s, ty)
+  ctx.lineTo(tx + 0.6 * s, ty)
+  ctx.quadraticCurveTo(bend + 0.8 * s, y - H * 0.55, x + 1.1 * s, y)
+  ctx.closePath()
+  ctx.fillStyle = '#C9A36A'
+  ctx.fill()
+  ink(ctx, 1.05 * s)
+  ctx.stroke()
+  ink(ctx, 0.7 * s)
+  for (let k = 1; k <= 3; k++) {
+    const t = k / 4
+    const cx = x + (tx - x) * t * t
+    const cy = y - H * t
+    wobble(
+      ctx,
+      [
+        [cx - 0.9 * s, cy + 0.4 * s],
+        [cx + 0.9 * s, cy - 0.2 * s],
+      ],
+      s,
+      100 + k,
+      0.2,
+    )
+  }
+  // Copa: cada folha é uma lente larga entre o topo do tronco e a ponta, arqueada para cima, com a
+  // nervura a traço fino.
+  FRONDS.forEach(([fx, fy], i) => {
+    const px = tx + fx * s
+    const py = ty + fy * s
+    const mx = (tx + px) / 2
+    const my = (ty + py) / 2
+    const len = Math.sqrt(fx * fx + fy * fy)
+    // Perpendicular à folha, virada para cima (na folha de pé, para a esquerda).
+    const up = fx > 0 ? 1 : -1
+    const nx = (up * fy) / len
+    const ny = (-up * fx) / len
+    ctx.beginPath()
+    ctx.moveTo(tx, ty)
+    ctx.quadraticCurveTo(mx + nx * 2.6 * s, my + ny * 2.6 * s - 0.6 * s, px, py)
+    ctx.quadraticCurveTo(mx - nx * 0.6 * s, my - ny * 0.6 * s + 0.4 * s, tx, ty)
+    ctx.closePath()
+    ctx.fillStyle = '#86BE5C'
+    ctx.fill()
+    ink(ctx, 0.8 * s)
+    ctx.stroke()
+    ink(ctx, 0.45 * s)
+    wobble(
+      ctx,
+      [
+        [tx, ty],
+        [mx + nx * 0.9 * s, my + ny * 0.9 * s - 0.3 * s],
+        [px, py],
+      ],
+      s,
+      110 + i,
+      0.2,
+    )
+  })
+  // Chão, a traço, como no cacto.
+  ink(ctx, 0.9 * s)
+  wobble(
+    ctx,
+    [
+      [x - 4.5 * s, y + 0.5 * s],
+      [x + 4.5 * s, y + 0.5 * s],
+    ],
+    s,
+    120,
+    0.5,
+  )
+}
+
 function tuft(ctx: Ink, x: number, y: number, s: number) {
   ink(ctx, 1 * s)
   ctx.strokeStyle = 'rgba(28,21,17,.8)'
@@ -462,6 +556,7 @@ const DRAW: Record<number, (ctx: Ink, x: number, y: number, s: number, r: number
   [DECOR.hill]: hill,
   [DECOR.peak]: (ctx, x, y, s, r) => mountain(ctx, x, y, s, false, r),
   [DECOR.snowPeak]: (ctx, x, y, s, r) => mountain(ctx, x, y, s, true, r),
+  [DECOR.palm]: palm,
 }
 
 /** Tipos do núcleo que têm desenho, na ordem das colunas do spritesheet. */
@@ -501,6 +596,7 @@ export const INK_BOXES: ReadonlyMap<number, InkBox> = new Map<number, InkBox>([
   [DECOR.hill, { left: 11, right: 11, up: 7, down: 4 }],
   [DECOR.peak, { left: 16, right: 17, up: 24, down: 4 }],
   [DECOR.snowPeak, { left: 16, right: 17, up: 24, down: 4 }],
+  [DECOR.palm, { left: 9, right: 12, up: 21, down: 3 }],
 ])
 
 /** Pixels do spritesheet por unidade do protótipo: nítido no zoom máximo, com folga para telas 2×. */

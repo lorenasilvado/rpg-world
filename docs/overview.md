@@ -227,13 +227,17 @@ src/
 3. **Umidade e temperatura:** fBm com gerador próprio da seed (`seed#clima`), amostrado numa grade
    de 4 células e interpolado; a temperatura cai com a altitude e com a distância do "equador" do
    mapa, e a Temperatura global a desloca por igual.
-4. **Classificação por quantis**, na ordem água → praia → montanha → deserto ou floresta → campo:
-   o nível do mar é o percentil igual ao slider de oceano. A praia vem da distância até a água
-   (passo 5). Montanhas usam o percentil da elevação, e a neve, o da temperatura entre as
-   montanhas. Sobre a terra que sobrou, as células mais áridas viram deserto até atingir o
-   percentual pedido, e as mais úmidas viram floresta; o campo alto vira colina, e o campo abaixo da geada fica gelado.
-5. **Praias:** faixa de largura configurável a partir da costa, por distância chanfrada até a água,
-   não por altura.
+4. **Classificação por quantis**, na ordem água → lago → praia → montanha → deserto ou floresta →
+   campo → oásis ([ADR 0009](adr/0009-agua-interior-como-lago-e-deserto-com-oasis.md)): só a água
+   ligada à borda é oceano, e o nível do mar é o percentil do transbordo até a borda
+   (`src/core/world/water.ts`) igual ao slider de oceano; a água presa no continente vira lago. A
+   praia vem da distância até o oceano (passo 5). Montanhas usam o percentil da elevação, e a neve, o
+   da temperatura entre as montanhas. Sobre a terra que sobrou, longe dos rios e dos lagos, as células
+   mais áridas viram deserto até atingir o percentual pedido, e as mais úmidas viram floresta; o
+   campo alto vira colina, e o campo abaixo da geada fica gelado. Por fim, os oásis
+   (`src/core/world/oasis.ts`) abrem um lago pequeno com um anel de campo dentro do deserto.
+5. **Praias:** faixa de largura configurável a partir da costa, por distância chanfrada até o
+   oceano, não por altura; a margem de lago nunca é praia.
 6. **Sombreamento:** hillshade pela inclinação, com luz do noroeste, guardado em `Int8Array`.
 7. **Rios e lagos:** sem hidrologia ([ADR 0008](adr/0008-nascentes-na-terra-alta-e-depressoes-pequenas.md)),
    em `src/core/world/rivers.ts`: rios descem pelo gradiente, da terra alta até o mar ou um lago; o
@@ -243,7 +247,7 @@ src/
 8. **Decoração:** em `src/core/decor/`, uma amostra de Poisson-disk do mapa, sorteada pela seed
    (`seed#decor`) e igual em qualquer tamanho, dá as posições; cada ponto ganha o ícone do bioma da
    sua célula, na chance daquele bioma (ondas, areia, tufos, árvores, dunas, cactos, colinas,
-   montanhas e montanhas nevadas), até 5.000 ícones.
+   montanhas e montanhas nevadas), mais as palmeiras de cada oásis, até 5.000 ícones.
 9. **Entrega:** os arrays voltam ao React por transferência sem cópia; o renderer monta uma textura
    RGBA única e os sprites de decoração.
 
@@ -285,6 +289,7 @@ type WorldField = { width: number; height: number;
   elevation: Float32Array; moisture: Float32Array;
   temperature: Float32Array; biome: Uint8Array; shade: Int8Array;
   rivers: { u: number; v: number }[][]; // polilinhas; lago é um bioma em `biome`
+  oases: { u: number; v: number }[]; // centro de cada oásis (o lago e o anel estão em `biome`)
   decor: { u: Float32Array; v: Float32Array; kind: Uint8Array } }; // ícones, de cima para baixo
 ```
 

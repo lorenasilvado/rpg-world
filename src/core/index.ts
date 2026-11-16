@@ -9,6 +9,7 @@ export {
   type CoreField,
   type Decor,
   type DecorKind,
+  type OasisPoint,
   type RiverPoint,
   type WorldParams,
 } from './types'
@@ -18,6 +19,7 @@ export { composeElevation, sampleTerrainNoise, type TerrainNoise } from './world
 export { createFieldCache, fieldBytes, type CachedField, type FieldCache, type RecomputedStage } from './world/fieldCache'
 export {
   classifyField,
+  DESERT_WATER_MARGIN,
   elevationLevels,
   generateField,
   validateFieldRequest,
@@ -29,3 +31,5 @@ export { DEFAULT_WORLD_PARAMS } from './world/params'
 export { quantile, quantiles } from './world/quantile'
 export { cutRivers, minLakeCells, traceHydrology, visibleLakes, type Hydrology } from './world/rivers'
 export { hillshade } from './world/shade'
+export { OASIS_LAKE_RADIUS, OASIS_RING_RADIUS, placeOases, type Oasis } from './world/oasis'
+export { depressions, seaWater, spillLevels, type Depressions, type SeaWater } from './world/water'
