@@ -1,20 +1,25 @@
-import { ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, RotateCcw } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
-import type { WorldParams } from '../../core'
+import { DEFAULT_WORLD_PARAMS, type WorldParams } from '../../core'
 import type { LandShareKey } from '../../state/params'
+import { matchingPreset } from '../../state/presets'
 import type { WorldStore } from '../../state/worldStore'
 import { ParamSlider } from './ParamSlider'
+import { PresetList } from './PresetList'
+import { SeedField } from './SeedField'
 import { SECTIONS, SECTIONS_OPEN_AT_START, type SectionDef, type SectionId } from './sliders'
 
 /** Duração do flash âmbar do slider que recuou (design-system.md → Movimento). */
 export const FLASH_MS = 700
 
 /**
- * Conteúdo da sidebar "Gerar mundo", abaixo do cabeçalho: as seções recolhíveis Terreno, Biomas,
- * Relevo e Avançado, com os 9 sliders (AC-F1-21). Arrastar um slider pede a prévia
- * (`dragParams`); soltar, o mapa final (`releaseParams`). Se Desertos + Florestas passaria de
- * 100%, o outro slider recua (no `worldStore`) e pisca (AC-F1-14).
+ * Conteúdo da sidebar "Gerar mundo", abaixo do cabeçalho: as seções recolhíveis Seed, Presets,
+ * Terreno, Biomas, Relevo e Avançado, com os 9 sliders (AC-F1-21), e o rodapé com "Restaurar
+ * padrão". Arrastar um slider pede a prévia (`dragParams`); soltar, o mapa final
+ * (`releaseParams`). Se Desertos + Florestas passaria de 100%, o outro slider recua (no
+ * `worldStore`) e pisca (AC-F1-14). Editar ou sortear a seed (AC-F1-15), escolher um preset
+ * (AC-F1-16) e "Restaurar padrão" (AC-F1-17, que mantém a seed) pedem o mapa final.
  *
  * Recolhida (`collapsed`, só a partir de 768 px), a sidebar vira um trilho de 48 px com o botão de
  * abrir e um ícone por seção: o ícone abre o painel com aquela seção aberta.
@@ -32,6 +37,7 @@ export function GenerateSidebar({
   onCollapsedChange: (collapsed: boolean) => void
 }) {
   const params = useStore(world, (s) => s.params)
+  const seed = useStore(world, (s) => s.seed)
   const [open, setOpen] = useState(SECTIONS_OPEN_AT_START)
   const [flash, setFlash] = useState<{ key: LandShareKey; id: number } | null>(null)
   const focusAfter = useRef<SectionId | 'collapse' | 'expand' | null>(null)
@@ -131,6 +137,10 @@ export function GenerateSidebar({
             }}
             onToggle={() => setOpen((o) => ({ ...o, [section.id]: !o[section.id] }))}
           >
+            {section.id === 'seed' && <SeedField seed={seed} onSeed={(next) => world.getState().setSeed(next)} />}
+            {section.id === 'presets' && (
+              <PresetList selected={matchingPreset(params)} onPick={(preset) => world.getState().setParams(preset.params)} />
+            )}
             {section.sliders.map((def) => (
               <ParamSlider
                 key={def.key}
@@ -143,6 +153,16 @@ export function GenerateSidebar({
             ))}
           </Section>
         ))}
+      </div>
+      <div className="shrink-0 border-t border-line p-4">
+        <button
+          type="button"
+          onClick={() => world.getState().setParams(DEFAULT_WORLD_PARAMS)}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-control border border-line-2 text-[13px] font-bold text-ink hover:bg-hover active:bg-press"
+        >
+          <RotateCcw size={16} aria-hidden="true" />
+          Restaurar padrão
+        </button>
       </div>
     </>
   )

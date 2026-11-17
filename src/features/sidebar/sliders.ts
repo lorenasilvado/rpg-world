@@ -1,5 +1,7 @@
 import {
+  Dices,
   Globe,
+  Map as MapIcon,
   Mountain,
   MountainSnow,
   Shell,
@@ -15,16 +17,19 @@ import { BIOME_TONES } from '../../render/style/palette'
 import type { ParamKey } from '../../state/params'
 
 /**
- * Os 9 sliders da sidebar (tabela de sliders em `docs/specs/geracao-terreno.md`), com o ícone do
- * design system e, nos de bioma, a amostra de cor: o tom base do bioma na paleta do mapa.
+ * As seções da sidebar: Seed e Presets (sem sliders, com o conteúdo próprio) e as 4 seções dos 9
+ * sliders (tabela de sliders em `docs/specs/geracao-terreno.md`), com o ícone do design system e,
+ * nos de bioma, a amostra de cor: o tom base do bioma na paleta do mapa.
  */
 export type SliderDef = { key: ParamKey; label: string; icon: LucideIcon; swatch?: string }
 
-export type SectionId = 'terreno' | 'biomas' | 'relevo' | 'avancado'
+export type SectionId = 'seed' | 'presets' | 'terreno' | 'biomas' | 'relevo' | 'avancado'
 
 export type SectionDef = { id: SectionId; label: string; icon: LucideIcon; sliders: SliderDef[] }
 
 export const SECTIONS: SectionDef[] = [
+  { id: 'seed', label: 'Seed', icon: Dices, sliders: [] },
+  { id: 'presets', label: 'Presets', icon: MapIcon, sliders: [] },
   {
     id: 'terreno',
     label: 'Terreno',
@@ -64,8 +69,10 @@ export const SECTIONS: SectionDef[] = [
   },
 ]
 
-/** Seções abertas ao abrir o editor (a tela E1): Avançado começa fechada. */
+/** Seções abertas ao abrir o editor (a tela E1): Presets e Avançado começam fechadas. */
 export const SECTIONS_OPEN_AT_START: Record<SectionId, boolean> = {
+  seed: true,
+  presets: false,
   terreno: true,
   biomas: true,
   relevo: true,

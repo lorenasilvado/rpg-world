@@ -149,3 +149,28 @@ describe('worldStore: Desertos + Florestas (AC-F1-14)', () => {
     expect(store.getState().releaseParams({ ocean: 20 })).toBeNull()
   })
 })
+
+describe('worldStore: presets e "Restaurar padrão" (AC-F1-16, AC-F1-17)', () => {
+  it('setParams troca todos os parâmetros, mantém a seed e pede o mapa final 1024²', async () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen, { seed: 'valdora' })
+    const arid = { ocean: 32, beach: 25, desert: 62, forest: 10, mountains: 34, snow: 12, continentSize: 74, coastRoughness: 45, temperature: 85 }
+    store.getState().setParams(arid)
+    expect(store.getState().params).toEqual(arid)
+    expect(started[0].req).toEqual({ seed: 'valdora', size: MAP_SIZE, params: arid })
+    started[0].finish()
+    await tick()
+    store.getState().setParams(DEFAULT_WORLD_PARAMS)
+    expect(store.getState().params).toEqual(DEFAULT_WORLD_PARAMS)
+    expect(store.getState().seed).toBe('valdora')
+    expect(started[1].req).toMatchObject({ size: MAP_SIZE, params: DEFAULT_WORLD_PARAMS })
+  })
+
+  it('o store guarda uma cópia: o objeto do preset não é alterado depois', () => {
+    const { gen } = fakeGenerator()
+    const store = createWorldStore(gen)
+    store.getState().setParams(DEFAULT_WORLD_PARAMS)
+    store.getState().dragParams({ ocean: 10 })
+    expect(DEFAULT_WORLD_PARAMS.ocean).toBe(45)
+  })
+})
