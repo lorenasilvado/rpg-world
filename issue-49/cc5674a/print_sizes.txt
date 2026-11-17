@@ -1,0 +1,13 @@
+commit: cc5674ac8584fc3557d1f948eaecbffaceceb27c
+ac-f1-05-nove-sliders-mudados.png  1280x800  2feeca953f7ea5a5de5f079ec0843c1028d5b5e6bd6800cc56d4907c45e27c84
+ac-f1-05-padrao.png  1280x800  26904d07b0662fe2d22a0f0e214d38a0f0ce8100081da6b59089cceda285801d
+ac-f1-11-soltar-no-valor-inicial-mapa-final.png  1280x800  4a82db1fcaaf769aa8f361c1f30710c87af9b436bd3f350e35480c917e92470e
+ac-f1-13-tablet-1024.png  1024x768  9d4ecbcd9d503b8518a06f42b4f287be7ef4cc473beadb2c8135251ab808bd08
+ac-f1-13-teclado-foco-praias.png  1280x800  1c8e5d5c5db27219841f58e1e29a3affddc8bf08b7019b0043841086c93c4f12
+ac-f1-14-arrasto-continuo-flash-segue.png  1280x800  d14ad880760529afc8fe21c92c04b73a1af834255ccb45f5530d18cff069cb02
+ac-f1-14-arrasto-desertos-florestas-recua.png  1280x800  d14ad880760529afc8fe21c92c04b73a1af834255ccb45f5530d18cff069cb02
+ac-f1-14-teclado-florestas-100-desertos-recua.png  1280x800  5d03ea2a52de1b22c43153ef63430c5e83afb16f0051ddc2a5141178c6c814ed
+ac-f1-21-celular-390-painel-pela-tecla.png  390x844  4a02dcfbbe12056892c35cae5f44ac48987570654c78a21cd8bcbeb22b37a4e8
+ac-f1-21-painel-recolhido-tecla.png  1280x800  8cef7216ee194217a2da66d7801a7bea84724b8ef0f652eedc8e2983286f727b
+ac-f1-21-sidebar-escuro.png  1280x800  07a2ea91a75ce0b81ffaae23089f5c4f166bd763b92b03ca3f6f9caca4e7071d
+ac-f1-21-terreno-fechada-avancado-aberta.png  1280x800  207b8c543cb3cb2adfec017005b1bd82f770268e67a182f2c8b8b400ad4ccaaf
