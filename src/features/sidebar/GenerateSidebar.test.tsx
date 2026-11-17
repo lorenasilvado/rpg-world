@@ -6,7 +6,7 @@ import { DEFAULT_WORLD_PARAMS, type WorldParams } from '../../core'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
 import { FLASH_MS } from './GenerateSidebar'
-import { SEED_TYPING_MS } from './SeedField'
+import { COPIED_MS, SEED_TYPING_MS } from './SeedField'
 import { PRESETS } from '../../state/presets'
 
 /** Gerador que guarda os pedidos e nunca responde: aqui só importa o que a sidebar pede. */
@@ -343,5 +343,82 @@ describe('Sidebar: seed, presets e restaurar', () => {
       const key = Object.keys(DEFAULT_WORLD_PARAMS)[LABELS.indexOf(label)] as keyof WorldParams
       expect(screen.getByRole('slider', { name: label, hidden: true }).getAttribute('aria-valuenow'), label).toBe(String(DEFAULT_WORLD_PARAMS[key]))
     }
+  })
+
+  it('celular: no painel sobreposto, seed, preset e "Restaurar padrão" funcionam', () => {
+    desktop = false
+    const { world, requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir painel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Seed aleatória' }))
+    expect(requests.at(-1)).toMatchObject({ seed: world.getState().seed, size: 1024 })
+    fireEvent.click(screen.getByRole('button', { name: 'Presets' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Presets' })).getByRole('button', { name: /Deserto árido/ }))
+    expect(world.getState().params).toEqual(PRESETS[2].params)
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }))
+    expect(world.getState().params).toEqual(DEFAULT_WORLD_PARAMS)
+    expect(requests).toHaveLength(3)
+  })
+
+  it('a seed vale sem os espaços das pontas, e o espaço digitado antes da pausa não some', () => {
+    vi.useFakeTimers()
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'mar do ' } })
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(world.getState().seed).toBe('mar do')
+    expect(input.value).toBe('mar do ')
+    fireEvent.change(input, { target: { value: 'mar do norte ' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(world.getState().seed).toBe('mar do norte')
+    expect(input.value).toBe('mar do norte')
+    // " mar do norte" é a mesma seed: não gera de novo.
+    fireEvent.change(input, { target: { value: ' mar do norte' } })
+    fireEvent.blur(input)
+    expect(requests).toHaveLength(2)
+  })
+
+  it('se a seed muda por fora durante a pausa, o texto digitado é descartado', () => {
+    vi.useFakeTimers()
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'digitada' } })
+    act(() => world.getState().setSeed('de-fora'))
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(world.getState().seed).toBe('de-fora')
+    expect(input.value).toBe('de-fora')
+    expect(requests.map((r) => r.seed)).toEqual(['de-fora'])
+  })
+
+  it('sortear com a seed editada gera só o mapa da seed sorteada', () => {
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' })
+    input.focus()
+    fireEvent.change(input, { target: { value: 'editada' } })
+    const roll = screen.getByRole('button', { name: 'Seed aleatória' })
+    // O clique do mouse: o mousedown não tira o foco do campo.
+    expect(fireEvent.mouseDown(roll)).toBe(false)
+    fireEvent.click(roll)
+    expect(requests.map((r) => r.seed)).toEqual([world.getState().seed])
+    expect(world.getState().seed).not.toBe('editada')
+  })
+
+  it('copiar de novo reinicia o check de 1,5 s', async () => {
+    vi.useFakeTimers()
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.resolve() }, configurable: true })
+    setup()
+    const copy = screen.getByRole('button', { name: 'Copiar seed' })
+    await act(async () => fireEvent.click(copy))
+    act(() => vi.advanceTimersByTime(COPIED_MS - 300))
+    await act(async () => fireEvent.click(copy))
+    act(() => vi.advanceTimersByTime(COPIED_MS - 300))
+    expect(screen.getByRole('status').textContent).toBe('Seed copiada')
+    act(() => vi.advanceTimersByTime(300))
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
+
+  it('"Restaurar padrão" com os parâmetros já no padrão não pede mapa', () => {
+    const { requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }))
+    expect(requests).toHaveLength(0)
   })
 })

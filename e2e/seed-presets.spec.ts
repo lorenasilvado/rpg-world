@@ -27,8 +27,8 @@ const ARID: Record<string, number> = {
   'Temperatura global': 85,
 }
 
-async function openEditor(page: Page) {
-  await page.setViewportSize({ width: 1440, height: 900 })
+async function openEditor(page: Page, width = 1440, height = 900) {
+  await page.setViewportSize({ width, height })
   await page.goto('/')
   await waitFinalMap(page)
 }
@@ -95,4 +95,33 @@ test('escolher um preset aplica os valores dele, e "Restaurar padrão" volta ao 
   await expect(presets.getByRole('button', { name: /Continente temperado/ })).toHaveAttribute('aria-pressed', 'true')
   await waitFinalMap(page)
   await expect.poll(async () => (await mapShot(page)).equals(before)).toBe(true)
+})
+
+test('celular 390: no painel sobreposto, seed, preset e "Restaurar padrão" funcionam (AC-F1-15, AC-F1-16, AC-F1-17)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await openEditor(page, 390, 844)
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  const seed = page.getByRole('textbox', { name: 'Seed' })
+  await expect(seed).toBeVisible()
+
+  // Com o painel aberto, o mapa fica atrás dele: o mapa novo é conferido pelo pedido gerado.
+  await page.getByRole('button', { name: 'Seed aleatória' }).click()
+  await expect(seed).toHaveValue(/^[a-z]+-[0-9a-f]{4}$/)
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'generating')
+  await waitFinalMap(page)
+  const rolled = await seed.inputValue()
+
+  await page.getByRole('button', { name: 'Presets' }).click()
+  const presets = page.getByRole('group', { name: 'Presets' })
+  await presets.getByRole('button', { name: /Deserto árido/ }).click()
+  await expect(presets.getByRole('button', { name: /Deserto árido/ })).toHaveAttribute('aria-pressed', 'true')
+  await expectSliders(page, ARID)
+  await waitFinalMap(page)
+
+  const restore = page.getByRole('button', { name: 'Restaurar padrão' })
+  await expect(restore).toBeInViewport()
+  await restore.click()
+  await expectSliders(page, DEFAULTS)
+  await expect(seed).toHaveValue(rolled)
+  await waitFinalMap(page)
 })

@@ -4,7 +4,8 @@ import { PRESETS, type Preset, type PresetId } from '../../state/presets'
 /**
  * Seção Presets da sidebar (AC-F1-16): os 4 presets em cartões de duas colunas, com o nome e a
  * descrição. Escolher um aplica os 9 valores dele (`onPick`). O cartão do preset cujos valores são
- * os dos sliders agora (`selected`) tem a borda âmbar e o check; mexer num slider tira a marca.
+ * os dos sliders agora (`selected`) tem a borda âmbar e o check; mexer num slider tira a marca. O
+ * hover não usa o âmbar, para um cartão não parecer marcado.
  */
 export function PresetList({ selected, onPick }: { selected: PresetId | null; onPick: (preset: Preset) => void }) {
   return (
@@ -17,8 +18,8 @@ export function PresetList({ selected, onPick }: { selected: PresetId | null; on
             type="button"
             aria-pressed={on}
             onClick={() => onPick(preset)}
-            className={`relative flex flex-col gap-1 rounded-[10px] border-2 bg-field px-2.5 py-2 text-left text-ink hover:border-amber ${
-              on ? 'border-amber' : 'border-line'
+            className={`relative flex flex-col gap-1 rounded-[10px] border-2 bg-field px-2.5 py-2 text-left text-ink hover:bg-hover ${
+              on ? 'border-amber' : 'border-line hover:border-line-2'
             }`}
           >
             <span className="pr-4 text-xs leading-[15px] font-bold">{preset.name}</span>

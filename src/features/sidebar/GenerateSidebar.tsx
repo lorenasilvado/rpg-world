@@ -157,7 +157,10 @@ export function GenerateSidebar({
       <div className="shrink-0 border-t border-line p-4">
         <button
           type="button"
-          onClick={() => world.getState().setParams(DEFAULT_WORLD_PARAMS)}
+          // Já no padrão, não há o que restaurar: não pede um mapa igual ao atual.
+          onClick={() => {
+            if (matchingPreset(params) !== 'temperado') world.getState().setParams(DEFAULT_WORLD_PARAMS)
+          }}
           className="flex h-10 w-full items-center justify-center gap-2 rounded-control border border-line-2 text-[13px] font-bold text-ink hover:bg-hover active:bg-press"
         >
           <RotateCcw size={16} aria-hidden="true" />

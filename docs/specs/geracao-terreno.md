@@ -16,8 +16,8 @@ o comportamento atualiza esta spec.
 > e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
 > a 48 px; ainda não tem nome do mundo nem "Distribuição do mapa", os cartões de preset não têm
-> miniatura, e o mapa não fica borrado durante a prévia. A câmera e os ícones de decoração estão em [navegacao.md](navegacao.md). O resto vem do
-> material de design e do PRD.
+> miniatura, e o mapa não fica borrado durante a prévia. A câmera e os ícones de decoração estão
+> em [navegacao.md](navegacao.md). O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -40,14 +40,16 @@ de dados em [overview.md](../overview.md).
 - Nome do mundo e status de salvamento ("Salvo").
 - Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável, em
   JetBrains Mono. Não há botão "Gerar": editar a seed regenera o mapa final 400 ms depois da
-  última tecla, ou já no Enter ou ao sair do campo; uma seed vazia não gera nada, e ao sair do
-  campo ele volta para a seed atual. Sortear dá uma seed no formato "valdora-7f3a" (uma palavra e 4
+  última tecla, ou já no Enter ou ao sair do campo. A seed vale sem os espaços das pontas; uma seed
+  vazia não gera nada, e ao sair do campo ele volta para a seed atual. Se a seed muda por fora
+  durante a pausa, o texto digitado é descartado. Sortear dá uma seed no formato "valdora-7f3a" (uma palavra e 4
   dígitos hexadecimais) e regenera o mapa. Copiar põe a seed na área de transferência e troca o
-  ícone por um check por 1,5 s (o leitor de tela ouve "Seed copiada"); sem acesso à área de
+  ícone por um check por 1,5 s, contados de novo a cada cópia (o leitor de tela ouve "Seed copiada"); sem acesso à área de
   transferência, a seed fica selecionada no campo.
 - Presets: os 4 presets do assistente em cartões de duas colunas, com o nome e a descrição.
   Escolher um aplica os 9 valores dele (a seed fica) e gera o mapa final. O cartão do preset cujos
-  valores são os dos sliders agora tem a borda âmbar e o check; mexer num slider tira a marca.
+  valores são os dos sliders agora tem a borda âmbar e o check; mexer num slider tira a marca. No
+  hover, o cartão escurece o fundo, sem a borda âmbar.
 - Seções recolhíveis: Seed, Presets, Terreno (Oceano 45%, Praias 30%), Biomas (Desertos 15%,
   Florestas 35%), Relevo (Montanhas 30%, Neve 40%) e Avançado (Tamanho do continente, Rugosidade
   da costa, Temperatura global). Cada controle tem ícone, rótulo, amostra de cor (só nos seis de
@@ -64,7 +66,7 @@ de dados em [overview.md](../overview.md).
   recolher: a tecla `[` abre e fecha o painel sobreposto.
 - Rodapé, fixo abaixo das seções: barra "Distribuição do mapa" com a porcentagem real de cada
   bioma no mapa gerado, legenda e botão "Restaurar padrão" (`rotate-ccw`), que volta os 9
-  parâmetros ao padrão (a seed fica) e gera o mapa final.
+  parâmetros ao padrão (a seed fica) e gera o mapa final; com eles já no padrão, não faz nada.
 
 ### Sliders (PRD RF-1)
 
@@ -143,7 +145,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Editar a seed | Regenera o mapa final com a seed nova (400 ms depois da última tecla, ou no Enter ou ao sair do campo); vazia, não gera |
 | Copiar seed | Copia a seed e mostra o check por 1,5 s |
 | Escolher preset | Aplica os 9 parâmetros do preset, mantém a seed e gera o mapa final |
-| "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final |
+| "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final (já no padrão, não faz nada) |
 | Recolher / abrir painel (`[`) | Sidebar passa a 48 px / volta a 320 px (abaixo de 768 px, a tecla abre e fecha o painel sobreposto) |
 | "Criar mundo →" no assistente | Abre o editor (E1) com o mundo novo |
 | Cancelar no assistente | TODO: volta à tela de origem (não descrito no material) |
