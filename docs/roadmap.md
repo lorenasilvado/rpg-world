@@ -114,7 +114,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 26 | #94 | [feat] Núcleo: deserto com oásis e água interior como lago | done | specs/geracao-terreno.md | #121 |
 | 27 | #49 | [feat] Sidebar: seções e sliders | done | specs/geracao-terreno.md | #122 |
 | 28 | #50 | [feat] Sidebar: seed, presets e restaurar | done | specs/geracao-terreno.md | #125 |
-| 29 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | doing | specs/geracao-terreno.md | |
+| 29 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | done | specs/geracao-terreno.md | |
 | 30 | #52 | [feat] Assistente de novo mundo | todo | specs/geracao-terreno.md | |
 | 31 | #53 | [feat] Minimapa, escala e controles de zoom | todo | specs/navegacao.md | |
 | 32 | #54 | [feat] Barras do editor, Camadas e Ajuda | todo | specs/navegacao.md | |
