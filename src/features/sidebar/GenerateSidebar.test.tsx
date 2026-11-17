@@ -135,6 +135,31 @@ describe('Sidebar: seções e sliders', () => {
     expect(screen.getByTestId('slider-desert').dataset.flash).toBe('true')
   })
 
+  it('o recuo repetido não reinicia o flash: ele dura 700 ms e só então pode piscar de novo (AC-F1-14)', () => {
+    vi.useFakeTimers()
+    const { world } = setup()
+    const desert = screen.getByRole('slider', { name: 'Desertos' })
+    const flashSpan = () => screen.getByTestId('slider-forest').querySelector('.flash-row')
+    // Desertos de 15 a 65: a soma chega a 100, sem recuo.
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(desert, { key: 'ArrowRight', shiftKey: true })
+    expect(flashSpan()).toBeNull()
+    // 66: Florestas recua para 34 e pisca.
+    fireEvent.keyDown(desert, { key: 'ArrowRight' })
+    const first = flashSpan()
+    expect(first).toBeTruthy()
+    act(() => vi.advanceTimersByTime(FLASH_MS / 2))
+    // 67: recua de novo (33) no meio do flash: o mesmo elemento, a animação segue sem recomeçar.
+    fireEvent.keyDown(desert, { key: 'ArrowRight' })
+    expect(world.getState().params).toMatchObject({ desert: 67, forest: 33 })
+    expect(flashSpan()).toBe(first)
+    // Os 700 ms contam do primeiro recuo.
+    act(() => vi.advanceTimersByTime(FLASH_MS / 2))
+    expect(flashSpan()).toBeNull()
+    // Depois do fim, um recuo novo pisca de novo.
+    fireEvent.keyDown(desert, { key: 'ArrowRight' })
+    expect(flashSpan()).toBeTruthy()
+  })
+
   it('o painel recolhe a 48 px e abre pelo botão e pela tecla [ (AC-F1-21)', () => {
     const { ui } = setup()
     const sidebar = screen.getByTestId('sidebar')

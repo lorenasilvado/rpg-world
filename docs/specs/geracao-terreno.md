@@ -128,7 +128,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Arrastar um slider | Prévia 256² em tempo real: o mapa mostra cada resultado mais novo que o último exibido, e um resultado velho nunca substitui um novo |
 | Soltar o slider | Gera o mapa final em 1024² |
 | Mudar um slider pelo teclado | Cada tecla gera o mapa final em 1024² com o valor novo (sem prévia) |
-| Desertos + Florestas passaria de 100% | O outro slider recua até a soma dar 100 e pisca em âmbar por 700 ms (também com movimento reduzido: é só cor) |
+| Desertos + Florestas passaria de 100% | O outro slider recua até a soma dar 100 e pisca em âmbar por 700 ms (também com movimento reduzido: é só cor); num arrasto, os recuos seguintes durante esses 700 ms não reiniciam o flash, e um recuo depois deles pisca de novo |
 | Abrir ou fechar uma seção | Mostra ou esconde os sliders dela |
 | Sortear seed | Seed aleatória e mapa novo |
 | Editar a seed | Regenera o mapa com a seed nova |

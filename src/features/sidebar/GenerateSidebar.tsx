@@ -57,8 +57,10 @@ export function GenerateSidebar({
     else if (collapsed && document.activeElement === document.body) expandButton.current?.focus()
   }, [collapsed])
 
+  // Se o mesmo slider ainda está piscando, o flash continua até o fim: num arrasto, cada passo que
+  // o faz recuar não reinicia a animação (que começa transparente e quase não apareceria).
   const showFlash = (key: LandShareKey | null) => {
-    if (key) setFlash((prev) => ({ key, id: (prev?.id ?? 0) + 1 }))
+    if (key) setFlash((prev) => (prev?.key === key ? prev : { key, id: (prev?.id ?? 0) + 1 }))
   }
   const change = (key: keyof WorldParams, value: number) => {
     if (params[key] !== value) showFlash(world.getState().dragParams({ [key]: value }))
