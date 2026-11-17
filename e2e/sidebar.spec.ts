@@ -78,12 +78,21 @@ test('só com o teclado: Tab chega aos sliders, que têm rótulo, e as setas mud
   for (const name of SLIDERS) await expect(page.getByRole('slider', { name })).toBeVisible()
 })
 
-test('arrastar Desertos mostra a prévia, e Florestas recua e pisca; soltar gera o mapa final (AC-F1-14)', async ({ page }) => {
+test('arrastar Desertos mostra a prévia, e Florestas recua e pisca durante o arrasto; soltar gera o mapa final (AC-F1-14)', async ({ page }) => {
   await openEditor(page)
   const desert = page.getByRole('slider', { name: 'Desertos' })
   const forest = page.getByRole('slider', { name: 'Florestas' })
   const track = (await page.getByTestId('slider-desert').locator('span[data-orientation]').first().boundingBox())!
   const thumb = (await desert.boundingBox())!
+  // O flash dura 700 ms desde o primeiro recuo (perto de 66%): numa máquina lenta ele já pode ter
+  // acabado ao fim do arrasto. Um observador anota se ele apareceu em algum momento.
+  await page.getByTestId('slider-forest').evaluate((row) => {
+    const w = window as unknown as { flashSeen: boolean }
+    w.flashSeen = false
+    new MutationObserver(() => {
+      if (row.dataset.flash === 'true') w.flashSeen = true
+    }).observe(row, { attributes: true, attributeFilter: ['data-flash'] })
+  })
   await page.mouse.move(thumb.x + thumb.width / 2, thumb.y + thumb.height / 2)
   await page.mouse.down()
   // Até 70% do trilho, em passos, como um arrasto de verdade.
@@ -91,7 +100,7 @@ test('arrastar Desertos mostra a prévia, e Florestas recua e pisca; soltar gera
   await expect(desert).toHaveAttribute('aria-valuenow', /^(69|70|71)$/)
   const desertValue = Number(await desert.getAttribute('aria-valuenow'))
   await expect(forest).toHaveAttribute('aria-valuenow', String(100 - desertValue))
-  await expect(page.getByTestId('slider-forest')).toHaveAttribute('data-flash', 'true')
+  expect(await page.evaluate(() => (window as unknown as { flashSeen: boolean }).flashSeen)).toBe(true)
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '256')
   await page.mouse.up()
   await waitFinalMap(page)
