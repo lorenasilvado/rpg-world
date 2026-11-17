@@ -2,6 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { DEFAULT_WORLD_PARAMS, type CoreField, type WorldParams } from '../core'
 import type { GenerateRequest, GenerateResult } from '../workers/generatorApi'
 import type { NewerOnly } from '../workers/newerOnly'
+import { applyParamChange, type LandShareKey } from './params'
 import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
 
 /**
@@ -12,7 +13,8 @@ import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
  * Durante o arrasto de um slider (`dragParams`), cada mudança pede a prévia 256²; ao soltar
  * (`releaseParams`), o mapa final 1024². O `field` só é trocado por um resultado mais novo que o
  * exibido: um resultado velho nunca substitui um novo (AC-F1-10), e o mapa final pedido ao soltar
- * substitui a prévia (AC-F1-11).
+ * substitui a prévia (AC-F1-11). Desertos + Florestas nunca passa de 100%: o outro slider recua
+ * (`applyParamChange`, AC-F1-14), e as duas ações devolvem qual recuou, para a sidebar piscá-lo.
  */
 export type GenerationStatus = 'idle' | 'generating' | 'error'
 
@@ -33,10 +35,10 @@ export type WorldState = {
   error: unknown
   /** Troca a seed e gera o mapa final. */
   setSeed(seed: string): void
-  /** Arrasto de um slider: muda os parâmetros e pede a prévia 256². */
-  dragParams(change: Partial<WorldParams>): void
-  /** Soltou o slider: aplica a mudança (se houver) e pede o mapa final 1024². */
-  releaseParams(change?: Partial<WorldParams>): void
+  /** Arrasto de um slider: muda os parâmetros e pede a prévia 256². Devolve o slider que recuou. */
+  dragParams(change: Partial<WorldParams>): LandShareKey | null
+  /** Soltou o slider: aplica a mudança (se houver) e pede o mapa final 1024². Devolve o que recuou. */
+  releaseParams(change?: Partial<WorldParams>): LandShareKey | null
   /** Gera o mapa final com a seed e os parâmetros atuais. */
   generate(): void
 }
@@ -87,12 +89,16 @@ export function createWorldStore(
         request(MAP_SIZE)
       },
       dragParams(change) {
-        set({ params: { ...get().params, ...change } })
+        const { params, receded } = applyParamChange(get().params, change)
+        set({ params })
         request(PREVIEW_SIZE)
+        return receded
       },
       releaseParams(change = {}) {
-        set({ params: { ...get().params, ...change } })
+        const { params, receded } = applyParamChange(get().params, change)
+        set({ params })
         request(MAP_SIZE)
+        return receded
       },
       generate() {
         request(MAP_SIZE)

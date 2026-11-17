@@ -67,11 +67,35 @@ body {
   animation: toast-in 200ms ease;
 }
 
+/* Slider que recuou (Desertos ↔ Florestas): flash âmbar de 700 ms, ease (design-system.md → Movimento) */
+@keyframes flash-row {
+  0%,
+  100% {
+    background: transparent;
+  }
+  30%,
+  70% {
+    background: color-mix(in srgb, var(--amber) 28%, transparent);
+  }
+}
+
+.flash-row {
+  animation: flash-row 700ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
+  }
+}
+
+/* O flash não é movimento (só muda a cor): ele avisa que o outro slider recuou, e fica mesmo com
+   movimento reduzido. */
+@media (prefers-reduced-motion: reduce) {
+  .flash-row {
+    animation-duration: 700ms !important;
   }
 }

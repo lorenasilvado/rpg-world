@@ -71,6 +71,7 @@
   --radius-pill: 999px;
   /* Layout do Editor */
   --sidebar-width: 320px;
+  --sidebar-collapsed-width: 48px;
   --drawer-width: 400px;
   --editor-header-height: 56px;
   /* Fundo do canvas fora do mapa (design-system.md → Estilo do mapa) */

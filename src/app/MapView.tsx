@@ -17,7 +17,8 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui) =>
 
 /**
  * Área do mapa do editor: o renderer desenha nela o campo do `world`, com as camadas ligadas no
- * `ui`. O React só cria e destrói o renderer; o desenho não passa pelo React (ADR 0001).
+ * `ui`. O React só cria e destrói o renderer; o desenho não passa pelo React (ADR 0001). Quando a
+ * sidebar recolhe ou abre (`sidebarCollapsed` do `ui`), a área livre muda e o mapa se ajusta a ela.
  */
 export function MapView({
   world,
@@ -36,7 +37,11 @@ export function MapView({
     const el = host.current
     if (!el) return
     const mounted: { renderer: MapRenderer | null; disposed: boolean } = { renderer: null, disposed: false }
-    createRenderer(el, world, panelInsets, ui).then(
+    const insets = () => panelInsets(ui.getState().sidebarCollapsed)
+    const unsubscribe = ui.subscribe((state, prev) => {
+      if (state.sidebarCollapsed !== prev.sidebarCollapsed) mounted.renderer?.refit()
+    })
+    createRenderer(el, world, insets, ui).then(
       (r) => {
         if (mounted.disposed) r.destroy()
         else mounted.renderer = r
@@ -44,6 +49,7 @@ export function MapView({
       (error: unknown) => console.error('Não foi possível iniciar o renderer do mapa', error),
     )
     return () => {
+      unsubscribe()
       mounted.disposed = true
       mounted.renderer?.destroy()
     }
