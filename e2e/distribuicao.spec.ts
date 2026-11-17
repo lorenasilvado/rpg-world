@@ -4,8 +4,8 @@ import { expect, test, type Page } from '@playwright/test'
 // Distribuição do mapa, "Gerando" e sem WebGL2 (#51).
 
 /** Abre o editor e espera o mapa final 1024² desenhado. */
-async function openEditor(page: Page) {
-  await page.setViewportSize({ width: 1440, height: 900 })
+async function openEditor(page: Page, width = 1440, height = 900) {
+  await page.setViewportSize({ width, height })
   await page.goto('/')
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
@@ -69,6 +69,47 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
   await expect(footer.getByRole('status')).toHaveCount(0)
   await expect(page.getByTestId('map')).toHaveCSS('filter', 'none')
+  const ocean = Number(await thumb.getAttribute('aria-valuenow'))
+  const after = await shares(page)
+  expect(Math.abs(after['Oceano'] + (after['Água rasa'] ?? 0) - ocean)).toBeLessThanOrEqual(3)
+})
+
+test('AC-F1-18 no celular 390: no painel sobreposto, a barra cabe na tela e mostra "Gerando" durante a geração', async ({ page }) => {
+  test.setTimeout(90_000)
+  await openEditor(page, 390, 844)
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  const footer = page.getByTestId('map-distribution')
+  const bar = page.getByRole('img', { name: /^Distribuição do mapa:/ })
+  await expect(bar).toBeInViewport({ ratio: 1 })
+  const box = (await bar.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(390)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await expect(page.getByTestId('distribution-legend')).toBeInViewport()
+  const before = await shares(page)
+  expect(Math.abs(before['Oceano'] + (before['Água rasa'] ?? 0) - 45)).toBeLessThanOrEqual(3)
+  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
+
+  // Arrasta o slider Oceano no painel e segura: a prévia chega, borrada, e a barra diz "Gerando".
+  const thumb = page.getByRole('slider', { name: 'Oceano' })
+  const t = (await thumb.boundingBox())!
+  await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(t.x + t.width / 2 + 60, t.y + t.height / 2, { steps: 6 })
+  await expect(footer.getByRole('status')).toHaveText('Gerando')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'true')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '256', { timeout: 30_000 })
+  await expect.poll(async () => (await shares(page))['Oceano']).toBeGreaterThan(before['Oceano'])
+  await expect(footer.getByRole('status')).toHaveText('Gerando')
+
+  // Ao soltar, o mapa final chega: some o "Gerando" e o mapa fica nítido.
+  await page.mouse.up()
+  await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
+  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(bar).toBeInViewport({ ratio: 1 })
   const ocean = Number(await thumb.getAttribute('aria-valuenow'))
   const after = await shares(page)
   expect(Math.abs(after['Oceano'] + (after['Água rasa'] ?? 0) - ocean)).toBeLessThanOrEqual(3)
