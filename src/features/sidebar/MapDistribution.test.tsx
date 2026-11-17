@@ -37,11 +37,15 @@ function fakeGenerator() {
 }
 const noRenderer: CreateMapRenderer = async () => ({ refit() {}, destroy() {} })
 
-/** 100 células: `ocean` de oceano e o resto de deserto, com 1 de neve (1%, fora da legenda). */
+/**
+ * 1000 células: `ocean`% de oceano e o resto de deserto, com 10 de neve (1%, fora da legenda) e 1
+ * de campo gelado (0,1%, que aparece como "<1%").
+ */
 function biomes(ocean: number) {
-  const b = new Uint8Array(100).fill(BIOME.desert)
-  b.fill(BIOME.deepOcean, 0, ocean)
-  b[99] = BIOME.snow
+  const b = new Uint8Array(1000).fill(BIOME.desert)
+  b.fill(BIOME.deepOcean, 0, ocean * 10)
+  b.fill(BIOME.snow, 989, 999)
+  b[999] = BIOME.frozenField
   return b
 }
 
@@ -79,7 +83,7 @@ describe('Distribuição do mapa e Gerando (AC-F1-18)', () => {
     expect(within(bar).queryByRole('status')).toBeNull()
     expect(map.dataset.blurred).toBe('false')
     expect(within(bar).getByRole('img').getAttribute('aria-label')).toBe(
-      'Distribuição do mapa: Oceano 45%, Deserto 54%, Neve 1%',
+      'Distribuição do mapa: Oceano 45%, Deserto 54%, Neve 1%, Campo gelado <1%',
     )
     const legend = screen.getByTestId('distribution-legend')
     expect(legend.textContent).toContain('Oceano 45%')
@@ -87,6 +91,7 @@ describe('Distribuição do mapa e Gerando (AC-F1-18)', () => {
     // Neve tem 1%: fica na barra (com o título), fora da legenda.
     expect(legend.textContent).not.toContain('Neve')
     expect(bar.querySelector('[data-biome="snow"]')?.getAttribute('title')).toBe('Neve 1%')
+    expect(bar.querySelector('[data-biome="frozenField"]')?.getAttribute('title')).toBe('Campo gelado <1%')
     expect((bar.querySelector('[data-biome="deepOcean"]') as HTMLElement).style.width).toBe('45%')
 
     // Arrastando: a prévia chega com os valores novos, e continua "Gerando" e borrado até o mapa final.

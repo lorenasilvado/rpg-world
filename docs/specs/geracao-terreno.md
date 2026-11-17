@@ -70,7 +70,9 @@ de dados em [overview.md](../overview.md).
   parâmetros ao padrão (a seed fica) e gera o mapa final; com eles já no padrão, não faz nada.
   A barra tem um segmento por bioma presente, na largura da fração dele, na cor base do bioma e
   com o nome e a porcentagem no título (e, para o leitor de tela, a lista inteira no rótulo da
-  barra). A legenda mostra o nome e a porcentagem arredondada dos biomas com 1,5% ou mais. Os
+  barra). Um bioma presente que arredonda para 0% aparece como "<1%". Um fio separa os segmentos,
+  e a amostra de cor da legenda tem contorno (os tons claros, como a Neve, ficam visíveis sobre o
+  papel). A legenda mostra o nome e a porcentagem arredondada dos biomas com 1,5% ou mais. Os
   nomes: Oceano, Água rasa, Praia, Campo, Floresta, Deserto, Colina, Montanha, Neve, Campo gelado
   e Lago.
 
@@ -133,7 +135,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
 | Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água" |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
-| Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso "Este navegador não tem WebGL2": "O editor desenha o mapa com WebGL2, que este navegador não oferece ou está desligado. Abra o RPG World Builder na versão atual de um destes navegadores:", a lista Google Chrome, Microsoft Edge, Mozilla Firefox e Safari, e "Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações." O mapa não é gerado. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)) |
+| Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso "Este navegador não tem WebGL2": "O editor desenha o mapa com WebGL2, que este navegador não oferece ou está desligado. Abra o RPG World Builder na versão atual de um destes navegadores:", a lista Google Chrome, Microsoft Edge, Mozilla Firefox e Safari, e "Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações." O aviso tem o botão de tema claro e escuro do editor. O mapa não é gerado. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)) |
 
 > Pendente: o que acontece com o pin depois do aviso "N pins ficaram sobre a água" (fica onde
 > está, é movido, oferece ação)?

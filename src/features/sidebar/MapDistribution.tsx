@@ -14,7 +14,7 @@ export function MapDistribution({ world }: { world: WorldStore }) {
   const field = useStore(world, (s) => s.field)
   const busy = useStore(world, isGenerating)
   const shares = useMemo(() => (field ? distribution(field.biome) : []), [field])
-  const summary = shares.map((s) => `${s.label} ${s.percent}%`).join(', ')
+  const summary = shares.map((s) => `${s.label} ${s.text}`).join(', ')
 
   return (
     <div className="flex flex-col gap-2.5" data-testid="map-distribution" data-busy={busy}>
@@ -35,10 +35,11 @@ export function MapDistribution({ world }: { world: WorldStore }) {
         {shares.map((s) => (
           <div
             key={s.biome}
-            title={`${s.label} ${s.percent}%`}
+            title={`${s.label} ${s.text}`}
             data-biome={s.biome}
             style={{ width: `${(s.share * 100).toFixed(2)}%`, background: s.color }}
-            className="transition-[width] duration-200"
+            // Um fio entre os segmentos separa os tons claros (Neve, Praia) dos vizinhos.
+            className="transition-[width] duration-200 not-first:shadow-[inset_1px_0_0_var(--line-2)]"
           />
         ))}
       </div>
@@ -47,8 +48,9 @@ export function MapDistribution({ world }: { world: WorldStore }) {
           .filter((s) => s.share >= LEGEND_MIN_SHARE)
           .map((s) => (
             <li key={s.biome} className="flex items-center gap-1 text-[11px]/4 font-semibold text-ink-2">
-              <span className="size-2 rounded-[2px]" style={{ background: s.color }} />
-              {s.label} {s.percent}%
+              {/* O contorno deixa a amostra dos tons claros (Neve) visível sobre o papel. */}
+              <span className="size-2 rounded-[2px] shadow-[inset_0_0_0_1px_var(--line-2)]" style={{ background: s.color }} />
+              {s.label} {s.text}
             </li>
           ))}
       </ul>

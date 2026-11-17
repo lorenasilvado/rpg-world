@@ -110,4 +110,13 @@ describe('Sem WebGL2 (AC-F1-20)', () => {
     expect(browsers.textContent).toContain('Mozilla Firefox')
     expect(browsers.textContent).toContain('Safari')
   })
+
+  it('o aviso alterna entre tema claro e escuro, como o editor', () => {
+    render(<App world={world()} createRenderer={noRenderer} webgl2={false} />)
+    expect(document.documentElement.dataset.theme).toBe('light')
+    fireEvent.click(screen.getByRole('button', { name: 'Usar tema escuro' }))
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    fireEvent.click(screen.getByRole('button', { name: 'Usar tema claro' }))
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
 })

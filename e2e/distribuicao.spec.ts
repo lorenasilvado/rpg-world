@@ -19,7 +19,8 @@ async function shares(page: Page) {
       .replace('Distribuição do mapa: ', '')
       .split(', ')
       .map((part) => {
-        const m = /^(.*) (\d+)%$/.exec(part)!
+        // "<1%": o bioma existe, mas arredonda para 0%.
+        const m = /^(.*) <?(\d+)%$/.exec(part)!
         return [m[1], Number(m[2])]
       }),
   ) as Record<string, number>

@@ -1,11 +1,15 @@
-import { Compass, TriangleAlert } from 'lucide-react'
+import { Compass, Moon, Sun, TriangleAlert } from 'lucide-react'
+import { useTheme } from './useTheme'
 import { SUPPORTED_BROWSERS } from './webgl2'
 
 /**
  * Aviso no lugar do editor quando o navegador não tem WebGL2 (AC-F1-20): o mapa não teria como ser
- * desenhado, então o editor nem abre. Diz por quê e lista os navegadores suportados.
+ * desenhado, então o editor nem abre. Diz por quê e lista os navegadores suportados. Tem o mesmo
+ * botão de tema claro e escuro do editor.
  */
 export function NoWebGL2Notice() {
+  const { theme, toggle } = useTheme()
+  const themeLabel = theme === 'light' ? 'Usar tema escuro' : 'Usar tema claro'
   return (
     <main
       aria-labelledby="no-webgl2-title"
@@ -17,7 +21,16 @@ export function NoWebGL2Notice() {
           <span className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
             <Compass size={20} aria-hidden="true" />
           </span>
-          <span className="font-title text-base/5 font-semibold">RPG World Builder</span>
+          <span className="flex-1 font-title text-base/5 font-semibold">RPG World Builder</span>
+          <button
+            type="button"
+            aria-label={themeLabel}
+            title={themeLabel}
+            onClick={toggle}
+            className="-my-2 -mr-2 grid size-11 place-items-center rounded-control text-ink hover:bg-hover active:bg-press"
+          >
+            {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
+          </button>
         </div>
         <h1 id="no-webgl2-title" className="flex items-center gap-2 text-lg/6 font-extrabold">
           <TriangleAlert size={20} aria-hidden="true" className="shrink-0 text-amber-ink" />

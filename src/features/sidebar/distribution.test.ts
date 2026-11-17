@@ -18,8 +18,8 @@ describe('Distribuição do mapa (AC-F1-18)', () => {
     biome.fill(BIOME.desert, 0, 333)
     biome.fill(BIOME.deepOcean, 333, 1000)
     expect(distribution(biome)).toEqual([
-      { biome: 'deepOcean', label: 'Oceano', color: '#2B6CA3', share: 0.667, percent: 67 },
-      { biome: 'desert', label: 'Deserto', color: '#E6B866', share: 0.333, percent: 33 },
+      { biome: 'deepOcean', label: 'Oceano', color: '#2B6CA3', share: 0.667, percent: 67, text: '67%' },
+      { biome: 'desert', label: 'Deserto', color: '#E6B866', share: 0.333, percent: 33, text: '33%' },
     ])
   })
 
@@ -28,6 +28,14 @@ describe('Distribuição do mapa (AC-F1-18)', () => {
     const total = distribution(field.biome).reduce((sum, s) => sum + s.share, 0)
     expect(total).toBeCloseTo(1, 10)
     for (const b of BIOMES) expect(BIOME_LABELS[b]).toBeTruthy()
+  })
+
+  it('um bioma presente que arredonda para 0% aparece como "<1%"', () => {
+    const biome = new Uint8Array(1000).fill(BIOME.deepOcean)
+    biome[0] = BIOME.frozenField
+    const frozen = distribution(biome).find((s) => s.biome === 'frozenField')!
+    expect(frozen.percent).toBe(0)
+    expect(frozen.text).toBe('<1%')
   })
 
   it('sem células, não lista nada', () => {

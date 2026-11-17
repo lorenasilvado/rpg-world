@@ -22,7 +22,15 @@ export const BIOME_LABELS: Record<Biome, string> = {
 /** Abaixo disso (1,5%), o bioma fica só na barra (com a porcentagem no título), fora da legenda. */
 export const LEGEND_MIN_SHARE = 0.015
 
-export type BiomeShare = { biome: Biome; label: string; color: string; share: number; percent: number }
+export type BiomeShare = {
+  biome: Biome
+  label: string
+  color: string
+  share: number
+  percent: number
+  /** A porcentagem para mostrar: "<1%" quando o bioma existe, mas arredonda para 0%. */
+  text: string
+}
 
 /** Fração de cada bioma (de 0 a 1, na ordem de `BIOMES`) num campo de biomas. */
 export function biomeShares(biome: Uint8Array): Float64Array {
@@ -37,7 +45,12 @@ export function distribution(biome: Uint8Array): BiomeShare[] {
   const shares = biomeShares(biome)
   return BIOMES.flatMap((b, i) =>
     shares[i] > 0
-      ? [{ biome: b, label: BIOME_LABELS[b], color: BIOME_TONES[b][1], share: shares[i], percent: Math.round(shares[i] * 100) }]
+      ? [shareOf(b, shares[i])]
       : [],
   )
+}
+
+function shareOf(biome: Biome, share: number): BiomeShare {
+  const percent = Math.round(share * 100)
+  return { biome, label: BIOME_LABELS[biome], color: BIOME_TONES[biome][1], share, percent, text: percent === 0 ? '<1%' : `${percent}%` }
 }
