@@ -6,6 +6,7 @@ import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
 import { MapView, type CreateMapRenderer } from './MapView'
+import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
 
 /**
@@ -55,7 +56,7 @@ export function EditorLayout({
   }
 
   useEffect(() => {
-    const desktop = window.matchMedia('(min-width: 768px)')
+    const desktop = window.matchMedia(DESKTOP_QUERY)
     const onChange = (e: MediaQueryListEvent) => {
       if (e.matches) closeAll()
     }
@@ -67,7 +68,7 @@ export function EditorLayout({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== '[' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented || isTextField(e.target)) return
       e.preventDefault()
-      if (window.matchMedia('(min-width: 768px)').matches) {
+      if (window.matchMedia(DESKTOP_QUERY).matches) {
         const { sidebarCollapsed, setSidebarCollapsed } = ui.getState()
         setSidebarCollapsed(!sidebarCollapsed)
       } else {
@@ -189,10 +190,9 @@ export function EditorLayout({
 
 /** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */
 function useDesktop() {
-  const query = '(min-width: 768px)'
-  const [desktop, setDesktop] = useState(() => window.matchMedia(query).matches)
+  const [desktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches)
   useEffect(() => {
-    const media = window.matchMedia(query)
+    const media = window.matchMedia(DESKTOP_QUERY)
     const onChange = (e: { matches: boolean }) => setDesktop(e.matches)
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
@@ -200,10 +200,14 @@ function useDesktop() {
   return desktop
 }
 
+/** Tipos de `input` que não recebem texto: neles a tecla `[` continua sendo o atalho. */
+const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'range', 'button', 'submit', 'reset', 'color', 'file', 'image'])
+
 /** Foco num campo de texto: aí a tecla `[` é do campo. */
 function isTextField(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || target.closest('input, textarea, select') !== null
+  if (target.isContentEditable || target.closest('textarea, select')) return true
+  return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type)
 }
 
 /** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */

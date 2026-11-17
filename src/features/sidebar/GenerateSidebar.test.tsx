@@ -200,6 +200,16 @@ describe('Sidebar: seções e sliders', () => {
     input.remove()
   })
 
+  it('num input que não recebe texto (checkbox), a tecla [ continua sendo o atalho', () => {
+    const { ui } = setup()
+    const checkbox = document.createElement('input')
+    checkbox.type = 'checkbox'
+    document.body.appendChild(checkbox)
+    fireEvent.keyDown(checkbox, { key: '[' })
+    expect(ui.getState().sidebarCollapsed).toBe(true)
+    checkbox.remove()
+  })
+
   it('abaixo de 768 px não há botão de recolher, e a tecla [ abre e fecha o painel sobreposto', () => {
     desktop = false
     const { ui } = setup()

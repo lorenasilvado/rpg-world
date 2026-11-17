@@ -189,7 +189,9 @@ function Section({
         role="group"
         aria-label={section.label}
         hidden={!open}
-        data-testid={`section-content-${section.id}`} className="flex flex-col gap-3.5 px-4 pt-0.5 pb-4">
+        data-testid={`section-content-${section.id}`}
+        className="flex flex-col gap-3.5 px-4 pt-0.5 pb-4"
+      >
         {children}
       </div>
     </section>
