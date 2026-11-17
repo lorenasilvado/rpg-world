@@ -78,6 +78,18 @@ test('só com o teclado: Tab chega aos sliders, que têm rótulo, e as setas mud
   for (const name of SLIDERS) await expect(page.getByRole('slider', { name })).toBeVisible()
 })
 
+test('segurar a seta mostra a prévia; soltar a tecla gera o mapa final', async ({ page }) => {
+  await openEditor(page)
+  const ocean = page.getByRole('slider', { name: 'Oceano' })
+  await ocean.focus()
+  // Tecla pressionada e repetida: só prévias.
+  for (let i = 0; i < 6; i++) await page.keyboard.down('ArrowRight')
+  await expect(ocean).toHaveAttribute('aria-valuenow', '51')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '256')
+  await page.keyboard.up('ArrowRight')
+  await waitFinalMap(page)
+})
+
 test('arrastar Desertos mostra a prévia, e Florestas recua e pisca durante o arrasto; soltar gera o mapa final (AC-F1-14)', async ({ page }) => {
   await openEditor(page)
   const desert = page.getByRole('slider', { name: 'Desertos' })

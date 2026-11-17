@@ -96,23 +96,55 @@ describe('Sidebar: seções e sliders', () => {
   it('só com o teclado: setas mudam 1, Shift + seta 10, Home e End vão a 0 e 100 (AC-F1-13)', () => {
     const { world, requests } = setup()
     const ocean = screen.getByRole('slider', { name: 'Oceano' })
-    fireEvent.keyDown(ocean, { key: 'ArrowRight' })
+    const press = (init: { key: string; shiftKey?: boolean }) => {
+      fireEvent.keyDown(ocean, init)
+      fireEvent.keyUp(ocean, init)
+    }
+    press({ key: 'ArrowRight' })
     expect(world.getState().params.ocean).toBe(46)
-    fireEvent.keyDown(ocean, { key: 'ArrowLeft', shiftKey: true })
+    press({ key: 'ArrowLeft', shiftKey: true })
     expect(world.getState().params.ocean).toBe(36)
-    fireEvent.keyDown(ocean, { key: 'End' })
+    press({ key: 'End' })
     expect(world.getState().params.ocean).toBe(100)
-    fireEvent.keyDown(ocean, { key: 'Home' })
+    press({ key: 'Home' })
     expect(world.getState().params.ocean).toBe(0)
     expect(ocean.getAttribute('aria-valuenow')).toBe('0')
     expect(within(screen.getByTestId('slider-ocean')).getByText('0%')).toBeTruthy()
-    // Pelo teclado não há arrasto: cada tecla pede direto o mapa final com o valor novo.
+    // Cada tecla pede a prévia ao descer e o mapa final ao subir.
     expect(requests.map((r) => [r.size, r.params?.ocean])).toEqual([
+      [256, 46],
       [1024, 46],
+      [256, 36],
       [1024, 36],
+      [256, 100],
       [1024, 100],
+      [256, 0],
       [1024, 0],
     ])
+  })
+
+  it('segurar a tecla mostra só prévias; soltar a tecla gera o mapa final uma vez', () => {
+    const { world, requests } = setup()
+    const ocean = screen.getByRole('slider', { name: 'Oceano' })
+    // A seta pressionada se repete: cada repetição chega como outro keydown.
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(ocean, { key: 'ArrowRight', repeat: i > 0 })
+    expect(world.getState().params.ocean).toBe(50)
+    expect(requests.map((r) => r.size)).toEqual([256, 256, 256, 256, 256])
+    fireEvent.keyUp(ocean, { key: 'ArrowRight' })
+    expect(requests.at(-1)).toMatchObject({ size: 1024, params: { ocean: 50 } })
+    expect(requests.filter((r) => r.size === 1024)).toHaveLength(1)
+    // Uma tecla que não muda o valor (Tab) não pede nada ao subir.
+    fireEvent.keyDown(ocean, { key: 'Tab' })
+    fireEvent.keyUp(ocean, { key: 'Tab' })
+    expect(requests).toHaveLength(6)
+  })
+
+  it('se o foco sai com a tecla pressionada, o mapa final é pedido mesmo assim', () => {
+    const { requests } = setup()
+    const ocean = screen.getByRole('slider', { name: 'Oceano' })
+    fireEvent.keyDown(ocean, { key: 'ArrowRight' })
+    fireEvent.blur(ocean)
+    expect(requests.map((r) => r.size)).toEqual([256, 1024])
   })
 
   it('Desertos + Florestas nunca passa de 100%: Florestas recua e pisca por 700 ms (AC-F1-14)', () => {

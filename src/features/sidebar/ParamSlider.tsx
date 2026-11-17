@@ -10,9 +10,9 @@ import type { SliderDef } from './sliders'
  *
  * Funciona só com o teclado (o Radix: setas mudam 1, Shift + setas e PageUp/PageDown mudam 10,
  * Home e End vão a 0 e 100) e tem rótulo (AC-F1-13). `onChange` recebe cada valor durante o
- * arrasto com o ponteiro; `onCommit`, o valor ao soltar. Pelo teclado não há arrasto: cada tecla
- * chama só o `onCommit` (o Radix avisa o commit antes da mudança, e uma prévia pedida depois
- * tomaria o lugar do mapa final).
+ * arrasto com o ponteiro, ou enquanto uma tecla está pressionada (e se repete); `onCommit`, o
+ * valor ao soltar o ponteiro ou a tecla. O Radix avisa o commit de cada tecla antes da mudança:
+ * com a tecla pressionada, esse aviso é ignorado, e o commit sai no `keyup` (ou se o foco sai).
  *
  * `flash` muda a cada vez que este slider recua sozinho (Desertos ↔ Florestas, AC-F1-14): a linha
  * pisca em âmbar por 700 ms.
@@ -34,7 +34,9 @@ export function ParamSlider({
   const [dragging, setDragging] = useState(false)
   // O estado só muda no próximo render; os refs valem já no mesmo evento do ponteiro.
   const pointerDown = useRef(false)
-  /** Se o arrasto atual já pediu alguma prévia (`onChange`) sem o commit depois. */
+  /** Uma tecla está pressionada no slider (do `keydown` ao `keyup`). */
+  const keyHeld = useRef(false)
+  /** Se o arrasto (ou a tecla) atual já pediu alguma prévia (`onChange`) sem o commit depois. */
   const pendingCommit = useRef(false)
   /** O último valor do arrasto atual. */
   const dragValue = useRef(value)
@@ -43,6 +45,14 @@ export function ParamSlider({
     commitRef.current = onCommit
   }, [onCommit])
   const Icon = def.icon
+
+  /** Pede o mapa final, se a tecla pressionada pediu prévias. */
+  const flushKeyboard = () => {
+    keyHeld.current = false
+    if (!pendingCommit.current || pointerDown.current) return
+    pendingCommit.current = false
+    onCommit(dragValue.current)
+  }
 
   // O Radix só chama `onValueCommit` se o valor final é diferente do inicial. Soltar de volta no
   // valor de partida também encerra o arrasto e, se ele pediu prévias, pede o mapa final aqui: o
@@ -102,13 +112,20 @@ export function ParamSlider({
           dragValue.current = value
           setDragging(true)
         }}
+        onKeyDown={() => {
+          keyHeld.current = true
+        }}
+        onKeyUp={flushKeyboard}
+        onBlur={flushKeyboard}
         onValueChange={([v]) => {
-          if (!pointerDown.current) return
+          if (!pointerDown.current && !keyHeld.current) return
           pendingCommit.current = true
           dragValue.current = v
           onChange(v)
         }}
         onValueCommit={([v]) => {
+          // Pela tecla, o commit vem no `keyup` (`flushKeyboard`).
+          if (keyHeld.current && !pointerDown.current) return
           pointerDown.current = false
           pendingCommit.current = false
           setDragging(false)
