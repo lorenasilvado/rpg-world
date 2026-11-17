@@ -22,7 +22,7 @@ export function MapDistribution({ world }: { world: WorldStore }) {
         <h3 className="text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase">Distribuição do mapa</h3>
         {busy && (
           <span role="status" className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
-            <LoaderCircle size={14} aria-hidden="true" className="animate-spin [animation-duration:900ms]" />
+            <LoaderCircle size={14} aria-hidden="true" className="animate-spin [animation-duration:900ms] motion-reduce:animate-none" />
             Gerando
           </span>
         )}

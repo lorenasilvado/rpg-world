@@ -56,7 +56,10 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, { steps: 6 })
   await expect(footer.getByRole('status')).toHaveText('Gerando')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'true')
-  await expect(page.getByTestId('map')).toHaveCSS('filter', /blur\(3px\)/)
+  // O desfoque é do terreno e da decoração, dentro do canvas (o que ficar acima deles fica nítido):
+  // o elemento do mapa não tem filtro CSS.
+  await expect(page.getByTestId('map')).toHaveAttribute('data-map-blur', '3.0')
+  await expect(page.getByTestId('map')).toHaveCSS('filter', 'none')
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '256', { timeout: 30_000 })
   // Os valores novos (da prévia) já aparecem durante a geração.
   await expect.poll(async () => (await shares(page))['Oceano']).toBeGreaterThan(before['Oceano'])
@@ -68,7 +71,7 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
   await expect(footer.getByRole('status')).toHaveCount(0)
-  await expect(page.getByTestId('map')).toHaveCSS('filter', 'none')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-map-blur', '0.0')
   const ocean = Number(await thumb.getAttribute('aria-valuenow'))
   const after = await shares(page)
   expect(Math.abs(after['Oceano'] + (after['Água rasa'] ?? 0) - ocean)).toBeLessThanOrEqual(3)
@@ -115,24 +118,55 @@ test('AC-F1-18 no celular 390: no painel sobreposto, a barra cabe na tela e most
   expect(Math.abs(after['Oceano'] + (after['Água rasa'] ?? 0) - ocean)).toBeLessThanOrEqual(3)
 })
 
-test('AC-F1-20: sem WebGL2, um aviso com os navegadores suportados aparece no lugar do editor', async ({ page }) => {
-  // Desliga o WebGL2 antes de o app carregar: o canvas não dá o contexto `webgl2`.
-  await page.addInitScript(() => {
-    const getContext = HTMLCanvasElement.prototype.getContext
-    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
-      if (type === 'webgl2') return null
-      return (getContext as (...a: unknown[]) => unknown).call(this, type, ...args)
-    } as typeof getContext
-  })
-  const workers: string[] = []
-  page.on('worker', (w) => workers.push(w.url()))
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Este navegador não tem WebGL2' })).toBeVisible()
-  const browsers = page.getByRole('list', { name: 'Navegadores suportados' }).getByRole('listitem')
-  await expect(browsers).toHaveText(['Google Chrome', 'Microsoft Edge', 'Mozilla Firefox', 'Safari'])
-  await expect(page.getByTestId('editor')).toHaveCount(0)
-  await expect(page.getByRole('main', { name: 'Mapa' })).toHaveCount(0)
-  // Nada é gerado: o worker de geração nem é criado.
-  expect(workers).toEqual([])
+test('AC-F1-18 com movimento reduzido: o ícone de "Gerando" não gira e o desfoque não anima', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await openEditor(page)
+  const map = page.getByTestId('map')
+  await expect(map).toHaveAttribute('data-map-blur', '0.0')
+  const thumb = page.getByRole('slider', { name: 'Oceano' })
+  const box = (await thumb.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, { steps: 6 })
+  const status = page.getByTestId('map-distribution').getByRole('status')
+  await expect(status).toHaveText('Gerando')
+  expect(await status.locator('svg').evaluate((el) => getComputedStyle(el).animationName)).toBe('none')
+  // Sem animação, o desfoque salta direto para 3 px e, no mapa final, para 0.
+  await expect(map).toHaveAttribute('data-map-blur', '3.0')
+  await page.mouse.up()
+  await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
+  expect(await map.getAttribute('data-map-blur')).toBe('0.0')
 })
+
+for (const [label, width, height] of [
+  ['tela larga 1440', 1440, 900],
+  ['celular 390', 390, 844],
+] as const) {
+  test(`AC-F1-20 (${label}): sem WebGL2, um aviso com os navegadores suportados aparece no lugar do editor`, async ({ page }) => {
+    // Desliga o WebGL2 antes de o app carregar: o canvas não dá o contexto `webgl2`.
+    await page.addInitScript(() => {
+      const getContext = HTMLCanvasElement.prototype.getContext
+      HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...args: unknown[]) {
+        if (type === 'webgl2') return null
+        return (getContext as (...a: unknown[]) => unknown).call(this, type, ...args)
+      } as typeof getContext
+    })
+    const workers: string[] = []
+    page.on('worker', (w) => workers.push(w.url()))
+    await page.setViewportSize({ width, height })
+    await page.goto('/')
+    const notice = page.getByTestId('no-webgl2').locator('section')
+    await expect(page.getByRole('heading', { name: 'Este navegador não tem WebGL2' })).toBeVisible()
+    const browsers = page.getByRole('list', { name: 'Navegadores suportados' }).getByRole('listitem')
+    await expect(browsers).toHaveText(['Google Chrome', 'Microsoft Edge', 'Mozilla Firefox', 'Safari'])
+    // O aviso cabe inteiro na tela, sem rolagem horizontal.
+    await expect(notice).toBeInViewport({ ratio: 1 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await expect(page.getByTestId('editor')).toHaveCount(0)
+    await expect(page.getByRole('main', { name: 'Mapa' })).toHaveCount(0)
+    // Nada é gerado: o worker de geração nem é criado.
+    expect(workers).toEqual([])
+  })
+}

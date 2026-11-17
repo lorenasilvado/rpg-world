@@ -67,16 +67,6 @@ body {
   animation: toast-in 200ms ease;
 }
 
-/* Prévia do mapa ao gerar: borrada, e nítida em 260 ms quando o mapa final chega
-   (design-system.md → Movimento) */
-.map-host {
-  transition: filter 260ms ease;
-}
-
-.map-preview {
-  filter: blur(3px) saturate(0.9);
-}
-
 /* Slider que recuou (Desertos ↔ Florestas): flash âmbar de 700 ms, ease (design-system.md → Movimento) */
 @keyframes flash-row {
   0%,

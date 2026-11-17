@@ -21,7 +21,7 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui) =>
  * `ui`. O React só cria e destrói o renderer; o desenho não passa pelo React (ADR 0001). Quando a
  * sidebar recolhe ou abre (`sidebarCollapsed` do `ui`), a área livre muda e o mapa se ajusta a ela.
  * Durante a geração (`isGenerating`: o pedido mais novo não chegou, ou o mapa é a prévia), o mapa
- * fica borrado (`blur(3px)`) e volta a ficar nítido em 260 ms quando o mapa final chega (AC-F1-18).
+ * fica `aria-busy` e `data-blurred`; o desfoque do terreno e da decoração é do renderer (AC-F1-18).
  */
 export function MapView({
   world,
@@ -67,7 +67,7 @@ export function MapView({
       data-blurred={blurred}
       aria-busy={blurred}
       inert={inert}
-      className={`map-host absolute inset-0 bg-map-canvas ${blurred ? 'map-preview' : ''}`}
+      className="absolute inset-0 bg-map-canvas"
     />
   )
 }

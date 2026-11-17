@@ -76,7 +76,6 @@ describe('Distribuição do mapa e Gerando (AC-F1-18)', () => {
     act(() => world.getState().generate())
     expect(within(bar).getByRole('status').textContent).toBe('Gerando')
     expect(map.dataset.blurred).toBe('true')
-    expect(map.classList.contains('map-preview')).toBe(true)
 
     started[0].finish(biomes(45))
     await flush()

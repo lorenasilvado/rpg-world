@@ -130,7 +130,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Carregando / gerando | Um slider, a seed ou um preset muda, ou o editor abre | "Distribuição do mapa" mostra "Gerando" (com o ícone girando) e os valores do mapa exibido, que durante o arrasto são os da prévia; o mapa fica borrado (`blur(3px)`) enquanto o pedido mais novo não chega ou o mapa exibido é a prévia, e fica nítido em 260 ms quando o mapa final chega; pins e rotas continuam nítidos; o minimapa acompanha a prévia |
+| Carregando / gerando | Um slider, a seed ou um preset muda, ou o editor abre | "Distribuição do mapa" mostra "Gerando" (com o ícone girando) e os valores do mapa exibido, que durante o arrasto são os da prévia; o terreno e a decoração do mapa ficam borrados (3 px) enquanto o pedido mais novo não chega ou o mapa exibido é a prévia, e ficam nítidos em 260 ms quando o mapa final chega; o desfoque vale só para o terreno e a decoração, e o que fica acima deles (pins e rotas) continua nítido; com movimento reduzido, o mapa borra e fica nítido na hora, e o ícone de "Gerando" não gira; o minimapa acompanha a prévia |
 | Slider recuou | Desertos + Florestas passaria de 100% | O outro slider recua sozinho e pisca (flash âmbar de 700 ms). Ex.: Desertos de 15% para 70% → Florestas de 35% para 30% |
 | Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
 | Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água" |
