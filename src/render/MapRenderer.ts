@@ -108,7 +108,11 @@ export async function createMapRenderer(
   if (decor) base.addChild(decor.view)
   camera.viewport.addChild(base)
 
-  const blurFilter = new BlurFilter({ strength: MAP_BLUR_PX, quality: 4 })
+  // O filtro roda a cada quadro enquanto gera, junto com o worker de geração: 2 passadas por eixo
+  // em meia resolução custam o mesmo que o quadro nítido (com `quality: 4` em resolução cheia, o
+  // quadro borrado custava 2,4× mais, e sem GPU a geração atrasava). Num desfoque de 3 px, a meia
+  // resolução não aparece.
+  const blurFilter = new BlurFilter({ strength: MAP_BLUR_PX, quality: 2, resolution: 0.5 })
   const blur = createMapBlur()
   const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   let filtered = false
