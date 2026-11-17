@@ -60,6 +60,11 @@ test('cada um dos 9 sliders muda o mapa desenhado (AC-F1-05)', async ({ page }) 
 test('só com o teclado: Tab chega aos sliders, que têm rótulo, e as setas mudam o valor (AC-F1-13)', async ({ page }) => {
   await openEditor(page)
   await page.getByRole('button', { name: 'Recolher painel' }).focus()
+  // Antes de Terreno: a seção Seed (cabeçalho, campo, sortear e copiar) e o cabeçalho de Presets.
+  for (const name of ['Seed', 'Seed', 'Seed aleatória', 'Copiar seed', 'Presets']) {
+    await page.keyboard.press('Tab')
+    await expect(page.locator(':focus')).toHaveAccessibleName(name)
+  }
   await page.keyboard.press('Tab')
   await expect(page.getByRole('button', { name: 'Terreno' })).toBeFocused()
   await page.keyboard.press('Tab')

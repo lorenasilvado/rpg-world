@@ -6,13 +6,15 @@ import { DEFAULT_WORLD_PARAMS, type WorldParams } from '../../core'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
 import { FLASH_MS } from './GenerateSidebar'
+import { COPIED_MS, SEED_TYPING_MS } from './SeedField'
+import { PRESETS } from '../../state/presets'
 
 /** Gerador que guarda os pedidos e nunca responde: aqui só importa o que a sidebar pede. */
 function recordingGenerator() {
-  const requests: { size: number; params?: WorldParams }[] = []
+  const requests: { seed: string; size: number; params?: WorldParams }[] = []
   const gen: WorldGenerator = {
     request: (req) => {
-      requests.push({ size: req.size, params: req.params })
+      requests.push({ seed: req.seed, size: req.size, params: req.params })
       return new Promise(() => {})
     },
     latestVersion: () => requests.length,
@@ -252,5 +254,171 @@ describe('Sidebar: seções e sliders', () => {
     fireEvent.keyDown(document.body, { key: '[' })
     expect(sidebar.dataset.open).toBe('false')
     expect(ui.getState().sidebarCollapsed).toBe(false)
+  })
+})
+
+describe('Sidebar: seed, presets e restaurar', () => {
+  it('Seed começa aberta e Presets, fechada', () => {
+    setup()
+    expect(screen.getByRole('button', { name: 'Seed' }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Presets' }).getAttribute('aria-expanded')).toBe('false')
+    expect((screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement).value).toBe('rpg-world')
+  })
+
+  it('editar a seed regenera o mapa final depois da pausa na digitação, ou já no Enter (AC-F1-15)', () => {
+    vi.useFakeTimers()
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' })
+    fireEvent.change(input, { target: { value: 'val' } })
+    fireEvent.change(input, { target: { value: 'valdora' } })
+    expect(requests).toHaveLength(0)
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(world.getState().seed).toBe('valdora')
+    expect(requests).toEqual([{ seed: 'valdora', size: 1024, params: DEFAULT_WORLD_PARAMS }])
+    fireEvent.change(input, { target: { value: 'brumas' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(requests.at(-1)).toMatchObject({ seed: 'brumas', size: 1024 })
+    // A pausa depois do Enter não pede de novo.
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(requests).toHaveLength(2)
+  })
+
+  it('uma seed vazia não gera nada, e o campo volta para a seed atual ao sair dele', () => {
+    vi.useFakeTimers()
+    const { requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: '  ' } })
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    fireEvent.blur(input)
+    expect(requests).toHaveLength(0)
+    expect(input.value).toBe('rpg-world')
+  })
+
+  it('sortear troca a seed, mostra a nova no campo e regenera o mapa (AC-F1-15)', () => {
+    const { world, requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Seed aleatória' }))
+    const seed = world.getState().seed
+    expect(seed).toMatch(/^[a-z]+-[0-9a-f]{4}$/)
+    expect((screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement).value).toBe(seed)
+    expect(requests).toEqual([{ seed, size: 1024, params: DEFAULT_WORLD_PARAMS }])
+  })
+
+  it('copiar põe a seed na área de transferência e avisa (AC-F1-15)', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    setup()
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copiar seed' })))
+    expect(writeText).toHaveBeenCalledWith('rpg-world')
+    expect(screen.getByRole('status').textContent).toBe('Seed copiada')
+  })
+
+  it('escolher um preset aplica os valores dele e o marca; mexer num slider tira a marca (AC-F1-16)', () => {
+    const { world, requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Presets' }))
+    const presets = within(screen.getByRole('group', { name: 'Presets' }))
+    expect(presets.getByRole('button', { name: /Continente temperado/ }).getAttribute('aria-pressed')).toBe('true')
+    const arid = PRESETS.find((p) => p.id === 'deserto')!
+    fireEvent.click(presets.getByRole('button', { name: /Deserto árido/ }))
+    expect(world.getState().params).toEqual(arid.params)
+    expect(requests).toEqual([{ seed: 'rpg-world', size: 1024, params: arid.params }])
+    expect(presets.getByRole('button', { name: /Deserto árido/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('slider', { name: 'Desertos' }).getAttribute('aria-valuenow')).toBe('62')
+    act(() => {
+      world.getState().releaseParams({ ocean: 33 })
+    })
+    expect(presets.getAllByRole('button').map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'false'])
+  })
+
+  it('"Restaurar padrão" volta todos os parâmetros ao padrão e mantém a seed (AC-F1-17)', () => {
+    const { world, requests } = setup()
+    act(() => {
+      world.getState().setSeed('valdora')
+      world.getState().setParams(PRESETS[3].params)
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }))
+    expect(world.getState().params).toEqual(DEFAULT_WORLD_PARAMS)
+    expect(world.getState().seed).toBe('valdora')
+    expect(requests.at(-1)).toEqual({ seed: 'valdora', size: 1024, params: DEFAULT_WORLD_PARAMS })
+    for (const label of LABELS) {
+      const key = Object.keys(DEFAULT_WORLD_PARAMS)[LABELS.indexOf(label)] as keyof WorldParams
+      expect(screen.getByRole('slider', { name: label, hidden: true }).getAttribute('aria-valuenow'), label).toBe(String(DEFAULT_WORLD_PARAMS[key]))
+    }
+  })
+
+  it('celular: no painel sobreposto, seed, preset e "Restaurar padrão" funcionam', () => {
+    desktop = false
+    const { world, requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir painel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Seed aleatória' }))
+    expect(requests.at(-1)).toMatchObject({ seed: world.getState().seed, size: 1024 })
+    fireEvent.click(screen.getByRole('button', { name: 'Presets' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Presets' })).getByRole('button', { name: /Deserto árido/ }))
+    expect(world.getState().params).toEqual(PRESETS[2].params)
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }))
+    expect(world.getState().params).toEqual(DEFAULT_WORLD_PARAMS)
+    expect(requests).toHaveLength(3)
+  })
+
+  it('a seed vale sem os espaços das pontas, e o espaço digitado antes da pausa não some', () => {
+    vi.useFakeTimers()
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'mar do ' } })
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(world.getState().seed).toBe('mar do')
+    expect(input.value).toBe('mar do ')
+    fireEvent.change(input, { target: { value: 'mar do norte ' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(world.getState().seed).toBe('mar do norte')
+    expect(input.value).toBe('mar do norte')
+    // " mar do norte" é a mesma seed: não gera de novo.
+    fireEvent.change(input, { target: { value: ' mar do norte' } })
+    fireEvent.blur(input)
+    expect(requests).toHaveLength(2)
+  })
+
+  it('se a seed muda por fora durante a pausa, o texto digitado é descartado', () => {
+    vi.useFakeTimers()
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'digitada' } })
+    act(() => world.getState().setSeed('de-fora'))
+    act(() => vi.advanceTimersByTime(SEED_TYPING_MS))
+    expect(world.getState().seed).toBe('de-fora')
+    expect(input.value).toBe('de-fora')
+    expect(requests.map((r) => r.seed)).toEqual(['de-fora'])
+  })
+
+  it('sortear com a seed editada gera só o mapa da seed sorteada', () => {
+    const { world, requests } = setup()
+    const input = screen.getByRole('textbox', { name: 'Seed' })
+    input.focus()
+    fireEvent.change(input, { target: { value: 'editada' } })
+    const roll = screen.getByRole('button', { name: 'Seed aleatória' })
+    // O clique do mouse: o mousedown não tira o foco do campo.
+    expect(fireEvent.mouseDown(roll)).toBe(false)
+    fireEvent.click(roll)
+    expect(requests.map((r) => r.seed)).toEqual([world.getState().seed])
+    expect(world.getState().seed).not.toBe('editada')
+  })
+
+  it('copiar de novo reinicia o check de 1,5 s', async () => {
+    vi.useFakeTimers()
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.resolve() }, configurable: true })
+    setup()
+    const copy = screen.getByRole('button', { name: 'Copiar seed' })
+    await act(async () => fireEvent.click(copy))
+    act(() => vi.advanceTimersByTime(COPIED_MS - 300))
+    await act(async () => fireEvent.click(copy))
+    act(() => vi.advanceTimersByTime(COPIED_MS - 300))
+    expect(screen.getByRole('status').textContent).toBe('Seed copiada')
+    act(() => vi.advanceTimersByTime(300))
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
+
+  it('"Restaurar padrão" com os parâmetros já no padrão não pede mapa', () => {
+    const { requests } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrão' }))
+    expect(requests).toHaveLength(0)
   })
 })

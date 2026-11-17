@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -13,11 +13,11 @@ o comportamento atualiza esta spec.
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
 > da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
 > mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
-> e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Terreno,
-> Biomas, Relevo e Avançado com os 9 sliders e recolhe a 48 px; ainda não tem nome do mundo, seed,
-> presets, "Distribuição do mapa" nem "Restaurar padrão", e o mapa não fica borrado durante a
-> prévia. A câmera e os ícones de decoração estão em [navegacao.md](navegacao.md). O resto vem do
-> material de design e do PRD.
+> e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
+> Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
+> a 48 px; ainda não tem nome do mundo nem "Distribuição do mapa", os cartões de preset não têm
+> miniatura, e o mapa não fica borrado durante a prévia. A câmera e os ícones de decoração estão
+> em [navegacao.md](navegacao.md). O resto vem do material de design e do PRD.
 
 ## Resumo
 
@@ -38,14 +38,24 @@ de dados em [overview.md](../overview.md).
 
 - Painel esquerdo de 320 px, recolhível (48 px recolhido).
 - Nome do mundo e status de salvamento ("Salvo").
-- Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável. Não há
-  botão "Gerar": editar ou sortear a seed regenera o mapa.
-- Seções recolhíveis: Presets, Terreno (Oceano 45%, Praias 30%), Biomas (Desertos 15%,
+- Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável, em
+  JetBrains Mono. Não há botão "Gerar": editar a seed regenera o mapa final 400 ms depois da
+  última tecla, ou já no Enter ou ao sair do campo. A seed vale sem os espaços das pontas; uma seed
+  vazia não gera nada, e ao sair do campo ele volta para a seed atual. Se a seed muda por fora
+  durante a pausa, o texto digitado é descartado. Sortear dá uma seed no formato "valdora-7f3a" (uma palavra e 4
+  dígitos hexadecimais) e regenera o mapa. Copiar põe a seed na área de transferência e troca o
+  ícone por um check por 1,5 s, contados de novo a cada cópia (o leitor de tela ouve "Seed copiada"); sem acesso à área de
+  transferência, a seed fica selecionada no campo.
+- Presets: os 4 presets do assistente em cartões de duas colunas, com o nome e a descrição.
+  Escolher um aplica os 9 valores dele (a seed fica) e gera o mapa final. O cartão do preset cujos
+  valores são os dos sliders agora tem a borda âmbar e o check; mexer num slider tira a marca. No
+  hover, o cartão escurece o fundo, sem a borda âmbar.
+- Seções recolhíveis: Seed, Presets, Terreno (Oceano 45%, Praias 30%), Biomas (Desertos 15%,
   Florestas 35%), Relevo (Montanhas 30%, Neve 40%) e Avançado (Tamanho do continente, Rugosidade
   da costa, Temperatura global). Cada controle tem ícone, rótulo, amostra de cor (só nos seis de
   bioma, no tom base do bioma na paleta do mapa), porcentagem e slider. A tela E1 mostra só as
   quatro primeiras seções (sem Neve). O cabeçalho da seção abre e fecha o conteúdo; ao abrir o
-  editor, Terreno, Biomas e Relevo estão abertas e Avançado, fechada.
+  editor, Seed, Terreno, Biomas e Relevo estão abertas e Presets e Avançado, fechadas.
 - Slider: trilho de 6 px, preenchimento âmbar e thumb de 18 px; no hover, halo âmbar; durante o
   arrasto, thumb âmbar maior e balão com o valor. Pelo teclado: setas mudam 1, Shift + setas e
   PageUp/PageDown mudam 10, Home e End vão a 0 e 100.
@@ -54,8 +64,9 @@ de dados em [overview.md](../overview.md).
   O mapa passa a caber na área livre maior, com o mesmo centro e zoom relativo. A tecla `[` não vale
   com o foco num campo de texto nem com Ctrl, Alt ou Meta. Abaixo de 768 px não há botão de
   recolher: a tecla `[` abre e fecha o painel sobreposto.
-- Rodapé: barra "Distribuição do mapa" com a porcentagem real de cada bioma no mapa gerado,
-  legenda e botão "Restaurar padrão".
+- Rodapé, fixo abaixo das seções: barra "Distribuição do mapa" com a porcentagem real de cada
+  bioma no mapa gerado, legenda e botão "Restaurar padrão" (`rotate-ccw`), que volta os 9
+  parâmetros ao padrão (a seed fica) e gera o mapa final; com eles já no padrão, não faz nada.
 
 ### Sliders (PRD RF-1)
 
@@ -130,11 +141,11 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Mudar um slider pelo teclado | Enquanto a tecla está pressionada (e se repete), prévia 256² a cada valor novo; ao soltar a tecla (ou se o foco sai), gera o mapa final em 1024² |
 | Desertos + Florestas passaria de 100% | O outro slider recua até a soma dar 100 e pisca em âmbar por 700 ms (também com movimento reduzido: é só cor); num arrasto, os recuos seguintes durante esses 700 ms não reiniciam o flash, e um recuo depois deles pisca de novo |
 | Abrir ou fechar uma seção | Mostra ou esconde os sliders dela |
-| Sortear seed | Seed aleatória e mapa novo |
-| Editar a seed | Regenera o mapa com a seed nova |
-| Copiar seed | Copia a seed |
-| Escolher preset | Aplica os parâmetros do preset |
-| "Restaurar padrão" | Volta os parâmetros ao padrão |
+| Sortear seed | Seed aleatória e mapa final novo |
+| Editar a seed | Regenera o mapa final com a seed nova (400 ms depois da última tecla, ou no Enter ou ao sair do campo); vazia, não gera |
+| Copiar seed | Copia a seed e mostra o check por 1,5 s |
+| Escolher preset | Aplica os 9 parâmetros do preset, mantém a seed e gera o mapa final |
+| "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final (já no padrão, não faz nada) |
 | Recolher / abrir painel (`[`) | Sidebar passa a 48 px / volta a 320 px (abaixo de 768 px, a tecla abre e fecha o painel sobreposto) |
 | "Criar mundo →" no assistente | Abre o editor (E1) com o mundo novo |
 | Cancelar no assistente | TODO: volta à tela de origem (não descrito no material) |

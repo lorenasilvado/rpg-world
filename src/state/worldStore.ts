@@ -15,6 +15,8 @@ import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
  * exibido: um resultado velho nunca substitui um novo (AC-F1-10), e o mapa final pedido ao soltar
  * substitui a prévia (AC-F1-11). Desertos + Florestas nunca passa de 100%: o outro slider recua
  * (`applyParamChange`, AC-F1-14), e as duas ações devolvem qual recuou, para a sidebar piscá-lo.
+ * Trocar a seed (`setSeed`) ou todos os parâmetros de uma vez (`setParams`: preset ou "Restaurar
+ * padrão") pede o mapa final direto.
  */
 export type GenerationStatus = 'idle' | 'generating' | 'error'
 
@@ -39,6 +41,8 @@ export type WorldState = {
   dragParams(change: Partial<WorldParams>): LandShareKey | null
   /** Soltou o slider: aplica a mudança (se houver) e pede o mapa final 1024². Devolve o que recuou. */
   releaseParams(change?: Partial<WorldParams>): LandShareKey | null
+  /** Troca todos os parâmetros (um preset, ou o padrão) e pede o mapa final 1024². */
+  setParams(params: Readonly<WorldParams>): void
   /** Gera o mapa final com a seed e os parâmetros atuais. */
   generate(): void
 }
@@ -99,6 +103,12 @@ export function createWorldStore(
         set({ params })
         request(MAP_SIZE)
         return receded
+      },
+      setParams(params) {
+        // Os presets e o padrão já respeitam Desertos + Florestas ≤ 100; o `applyParamChange` só
+        // garante isso para qualquer valor.
+        set({ params: applyParamChange(get().params, params).params })
+        request(MAP_SIZE)
       },
       generate() {
         request(MAP_SIZE)
