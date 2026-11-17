@@ -3,7 +3,7 @@ import { DEFAULT_WORLD_PARAMS, generateField, type CoreField } from '../core'
 import type { GenerateRequest, GenerateResult } from '../workers/generatorApi'
 import { createNewerOnly } from '../workers/newerOnly'
 import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
-import { createWorldStore } from './worldStore'
+import { createWorldStore, isGenerating } from './worldStore'
 
 /** Gerador falso: cada pedido fica parado até o teste chamar `finish` (ou `fail`). */
 function fakeGenerator() {
@@ -172,5 +172,35 @@ describe('worldStore: presets e "Restaurar padrão" (AC-F1-16, AC-F1-17)', () =>
     store.getState().setParams(DEFAULT_WORLD_PARAMS)
     store.getState().dragParams({ ocean: 10 })
     expect(DEFAULT_WORLD_PARAMS.ocean).toBe(45)
+  })
+})
+
+describe('worldStore: gerando (AC-F1-18)', () => {
+  it('gera enquanto o pedido mais novo não chega e enquanto o mapa exibido é a prévia', async () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen)
+    expect(isGenerating(store.getState())).toBe(false)
+    store.getState().dragParams({ ocean: 30 })
+    expect(isGenerating(store.getState())).toBe(true)
+    // A prévia chegou e é o pedido mais novo: o status volta a `idle`, mas o mapa ainda é a prévia.
+    started[0].finish()
+    await tick()
+    expect(store.getState().status).toBe('idle')
+    expect(isGenerating(store.getState())).toBe(true)
+    store.getState().releaseParams()
+    started[1].finish()
+    await tick()
+    expect(store.getState().field?.width).toBe(MAP_SIZE)
+    expect(isGenerating(store.getState())).toBe(false)
+  })
+
+  it('não gera mais depois de uma falha', async () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen)
+    store.getState().generate()
+    started[0].fail(new Error('falhou'))
+    await tick()
+    expect(store.getState().status).toBe('error')
+    expect(isGenerating(store.getState())).toBe(false)
   })
 })

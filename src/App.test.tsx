@@ -97,3 +97,17 @@ describe('Layout vazio do editor', () => {
     expect(screen.getByTestId('drawer').dataset.open).toBe('false')
   })
 })
+
+describe('Sem WebGL2 (AC-F1-20)', () => {
+  it('mostra o aviso com os navegadores suportados no lugar do editor', () => {
+    render(<App world={world()} createRenderer={noRenderer} webgl2={false} />)
+    expect(screen.queryByTestId('editor')).toBeNull()
+    expect(screen.queryByRole('main', { name: 'Mapa' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Este navegador não tem WebGL2' })).toBeTruthy()
+    const browsers = screen.getByRole('list', { name: 'Navegadores suportados' })
+    expect(browsers.textContent).toContain('Google Chrome')
+    expect(browsers.textContent).toContain('Microsoft Edge')
+    expect(browsers.textContent).toContain('Mozilla Firefox')
+    expect(browsers.textContent).toContain('Safari')
+  })
+})

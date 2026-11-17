@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { useStore } from 'zustand'
 import type { MapInsets, MapRenderer } from '../render/MapRenderer'
 import type { UiStore } from '../state/uiStore'
-import type { WorldStore } from '../state/worldStore'
+import { isGenerating, type WorldStore } from '../state/worldStore'
 import { panelInsets } from './panelInsets'
 
 export type CreateMapRenderer = (
@@ -19,6 +20,8 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui) =>
  * Área do mapa do editor: o renderer desenha nela o campo do `world`, com as camadas ligadas no
  * `ui`. O React só cria e destrói o renderer; o desenho não passa pelo React (ADR 0001). Quando a
  * sidebar recolhe ou abre (`sidebarCollapsed` do `ui`), a área livre muda e o mapa se ajusta a ela.
+ * Durante a geração (`isGenerating`: o pedido mais novo não chegou, ou o mapa é a prévia), o mapa
+ * fica borrado (`blur(3px)`) e volta a ficar nítido em 260 ms quando o mapa final chega (AC-F1-18).
  */
 export function MapView({
   world,
@@ -32,6 +35,7 @@ export function MapView({
   createRenderer?: CreateMapRenderer
 }) {
   const host = useRef<HTMLElement>(null)
+  const blurred = useStore(world, isGenerating)
 
   useEffect(() => {
     const el = host.current
@@ -56,6 +60,14 @@ export function MapView({
   }, [world, ui, createRenderer])
 
   return (
-    <main ref={host} aria-label="Mapa" data-testid="map" inert={inert} className="absolute inset-0 bg-map-canvas" />
+    <main
+      ref={host}
+      aria-label="Mapa"
+      data-testid="map"
+      data-blurred={blurred}
+      aria-busy={blurred}
+      inert={inert}
+      className={`map-host absolute inset-0 bg-map-canvas ${blurred ? 'map-preview' : ''}`}
+    />
   )
 }

@@ -5,6 +5,7 @@ import { DEFAULT_WORLD_PARAMS, type WorldParams } from '../../core'
 import type { LandShareKey } from '../../state/params'
 import { matchingPreset } from '../../state/presets'
 import type { WorldStore } from '../../state/worldStore'
+import { MapDistribution } from './MapDistribution'
 import { ParamSlider } from './ParamSlider'
 import { PresetList } from './PresetList'
 import { SeedField } from './SeedField'
@@ -15,8 +16,8 @@ export const FLASH_MS = 700
 
 /**
  * Conteúdo da sidebar "Gerar mundo", abaixo do cabeçalho: as seções recolhíveis Seed, Presets,
- * Terreno, Biomas, Relevo e Avançado, com os 9 sliders (AC-F1-21), e o rodapé com "Restaurar
- * padrão". Arrastar um slider pede a prévia (`dragParams`); soltar, o mapa final
+ * Terreno, Biomas, Relevo e Avançado, com os 9 sliders (AC-F1-21), e o rodapé com a barra
+ * "Distribuição do mapa" (AC-F1-18) e "Restaurar padrão". Arrastar um slider pede a prévia (`dragParams`); soltar, o mapa final
  * (`releaseParams`). Se Desertos + Florestas passaria de 100%, o outro slider recua (no
  * `worldStore`) e pisca (AC-F1-14). Editar ou sortear a seed (AC-F1-15), escolher um preset
  * (AC-F1-16) e "Restaurar padrão" (AC-F1-17, que mantém a seed) pedem o mapa final.
@@ -154,7 +155,8 @@ export function GenerateSidebar({
           </Section>
         ))}
       </div>
-      <div className="shrink-0 border-t border-line p-4">
+      <div className="flex shrink-0 flex-col gap-2.5 border-t border-line px-4 pt-3 pb-3.5">
+        <MapDistribution world={world} />
         <button
           type="button"
           // Já no padrão, não há o que restaurar: não pede um mapa igual ao atual.
