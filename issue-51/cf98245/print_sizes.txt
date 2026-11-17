@@ -1,0 +1,12 @@
+commit: cf98245edaf1764fb8fec0afd905b963da02aa47
+ac-f1-18-celular-390-gerando.png  390x844  7ac30a44b2af8a0b7fc08f67d404f0c5284e884c41bde68b992bebafa34d4147
+ac-f1-18-celular-390-painel-distribuicao.png  390x844  fedfe3e2e17874f68fac503c921de887135417d71faa523f02c6dd6327b65b99
+ac-f1-18-depois-de-soltar-nitido.png  1440x900  8e64d39fdebfdce7b24e9f69298e4415bb5c9200ee00eb0504e37666ffcc88e8
+ac-f1-18-distribuicao-detalhe-2x.png  640x388  7186af30b09ebdb3b823ed49894545a64ada64dca6639750216fd90c6fdd91ca
+ac-f1-18-distribuicao-mapa-final.png  1440x900  d07449c307f2d9848e0a21f7a2f1bc4b942a04fc3de3c865e28eeb0a1732a417
+ac-f1-18-gerando-escuro.png  1440x900  8372f0c71007c0de97a99ed89bbc67864a0d2a45c872cbb46a9526d6db29e3ee
+ac-f1-18-gerando-previa-borrada.png  1440x900  1aec25ca44a3bae6c46305d009f5765b3e05834d4aeb2fc4409e05726f5e4aeb
+ac-f1-18-movimento-reduzido-gerando.png  1440x900  99efaa8c1a958cbb5df0f4e107a86c1012d9527ee62767dd334132aca77d2f0f
+ac-f1-20-sem-webgl2-aviso-escuro.png  1440x900  d6643bbf1361575d6d07050882a723258d530c13def201fa4ee5e841796031e8
+ac-f1-20-sem-webgl2-aviso.png  1440x900  5992982083493deb16c531890c88a422d18de597d6d15d81b7494b515b4a84ae
+ac-f1-20-sem-webgl2-celular-390.png  390x844  ccc6e08dc7f17c914d82f308b43bd6d792fba7d1312ea28964f3cbc207a2ae7e
