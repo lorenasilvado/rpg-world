@@ -135,6 +135,13 @@ estilo do design system) e `sliders.ts` (os 9 sliders por seção, com ícone e 
 sidebar recolhida fica no `uiStore` (`sidebarCollapsed`): o `MapView` a lê para calcular a área
 livre do mapa e chama o `refit` do renderer quando ela muda.
 
+O rodapé da sidebar tem a barra "Distribuição do mapa" (`MapDistribution.tsx`), com a fração de
+cada bioma contada no campo exibido (`distribution.ts`, TS puro). Enquanto gera (`isGenerating`, do
+`worldStore`: o pedido mais novo não chegou, ou o mapa exibido é a prévia), a barra diz "Gerando"
+e o renderer borra o terreno e a decoração (um filtro só desse grupo, animado por
+`src/render/mapBlur.ts`), deixando nítido o que ficar acima deles. Sem WebGL2 (`src/app/webgl2.ts`, conferido no `main.tsx`), o `App`
+mostra o aviso `NoWebGL2Notice` no lugar do editor, e nada é gerado.
+
 A página de medição abre em `/bench.html`, no dev e no build
 (`http://localhost:5173/bench.html`): o botão "Medir" mede a prévia 256² e o mapa 1024² com o
 pipeline completo, primeiro num worker recém-criado, sem aquecimento (um worker novo por geração,

@@ -1,11 +1,12 @@
-import { Application } from 'pixi.js'
+import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createUiStore, type UiStore } from '../state/uiStore'
-import type { WorldStore } from '../state/worldStore'
+import { isGenerating, type WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
 import { WORLD_SIZE, mapRect, type Area } from './camera'
 import { DecorLayer, bindDecorLayer, destroyDecorTextures, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { worldView } from './layers/decorCull'
+import { createMapBlur, MAP_BLUR_PX } from './mapBlur'
 import { CANVAS_BACKGROUND } from './style/palette'
 
 /** Faixas da área do mapa cobertas por painéis, em px CSS: o mapa cabe no que sobra. */
@@ -26,9 +27,14 @@ export type MapRenderer = {
  * (`#1F4E79`). A câmera (`MapCamera`) abre com o mapa inteiro centrado na área livre (a tela menos
  * os `insets`).
  *
+ * Enquanto gera (`isGenerating`), o terreno e a decoração ficam borrados (3 px) e voltam a ficar
+ * nítidos em 260 ms (`mapBlur.ts`; com movimento reduzido, na hora). O desfoque é um filtro só do
+ * grupo `base` (terreno e decoração): o que for desenhado acima dele (pins e rotas) fica nítido.
+ *
  * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
- * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre); da decoração, os ícones com desenho
+ * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre), o desfoque atual do terreno em px
+ * em `data-map-blur` (de 0 a 3, uma casa decimal); da decoração, os ícones com desenho
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
  * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não é desenhado,
  * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, mesmo com `layers.decor`
@@ -96,8 +102,42 @@ export async function createMapRenderer(
     if (host.dataset.zoom !== z) host.dataset.zoom = z
   })
   app.stage.addChild(camera.viewport)
-  camera.viewport.addChild(terrain.view)
-  if (decor) camera.viewport.addChild(decor.view)
+  // Terreno e decoração num grupo: o desfoque da prévia vale só para ele.
+  const base = new Container()
+  base.addChild(terrain.view)
+  if (decor) base.addChild(decor.view)
+  camera.viewport.addChild(base)
+
+  // O filtro roda a cada quadro enquanto gera, junto com o worker de geração: 2 passadas por eixo
+  // em meia resolução custam o mesmo que o quadro nítido (com `quality: 4` em resolução cheia, o
+  // quadro borrado custava 2,4× mais, e sem GPU a geração atrasava). Num desfoque de 3 px, a meia
+  // resolução não aparece.
+  const blurFilter = new BlurFilter({ strength: MAP_BLUR_PX, quality: 2, resolution: 0.5 })
+  const blur = createMapBlur()
+  const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  let filtered = false
+  const applyBlur = () => {
+    blurFilter.strength = blur.value
+    // Sem desfoque, sem filtro: não custa uma passada a mais por quadro.
+    const on = blur.value > 0
+    if (on !== filtered) {
+      base.filters = on ? [blurFilter] : []
+      filtered = on
+    }
+    const px = blur.value.toFixed(1)
+    if (host.dataset.mapBlur !== px) host.dataset.mapBlur = px
+  }
+  const onBlurTick = (ticker: Ticker) => {
+    if (!blur.step(ticker.lastTime)) app.ticker.remove(onBlurTick)
+    applyBlur()
+  }
+  const updateBlur = (instant = false) => {
+    blur.target(isGenerating(world.getState()) ? MAP_BLUR_PX : 0, app.ticker.lastTime, instant || reducedMotion())
+    applyBlur()
+    app.ticker.remove(onBlurTick)
+    app.ticker.add(onBlurTick)
+  }
+  updateBlur(true)
 
   const unsubscribeUi = decor ? bindDecorLayer(ui, decor) : () => {}
 
@@ -117,6 +157,7 @@ export async function createMapRenderer(
   show()
   const unsubscribe = world.subscribe((state, prev) => {
     if (state.field !== prev.field) show()
+    if (isGenerating(state) !== isGenerating(prev)) updateBlur()
   })
   const onResize = (w: number, h: number) => camera.resize(w, h)
   app.renderer.on('resize', onResize)
@@ -126,14 +167,17 @@ export async function createMapRenderer(
     destroy() {
       unsubscribe()
       unsubscribeUi()
+      app.ticker.remove(onBlurTick)
       app.renderer.off('resize', onResize)
       camera.destroy()
       terrain.destroy()
       decor?.destroy()
+      blurFilter.destroy()
       app.destroy({ removeView: true }, { children: true })
       delete host.dataset.terrainSize
       delete host.dataset.mapRect
       delete host.dataset.zoom
+      delete host.dataset.mapBlur
       delete host.dataset.decorTotal
       delete host.dataset.decorDrawn
       delete host.dataset.decorLayer

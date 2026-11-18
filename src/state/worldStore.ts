@@ -49,6 +49,17 @@ export type WorldState = {
 
 export type WorldStore = StoreApi<WorldState>
 
+/**
+ * Se o editor está gerando (AC-F1-18): o pedido mais novo ainda não chegou, ou o mapa exibido é
+ * a prévia 256² (durante o arrasto, uma prévia pode chegar antes da próxima e deixar o status
+ * `idle` por um instante; o mapa só fica nítido com o mapa final). Enquanto isso, o mapa fica
+ * borrado e "Distribuição do mapa" mostra "Gerando".
+ */
+export function isGenerating(state: Pick<WorldState, 'status' | 'field'>): boolean {
+  if (state.status === 'generating') return true
+  return state.status === 'idle' && state.field !== null && state.field.width < MAP_SIZE
+}
+
 export const DEFAULT_SEED = 'rpg-world'
 
 export function createWorldStore(

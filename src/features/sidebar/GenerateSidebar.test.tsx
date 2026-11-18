@@ -309,7 +309,7 @@ describe('Sidebar: seed, presets e restaurar', () => {
     setup()
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copiar seed' })))
     expect(writeText).toHaveBeenCalledWith('rpg-world')
-    expect(screen.getByRole('status').textContent).toBe('Seed copiada')
+    expect(within(screen.getByTestId('section-content-seed')).getByRole('status').textContent).toBe('Seed copiada')
   })
 
   it('escolher um preset aplica os valores dele e o marca; mexer num slider tira a marca (AC-F1-16)', () => {
@@ -411,9 +411,9 @@ describe('Sidebar: seed, presets e restaurar', () => {
     act(() => vi.advanceTimersByTime(COPIED_MS - 300))
     await act(async () => fireEvent.click(copy))
     act(() => vi.advanceTimersByTime(COPIED_MS - 300))
-    expect(screen.getByRole('status').textContent).toBe('Seed copiada')
+    expect(within(screen.getByTestId('section-content-seed')).getByRole('status').textContent).toBe('Seed copiada')
     act(() => vi.advanceTimersByTime(300))
-    expect(screen.getByRole('status').textContent).toBe('')
+    expect(within(screen.getByTestId('section-content-seed')).getByRole('status').textContent).toBe('')
   })
 
   it('"Restaurar padrão" com os parâmetros já no padrão não pede mapa', () => {

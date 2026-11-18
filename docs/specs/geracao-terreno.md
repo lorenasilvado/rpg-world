@@ -15,8 +15,9 @@ o comportamento atualiza esta spec.
 > mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
 > e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
-> a 48 px; ainda não tem nome do mundo nem "Distribuição do mapa", os cartões de preset não têm
-> miniatura, e o mapa não fica borrado durante a prévia. A câmera e os ícones de decoração estão
+> a 48 px; o rodapé tem a barra "Distribuição do mapa", e o mapa fica borrado durante a geração.
+> Sem WebGL2, o aviso toma o lugar do editor. Ainda não tem nome do mundo, e os cartões de preset
+> não têm miniatura. A câmera e os ícones de decoração estão
 > em [navegacao.md](navegacao.md). O resto vem do material de design e do PRD.
 
 ## Resumo
@@ -65,8 +66,15 @@ de dados em [overview.md](../overview.md).
   com o foco num campo de texto nem com Ctrl, Alt ou Meta. Abaixo de 768 px não há botão de
   recolher: a tecla `[` abre e fecha o painel sobreposto.
 - Rodapé, fixo abaixo das seções: barra "Distribuição do mapa" com a porcentagem real de cada
-  bioma no mapa gerado, legenda e botão "Restaurar padrão" (`rotate-ccw`), que volta os 9
+  bioma no mapa exibido (contada célula a célula), legenda e botão "Restaurar padrão" (`rotate-ccw`), que volta os 9
   parâmetros ao padrão (a seed fica) e gera o mapa final; com eles já no padrão, não faz nada.
+  A barra tem um segmento por bioma presente, na largura da fração dele, na cor base do bioma e
+  com o nome e a porcentagem no título (e, para o leitor de tela, a lista inteira no rótulo da
+  barra). Um bioma presente que arredonda para 0% aparece como "<1%". Um fio separa os segmentos,
+  e a amostra de cor da legenda tem contorno (os tons claros, como a Neve, ficam visíveis sobre o
+  papel). A legenda mostra o nome e a porcentagem arredondada dos biomas com 1,5% ou mais. Os
+  nomes: Oceano, Água rasa, Praia, Campo, Floresta, Deserto, Colina, Montanha, Neve, Campo gelado
+  e Lago.
 
 ### Sliders (PRD RF-1)
 
@@ -122,12 +130,12 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Carregando / gerando | Um slider muda | "Distribuição do mapa" mostra "Gerando" e os valores novos; o mapa exibe uma prévia borrada (`blur(3px)` → nítido em 260 ms) até a geração terminar; pins e rotas continuam nítidos; o minimapa acompanha a prévia |
+| Carregando / gerando | Um slider, a seed ou um preset muda, ou o editor abre | "Distribuição do mapa" mostra "Gerando" (com o ícone girando) e os valores do mapa exibido, que durante o arrasto são os da prévia; o terreno e a decoração do mapa ficam borrados (3 px) enquanto o pedido mais novo não chega ou o mapa exibido é a prévia, e ficam nítidos em 260 ms quando o mapa final chega; o desfoque vale só para o terreno e a decoração, e o que fica acima deles (pins e rotas) continua nítido; com movimento reduzido, o mapa borra e fica nítido na hora, e o ícone de "Gerando" não gira; o minimapa acompanha a prévia |
 | Slider recuou | Desertos + Florestas passaria de 100% | O outro slider recua sozinho e pisca (flash âmbar de 700 ms). Ex.: Desertos de 15% para 70% → Florestas de 35% para 30% |
 | Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
 | Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água" |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
-| Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso com os navegadores suportados. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)). TODO: texto do aviso |
+| Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso "Este navegador não tem WebGL2": "O editor desenha o mapa com WebGL2, que este navegador não oferece ou está desligado. Abra o RPG World Builder na versão atual de um destes navegadores:", a lista Google Chrome, Microsoft Edge, Mozilla Firefox e Safari, e "Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações." O aviso tem o botão de tema claro e escuro do editor. O mapa não é gerado. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)) |
 
 > Pendente: o que acontece com o pin depois do aviso "N pins ficaram sobre a água" (fica onde
 > está, é movido, oferece ação)?
