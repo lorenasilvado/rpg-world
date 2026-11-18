@@ -39,7 +39,7 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   test.setTimeout(90_000)
   await openEditor(page)
   const footer = page.getByTestId('map-distribution')
-  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(footer.getByRole('status')).toHaveText('')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
   expect(await barWidth(page)).toBeCloseTo(1, 2)
   // Oceano 45%: a água oceânica (oceano + água rasa) é 45% ± 2% das células (AC-F1-02), mais o
@@ -47,6 +47,8 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   const before = await shares(page)
   expect(Math.abs(before['Oceano'] + (before['Água rasa'] ?? 0) - 45)).toBeLessThanOrEqual(3)
   await expect(page.getByTestId('distribution-legend')).toContainText(`Oceano ${before['Oceano']}%`)
+  const footerHeight = async () => (await footer.boundingBox())!.height
+  const heightBefore = await footerHeight()
 
   // Arrasta o slider Oceano e segura: a prévia chega, o mapa fica borrado e a barra diz "Gerando".
   const thumb = page.getByRole('slider', { name: 'Oceano' })
@@ -64,14 +66,17 @@ test('AC-F1-18: a barra mostra a porcentagem real de cada bioma, e "Gerando" com
   // Os valores novos (da prévia) já aparecem durante a geração.
   await expect.poll(async () => (await shares(page))['Oceano']).toBeGreaterThan(before['Oceano'])
   await expect(footer.getByRole('status')).toHaveText('Gerando')
+  // A legenda reserva 4 linhas: o rodapé não muda de altura com os biomas da prévia.
+  expect(await footerHeight()).toBe(heightBefore)
 
   // Ao soltar, o mapa final chega e fica nítido.
   await page.mouse.up()
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
-  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(footer.getByRole('status')).toHaveText('')
   await expect(page.getByTestId('map')).toHaveAttribute('data-map-blur', '0.0')
+  expect(await footerHeight()).toBe(heightBefore)
   const ocean = Number(await thumb.getAttribute('aria-valuenow'))
   const after = await shares(page)
   expect(Math.abs(after['Oceano'] + (after['Água rasa'] ?? 0) - ocean)).toBeLessThanOrEqual(3)
@@ -91,7 +96,7 @@ test('AC-F1-18 no celular 390: no painel sobreposto, a barra cabe na tela e most
   await expect(page.getByTestId('distribution-legend')).toBeInViewport()
   const before = await shares(page)
   expect(Math.abs(before['Oceano'] + (before['Água rasa'] ?? 0) - 45)).toBeLessThanOrEqual(3)
-  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(footer.getByRole('status')).toHaveText('')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
 
   // Arrasta o slider Oceano no painel e segura: a prévia chega, borrada, e a barra diz "Gerando".
@@ -111,7 +116,7 @@ test('AC-F1-18 no celular 390: no painel sobreposto, a barra cabe na tela e most
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
   await expect(page.getByTestId('map')).toHaveAttribute('data-blurred', 'false')
-  await expect(footer.getByRole('status')).toHaveCount(0)
+  await expect(footer.getByRole('status')).toHaveText('')
   await expect(bar).toBeInViewport({ ratio: 1 })
   const ocean = Number(await thumb.getAttribute('aria-valuenow'))
   const after = await shares(page)

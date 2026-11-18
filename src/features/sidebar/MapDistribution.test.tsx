@@ -73,13 +73,17 @@ describe('Distribuição do mapa e Gerando (AC-F1-18)', () => {
     const bar = screen.getByTestId('map-distribution')
     const map = screen.getByRole('main', { name: 'Mapa' })
 
+    // A região de status existe antes de gerar, vazia: o leitor de tela anuncia o texto que entra nela.
+    const status = within(bar).getByRole('status')
+    expect(status.textContent).toBe('')
     act(() => world.getState().generate())
-    expect(within(bar).getByRole('status').textContent).toBe('Gerando')
+    expect(within(bar).getByRole('status')).toBe(status)
+    expect(status.textContent).toBe('Gerando')
     expect(map.dataset.blurred).toBe('true')
 
     started[0].finish(biomes(45))
     await flush()
-    expect(within(bar).queryByRole('status')).toBeNull()
+    expect(within(bar).getByRole('status').textContent).toBe('')
     expect(map.dataset.blurred).toBe('false')
     expect(within(bar).getByRole('img').getAttribute('aria-label')).toBe(
       'Distribuição do mapa: Oceano 45%, Deserto 54%, Neve 1%, Campo gelado <1%',
@@ -111,7 +115,7 @@ describe('Distribuição do mapa e Gerando (AC-F1-18)', () => {
     started[2].finish(biomes(31))
     await flush()
     expect(legend.textContent).toContain('Oceano 31%')
-    expect(within(bar).queryByRole('status')).toBeNull()
+    expect(within(bar).getByRole('status').textContent).toBe('')
     expect(map.dataset.blurred).toBe('false')
   })
 })

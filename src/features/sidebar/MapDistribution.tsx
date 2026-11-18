@@ -9,6 +9,10 @@ import { distribution, LEGEND_MIN_SHARE } from './distribution'
  * no mapa exibido, com a largura da fração real dele, e a legenda dos biomas com 1,5% ou mais.
  * Durante a geração (`isGenerating`), o cabeçalho mostra "Gerando" e a barra acompanha a prévia
  * (os valores novos). O leitor de tela ouve a lista inteira pelo rótulo da barra.
+ *
+ * A região de status fica sempre na página e só o texto muda: assim o leitor de tela anuncia
+ * "Gerando" quando ele aparece (uma região criada já com o texto pode não ser anunciada). A legenda
+ * reserva a altura de 4 linhas, para o rodapé não mudar de altura quando a prévia muda os biomas.
  */
 export function MapDistribution({ world }: { world: WorldStore }) {
   const field = useStore(world, (s) => s.field)
@@ -20,12 +24,14 @@ export function MapDistribution({ world }: { world: WorldStore }) {
     <div className="flex flex-col gap-2.5" data-testid="map-distribution" data-busy={busy}>
       <div className="flex h-4 items-center justify-between">
         <h3 className="text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase">Distribuição do mapa</h3>
-        {busy && (
-          <span role="status" className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
-            <LoaderCircle size={14} aria-hidden="true" className="animate-spin [animation-duration:900ms] motion-reduce:animate-none" />
-            Gerando
-          </span>
-        )}
+        <span role="status" className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
+          {busy && (
+            <>
+              <LoaderCircle size={14} aria-hidden="true" className="animate-spin [animation-duration:900ms] motion-reduce:animate-none" />
+              Gerando
+            </>
+          )}
+        </span>
       </div>
       <div
         role="img"
@@ -43,7 +49,7 @@ export function MapDistribution({ world }: { world: WorldStore }) {
           />
         ))}
       </div>
-      <ul aria-hidden="true" className="flex flex-wrap gap-x-2.5 gap-y-0.5" data-testid="distribution-legend">
+      <ul aria-hidden="true" className="flex min-h-[70px] flex-wrap content-start gap-x-2.5 gap-y-0.5" data-testid="distribution-legend">
         {shares
           .filter((s) => s.share >= LEGEND_MIN_SHARE)
           .map((s) => (
