@@ -16,7 +16,8 @@ import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
  * substitui a prévia (AC-F1-11). Desertos + Florestas nunca passa de 100%: o outro slider recua
  * (`applyParamChange`, AC-F1-14), e as duas ações devolvem qual recuou, para a sidebar piscá-lo.
  * Trocar a seed (`setSeed`) ou todos os parâmetros de uma vez (`setParams`: preset ou "Restaurar
- * padrão") pede o mapa final direto.
+ * padrão") pede o mapa final direto. O assistente de novo mundo (`createWorld`) troca o nome, a seed
+ * e os parâmetros juntos e pede um mapa final só.
  */
 export type GenerationStatus = 'idle' | 'generating' | 'error'
 
@@ -24,6 +25,8 @@ export type GenerationStatus = 'idle' | 'generating' | 'error'
 export type WorldGenerator = Pick<NewerOnly<GenerateRequest, GenerateResult>, 'request' | 'latestVersion'>
 
 export type WorldState = {
+  /** Nome do mundo, na barra da sidebar. */
+  name: string
   seed: string
   params: WorldParams
   /** Campo exibido: o resultado mais novo entregue até agora (`null` antes do primeiro). */
@@ -45,6 +48,8 @@ export type WorldState = {
   setParams(params: Readonly<WorldParams>): void
   /** Gera o mapa final com a seed e os parâmetros atuais. */
   generate(): void
+  /** Mundo novo do assistente: troca o nome, a seed e os 9 parâmetros e pede o mapa final 1024². */
+  createWorld(world: { name: string; seed: string; params: Readonly<WorldParams> }): void
 }
 
 export type WorldStore = StoreApi<WorldState>
@@ -61,10 +66,12 @@ export function isGenerating(state: Pick<WorldState, 'status' | 'field'>): boole
 }
 
 export const DEFAULT_SEED = 'rpg-world'
+/** Nome do mundo padrão, o que fica atrás do assistente ao abrir o app (o do protótipo). */
+export const DEFAULT_WORLD_NAME = 'Terras de Valdora'
 
 export function createWorldStore(
   generator: WorldGenerator,
-  initial: { seed?: string; params?: WorldParams } = {},
+  initial: { name?: string; seed?: string; params?: WorldParams } = {},
 ): WorldStore {
   return createStore<WorldState>()((set, get) => {
     const request = (size: number) => {
@@ -92,6 +99,7 @@ export function createWorldStore(
     }
 
     return {
+      name: initial.name ?? DEFAULT_WORLD_NAME,
       seed: initial.seed ?? DEFAULT_SEED,
       params: { ...(initial.params ?? DEFAULT_WORLD_PARAMS) },
       field: null,
@@ -122,6 +130,10 @@ export function createWorldStore(
         request(MAP_SIZE)
       },
       generate() {
+        request(MAP_SIZE)
+      },
+      createWorld({ name, seed, params }) {
+        set({ name, seed, params: applyParamChange(get().params, params).params })
         request(MAP_SIZE)
       },
     }

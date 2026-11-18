@@ -204,3 +204,24 @@ describe('worldStore: gerando (AC-F1-18)', () => {
     expect(isGenerating(store.getState())).toBe(false)
   })
 })
+
+describe('createWorld (assistente de novo mundo, AC-F1-19)', () => {
+  it('começa com o mundo padrão, que tem nome', () => {
+    expect(createWorldStore(fakeGenerator().gen).getState().name).toBe('Terras de Valdora')
+  })
+
+  it('troca o nome, a seed e os parâmetros juntos e pede um mapa final só', async () => {
+    const { gen, started } = fakeGenerator()
+    const store = createWorldStore(gen)
+    const params = { ...DEFAULT_WORLD_PARAMS, ocean: 66, desert: 8 }
+    store.getState().createWorld({ name: 'Ilhas do Corvo', seed: 'corvo-1a2b', params })
+    expect(started.map((s) => s.req)).toEqual([{ seed: 'corvo-1a2b', size: MAP_SIZE, params }])
+    const s = store.getState()
+    expect([s.name, s.seed, s.params]).toEqual(['Ilhas do Corvo', 'corvo-1a2b', params])
+    expect(s.status).toBe('generating')
+    started[0].finish()
+    await tick()
+    expect(store.getState().field?.width).toBe(MAP_SIZE)
+    expect(store.getState().status).toBe('idle')
+  })
+})

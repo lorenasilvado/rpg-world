@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-17
+updated: 2026-11-18
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -16,8 +16,10 @@ o comportamento atualiza esta spec.
 > e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
 > a 48 px; o rodapé tem a barra "Distribuição do mapa", e o mapa fica borrado durante a geração.
-> Sem WebGL2, o aviso toma o lugar do editor. Ainda não tem nome do mundo, e os cartões de preset
-> não têm miniatura. A câmera e os ícones de decoração estão
+> Sem WebGL2, o aviso toma o lugar do editor. O app abre com o assistente de novo mundo sobre o
+> editor, com o mundo padrão por trás, e a barra da sidebar mostra o nome do mundo. Ainda não tem o
+> status de salvamento ("Salvo"), e os cartões de preset da sidebar não têm miniatura (os do
+> assistente têm). Recarregar a página perde o mundo criado. A câmera e os ícones de decoração estão
 > em [navegacao.md](navegacao.md). O resto vem do material de design e do PRD.
 
 ## Resumo
@@ -38,7 +40,9 @@ de dados em [overview.md](../overview.md).
 ### E1 · Sidebar "Gerar mundo"
 
 - Painel esquerdo de 320 px, recolhível (48 px recolhido).
-- Nome do mundo e status de salvamento ("Salvo").
+- Nome do mundo, em Cinzel, cortado com reticências se não couber; recolhida a 48 px, a barra
+  mostra só o logo. O mundo padrão, que abre atrás do assistente, chama "Terras de Valdora". O status
+  de salvamento ("Salvo") ainda não existe.
 - Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável, em
   JetBrains Mono. Não há botão "Gerar": editar a seed regenera o mapa final 400 ms depois da
   última tecla, ou já no Enter ou ao sair do campo. A seed vale sem os espaços das pontas; uma seed
@@ -97,11 +101,19 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 
 ### 04 · Assistente de novo mundo
 
-- Modal de 800 px: título "Novo mundo" e subtítulo "Dê um nome e escolha um ponto de partida. Tudo
-  pode ser ajustado depois no editor."
-- Campo "Nome do mundo".
+- Abre sobre o editor ao carregar o app, com o mundo padrão gerando por trás (sem WebGL2, não abre:
+  o aviso toma o lugar do editor).
+- Modal de 800 px (no celular, a largura da tela menos 16 px de cada lado; o conteúdo rola e os
+  botões ficam fixos embaixo): título "Novo mundo", subtítulo "Dê um nome e escolha um ponto de
+  partida. Tudo pode ser ajustado depois no editor." e o botão fechar (`x`).
+- Campo "Nome do mundo", vazio e com o foco ao abrir. O nome vale sem os espaços das pontas e é
+  obrigatório: vazio, "Criar mundo" fica desabilitado. Enter no campo cria o mundo.
 - "Ponto de partida": 4 presets em cartões com miniatura, nome e descrição; o selecionado tem borda
-  âmbar e marca de check. As miniaturas usam a seed atual.
+  âmbar e marca de check. Ao abrir, o selecionado é "Continente temperado". As miniaturas são o
+  terreno do preset com a seed do assistente, em baixa resolução (128²), geradas num worker só delas,
+  um preset por vez; trocar a seed gera de novo 300 ms depois da última mudança, e as miniaturas
+  anteriores ficam até as novas chegarem. Antes da primeira chegar, ou se o worker falhar, o cartão
+  mostra o fundo do mar no lugar da miniatura.
 
   | Preset | Descrição |
   |---|---|
@@ -122,9 +134,11 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   As telas (`assistente-*.png`) ainda mostram "Reinos áridos" e "Norte gelado": valem os nomes
   desta tabela.
 
-- Seção "Avançado": Seed (opcional) com botões sortear e copiar; nota "A mesma seed sempre gera o
-  mesmo mapa."
-- Botões Cancelar e "Criar mundo →" (primário).
+- Seção "Avançado", aberta ao abrir o assistente e recolhível: Seed (opcional) com botões sortear e
+  copiar; nota "A mesma seed sempre gera o mesmo mapa." A seed começa sorteada (formato
+  "valdora-7f3a") e vale sem os espaços das pontas; vazia, vale a sorteada ao abrir.
+- Botões Cancelar e "Criar mundo →" (primário). Cancelar, o `x` e o Esc fecham sem mudar o mundo; um
+  clique fora do modal não fecha.
 
 ## Estados
 
@@ -155,8 +169,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Escolher preset | Aplica os 9 parâmetros do preset, mantém a seed e gera o mapa final |
 | "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final (já no padrão, não faz nada) |
 | Recolher / abrir painel (`[`) | Sidebar passa a 48 px / volta a 320 px (abaixo de 768 px, a tecla abre e fecha o painel sobreposto) |
-| "Criar mundo →" no assistente | Abre o editor (E1) com o mundo novo |
-| Cancelar no assistente | TODO: volta à tela de origem (não descrito no material) |
+| "Criar mundo →" no assistente | Troca o nome, a seed e os 9 parâmetros pelos do assistente (os do preset escolhido), gera o mapa final e fecha o assistente: o editor (E1) mostra o mundo novo |
+| Cancelar, `x` ou Esc no assistente | Fecha o assistente e mantém o mundo padrão |
 
 ## Regras
 

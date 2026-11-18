@@ -1,11 +1,11 @@
-import { Check, Copy, Dices } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Dices } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { randomSeed } from '../../state/seed'
+import { CopySeedButton, SeedButton } from './SeedButtons'
+import { useCopySeed } from './useCopySeed'
 
 /** Espera depois da última tecla na seed antes de regerar o mapa (Enter ou sair do campo regeram já). */
 export const SEED_TYPING_MS = 400
-/** Quanto tempo o botão copiar mostra o check depois de copiar. */
-export const COPIED_MS = 1500
 
 /**
  * Seção Seed da sidebar (AC-F1-15): o campo da seed, em JetBrains Mono, com os botões sortear
@@ -17,9 +17,8 @@ export const COPIED_MS = 1500
 export function SeedField({ seed, onSeed }: { seed: string; onSeed: (seed: string) => void }) {
   const [draft, setDraft] = useState(seed)
   const [shownSeed, setShownSeed] = useState(seed)
-  /** Quantas vezes a seed foi copiada (0: nenhuma, ou o check já sumiu); cada cópia reinicia o check. */
-  const [copied, setCopied] = useState(0)
   const input = useRef<HTMLInputElement>(null)
+  const { copied, copy } = useCopySeed(seed, input)
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   /** A seed atual, para o timer da digitação comparar com ela e não com a da renderização dele. */
   const seedRef = useRef(seed)
@@ -37,11 +36,6 @@ export function SeedField({ seed, onSeed }: { seed: string; onSeed: (seed: strin
     seedRef.current = seed
     clearTimeout(typingTimer.current)
   }, [seed])
-  useEffect(() => {
-    if (!copied) return
-    const timer = setTimeout(() => setCopied(0), COPIED_MS)
-    return () => clearTimeout(timer)
-  }, [copied])
 
   /**
    * Regera com o texto do campo (sem os espaços das pontas), se não está vazio e muda a seed. No
@@ -58,14 +52,6 @@ export function SeedField({ seed, onSeed }: { seed: string; onSeed: (seed: strin
   const roll = () => {
     clearTimeout(typingTimer.current)
     onSeed(randomSeed())
-  }
-
-  const copy = () => {
-    const done = () => setCopied((n) => n + 1)
-    // Sem acesso à área de transferência, a seed fica selecionada no campo para o Ctrl+C.
-    const fallback = () => input.current?.select()
-    if (navigator.clipboard) navigator.clipboard.writeText(seed).then(done, fallback)
-    else fallback()
   }
 
   return (
@@ -97,37 +83,7 @@ export function SeedField({ seed, onSeed }: { seed: string; onSeed: (seed: strin
       <SeedButton label="Seed aleatória" onClick={roll} keepFocus>
         <Dices size={18} aria-hidden="true" />
       </SeedButton>
-      <SeedButton label="Copiar seed" onClick={copy}>
-        {copied ? <Check size={18} aria-hidden="true" className="text-ok" /> : <Copy size={18} aria-hidden="true" />}
-      </SeedButton>
-      <span role="status" className="sr-only">
-        {copied ? 'Seed copiada' : ''}
-      </span>
+      <CopySeedButton copied={copied} onClick={copy} />
     </div>
-  )
-}
-
-function SeedButton({
-  label,
-  onClick,
-  keepFocus,
-  children,
-}: {
-  label: string
-  onClick: () => void
-  keepFocus?: boolean
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      onMouseDown={keepFocus ? (e) => e.preventDefault() : undefined}
-      className="grid size-10 flex-none place-items-center rounded-control border border-line-2 bg-field text-ink hover:bg-sunken active:bg-press"
-    >
-      {children}
-    </button>
   )
 }

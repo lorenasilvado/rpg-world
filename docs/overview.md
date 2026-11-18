@@ -122,7 +122,7 @@ culling pela área livre e o nível de detalhe pelo zoom ficam em `layers/decorC
 testado no Vitest. A camada liga e desliga pelo `src/state/uiStore.ts` (camadas do mapa). Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
-React): seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
+React): nome, seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
 status da geração. Arrastar um slider
 (`dragParams`) pede a prévia 256²; soltar (`releaseParams`) e trocar a seed pedem o mapa 1024². O
 campo só é trocado por um resultado de versão mais nova que a do exibido. As duas ações passam a
@@ -134,6 +134,14 @@ e o trilho de 48 px), `ParamSlider.tsx` (o slider do Radix, `@radix-ui/react-sli
 estilo do design system) e `sliders.ts` (os 9 sliders por seção, com ícone e amostra de cor). A
 sidebar recolhida fica no `uiStore` (`sidebarCollapsed`): o `MapView` a lê para calcular a área
 livre do mapa e chama o `refit` do renderer quando ela muda.
+
+O assistente de novo mundo fica em `src/features/wizard/`: `NewWorldWizard.tsx` (o modal, com o
+`Dialog` do Radix, `@radix-ui/react-dialog`) e `thumbnails.ts` (as miniaturas dos presets). Até a
+Lista de mundos (M2), o `main.tsx` abre o app com ele sobre o editor; "Criar mundo" chama o
+`createWorld` do `worldStore`, que troca o nome, a seed e os parâmetros e pede um mapa final só. As
+miniaturas usam um worker de geração só delas (`createGenerator()`), criado ao abrir o assistente e
+encerrado ao fechá-lo, para não trocar a seed guardada no worker do editor. Os E2E do editor abrem o
+app e cancelam o assistente (`e2e/editor.ts`).
 
 O rodapé da sidebar tem a barra "Distribuição do mapa" (`MapDistribution.tsx`), com a fração de
 cada bioma contada no campo exibido (`distribution.ts`, TS puro). Enquanto gera (`isGenerating`, do

@@ -1,12 +1,13 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Distribuição do mapa, "Gerando" e sem WebGL2 (#51).
 
 /** Abre o editor e espera o mapa final 1024² desenhado. */
 async function openEditor(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
 }
@@ -161,7 +162,9 @@ for (const [label, width, height] of [
     const workers: string[] = []
     page.on('worker', (w) => workers.push(w.url()))
     await page.setViewportSize({ width, height })
+    // Sem WebGL2, o editor não abre, e o assistente também não.
     await page.goto('/')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
     const notice = page.getByTestId('no-webgl2').locator('section')
     await expect(page.getByRole('heading', { name: 'Este navegador não tem WebGL2' })).toBeVisible()
     const browsers = page.getByRole('list', { name: 'Navegadores suportados' }).getByRole('listitem')

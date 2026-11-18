@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Falha do worker de geração (#34, AC-F1-12): o editor gera o mapa ao abrir; se o script do worker
 // não carregar, o pedido é rejeitado (em vez de ficar esperando) e aparece o toast de erro. Com o
@@ -9,7 +10,7 @@ const WORKER = '**/generator.worker*'
 test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o mapa (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.route(WORKER, (route) => route.abort())
-  await page.goto('/')
+  await gotoEditor(page)
 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
@@ -36,7 +37,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
 test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.route(WORKER, (route) => route.abort())
-  await page.goto('/')
+  await gotoEditor(page)
 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
@@ -56,7 +57,7 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de 
 })
 
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 20_000 })
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
