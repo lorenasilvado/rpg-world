@@ -40,7 +40,7 @@ barra inferior.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
-  controle de zoom, no canto direito. Se a área livre tem menos de 568 px (onde o toast cobriria o
+  controle de zoom, no canto direito. Se a área livre tem menos de 570 px (onde o toast cobriria o
   minimapa), o toast ocupa a largura da área livre e fica acima do minimapa aberto (ou do zoom, com
   o minimapa recolhido), inclusive quando o minimapa está empilhado.
 - Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
@@ -67,6 +67,7 @@ barra inferior.
 | Centralizar (atalho 0) | Centraliza o mapa |
 | Arrastar o retângulo do minimapa | Move a área visível |
 | Tocar no minimapa fora do retângulo | Centra a área visível no ponto tocado (e o arrasto continua dali) |
+| Setas com o foco no minimapa | Movem a área visível 1/10 do mapa (10 px do minimapa), na hora |
 | Recolher o minimapa | Esconde o minimapa |
 | Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa |
 | Ajuda | Abre o modal "Atalhos de teclado" |
@@ -92,6 +93,9 @@ barra inferior.
   dele) que seja input, textarea, select ou conteúdo editável, ou cujo `role` mais próximo seja
   textbox, searchbox, combobox, listbox, option, slider, spinbutton, menu, menuitem, radiogroup,
   tablist ou tab: controles que usam as setas ou digitam.
+- Com o foco no minimapa (ele entra na ordem do Tab), as setas são dele: movem a área visível 1/10
+  do mapa, sem deslizar, e o pan das setas da câmera não soma outro passo. WASD continua com a
+  câmera.
 - A borda do mapa não mostra corte reto quando o fundo aparece (mapa inteiro ou afastado): o
   oceano escurece até a cor do fundo perto dela (ver o desenho do terreno em
   [geracao-terreno.md](geracao-terreno.md)).

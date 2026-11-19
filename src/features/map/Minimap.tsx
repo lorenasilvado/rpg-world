@@ -1,5 +1,5 @@
 import { ChevronDown, Map as MapIcon } from 'lucide-react'
-import { useEffect, useId, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useStore } from 'zustand'
 import type { CameraStore } from '../../state/cameraStore'
 import type { UiStore } from '../../state/uiStore'
@@ -10,15 +10,18 @@ import {
   inRect,
   minimapToWorld,
   minimapViewCenter,
+  minimapKeyStep,
   minimapViewRect,
 } from './mapControls'
+import { MINIMAP_HEADER_HEIGHT, MINIMAP_PADDING, PANEL_BORDER } from './bottomBarLayout'
 import { MINIMAP_RES, createTerrainPainter } from './minimapTerrain'
 
 /**
  * Minimapa (navegacao.md, AC-F2-08): o terreno do mapa exibido em 160 × 100, com o retângulo da
  * área visível, que acompanha a câmera. Arrastar o retângulo move a área visível; tocar fora dele
- * centra a câmera ali (e o arrasto continua dali). O cabeçalho "Minimapa" recolhe e abre
- * (`minimapOpen` do `ui`).
+ * centra a câmera ali (e o arrasto continua dali). Com o foco no minimapa, as setas movem a área
+ * visível 10 px do minimapa (1/10 do mapa). O cabeçalho "Minimapa" recolhe e abre (`minimapOpen` do
+ * `ui`).
  *
  * O retângulo é posto direto no estilo, a cada mudança do `camera`, sem render do React. Para os
  * testes, o minimapa expõe em `data-drawn` o tamanho do campo desenhado (vazio antes do primeiro).
@@ -31,7 +34,8 @@ export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore;
       aria-label="Minimapa"
       data-testid="minimap"
       data-open={open}
-      className="overflow-hidden rounded-panel border border-line bg-paper shadow-md backdrop-blur-[14px]"
+      style={{ borderWidth: PANEL_BORDER }}
+      className="overflow-hidden rounded-panel border-line bg-paper shadow-md backdrop-blur-[14px]"
     >
       <button
         type="button"
@@ -39,17 +43,25 @@ export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore;
         aria-controls={bodyId}
         title={open ? 'Ocultar minimapa' : 'Mostrar minimapa'}
         onClick={() => ui.getState().setMinimapOpen(!open)}
-        className="flex h-8 w-full items-center gap-1.5 pr-1.5 pl-2.5 text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase hover:text-ink"
+        style={{ height: MINIMAP_HEADER_HEIGHT }}
+        className="flex w-full items-center gap-1.5 pr-1.5 pl-2.5 text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase hover:text-ink"
       >
         <MapIcon size={15} aria-hidden="true" />
         <span className="flex-1 pr-2 text-left">Minimapa</span>
         <ChevronDown size={16} aria-hidden="true" className={open ? 'rotate-180' : ''} />
       </button>
-      <div id={bodyId} hidden={!open} className="px-1.5 pb-1.5">
+      <div id={bodyId} hidden={!open} style={{ padding: `0 ${MINIMAP_PADDING}px ${MINIMAP_PADDING}px` }}>
         <MinimapSurface world={world} camera={camera} />
       </div>
     </section>
   )
+}
+
+const ARROWS: Record<string, [number, number]> = {
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
 }
 
 function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraStore }) {
@@ -124,12 +136,28 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
     drag.current = null
   }
 
+  // Setas com o foco no minimapa: movem a área visível `MINIMAP_KEY_STEP_PX` px do minimapa, na hora.
+  // O evento fica marcado como tratado, e o atalho de pan da câmera (no document) não soma outro passo.
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const dir = ARROWS[e.key]
+    if (!dir || e.ctrlKey || e.altKey || e.metaKey) return
+    const { ready, view, controls } = camera.getState()
+    if (!ready || !controls) return
+    e.preventDefault()
+    const step = minimapKeyStep()
+    controls.centerOn(view.x + view.width / 2 + dir[0] * step, view.y + view.height / 2 + dir[1] * step)
+  }
+
   return (
     <div
       ref={surface}
       data-testid="minimap-surface"
-      role="img"
-      aria-label="Mapa inteiro, com a área visível marcada; arraste para mover"
+      role="group"
+      aria-roledescription="minimapa"
+      aria-label="Área visível do mapa: arraste ou use as setas para mover"
+      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+      tabIndex={0}
+      onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}

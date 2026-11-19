@@ -1,5 +1,13 @@
 /// <reference lib="dom" />
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import {
+  MINIMAP_CARD_COLLAPSED_HEIGHT,
+  MINIMAP_CARD_HEIGHT,
+  MINIMAP_CARD_WIDTH,
+  TOAST_WIDTH,
+  ZOOM_BAR_HEIGHT,
+  ZOOM_COMPACT_MAX_WIDTH,
+} from '../src/features/map/bottomBarLayout.ts'
 import { gotoEditor } from './editor.ts'
 
 // Minimapa, escala e controles de zoom (#53, AC-F2-08 e AC-F2-09). O renderer expõe no mapa o
@@ -248,7 +256,8 @@ test('tablet 1024 com a sidebar aberta: o minimapa sobe acima do zoom, sem sobre
   const minimapBox = () => box(page.getByTestId('minimap'))
   const zoomBox = () => box(page.getByTestId('zoom-controls'))
   // Empilhado: o minimapa termina 12 px acima do zoom, que segue a 16 px da base.
-  await expect.poll(async () => Math.round((await zoomBox()).y - ((await minimapBox()).y + (await minimapBox()).height))).toBe(12)
+  const bottomOf = (b: Rect) => b.y + b.height
+  await expect.poll(async () => Math.round((await zoomBox()).y - bottomOf(await minimapBox()))).toBe(12)
   const z = await zoomBox()
   expect(Math.round(768 - (z.y + z.height))).toBe(16)
   // Nada cobre o minimapa: o canto inferior direito dele recebe o ponteiro.
@@ -258,6 +267,56 @@ test('tablet 1024 com a sidebar aberta: o minimapa sobe acima do zoom, sem sobre
 
   // Sidebar recolhida: 1024 − 48 − 400 = 576 px; o minimapa volta para a base, ao lado do zoom.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
-  await expect.poll(async () => Math.round(768 - ((await minimapBox()).y + (await minimapBox()).height))).toBe(16)
-  expect((await minimapBox()).x + (await minimapBox()).width).toBeLessThan((await zoomBox()).x)
+  await expect.poll(async () => Math.round(768 - bottomOf(await minimapBox()))).toBe(16)
+  const side = await minimapBox()
+  expect(side.x + side.width).toBeLessThan((await zoomBox()).x)
+})
+
+test('AC-F2-08: com o foco no minimapa, as setas movem a área visível 1/10 do mapa (só elas, sem o pan da câmera)', async ({ page }) => {
+  await open(page)
+  await page.getByRole('button', { name: 'Aproximar' }).click()
+  await page.getByRole('button', { name: 'Aproximar' }).click()
+  const before = await zoomed(page, 1.5625)
+  const surface = page.getByTestId('minimap-surface')
+  await surface.focus()
+  await page.keyboard.press('ArrowRight')
+  const right = await settled(page)
+  // 1/10 do mapa = 102,4 unidades; o pan das setas da câmera seria 20% da área livre (144 px).
+  const scale = before.width / 1024
+  expect(right.x - before.x).toBeCloseTo(-102.4 * scale, -1)
+  expect(right.y).toBe(before.y)
+  await page.keyboard.press('ArrowDown')
+  const down = await settled(page)
+  expect(down.y - right.y).toBeCloseTo(-102.4 * scale, -1)
+  await expect(surface).toBeFocused()
+})
+
+test('as caixas da linha inferior batem com as medidas de bottomBarLayout', async ({ page }) => {
+  await open(page)
+  const minimap = await box(page.getByTestId('minimap'))
+  expect([minimap.width, minimap.height]).toEqual([MINIMAP_CARD_WIDTH, MINIMAP_CARD_HEIGHT])
+  expect((await box(page.getByTestId('zoom-controls'))).height).toBe(ZOOM_BAR_HEIGHT)
+  await page.getByRole('button', { name: 'Minimapa' }).click()
+  expect((await box(page.getByTestId('minimap'))).height).toBe(MINIMAP_CARD_COLLAPSED_HEIGHT)
+})
+
+test('a largura do toast no canto direito bate com TOAST_WIDTH, e o texto cabe numa linha', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.route('**/generator.worker*', (route) => route.abort())
+  await gotoEditor(page)
+  const toast = page.getByTestId('generation-error-toast')
+  await expect(toast).toBeVisible()
+  const b = await box(toast)
+  expect(b.width).toBe(TOAST_WIDTH)
+  expect(b.height).toBe(60)
+})
+
+test.describe('zoom compacto no toque', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+
+  test('a largura bate com ZOOM_COMPACT_MAX_WIDTH', async ({ page }) => {
+    await gotoEditor(page)
+    await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
+    expect((await box(page.getByTestId('zoom-controls'))).width).toBe(ZOOM_COMPACT_MAX_WIDTH)
+  })
 })

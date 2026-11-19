@@ -1,5 +1,6 @@
 import { WORLD_SIZE } from '../../render/camera'
 import type { WorldRect } from '../../state/cameraStore'
+import { MINIMAP_HEIGHT, MINIMAP_WIDTH } from './bottomBarLayout'
 
 /**
  * Matemática do minimapa e do controle de zoom (TS puro, sem React): escala, porcentagem e a
@@ -10,9 +11,8 @@ import type { WorldRect } from '../../state/cameraStore'
 export const SCALE_BAR_PX = 32
 /** Abaixo desta largura da área livre, o controle de zoom esconde a escala e a porcentagem. */
 export const COMPACT_ZOOM_BELOW_PX = 860
-/** Tamanho do minimapa, em px (design-system.md → Layout do Editor). */
-export const MINIMAP_WIDTH = 160
-export const MINIMAP_HEIGHT = 100
+/** Tamanho do minimapa (160 × 100): mora com as outras medidas da linha inferior. */
+export { MINIMAP_HEIGHT, MINIMAP_WIDTH }
 
 /**
  * Texto da barra de escala: quantos km cabem em `SCALE_BAR_PX` px no zoom atual. `scale` é px por
@@ -66,6 +66,14 @@ export function minimapViewCenter(view: WorldRect, world = WORLD_SIZE): { x: num
 export function minimapToWorld(px: number, py: number, world = WORLD_SIZE): { x: number; y: number } {
   const box = minimapMapBox(world)
   return { x: (px - box.x) / box.k, y: (py - box.y) / box.k }
+}
+
+/** Passo das setas com o foco no minimapa, em px do minimapa. */
+export const MINIMAP_KEY_STEP_PX = 10
+
+/** O passo das setas no minimapa, em unidades do mundo (10 px do minimapa = 1/10 do mapa). */
+export function minimapKeyStep(world = WORLD_SIZE): number {
+  return MINIMAP_KEY_STEP_PX / minimapMapBox(world).k
 }
 
 /** Se o ponto (px) do minimapa está dentro do retângulo. */

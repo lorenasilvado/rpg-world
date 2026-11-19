@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   inRect,
   minimapMapBox,
+  minimapKeyStep,
   minimapToWorld,
   minimapViewCenter,
   minimapViewRect,
@@ -52,6 +53,10 @@ describe('minimapa (AC-F2-08)', () => {
     expect(minimapToWorld(80, 50)).toEqual({ x: 512, y: 512 })
     expect(minimapToWorld(30, 0)).toEqual({ x: 0, y: 0 })
     expect(minimapViewCenter({ x: 256, y: 512, width: 512, height: 256 })).toEqual({ x: 80, y: 62.5 })
+  })
+
+  it('as setas movem 10 px do minimapa: 1/10 do mapa', () => {
+    expect(minimapKeyStep()).toBeCloseTo(102.4, 6)
   })
 
   it('sabe se o ponto está no retângulo', () => {

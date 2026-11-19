@@ -45,6 +45,15 @@ describe('Controle de zoom (AC-F2-09)', () => {
     expect(screen.getByTestId('zoom-percent').textContent).toBe('200%')
   })
 
+  it('antes de a câmera estar pronta, fica compacto (data-compact)', () => {
+    const camera = createCameraStore()
+    camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, areaWidth: 992 })
+    camera.getState().setControls(null)
+    render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
+    expect(screen.getByTestId('zoom-controls').dataset.compact).toBe('true')
+    expect(screen.queryByTestId('zoom-percent')).toBeNull()
+  })
+
   it('a porcentagem acompanha o zoom', () => {
     const { camera } = cameraWith(992)
     render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
@@ -85,6 +94,24 @@ describe('Minimapa (AC-F2-08)', () => {
     render(<Minimap world={createWorldStore(idleGenerator)} ui={createUiStore()} camera={camera} />)
     fireEvent.pointerDown(screen.getByTestId('minimap-surface'), { button: 0, clientX: 35, clientY: 10, pointerId: 1 })
     expect(controls.centerOn).toHaveBeenLastCalledWith(5 * 10.24, 10 * 10.24)
+  })
+
+  it('com o foco nele, as setas movem a área visível 1/10 do mapa, e o atalho da câmera não soma outro passo', () => {
+    const { camera, controls } = cameraWith(720)
+    render(<Minimap world={createWorldStore(idleGenerator)} ui={createUiStore()} camera={camera} />)
+    const surface = screen.getByTestId('minimap-surface')
+    expect(surface.tabIndex).toBe(0)
+    // Centro da vista em (512, 512).
+    const right = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+    surface.dispatchEvent(right)
+    expect(controls.centerOn).toHaveBeenLastCalledWith(512 + 102.4, 512)
+    expect(right.defaultPrevented).toBe(true)
+    fireEvent.keyDown(surface, { key: 'ArrowUp' })
+    expect(controls.centerOn).toHaveBeenLastCalledWith(512, 512 - 102.4)
+    // Com Ctrl, Alt ou Meta, e outras teclas, nada.
+    fireEvent.keyDown(surface, { key: 'ArrowLeft', ctrlKey: true })
+    fireEvent.keyDown(surface, { key: 'a' })
+    expect(controls.centerOn).toHaveBeenCalledTimes(2)
   })
 
   it('recolhe e abre pelo cabeçalho', () => {

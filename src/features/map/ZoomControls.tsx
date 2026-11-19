@@ -3,14 +3,16 @@ import type { ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { CameraStore } from '../../state/cameraStore'
 import type { WorldStore } from '../../state/worldStore'
+import { PANEL_BORDER, ZOOM_BAR_HEIGHT, ZOOM_BAR_PADDING } from './bottomBarLayout'
 import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapControls'
 
 /**
  * Controle de zoom do canto inferior direito (navegacao.md, AC-F2-09): a barra de escala em km
  * (a partir do `sizeKm` do mundo), Afastar, a porcentagem do zoom, Aproximar e Centralizar. Os
  * botões fazem o mesmo que as teclas −, + e 0. Com a área livre abaixo de 860 px, a escala e a
- * porcentagem somem e ficam só os botões. Os botões têm 44 × 44 px em telas de toque (a área de toque
- * mínima do design system) e 40 px de largura com mouse (a exceção do zoom no desktop).
+ * porcentagem somem e ficam só os botões (`data-compact`, também antes de a câmera estar pronta).
+ * Os botões têm 44 × 44 px em telas de toque (`ZOOM_BUTTON_TOUCH`, a área de toque mínima do design
+ * system) e 40 px de largura com mouse (a exceção do zoom no desktop).
  */
 export function ZoomControls({ world, camera }: { world: WorldStore; camera: CameraStore }) {
   const sizeKm = useStore(world, (s) => s.sizeKm)
@@ -26,8 +28,9 @@ export function ZoomControls({ world, camera }: { world: WorldStore; camera: Cam
       role="group"
       aria-label="Zoom"
       data-testid="zoom-controls"
-      data-compact={!details}
-      className="flex h-14 items-center rounded-panel border border-line bg-paper px-1.5 shadow-md backdrop-blur-[14px]"
+      data-compact={!showDetails}
+      style={{ height: ZOOM_BAR_HEIGHT, padding: `0 ${ZOOM_BAR_PADDING}px`, borderWidth: PANEL_BORDER }}
+      className="flex items-center rounded-panel border-line bg-paper shadow-md backdrop-blur-[14px]"
     >
       {showDetails && (
         <div data-testid="map-scale" title="Escala" className="flex flex-col items-center gap-0.5 pr-1.5 pl-2">

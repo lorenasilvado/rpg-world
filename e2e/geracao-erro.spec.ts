@@ -54,7 +54,12 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga, acima do min
   expect(Math.round(minimap!.y)).toBe(844 - 16 - 140)
   // Com o minimapa recolhido, o toast desce para acima do controle de zoom.
   await page.getByRole('button', { name: 'Minimapa' }).click()
-  await expect.poll(async () => Math.round(((await toast.boundingBox())?.y ?? 0) + ((await toast.boundingBox())?.height ?? 0))).toBe(844 - 84)
+  await expect
+    .poll(async () => {
+      const b = await toast.boundingBox()
+      return b && Math.round(b.y + b.height)
+    })
+    .toBe(844 - 84)
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)

@@ -1,6 +1,7 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { Minimap } from '../features/map/Minimap'
 import { ZoomControls } from '../features/map/ZoomControls'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
@@ -32,10 +33,10 @@ import { useTheme } from './useTheme'
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  *
  * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
- * de zoom à direita. Se a área livre é estreita demais para os dois lado a lado (menos de 360 px,
- * medida por container query na própria linha: tablet com a sidebar aberta), o minimapa sobe para
- * 12 px acima do controle de zoom. Os dois leem a câmera do renderer (`cameraStore.ts`). O toast de
- * erro da geração também fica nesta linha, posicionado pela largura dela (`GenerationErrorToast`).
+ * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
+ * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
+ * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
+ * renderer (`cameraStore.ts`).
  */
 export function EditorLayout({
   world,
@@ -55,6 +56,8 @@ export function EditorLayout({
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   const [camera] = useState(createCameraStore)
   const minimapOpen = useStore(ui, (s) => s.minimapOpen)
+  const bottomBar = useRef<HTMLDivElement>(null)
+  const layout = bottomBarLayout(useWidth(bottomBar), minimapOpen)
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -107,27 +110,29 @@ export function EditorLayout({
       <MapView world={world} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
 
       <div
+        ref={bottomBar}
         data-testid="bottom-bar"
+        data-stacked={layout.stacked}
         inert={anyOpen}
+        style={{ bottom: BAR_BOTTOM }}
         className={[
-          '@container pointer-events-none absolute right-0 bottom-4 left-0 z-10',
+          'pointer-events-none absolute right-0 left-0 z-10',
           'transition-[left] duration-200 ease-[var(--ease-panel)]',
           'md:right-[var(--drawer-width)]',
           sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
         ].join(' ')}
       >
-        {/* 360 px = 16 + minimapa (174) + 12 + zoom compacto no toque (146) + 12. Empilhado, o minimapa
-            fica 12 px acima do zoom (56 px). */}
         <div
           data-testid="minimap-slot"
-          className="pointer-events-auto absolute bottom-0 left-4 transition-[bottom] duration-200 ease-[var(--ease-panel)] @max-[360px]:bottom-[68px]"
+          style={{ left: BAR_SIDE, bottom: layout.minimapBottom }}
+          className="pointer-events-auto absolute transition-[bottom] duration-200 ease-[var(--ease-panel)]"
         >
           <Minimap world={world} ui={ui} camera={camera} />
         </div>
-        <div className="pointer-events-auto absolute right-3 bottom-0">
+        <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
           <ZoomControls world={world} camera={camera} />
         </div>
-        <GenerationErrorToast world={world} aboveMinimap={minimapOpen} />
+        <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} />
       </div>
 
       {anyOpen && (
@@ -225,6 +230,19 @@ export function EditorLayout({
       </aside>
     </div>
   )
+}
+
+/** Largura do elemento, acompanhada pelo `ResizeObserver` (`null` antes de medir, ou sem ele, como no jsdom). */
+function useWidth(ref: RefObject<HTMLElement | null>) {
+  const [width, setWidth] = useState<number | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref])
+  return width
 }
 
 /** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */
