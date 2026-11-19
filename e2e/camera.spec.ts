@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Câmera (#47, AC-F2-01 a AC-F2-06): pan, inércia, zoom no cursor, pinça, teclado, limites e
 // movimento reduzido. O renderer expõe no mapa o retângulo dele na tela (`data-map-rect`) e o zoom
@@ -18,7 +19,7 @@ const CENTER = { x: AREA.x + AREA.width / 2, y: AREA.height / 2 }
 
 async function open(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   const map = page.getByTestId('map')
   await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
   await expect(map).toHaveAttribute('data-map-rect', /.+/)

@@ -6,7 +6,8 @@ import { DEFAULT_WORLD_PARAMS, type WorldParams } from '../../core'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
 import { FLASH_MS } from './GenerateSidebar'
-import { COPIED_MS, SEED_TYPING_MS } from './SeedField'
+import { SEED_TYPING_MS } from './SeedField'
+import { COPIED_MS } from './useCopySeed'
 import { PRESETS } from '../../state/presets'
 
 /** Gerador que guarda os pedidos e nunca responde: aqui só importa o que a sidebar pede. */

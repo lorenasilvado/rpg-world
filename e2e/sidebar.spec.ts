@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Sidebar: seções e sliders (#49). A direção de cada slider é conferida no núcleo
 // (src/core/world/sliders.test.ts); aqui fica o caminho real: o slider na tela muda o mapa desenhado.
@@ -19,7 +20,7 @@ const SLIDERS = [
 /** Abre o editor e espera o mapa final 1024² desenhado. */
 async function openEditor(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
 }

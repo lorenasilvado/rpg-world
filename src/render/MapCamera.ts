@@ -7,6 +7,7 @@ import {
   clampTransform,
   easeCamera,
   fitView,
+  inDialog,
   isFieldTarget,
   keyAction,
   lerpView,
@@ -180,7 +181,7 @@ export class MapCamera {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
-    if (!this.fitted || e.defaultPrevented || this.host.inert || isFieldTarget(e.target)) return
+    if (!this.fitted || e.defaultPrevented || this.host.inert || isFieldTarget(e.target) || inDialog(e.target)) return
     const action = keyAction(e)
     if (!action) return
     e.preventDefault()

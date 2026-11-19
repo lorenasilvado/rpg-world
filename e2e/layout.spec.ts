@@ -1,10 +1,11 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 test.describe('Layout vazio do editor', () => {
   test('desktop 1440×900: sidebar de 320 px, mapa e drawer de 400 px (AC-M0-01)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/')
+    await gotoEditor(page)
     const sidebar = await page.getByTestId('sidebar').boundingBox()
     const drawer = await page.getByTestId('drawer').boundingBox()
     const map = await page.getByTestId('map').boundingBox()
@@ -16,7 +17,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('cores, fonte e raios vêm do design system (AC-M0-01)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/')
+    await gotoEditor(page)
     const sidebar = page.getByTestId('sidebar')
     await expect(sidebar).toHaveCSS('background-color', 'rgb(247, 241, 227)')
     await expect(page.locator('body')).toHaveCSS('font-family', /Nunito/)
@@ -26,7 +27,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('abaixo de 768 px, sidebar e drawer viram painéis sobrepostos (AC-M0-02)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
+    await gotoEditor(page)
     await expect(page.getByTestId('sidebar')).toBeHidden()
     await expect(page.getByTestId('drawer')).toBeHidden()
     await expect(page.getByTestId('map')).toBeVisible()
@@ -49,7 +50,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('o tema alterna entre claro e escuro, só mudando as cores (AC-M0-03)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/')
+    await gotoEditor(page)
     const sidebar = page.getByTestId('sidebar')
     const before = await sidebar.boundingBox()
     await expect(sidebar).toHaveCSS('background-color', 'rgb(247, 241, 227)')
@@ -63,7 +64,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('no celular, o scrim cobre a barra de ações e Esc fecha o painel (AC-M0-02)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
+    await gotoEditor(page)
     const opener = page.getByRole('button', { name: 'Abrir painel' })
     await opener.click()
     await expect(page.getByRole('button', { name: 'Fechar painel' })).toBeFocused()
@@ -90,7 +91,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('com o painel aberto, o Tab não sai dele (AC-M0-02)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
+    await gotoEditor(page)
     await page.getByRole('button', { name: 'Abrir painel' }).click()
     const close = page.getByRole('button', { name: 'Fechar painel' })
     await expect(close).toBeFocused()
@@ -112,7 +113,7 @@ test.describe('Layout vazio do editor', () => {
 
   test('ao alargar para 768 px ou mais, o painel aberto fecha (AC-M0-02)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/')
+    await gotoEditor(page)
     await page.getByRole('button', { name: 'Abrir detalhes' }).click()
     await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
     await page.setViewportSize({ width: 1440, height: 900 })

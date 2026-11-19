@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Camada de decoração (#48): os ícones aparecem, o culling tira os que ficam fora da tela e o nível
 // de detalhe tira parte deles no zoom baixo. O renderer expõe no mapa os ícones com desenho no
@@ -13,7 +14,7 @@ const attr = async (page: Page, name: string) => Number(await map(page).getAttri
 
 async function open(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
   await expect(map(page)).toHaveAttribute('data-decor-drawn', /\d/)
 }
@@ -133,7 +134,7 @@ test('sem como desenhar o spritesheet dos ícones, o mapa aparece só com o terr
     } as typeof getContext
   })
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
   await expect(page.getByTestId('map-canvas')).toBeVisible()
   await expect(map(page)).toHaveAttribute('data-decor-total', '0')

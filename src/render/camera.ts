@@ -153,3 +153,8 @@ export function isFieldTarget(target: EventTarget | null): boolean {
   const role = el.closest('[role]')?.getAttribute('role')
   return role ? FIELD_ROLES.has(role) : false
 }
+
+/** Se o foco está dentro de um modal (o assistente): o teclado não mexe no que está atrás dele. */
+export function inDialog(target: EventTarget | null): boolean {
+  return !!target && typeof (target as Element).closest === 'function' && (target as Element).closest('[role="dialog"]') !== null
+}

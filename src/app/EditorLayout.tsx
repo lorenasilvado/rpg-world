@@ -5,6 +5,7 @@ import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
+import { inDialog } from '../render/camera'
 import { MapView, type CreateMapRenderer } from './MapView'
 import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
@@ -17,7 +18,7 @@ import { useTheme } from './useTheme'
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
- * A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
+ * O cabeçalho da sidebar mostra o nome do mundo. A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
  * recolhe a 48 px e abre de novo pelo botão ou pela tecla `[`; abaixo disso, a tecla abre e fecha o
  * painel sobreposto. A tecla não vale com o foco num campo de texto nem com Ctrl, Alt ou Meta.
  *
@@ -38,6 +39,7 @@ export function EditorLayout({
 }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
+  const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const desktop = useDesktop()
@@ -66,7 +68,7 @@ export function EditorLayout({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== '[' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented || isTextField(e.target)) return
+      if (e.key !== '[' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented || isTextField(e.target) || inDialog(e.target)) return
       e.preventDefault()
       if (window.matchMedia(DESKTOP_QUERY).matches) {
         const { sidebarCollapsed, setSidebarCollapsed } = ui.getState()
@@ -123,7 +125,11 @@ export function EditorLayout({
           <span className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
             <Compass size={20} aria-hidden="true" />
           </span>
-          {!sidebarCollapsed && <span className="font-title text-base/5 font-semibold whitespace-nowrap">RPG World Builder</span>}
+          {!sidebarCollapsed && (
+            <span className="min-w-0 truncate font-title text-base/5 font-semibold" data-testid="world-name" title={worldName}>
+              {worldName}
+            </span>
+          )}
           <IconButton
             ref={sidebarClose}
             label="Fechar painel"
@@ -209,6 +215,7 @@ function isTextField(target: EventTarget | null) {
   if (target.isContentEditable || target.closest('textarea, select')) return true
   return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type)
 }
+
 
 /** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */
 function usePanelFocus(

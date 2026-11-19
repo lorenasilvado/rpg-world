@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE } from '../src/render/style/palette.ts'
+import { gotoEditor, stableMapShot } from './editor.ts'
 
 // Terreno em textura (#46, AC-F1-22): o editor desenha o mapa gerado. A comparação com o mockup
 // aprovado é por print no PR; aqui fica que o mapa aparece, no lugar certo, com as cores da paleta.
@@ -13,10 +14,11 @@ async function openMap(page: Page, width: number, height: number) {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   const map = page.getByTestId('map')
   await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
+  await stableMapShot(page)
   const [x, y, w, h] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
   return { rect: { x, y, width: w, height: h }, errors }
 }

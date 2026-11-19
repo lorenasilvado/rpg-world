@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // Sidebar: seed, presets e restaurar (#50). A fração de deserto do "Deserto árido" é conferida no
 // núcleo (src/state/presets.test.ts); aqui fica o caminho real na tela.
@@ -29,7 +30,7 @@ const ARID: Record<string, number> = {
 
 async function openEditor(page: Page, width = 1440, height = 900) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await gotoEditor(page)
   await waitFinalMap(page)
 }
 
