@@ -45,6 +45,7 @@ test('a barra superior e a toolbar: funções que ainda não existem desabilitad
 
 test('1440 com a sidebar e o drawer: a toolbar fica deitada, centrada entre eles, 16 px da base', async ({ page }) => {
   await open(page)
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
   const toolbar = await box(page, 'map-toolbar')
   expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
   expect(toolbar.bottom - toolbar.top).toBe(TOOLBAR_THICKNESS)
@@ -116,7 +117,7 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
 
 test('tablet 1024 com a sidebar aberta (304 px): a toolbar fica em pé acima do zoom, e a barra superior não chega à sidebar', async ({ page }) => {
   await open(page, 1024, 768)
-  await expect(page.getByTestId('map-toolbar')).toHaveAttribute('data-vertical', 'true')
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'vertical')
   const toolbar = await box(page, 'map-toolbar')
   const zoom = await box(page, 'zoom-controls')
   expect(toolbar.right - toolbar.left).toBe(TOOLBAR_THICKNESS)
@@ -142,16 +143,35 @@ test('tablet 1024 com a sidebar aberta (304 px): a toolbar fica em pé acima do 
   expect(popover.left).toBeGreaterThanOrEqual(320)
 })
 
-test('celular 390: a barra superior cabe na tela, e a toolbar fica em pé acima do zoom', async ({ page }) => {
+test('1280 com a sidebar e o drawer (560 px): a toolbar fica deitada numa segunda linha, acima do minimapa', async ({ page }) => {
+  await open(page, 1280, 800)
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
+  const toolbar = await box(page, 'map-toolbar')
+  expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
+  // Centrada na área livre (320 a 880).
+  expect(Math.abs((toolbar.left + toolbar.right) / 2 - 600)).toBeLessThanOrEqual(1)
+  const minimap = await box(page, 'minimap-slot')
+  expect(minimap.top - toolbar.bottom).toBe(BAR_GAP)
+  // Recolher o minimapa: a toolbar desce para 12 px acima do zoom.
+  await page.getByRole('button', { name: 'Minimapa' }).click()
+  await expect.poll(async () => (await box(page, 'zoom-controls')).top - (await box(page, 'map-toolbar')).bottom).toBe(BAR_GAP)
+  // O popover de Camadas abre acima dela, dentro da área livre.
+  await page.getByRole('button', { name: 'Camadas' }).click()
+  const popover = await box(page, 'layers-popover')
+  expect(popover.left).toBeGreaterThanOrEqual(320)
+  expect(popover.right).toBeLessThanOrEqual(880)
+})
+
+test('celular 390: a barra superior cabe na tela, e a toolbar fica deitada numa segunda linha', async ({ page }) => {
   await open(page, 390, 844)
   const actions = await box(page, 'actions')
   expect(actions.left).toBeGreaterThanOrEqual(12)
   expect(actions.right).toBe(390 - 12)
   await expect(page.getByTestId('search-button')).toHaveAttribute('data-label', 'false')
-  await expect(page.getByTestId('map-toolbar')).toHaveAttribute('data-vertical', 'true')
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
   const toolbar = await box(page, 'map-toolbar')
-  expect(toolbar.right).toBe(390 - ZOOM_SIDE)
-  expect((await box(page, 'zoom-controls')).top - toolbar.bottom).toBe(BAR_GAP)
+  expect(Math.abs((toolbar.left + toolbar.right) / 2 - 195)).toBeLessThanOrEqual(1)
+  expect((await box(page, 'minimap-slot')).top - toolbar.bottom).toBe(BAR_GAP)
 
   await page.getByRole('button', { name: 'Ajuda' }).click()
   const dialog = await page.getByRole('dialog', { name: 'Atalhos de teclado' }).boundingBox()

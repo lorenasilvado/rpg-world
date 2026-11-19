@@ -35,7 +35,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await expect(toast).toBeHidden()
 })
 
-test('celular 390×844: o toast ocupa a largura (16 px à esquerda; à direita, 12 px antes da toolbar em pé), acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
+test('celular 390×844: o toast ocupa a largura (16 px à esquerda, 12 à direita, alinhado com o zoom), acima da toolbar na segunda linha (sem cobrir ela nem o minimapa), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.route(WORKER, (route) => route.abort())
   await gotoEditor(page)
@@ -48,21 +48,21 @@ test('celular 390×844: o toast ocupa a largura (16 px à esquerda; à direita, 
       const box = await toast.boundingBox()
       return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([16, 390 - 80, 844 - 168])
-  // A toolbar em pé fica à direita do toast, sem ser coberta por ele.
-  const toolbar = await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox()
-  expect(Math.round(toolbar!.x)).toBe(390 - 12 - 56)
-  // O minimapa aberto (140 px, 16 px da base) fica inteiro abaixo do toast, com 12 px de folga.
+    .toEqual([16, 390 - 12, 844 - 16 - 220])
+  // A toolbar fica deitada 12 px acima do minimapa aberto (cartão de 140 px, 16 px da base), e o
+  // toast, 12 px acima dela.
+  const toolbar = (await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox())!
+  expect(Math.round(toolbar.y + toolbar.height)).toBe(844 - 16 - 152)
   const minimap = await page.getByTestId('minimap').boundingBox()
   expect(Math.round(minimap!.y)).toBe(844 - 16 - 140)
-  // Com o minimapa recolhido, o toast desce para acima do controle de zoom.
+  // Com o minimapa recolhido, a toolbar desce para acima do controle de zoom, e o toast com ela.
   await page.getByRole('button', { name: 'Minimapa' }).click()
   await expect
     .poll(async () => {
       const b = await toast.boundingBox()
       return b && Math.round(b.y + b.height)
     })
-    .toBe(844 - 84)
+    .toBe(844 - 16 - 136)
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)

@@ -1,7 +1,7 @@
 import { CircleHelp, Compass, Download, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
-import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, ZOOM_BAR_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { MapToolbar } from '../features/map/MapToolbar'
 import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
 import { Minimap } from '../features/map/Minimap'
@@ -39,8 +39,8 @@ import { useTheme } from './useTheme'
  * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
  * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
- * renderer (`cameraStore.ts`). No centro da linha fica a toolbar de ferramentas (`MapToolbar`), ou em
- * pé acima do zoom quando não cabe deitada.
+ * renderer (`cameraStore.ts`). A toolbar de ferramentas (`MapToolbar`) fica no centro da linha, numa
+ * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`).
  *
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar, Desfazer,
  * Refazer e Exportar ficam desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
@@ -165,10 +165,16 @@ export function EditorLayout({
         </div>
         <div
           data-testid="toolbar-slot"
-          style={layout.toolbarVertical ? { right: ZOOM_SIDE, bottom: ZOOM_BAR_HEIGHT + BAR_GAP } : { left: '50%', bottom: 0 }}
-          className={`pointer-events-auto absolute ${layout.toolbarVertical ? '' : '-translate-x-1/2'}`}
+          data-place={layout.toolbar}
+          style={layout.toolbar === 'vertical' ? { right: ZOOM_SIDE, bottom: layout.toolbarBottom } : { left: '50%', bottom: layout.toolbarBottom }}
+          className={[
+            'pointer-events-auto absolute',
+            layout.toolbar === 'vertical' ? '' : '-translate-x-1/2',
+            // Na segunda linha, ela sobe e desce junto com o minimapa (abrir e recolher), deslizando.
+            barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : '',
+          ].join(' ')}
         >
-          <MapToolbar ui={ui} vertical={layout.toolbarVertical} />
+          <MapToolbar ui={ui} vertical={layout.toolbar === 'vertical'} />
         </div>
         <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
           <ZoomControls world={world} camera={camera} areaWidth={barWidth} />

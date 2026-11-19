@@ -86,6 +86,16 @@ export const TOAST_BESIDE_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOAST
  */
 export const TOOLBAR_ROW_FROM = 2 * (BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP) + TOOLBAR_LENGTH
 
+/**
+ * A partir desta largura da área livre, a toolbar cabe deitada e centrada com `BAR_SIDE` de cada
+ * lado: 341 px. Abaixo dela (e de `TOOLBAR_ROW_FROM`), fica deitada numa segunda linha; abaixo
+ * desta, em pé.
+ */
+export const TOOLBAR_ABOVE_FROM = TOOLBAR_LENGTH + 2 * BAR_SIDE
+
+/** Onde fica a toolbar: na linha, deitada numa segunda linha acima dela, ou em pé acima do zoom. */
+export type ToolbarPlace = 'row' | 'above' | 'vertical'
+
 export type BottomBarLayout = {
   /** O minimapa fica acima do zoom, em vez de ao lado. */
   stacked: boolean
@@ -97,30 +107,39 @@ export type BottomBarLayout = {
   toastBottom: number
   /** Distância do toast à direita da linha (passa para a esquerda da toolbar em pé). */
   toastRight: number
-  /** A toolbar fica em pé, acima do controle de zoom, em vez de deitada no centro da linha. */
-  toolbarVertical: boolean
+  /** Onde fica a toolbar (`ToolbarPlace`). */
+  toolbar: ToolbarPlace
+  /** Base da toolbar, a partir da base da linha. */
+  toolbarBottom: number
 }
 
 /**
- * Onde ficam o minimapa e o toast na linha inferior, pela largura da área livre (`width`, a da
- * própria linha; `null` enquanto não foi medida, como no jsdom: o caso largo). Com `touch` (tela de
- * toque), o cabeçalho do minimapa é mais alto, e o toast sobe junto.
+ * Onde ficam o minimapa, a toolbar e o toast na linha inferior, pela largura da área livre
+ * (`width`, a da própria linha; `null` enquanto não foi medida, como no jsdom: o caso largo). Com
+ * `touch` (tela de toque), o cabeçalho do minimapa é mais alto, e o que fica acima dele sobe junto.
  *
  * - Abaixo de `STACK_BELOW`, o minimapa sobe para `BAR_GAP` acima do zoom.
- * - A partir de `TOOLBAR_ROW_FROM`, a toolbar fica deitada no centro da linha. Abaixo, ela fica em
- *   pé, `BAR_GAP` acima do zoom e alinhada à direita dele, e o toast passa para a esquerda dela.
+ * - Toolbar: a partir de `TOOLBAR_ROW_FROM`, deitada no centro da linha. Abaixo, a partir de
+ *   `TOOLBAR_ABOVE_FROM`, deitada e centrada numa segunda linha, `BAR_GAP` acima do mais alto entre
+ *   o minimapa (aberto ou recolhido) e o zoom. Abaixo disso, em pé, `BAR_GAP` acima do zoom e
+ *   alinhada à direita dele.
  * - A partir de `TOAST_BESIDE_FROM` (mais a toolbar em pé, quando ela está ali), o toast fica no
- *   canto direito, `BAR_GAP` acima do zoom. Abaixo, ele ocupa a largura e fica `BAR_GAP` acima do
- *   mais alto entre o minimapa (aberto ou recolhido) e o zoom.
+ *   canto direito; senão, ocupa a largura da área (até a toolbar em pé). Ele fica `BAR_GAP` acima
+ *   da toolbar na segunda linha; senão, acima do zoom (no canto) ou do mais alto entre o minimapa e
+ *   o zoom (na largura).
  */
 export function bottomBarLayout(width: number | null, minimapOpen: boolean, touch = false): BottomBarLayout {
   const stacked = width !== null && width < STACK_BELOW
   const minimapBottom = stacked ? ZOOM_BAR_HEIGHT + BAR_GAP : 0
   const minimapTop = minimapBottom + minimapCardHeight(minimapOpen, touch)
-  const toolbarVertical = width !== null && width < TOOLBAR_ROW_FROM
-  const toolbarSpace = toolbarVertical ? TOOLBAR_THICKNESS + BAR_GAP : 0
+  const rowTop = Math.max(minimapTop, ZOOM_BAR_HEIGHT)
+  const toolbar: ToolbarPlace =
+    width === null || width >= TOOLBAR_ROW_FROM ? 'row' : width >= TOOLBAR_ABOVE_FROM ? 'above' : 'vertical'
+  const toolbarBottom = toolbar === 'row' ? 0 : toolbar === 'above' ? rowTop + BAR_GAP : ZOOM_BAR_HEIGHT + BAR_GAP
+  const toolbarSpace = toolbar === 'vertical' ? TOOLBAR_THICKNESS + BAR_GAP : 0
   const toastRight = ZOOM_SIDE + toolbarSpace
   const toastBeside = width === null || width - toolbarSpace >= TOAST_BESIDE_FROM
-  const toastBottom = (toastBeside ? ZOOM_BAR_HEIGHT : Math.max(minimapTop, ZOOM_BAR_HEIGHT)) + BAR_GAP
-  return { stacked, minimapBottom, toastBeside, toastBottom, toastRight, toolbarVertical }
+  const toastBottom =
+    toolbar === 'above' ? toolbarBottom + TOOLBAR_THICKNESS + BAR_GAP : (toastBeside ? ZOOM_BAR_HEIGHT : rowTop) + BAR_GAP
+  return { stacked, minimapBottom, toastBeside, toastBottom, toastRight, toolbar, toolbarBottom }
 }

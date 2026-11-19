@@ -42,9 +42,12 @@ barra inferior.
   tooltip com o nome e o atalho. Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - Com a área livre de pelo menos 713 px, a toolbar fica deitada no centro da linha inferior (entre o
-  minimapa e o zoom, sem chegar a eles); o tooltip e o popover de Camadas abrem acima dela. Abaixo
-  disso (tablet com a sidebar aberta, celular), ela fica em pé, 12 px acima do controle de zoom e
-  alinhada à direita dele; o tooltip abre à esquerda, e o popover, acima, alinhado à direita.
+  minimapa e o zoom, sem chegar a eles). De 341 a 712 px (ex.: 1280 com a sidebar e o drawer: 560
+  px; celular 390), ela fica deitada e centrada numa segunda linha, 12 px acima do mais alto entre o
+  minimapa (aberto ou recolhido) e o zoom, e sobe e desce junto quando o minimapa abre e recolhe. Em
+  ambos, o tooltip e o popover de Camadas abrem acima dela. Abaixo de 341 px (tablet com a sidebar
+  aberta: 304 px), ela fica em pé, 12 px acima do controle de zoom e alinhada à direita dele; o
+  tooltip abre à esquerda, e o popover, acima, alinhado à direita.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
   só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
@@ -59,10 +62,12 @@ barra inferior.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
-  controle de zoom, no canto direito. Com a toolbar em pé, o toast fica à esquerda dela (12 px).
-  Se a área livre tem menos de 566 px à esquerda da toolbar em pé (onde o toast cobriria o
-  minimapa), o toast ocupa a largura da área livre (até a toolbar) e fica acima do minimapa aberto
-  (ou do zoom, com o minimapa recolhido), inclusive quando o minimapa está empilhado.
+  controle de zoom, no canto direito. Com a toolbar na segunda linha, o toast fica 12 px acima
+  dela; com a toolbar em pé, à esquerda dela (12 px). Se a área livre tem menos de 566 px (à
+  esquerda da toolbar em pé, quando ela está ali), onde o toast cobriria o minimapa, o toast ocupa a
+  largura da área livre (até a toolbar em pé) e fica acima da toolbar na segunda linha, ou do
+  minimapa aberto (ou do zoom, com o minimapa recolhido), inclusive quando o minimapa está
+  empilhado.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
 
