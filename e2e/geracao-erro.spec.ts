@@ -63,6 +63,24 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga, acima do min
   await expect(toast).toBeHidden()
 })
 
+test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima dos dois (AC-F1-12)', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.route(WORKER, (route) => route.abort())
+  await gotoEditor(page)
+  const toast = page.getByRole('alert')
+  await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
+  const bottom = async (testId: string) => {
+    const b = await page.getByTestId(testId).boundingBox()
+    return { top: Math.round(b!.y), bottom: Math.round(b!.y + b!.height) }
+  }
+  // Minimapa empilhado 12 px acima do zoom; toast 12 px acima do minimapa.
+  await expect.poll(async () => (await bottom('zoom-controls')).top - (await bottom('minimap')).bottom).toBe(12)
+  await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
+  // Recolhido, o toast desce para 12 px acima do cabeçalho do minimapa.
+  await page.getByRole('button', { name: 'Minimapa' }).click()
+  await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
+})
+
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
   await gotoEditor(page)
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 20_000 })

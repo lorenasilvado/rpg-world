@@ -41,7 +41,7 @@ barra inferior.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
   controle de zoom; abaixo de 768 px, onde o toast ocupa a largura da tela, ele fica acima do
-  minimapa aberto (sem cobri-lo).
+  minimapa aberto (sem cobri-lo), inclusive quando ele está empilhado.
 - Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
@@ -117,8 +117,10 @@ barra inferior.
   cortado na borda do mapa (afastado, ele cobre o mapa todo) e acompanha a câmera a cada quadro.
   Arrastar o retângulo move a área visível na hora, sem deslizar, mantendo o ponto pego sob o
   ponteiro, dentro dos limites de pan.
-- Se a área livre é estreita demais para o minimapa e o controle de zoom (tablet com a sidebar
-  aberta), o controle de zoom fica por cima do minimapa.
+- Se a área livre tem menos de 360 px (estreita demais para o minimapa e o controle de zoom lado a
+  lado: tablet com a sidebar aberta, celular estreito), o minimapa sobe para 12 px acima do
+  controle de zoom, sem sobreposição. Com a área de novo larga (ex.: sidebar recolhida), ele volta
+  para o lado.
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.

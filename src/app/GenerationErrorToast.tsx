@@ -28,8 +28,10 @@ export function GenerationErrorToast({
       className={[
         'toast-in absolute right-4 left-4 z-10 flex items-center gap-3 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg',
         // No celular, o toast ocupa a largura: com o minimapa aberto (140 px de altura), ele sobe acima
-        // dele; recolhido, o controle de zoom (56 px) é o mais alto da linha inferior.
-        aboveMinimap ? 'bottom-[168px]' : 'bottom-[84px]',
+        // dele; recolhido, o controle de zoom (56 px) é o mais alto da linha inferior. Abaixo de 360 px,
+        // o minimapa fica empilhado 68 px acima da base da linha (EditorLayout), e o toast sobe junto:
+        // 16 + 68 + 140 (ou 34, recolhido) + 12.
+        aboveMinimap ? 'bottom-[168px] max-[360px]:bottom-[236px]' : 'bottom-[84px] max-[360px]:bottom-[130px]',
         'md:bottom-[84px] md:left-auto md:right-[calc(var(--drawer-width)+16px)]',
       ].join(' ')}
     >

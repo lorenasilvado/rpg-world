@@ -241,3 +241,23 @@ test.describe('tela de toque', () => {
     expect(zoom.x + zoom.width).toBeLessThanOrEqual(390 - 12)
   })
 })
+
+test('tablet 1024 com a sidebar aberta: o minimapa sobe acima do zoom, sem sobreposição; recolhendo a sidebar, volta para o lado', async ({ page }) => {
+  // 1024 − 320 − 400 = 304 px de área livre: não cabem os dois lado a lado.
+  await open(page, 1024, 768)
+  const minimapBox = () => box(page.getByTestId('minimap'))
+  const zoomBox = () => box(page.getByTestId('zoom-controls'))
+  // Empilhado: o minimapa termina 12 px acima do zoom, que segue a 16 px da base.
+  await expect.poll(async () => Math.round((await zoomBox()).y - ((await minimapBox()).y + (await minimapBox()).height))).toBe(12)
+  const z = await zoomBox()
+  expect(Math.round(768 - (z.y + z.height))).toBe(16)
+  // Nada cobre o minimapa: o canto inferior direito dele recebe o ponteiro.
+  const m = await minimapBox()
+  const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid=minimap]') !== null, [m.x + m.width - 4, m.y + m.height - 4])
+  expect(hit).toBe(true)
+
+  // Sidebar recolhida: 1024 − 48 − 400 = 576 px; o minimapa volta para a base, ao lado do zoom.
+  await page.getByRole('button', { name: 'Recolher painel' }).click()
+  await expect.poll(async () => Math.round(768 - ((await minimapBox()).y + (await minimapBox()).height))).toBe(16)
+  expect((await minimapBox()).x + (await minimapBox()).width).toBeLessThan((await zoomBox()).x)
+})

@@ -32,8 +32,9 @@ import { useTheme } from './useTheme'
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  *
  * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
- * de zoom à direita (por cima do minimapa, se a área livre for estreita demais para os dois). Os
- * dois leem a câmera do renderer (`cameraStore.ts`).
+ * de zoom à direita. Se a área livre é estreita demais para os dois lado a lado (menos de 360 px,
+ * medida por container query na própria linha: tablet com a sidebar aberta), o minimapa sobe para
+ * 12 px acima do controle de zoom. Os dois leem a câmera do renderer (`cameraStore.ts`).
  */
 export function EditorLayout({
   world,
@@ -108,16 +109,21 @@ export function EditorLayout({
         data-testid="bottom-bar"
         inert={anyOpen}
         className={[
-          'pointer-events-none absolute right-0 bottom-4 left-0 z-10',
+          '@container pointer-events-none absolute right-0 bottom-4 left-0 z-10',
           'transition-[left] duration-200 ease-[var(--ease-panel)]',
           'md:right-[var(--drawer-width)]',
           sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
         ].join(' ')}
       >
-        <div className="pointer-events-auto absolute bottom-0 left-4">
+        {/* 360 px = 16 + minimapa (174) + 12 + zoom compacto no toque (146) + 12. Empilhado, o minimapa
+            fica 12 px acima do zoom (56 px). */}
+        <div
+          data-testid="minimap-slot"
+          className="pointer-events-auto absolute bottom-0 left-4 transition-[bottom] duration-200 ease-[var(--ease-panel)] @max-[360px]:bottom-[68px]"
+        >
           <Minimap world={world} ui={ui} camera={camera} />
         </div>
-        <div className="pointer-events-auto absolute right-3 bottom-0 z-[1]">
+        <div className="pointer-events-auto absolute right-3 bottom-0">
           <ZoomControls world={world} camera={camera} />
         </div>
       </div>

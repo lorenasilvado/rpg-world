@@ -8,14 +8,11 @@ import {
   MINIMAP_HEIGHT,
   MINIMAP_WIDTH,
   inRect,
-  minimapMapBox,
   minimapToWorld,
   minimapViewCenter,
   minimapViewRect,
 } from './mapControls'
-
-/** Resolução do canvas do minimapa: 2× o tamanho na tela, nítido em telas de alta densidade. */
-const MINIMAP_RES = 2
+import { MINIMAP_RES, createTerrainPainter } from './minimapTerrain'
 
 /**
  * Minimapa (navegacao.md, AC-F2-08): o terreno do mapa exibido em 160 × 100, com o retângulo da
@@ -61,13 +58,15 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
   const rect = useRef<HTMLDivElement>(null)
   const drag = useRef<{ dx: number; dy: number } | null>(null)
 
-  // O terreno: redesenhado a cada campo novo (a prévia e o mapa final).
+  // O terreno: redesenhado a cada campo novo (a prévia e o mapa final), reaproveitando o canvas de
+  // origem de cada tamanho.
   useEffect(() => {
+    const painter = createTerrainPainter()
     const draw = () => {
       const { field, terrainRgba } = world.getState()
       const el = canvas.current
       if (!el || !field || !terrainRgba) return
-      if (drawTerrain(el, field.width, field.height, terrainRgba)) surface.current?.setAttribute('data-drawn', String(field.width))
+      if (painter.draw(el, field.width, field.height, terrainRgba)) surface.current?.setAttribute('data-drawn', String(field.width))
     }
     draw()
     return world.subscribe((s, prev) => {
@@ -153,24 +152,4 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
       />
     </div>
   )
-}
-
-/**
- * Desenha o RGBA do terreno (`width` × `height`) reduzido no quadrado do mapa do minimapa. Devolve
- * se desenhou (sem canvas 2D, como no jsdom, não desenha).
- */
-function drawTerrain(el: HTMLCanvasElement, width: number, height: number, rgba: Uint8ClampedArray<ArrayBuffer>): boolean {
-  const ctx = el.getContext('2d')
-  const src = document.createElement('canvas')
-  src.width = width
-  src.height = height
-  const srcCtx = src.getContext('2d')
-  if (!ctx || !srcCtx) return false
-  srcCtx.putImageData(new ImageData(rgba, width, height), 0, 0)
-  const box = minimapMapBox()
-  ctx.clearRect(0, 0, el.width, el.height)
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(src, box.x * MINIMAP_RES, box.y * MINIMAP_RES, box.size * MINIMAP_RES, box.size * MINIMAP_RES)
-  return true
 }
