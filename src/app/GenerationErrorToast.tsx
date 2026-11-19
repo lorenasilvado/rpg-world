@@ -4,10 +4,16 @@ import type { WorldStore } from '../state/worldStore'
 /**
  * Toast de erro da geração (geracao-terreno.md → Estados, AC-F1-12): aparece quando o pedido mais
  * novo falha (a geração ou o worker) e some quando uma geração nova começa. "Tentar de novo" gera
- * o mapa final de novo, com a seed e os parâmetros atuais. Fica no canto inferior direito da área
- * do mapa, logo acima do controle de zoom (design-system.md → Layout do Editor): 56 px dele e 12 px de
- * folga sobre os 16 px da base. Abaixo de 768 px, ele ocupa a largura da tela, e com o minimapa aberto
- * (`aboveMinimap`) sobe para acima dele, para não cobri-lo.
+ * o mapa final de novo, com a seed e os parâmetros atuais.
+ *
+ * Fica dentro da linha inferior do editor (`EditorLayout`), que é um container: a posição depende da
+ * largura da área livre, não da tela, para nunca cobrir o minimapa (design-system.md → Layout do
+ * Editor: toasts acima do controle de zoom). As alturas são a partir da base da linha (16 px da tela):
+ * - 568 px ou mais: no canto direito, 12 px acima do controle de zoom (56 px). Cabe ao lado do
+ *   minimapa: 16 + 174 (minimapa) + 12 + 349 (toast) + 16 ≈ 568.
+ * - Abaixo: na largura da área, 12 px acima do minimapa aberto (140 px) ou, recolhido (34 px),
+ *   acima do zoom, que é o mais alto.
+ * - Abaixo de 360 px, o minimapa fica empilhado 68 px acima da base da linha, e o toast sobe junto.
  */
 export function GenerationErrorToast({
   world,
@@ -26,13 +32,11 @@ export function GenerationErrorToast({
       data-testid="generation-error-toast"
       inert={inert}
       className={[
-        'toast-in absolute right-4 left-4 z-10 flex items-center gap-3 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg',
-        // No celular, o toast ocupa a largura: com o minimapa aberto (140 px de altura), ele sobe acima
-        // dele; recolhido, o controle de zoom (56 px) é o mais alto da linha inferior. Abaixo de 360 px,
-        // o minimapa fica empilhado 68 px acima da base da linha (EditorLayout), e o toast sobe junto:
-        // 16 + 68 + 140 (ou 34, recolhido) + 12.
-        aboveMinimap ? 'bottom-[168px] max-[360px]:bottom-[236px]' : 'bottom-[84px] max-[360px]:bottom-[130px]',
-        'md:bottom-[84px] md:left-auto md:right-[calc(var(--drawer-width)+16px)]',
+        'toast-in pointer-events-auto absolute right-4 left-4 z-[2] flex items-center gap-3 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg',
+        aboveMinimap
+          ? 'bottom-[152px] @max-[360px]:bottom-[220px] @min-[568px]:bottom-[68px]'
+          : 'bottom-[68px] @max-[360px]:bottom-[114px]',
+        '@min-[568px]:left-auto',
       ].join(' ')}
     >
       <span className="flex-1 font-semibold">Não foi possível gerar o mapa</span>

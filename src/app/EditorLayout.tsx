@@ -34,7 +34,8 @@ import { useTheme } from './useTheme'
  * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
  * de zoom à direita. Se a área livre é estreita demais para os dois lado a lado (menos de 360 px,
  * medida por container query na própria linha: tablet com a sidebar aberta), o minimapa sobe para
- * 12 px acima do controle de zoom. Os dois leem a câmera do renderer (`cameraStore.ts`).
+ * 12 px acima do controle de zoom. Os dois leem a câmera do renderer (`cameraStore.ts`). O toast de
+ * erro da geração também fica nesta linha, posicionado pela largura dela (`GenerationErrorToast`).
  */
 export function EditorLayout({
   world,
@@ -126,6 +127,7 @@ export function EditorLayout({
         <div className="pointer-events-auto absolute right-3 bottom-0">
           <ZoomControls world={world} camera={camera} />
         </div>
+        <GenerationErrorToast world={world} aboveMinimap={minimapOpen} />
       </div>
 
       {anyOpen && (
@@ -200,8 +202,6 @@ export function EditorLayout({
           {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
         </IconButton>
       </div>
-
-      <GenerationErrorToast world={world} inert={anyOpen} aboveMinimap={minimapOpen} />
 
       <aside
         aria-label="Detalhes"

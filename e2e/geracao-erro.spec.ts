@@ -81,6 +81,41 @@ test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima 
   await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
 })
 
+// O toast nunca cobre o minimapa nem o controle de zoom e fica dentro da área livre (entre a
+// sidebar e o drawer), em larguras de área livre dos dois lados dos limites de 568 e 360 px.
+for (const { name, width, height, collapse, left } of [
+  { name: '1440 com a sidebar aberta (720 px)', width: 1440, height: 900, collapse: false, left: 320 },
+  { name: '1024 com a sidebar recolhida (576 px)', width: 1024, height: 768, collapse: true, left: 48 },
+  { name: '820 com a sidebar recolhida (372 px)', width: 820, height: 1180, collapse: true, left: 48 },
+  { name: '1024 com a sidebar aberta (304 px, minimapa empilhado)', width: 1024, height: 768, collapse: false, left: 320 },
+]) {
+  test(`${name}: o toast não cobre o minimapa nem o zoom (AC-F1-12)`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    await page.route(WORKER, (route) => route.abort())
+    await gotoEditor(page)
+    await expect(page.getByRole('alert')).toHaveText(/Não foi possível gerar o mapa/)
+    if (collapse) await page.getByRole('button', { name: 'Recolher painel' }).click()
+    const rect = async (testId: string) => {
+      const b = (await page.getByTestId(testId).boundingBox())!
+      return { left: Math.round(b.x), right: Math.round(b.x + b.width), top: Math.round(b.y), bottom: Math.round(b.y + b.height) }
+    }
+    type R = Awaited<ReturnType<typeof rect>>
+    const apart = (a: R, b: R) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
+    // Espera a animação de entrada e a transição da sidebar.
+    await expect
+      .poll(async () => {
+        const toast = await rect('generation-error-toast')
+        return (
+          apart(toast, await rect('minimap')) &&
+          apart(toast, await rect('zoom-controls')) &&
+          toast.left >= left &&
+          toast.right <= width - 400
+        )
+      })
+      .toBe(true)
+  })
+}
+
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
   await gotoEditor(page)
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 20_000 })
