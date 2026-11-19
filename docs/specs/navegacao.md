@@ -109,7 +109,8 @@ barra inferior.
   devolve os mesmos. A camada liga e desliga pelo estado da interface
   (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
   2D), o mapa aparece só com o terreno, sem decoração.
-- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão): a
+- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm` do mundo aberto ou criado
+  pelo assistente; sem valor válido, 800 km): a
   barra tem 32 px, e o texto é quantos km cabem nela no zoom atual (inteiro a partir de 10 km;
   abaixo, uma casa decimal, com vírgula). A porcentagem é o zoom relativo (100% = mapa inteiro na
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.

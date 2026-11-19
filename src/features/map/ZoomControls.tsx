@@ -42,8 +42,10 @@ export function ZoomControls({ world, camera }: { world: WorldStore; camera: Cam
         <Minus size={18} aria-hidden="true" />
       </ZoomButton>
       {showDetails && (
-        <span data-testid="zoom-percent" aria-label="Zoom atual" className="w-9 text-center text-[11px] font-bold text-ink-2 tabular-nums">
-          {percent}
+        <span className="w-9 text-center text-[11px] font-bold text-ink-2 tabular-nums">
+          {/* O rótulo vai como texto para leitores de tela: aria-label num span sem papel não é lido. */}
+          <span className="sr-only">Zoom atual: </span>
+          <span data-testid="zoom-percent">{percent}</span>
         </span>
       )}
       <ZoomButton label="Aproximar" shortcut="+" onClick={() => run('zoomIn')}>

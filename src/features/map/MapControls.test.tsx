@@ -54,6 +54,21 @@ describe('Controle de zoom (AC-F2-09)', () => {
     expect(screen.queryByTestId('zoom-percent')).toBeNull()
   })
 
+  it('a escala usa o sizeKm do mundo', () => {
+    const { camera } = cameraWith(992)
+    render(<ZoomControls world={createWorldStore(idleGenerator, { sizeKm: 1600 })} camera={camera} />)
+    expect(screen.getByTestId('map-scale').textContent).toBe('50 km')
+  })
+
+  it('a porcentagem tem o rótulo "Zoom atual" como texto para leitores de tela', () => {
+    const { camera } = cameraWith(992)
+    render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
+    const percent = screen.getByTestId('zoom-percent')
+    expect(percent.textContent).toBe('200%')
+    expect(percent.parentElement?.textContent).toBe('Zoom atual: 200%')
+    expect(percent.parentElement?.hasAttribute('aria-label')).toBe(false)
+  })
+
   it('a porcentagem acompanha o zoom', () => {
     const { camera } = cameraWith(992)
     render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
