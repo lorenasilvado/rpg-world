@@ -15,7 +15,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
   await expect(toast).toHaveCSS('background-color', 'rgb(179, 58, 46)')
-  // À esquerda do drawer (400 px) com 16 px de folga, acima do controle de zoom (16 px da base,
+  // À esquerda do drawer (400 px) com 12 px de folga (alinhado com o zoom), acima do controle de zoom (16 px da base,
   // 56 px de altura e 12 px de folga: 84 px).
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
   await expect
@@ -23,7 +23,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
       const box = await toast.boundingBox()
       return box && [Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([1440 - 400 - 16, 900 - 84])
+    .toEqual([1440 - 400 - 12, 900 - 84])
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)
@@ -35,7 +35,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await expect(toast).toBeHidden()
 })
 
-test('celular 390×844: o toast ocupa a largura com 16 px de folga, acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
+test('celular 390×844: o toast ocupa a largura (16 px à esquerda, 12 à direita, alinhado com o zoom), acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.route(WORKER, (route) => route.abort())
   await gotoEditor(page)
@@ -48,7 +48,7 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga, acima do min
       const box = await toast.boundingBox()
       return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([16, 390 - 16, 844 - 168])
+    .toEqual([16, 390 - 12, 844 - 168])
   // O minimapa aberto (140 px, 16 px da base) fica inteiro abaixo do toast, com 12 px de folga.
   const minimap = await page.getByTestId('minimap').boundingBox()
   expect(Math.round(minimap!.y)).toBe(844 - 16 - 140)

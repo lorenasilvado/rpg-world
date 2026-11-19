@@ -136,7 +136,7 @@ export function EditorLayout({
           <Minimap world={world} ui={ui} camera={camera} />
         </div>
         <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
-          <ZoomControls world={world} camera={camera} />
+          <ZoomControls world={world} camera={camera} areaWidth={barWidth} />
         </div>
         <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} />
       </div>

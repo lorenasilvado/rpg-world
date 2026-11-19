@@ -1,5 +1,5 @@
 import { ChevronDown, Map as MapIcon } from 'lucide-react'
-import { useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useStore } from 'zustand'
 import type { CameraStore } from '../../state/cameraStore'
 import type { UiStore } from '../../state/uiStore'
@@ -14,7 +14,7 @@ import {
   minimapViewRect,
 } from './mapControls'
 import { MINIMAP_PADDING, PANEL_BORDER, minimapHeaderHeight } from './bottomBarLayout'
-import { MINIMAP_RES, createTerrainPainter } from './minimapTerrain'
+import { createTerrainPainter, minimapResolution } from './minimapTerrain'
 import { useCoarsePointer } from './useCoarsePointer'
 
 /**
@@ -71,6 +71,8 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
   const surface = useRef<HTMLDivElement>(null)
   const rect = useRef<HTMLDivElement>(null)
   const drag = useRef<{ dx: number; dy: number } | null>(null)
+  // A densidade da tela ao montar (o canvas é redesenhado a cada mapa novo).
+  const [res] = useState(minimapResolution)
 
   // O terreno: redesenhado a cada campo novo (a prévia e o mapa final), reaproveitando o canvas de
   // origem de cada tamanho.
@@ -139,13 +141,17 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
   }
 
   // Setas com o foco no minimapa: movem a área visível `MINIMAP_KEY_STEP_PX` px do minimapa, na hora.
-  // O evento fica marcado como tratado, e o atalho de pan da câmera (no document) não soma outro passo.
+  // O atalho de pan da câmera (`MapCamera`) escuta as setas no `document`; para ele não somar outro
+  // passo, o evento para aqui (`stopPropagation`: o React escuta na raiz do app, abaixo do
+  // `document`, então o evento nativo não chega a ele) e fica marcado como tratado (`preventDefault`,
+  // que a câmera também respeita).
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     const dir = ARROWS[e.key]
     if (!dir || e.ctrlKey || e.altKey || e.metaKey) return
     const { ready, view, controls } = camera.getState()
     if (!ready || !controls) return
     e.preventDefault()
+    e.stopPropagation()
     const step = minimapKeyStep()
     controls.centerOn(view.x + view.width / 2 + dir[0] * step, view.y + view.height / 2 + dir[1] * step)
   }
@@ -170,8 +176,8 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
     >
       <canvas
         ref={canvas}
-        width={MINIMAP_WIDTH * MINIMAP_RES}
-        height={MINIMAP_HEIGHT * MINIMAP_RES}
+        width={MINIMAP_WIDTH * res}
+        height={MINIMAP_HEIGHT * res}
         className="block size-full"
         aria-hidden="true"
       />

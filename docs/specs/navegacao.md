@@ -41,10 +41,9 @@ barra inferior.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
-  controle de zoom, no canto direito. Se a área livre tem menos de 570 px (onde o toast cobriria o
+  controle de zoom, no canto direito. Se a área livre tem menos de 566 px (onde o toast cobriria o
   minimapa), o toast ocupa a largura da área livre e fica acima do minimapa aberto (ou do zoom, com
   o minimapa recolhido), inclusive quando o minimapa está empilhado.
-- Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
 

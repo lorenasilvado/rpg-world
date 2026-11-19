@@ -102,7 +102,7 @@ export async function createMapRenderer(
     if (!terrain.size) return
     const area = freeArea()
     const view = worldView(t, area)
-    cameraState.getState().update({ zoom, scale: t.scale, view, areaWidth: area.width })
+    cameraState.getState().update({ zoom, scale: t.scale, view })
     if (decor) {
       decor.frame(view, zoom)
       writeDecorState(host, decor)

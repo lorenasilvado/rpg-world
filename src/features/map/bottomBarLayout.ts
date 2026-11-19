@@ -13,9 +13,9 @@ export const MINIMAP_HEIGHT = 100
 export const BAR_BOTTOM = 16
 /** Folga entre os elementos da linha (e entre o toast e o que fica abaixo dele). */
 export const BAR_GAP = 12
-/** Margem do minimapa à esquerda e do toast dos dois lados. */
+/** Margem do minimapa (e do toast, quando ocupa a largura) à esquerda. */
 export const BAR_SIDE = 16
-/** Margem do controle de zoom à direita (alinhado com a barra de ações do topo). */
+/** Margem do controle de zoom e do toast à direita (alinhados com a barra de ações do topo). */
 export const ZOOM_SIDE = 12
 
 /** Borda dos cartões (minimapa e zoom). */
@@ -60,7 +60,7 @@ export const TOAST_WIDTH = 352
 /** Abaixo desta largura da área livre, o minimapa e o zoom compacto não cabem lado a lado. */
 export const STACK_BELOW = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + ZOOM_COMPACT_MAX_WIDTH + ZOOM_SIDE
 /** A partir desta largura, o toast cabe no canto direito sem chegar ao minimapa. */
-export const TOAST_BESIDE_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOAST_WIDTH + BAR_SIDE
+export const TOAST_BESIDE_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOAST_WIDTH + ZOOM_SIDE
 
 export type BottomBarLayout = {
   /** O minimapa fica acima do zoom, em vez de ao lado. */

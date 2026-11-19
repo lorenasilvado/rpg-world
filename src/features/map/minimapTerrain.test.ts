@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { createTerrainPainter, type PaintCanvas } from './minimapTerrain'
+import { createTerrainPainter, minimapResolution, type PaintCanvas } from './minimapTerrain'
 
 function fakeCanvas(width = 0, height = 0) {
   const ctx = {
@@ -45,6 +45,13 @@ describe('createTerrainPainter', () => {
     expect(target.ctx.drawImage).toHaveBeenCalledWith(expect.anything(), 60, 0, 200, 200)
   })
 
+  it('a escala do desenho sai da largura do canvas (3× numa tela de densidade 3)', () => {
+    const painter = createTerrainPainter(() => fakeCanvas().canvas)
+    const target = fakeCanvas(480, 300)
+    painter.draw(target.canvas, 4, 4, rgba(4))
+    expect(target.ctx.drawImage).toHaveBeenCalledWith(expect.anything(), 90, 0, 300, 300)
+  })
+
   it('reaproveita o canvas de origem de cada tamanho, em vez de criar um a cada campo', () => {
     const created: PaintCanvas[] = []
     const painter = createTerrainPainter(() => {
@@ -66,5 +73,17 @@ describe('createTerrainPainter', () => {
     const painter = createTerrainPainter(() => fakeCanvas().canvas)
     const target = { width: 320, height: 200, getContext: () => null } as unknown as PaintCanvas
     expect(painter.draw(target, 4, 4, rgba(4))).toBe(false)
+  })
+})
+
+describe('minimapResolution', () => {
+  it('é a densidade da tela arredondada para cima, de 1× a 3×', () => {
+    expect(minimapResolution(1)).toBe(1)
+    expect(minimapResolution(1.25)).toBe(2)
+    expect(minimapResolution(2)).toBe(2)
+    expect(minimapResolution(3)).toBe(3)
+    expect(minimapResolution(4)).toBe(3)
+    expect(minimapResolution(0)).toBe(1)
+    expect(minimapResolution(Number.NaN)).toBe(1)
   })
 })

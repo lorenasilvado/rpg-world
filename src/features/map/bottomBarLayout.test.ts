@@ -20,24 +20,24 @@ describe('medidas da linha inferior', () => {
     expect(MINIMAP_CARD_HEIGHT_TOUCH).toBe(152)
     expect(MINIMAP_CARD_COLLAPSED_HEIGHT_TOUCH).toBe(46)
     expect(ZOOM_COMPACT_MAX_WIDTH).toBe(146)
-    // 16 + 174 + 12 + 146 + 12 e 16 + 174 + 12 + 352 + 16.
+    // 16 + 174 + 12 + 146 + 12 e 16 + 174 + 12 + 352 + 12.
     expect(STACK_BELOW).toBe(360)
-    expect(TOAST_BESIDE_FROM).toBe(570)
+    expect(TOAST_BESIDE_FROM).toBe(566)
   })
 })
 
 describe('bottomBarLayout', () => {
   it('área larga: minimapa na base, toast no canto direito acima do zoom', () => {
     expect(bottomBarLayout(720, true)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: true, toastBottom: 68 })
-    expect(bottomBarLayout(570, false)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: true, toastBottom: 68 })
+    expect(bottomBarLayout(566, false)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: true, toastBottom: 68 })
   })
 
   it('sem medir (jsdom), o caso largo', () => {
     expect(bottomBarLayout(null, true)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: true, toastBottom: 68 })
   })
 
-  it('abaixo de 570 px: o toast na largura, acima do minimapa aberto ou do zoom', () => {
-    expect(bottomBarLayout(569, true)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: false, toastBottom: 152 })
+  it('abaixo de 566 px: o toast na largura, acima do minimapa aberto ou do zoom', () => {
+    expect(bottomBarLayout(565, true)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: false, toastBottom: 152 })
     // Recolhido (34 px), o zoom (56 px) é o mais alto.
     expect(bottomBarLayout(390, false)).toEqual({ stacked: false, minimapBottom: 0, toastBeside: false, toastBottom: 68 })
   })

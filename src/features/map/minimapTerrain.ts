@@ -1,7 +1,14 @@
+import { MINIMAP_WIDTH } from './bottomBarLayout'
 import { minimapMapBox } from './mapControls'
 
-/** Resolução do canvas do minimapa: 2× o tamanho na tela, nítido em telas de alta densidade. */
-export const MINIMAP_RES = 2
+/**
+ * Resolução do canvas do minimapa (pixels do canvas por px CSS): a densidade da tela arredondada
+ * para cima, de 1× a 3×, para ficar nítido sem gastar à toa.
+ */
+export function minimapResolution(devicePixelRatio = typeof window === 'undefined' ? 1 : window.devicePixelRatio): number {
+  const dpr = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1
+  return Math.min(3, Math.max(1, Math.ceil(dpr)))
+}
 
 /** O que o pintor usa de um canvas (o `HTMLCanvasElement`, ou um falso nos testes). */
 export type PaintCanvas = Pick<HTMLCanvasElement, 'width' | 'height'> & {
@@ -51,7 +58,9 @@ export function createTerrainPainter(
       ctx.clearRect(0, 0, target.width, target.height)
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(src as CanvasImageSource, box.x * MINIMAP_RES, box.y * MINIMAP_RES, box.size * MINIMAP_RES, box.size * MINIMAP_RES)
+      // A escala sai do próprio canvas (largura em pixels do canvas sobre a do minimapa em px CSS).
+      const res = target.width / MINIMAP_WIDTH
+      ctx.drawImage(src as CanvasImageSource, box.x * res, box.y * res, box.size * res, box.size * res)
       return true
     },
   }

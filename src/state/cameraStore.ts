@@ -22,8 +22,6 @@ export type CameraView = {
   scale: number
   /** Parte do mundo à vista na área livre. */
   view: WorldRect
-  /** Largura da área livre em px CSS (a tela menos a sidebar e o drawer fixos). */
-  areaWidth: number
 }
 
 export type CameraState = CameraView & {
@@ -48,7 +46,6 @@ export function createCameraStore(): CameraStore {
     zoom: 1,
     scale: 1,
     view: { x: 0, y: 0, width: 0, height: 0 },
-    areaWidth: 0,
     controls: null,
     update(next) {
       const s = get()
@@ -57,7 +54,6 @@ export function createCameraStore(): CameraStore {
         s.ready &&
         s.zoom === next.zoom &&
         s.scale === next.scale &&
-        s.areaWidth === next.areaWidth &&
         v.x === next.view.x &&
         v.y === next.view.y &&
         v.width === next.view.width &&

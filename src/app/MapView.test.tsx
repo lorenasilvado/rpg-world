@@ -17,7 +17,11 @@ function fakeRenderer() {
   }
 }
 
-afterEach(cleanup)
+const originalMatchMedia = window.matchMedia
+afterEach(() => {
+  cleanup()
+  window.matchMedia = originalMatchMedia
+})
 
 describe('MapView', () => {
   it('registra os comandos só do renderer que guardou, mesmo se o descartado termina depois (StrictMode)', async () => {

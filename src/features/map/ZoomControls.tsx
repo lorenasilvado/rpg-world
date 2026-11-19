@@ -9,15 +9,17 @@ import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapCo
 /**
  * Controle de zoom do canto inferior direito (navegacao.md, AC-F2-09): a barra de escala em km
  * (a partir do `sizeKm` do mundo), Afastar, a porcentagem do zoom, Aproximar e Centralizar. Os
- * botões fazem o mesmo que as teclas −, + e 0. Com a área livre abaixo de 860 px, a escala e a
- * porcentagem somem e ficam só os botões (`data-compact`, também antes de a câmera estar pronta).
+ * botões fazem o mesmo que as teclas −, + e 0. Com a área livre (`areaWidth`, a largura da linha
+ * inferior medida pelo editor, a mesma que decide o empilhamento; `null` antes de medir) abaixo de
+ * 860 px, a escala e a porcentagem somem e ficam só os botões (`data-compact`, também antes de a
+ * câmera estar pronta).
  * Os botões têm 44 × 44 px em telas de toque (`ZOOM_BUTTON_TOUCH`, a área de toque mínima do design
  * system) e 40 px de largura com mouse (a exceção do zoom no desktop).
  */
-export function ZoomControls({ world, camera }: { world: WorldStore; camera: CameraStore }) {
+export function ZoomControls({ world, camera, areaWidth }: { world: WorldStore; camera: CameraStore; areaWidth: number | null }) {
   const sizeKm = useStore(world, (s) => s.sizeKm)
   const ready = useStore(camera, (s) => s.ready)
-  const details = useStore(camera, (s) => showsZoomDetails(s.areaWidth))
+  const details = areaWidth !== null && showsZoomDetails(areaWidth)
   const scale = useStore(camera, (s) => scaleLabel(s.scale, sizeKm))
   const percent = useStore(camera, (s) => zoomPercent(s.zoom))
   const run = (command: 'zoomIn' | 'zoomOut' | 'center') => camera.getState().controls?.[command]()
