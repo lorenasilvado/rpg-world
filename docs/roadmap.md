@@ -117,6 +117,6 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 29 | #51 | [feat] Distribuição do mapa, Gerando e sem WebGL2 | done | specs/geracao-terreno.md | #128 |
 | 30 | #52 | [feat] Assistente de novo mundo | done | specs/geracao-terreno.md | #133 |
 | 31 | #53 | [feat] Minimapa, escala e controles de zoom | done | specs/navegacao.md | #136 |
-| 32 | #54 | [feat] Barras do editor, Camadas e Ajuda | doing | specs/navegacao.md | |
+| 32 | #54 | [feat] Barras do editor, Camadas e Ajuda | done | specs/navegacao.md | |
 | 33 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | todo | specs/geracao-terreno.md | |
 | 34 | #56 | [feat] Medir distância | todo | specs/navegacao.md | |
