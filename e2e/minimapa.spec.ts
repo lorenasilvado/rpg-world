@@ -2,6 +2,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   MINIMAP_CARD_COLLAPSED_HEIGHT,
+  MINIMAP_CARD_COLLAPSED_HEIGHT_TOUCH,
+  MINIMAP_CARD_HEIGHT_TOUCH,
+  MINIMAP_HEADER_HEIGHT_TOUCH,
   MINIMAP_CARD_HEIGHT,
   MINIMAP_CARD_WIDTH,
   TOAST_WIDTH,
@@ -314,9 +317,46 @@ test('a largura do toast no canto direito bate com TOAST_WIDTH, e o texto cabe n
 test.describe('zoom compacto no toque', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
 
+  test('o cabeçalho do minimapa tem a área de toque mínima (44 px), e o cartão bate com as medidas de toque', async ({ page }) => {
+    await gotoEditor(page)
+    await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
+    const header = page.getByRole('button', { name: 'Minimapa' })
+    expect((await box(header)).height).toBe(MINIMAP_HEADER_HEIGHT_TOUCH)
+    expect((await box(page.getByTestId('minimap'))).height).toBe(MINIMAP_CARD_HEIGHT_TOUCH)
+    await header.tap()
+    expect((await box(page.getByTestId('minimap'))).height).toBe(MINIMAP_CARD_COLLAPSED_HEIGHT_TOUCH)
+  })
+
   test('a largura bate com ZOOM_COMPACT_MAX_WIDTH', async ({ page }) => {
     await gotoEditor(page)
     await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
     expect((await box(page.getByTestId('zoom-controls'))).width).toBe(ZOOM_COMPACT_MAX_WIDTH)
   })
+})
+
+test('tablet 1024 com a sidebar aberta: ao abrir o editor, o minimapa já aparece acima do zoom, sem subir animado', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 })
+  // Registra cada mudança da posição do minimapa e se a transição estava ligada naquele momento.
+  // (Amostrar a posição por quadro não basta: ao abrir, a thread principal fica ocupada carregando o
+  // mapa, e a animação de 200 ms pode acontecer inteira entre dois quadros desenhados.)
+  await page.addInitScript(() => {
+    const w = window as unknown as { minimapMoves: { bottom: string; transition: string }[] }
+    w.minimapMoves = []
+    new MutationObserver((records) => {
+      for (const r of records) {
+        const el = r.target as HTMLElement
+        if (el.dataset?.testid !== 'minimap-slot') continue
+        const last = w.minimapMoves[w.minimapMoves.length - 1]
+        if (last?.bottom === el.style.bottom) continue
+        w.minimapMoves.push({ bottom: el.style.bottom, transition: getComputedStyle(el).transitionDuration })
+      }
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style', 'class'] })
+  })
+  await page.goto('/')
+  await expect(page.getByTestId('minimap-slot')).toHaveAttribute('data-animated', 'true', { timeout: 15_000 })
+  const moves = await page.evaluate(() => (window as unknown as { minimapMoves: { bottom: string; transition: string }[] }).minimapMoves)
+  // Ele sobe uma vez para 68 px (acima do zoom), sem transição; depois, a transição fica ligada.
+  const stacked = moves.find((m) => m.bottom === '68px')
+  expect(stacked).toEqual({ bottom: '68px', transition: '0s' })
+  expect(await page.getByTestId('minimap-slot').evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.2s')
 })

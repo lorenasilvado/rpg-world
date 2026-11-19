@@ -38,32 +38,48 @@ export function ZoomControls({ world, camera }: { world: WorldStore; camera: Cam
           <span aria-hidden="true" className="h-[5px] border-[1.5px] border-t-0 border-ink" style={{ width: SCALE_BAR_PX }} />
         </div>
       )}
-      <ZoomButton label="Afastar" shortcut="−" onClick={() => run('zoomOut')}>
+      <ZoomButton label="Afastar" shortcut="−" ariaKeys="-" onClick={() => run('zoomOut')}>
         <Minus size={18} aria-hidden="true" />
       </ZoomButton>
       {showDetails && (
-        <span className="w-9 text-center text-[11px] font-bold text-ink-2 tabular-nums">
+        <span className="w-11 text-center text-[11px] font-bold text-ink-2 tabular-nums">
           {/* O rótulo vai como texto para leitores de tela: aria-label num span sem papel não é lido. */}
           <span className="sr-only">Zoom atual: </span>
           <span data-testid="zoom-percent">{percent}</span>
         </span>
       )}
-      <ZoomButton label="Aproximar" shortcut="+" onClick={() => run('zoomIn')}>
+      <ZoomButton label="Aproximar" shortcut="+" ariaKeys="Plus" onClick={() => run('zoomIn')}>
         <Plus size={18} aria-hidden="true" />
       </ZoomButton>
-      <ZoomButton label="Centralizar" shortcut="0" onClick={() => run('center')}>
+      <ZoomButton label="Centralizar" shortcut="0" ariaKeys="0" onClick={() => run('center')}>
         <LocateFixed size={18} aria-hidden="true" />
       </ZoomButton>
     </div>
   )
 }
 
-function ZoomButton({ label, shortcut, onClick, children }: { label: string; shortcut: string; onClick: () => void; children: ReactNode }) {
+/**
+ * Botão do zoom. `shortcut` é a tecla como aparece no título; `ariaKeys`, como vai no
+ * `aria-keyshortcuts`, onde o `+` separa teclas e a tecla + se escreve `Plus`.
+ */
+function ZoomButton({
+  label,
+  shortcut,
+  ariaKeys,
+  onClick,
+  children,
+}: {
+  label: string
+  shortcut: string
+  ariaKeys: string
+  onClick: () => void
+  children: ReactNode
+}) {
   return (
     <button
       type="button"
       aria-label={label}
-      aria-keyshortcuts={shortcut === '−' ? '-' : shortcut}
+      aria-keyshortcuts={ariaKeys}
       title={`${label} ( ${shortcut} )`}
       onClick={onClick}
       className="grid h-11 w-11 place-items-center rounded-control text-ink hover:bg-hover active:bg-press pointer-fine:w-10"

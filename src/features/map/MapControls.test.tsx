@@ -35,6 +35,14 @@ describe('Controle de zoom (AC-F2-09)', () => {
     expect(controls.center).toHaveBeenCalledTimes(1)
   })
 
+  it('aria-keyshortcuts dá as teclas como o ARIA pede (a tecla + é "Plus")', () => {
+    const { camera } = cameraWith(992)
+    render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
+    expect(screen.getByRole('button', { name: 'Afastar' }).getAttribute('aria-keyshortcuts')).toBe('-')
+    expect(screen.getByRole('button', { name: 'Aproximar' }).getAttribute('aria-keyshortcuts')).toBe('Plus')
+    expect(screen.getByRole('button', { name: 'Centralizar' }).getAttribute('aria-keyshortcuts')).toBe('0')
+  })
+
   it('com menos de 860 px de área livre, esconde a escala e a porcentagem', () => {
     const { camera } = cameraWith(720)
     render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} />)
@@ -102,6 +110,16 @@ describe('Minimapa (AC-F2-08)', () => {
     fireEvent.pointerUp(surface, { pointerId: 1 })
     fireEvent.pointerMove(surface, { clientX: 130, clientY: 50, pointerId: 1 })
     expect(controls.centerOn).toHaveBeenCalledTimes(2)
+  })
+
+  it('perder a captura do ponteiro termina o arrasto', () => {
+    const { camera, controls } = cameraWith(720)
+    render(<Minimap world={createWorldStore(idleGenerator)} ui={createUiStore()} camera={camera} />)
+    const surface = screen.getByTestId('minimap-surface')
+    fireEvent.pointerDown(surface, { button: 0, clientX: 80, clientY: 50, pointerId: 1 })
+    fireEvent.lostPointerCapture(surface, { pointerId: 1 })
+    fireEvent.pointerMove(surface, { clientX: 120, clientY: 50, pointerId: 1 })
+    expect(controls.centerOn).toHaveBeenCalledTimes(1)
   })
 
   it('tocar fora do retângulo centra a câmera ali', () => {

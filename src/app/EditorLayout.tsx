@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject }
 import { useStore } from 'zustand'
 import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { Minimap } from '../features/map/Minimap'
+import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { createCameraStore } from '../state/cameraStore'
@@ -57,7 +58,11 @@ export function EditorLayout({
   const [camera] = useState(createCameraStore)
   const minimapOpen = useStore(ui, (s) => s.minimapOpen)
   const bottomBar = useRef<HTMLDivElement>(null)
-  const layout = bottomBarLayout(useWidth(bottomBar), minimapOpen)
+  const barWidth = useWidth(bottomBar)
+  const layout = bottomBarLayout(barWidth, minimapOpen, useCoarsePointer())
+  // O minimapa só desliza entre ao lado e acima do zoom depois da primeira medição da linha: ao
+  // abrir o editor numa área estreita, ele já aparece no lugar, sem subir animado.
+  const barAnimated = useAnimatedAfterMeasure(barWidth)
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -124,8 +129,9 @@ export function EditorLayout({
       >
         <div
           data-testid="minimap-slot"
+          data-animated={barAnimated}
           style={{ left: BAR_SIDE, bottom: layout.minimapBottom }}
-          className="pointer-events-auto absolute transition-[bottom] duration-200 ease-[var(--ease-panel)]"
+          className={`pointer-events-auto absolute ${barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : ''}`}
         >
           <Minimap world={world} ui={ui} camera={camera} />
         </div>
@@ -243,6 +249,25 @@ function useWidth(ref: RefObject<HTMLElement | null>) {
     return () => observer.disconnect()
   }, [ref])
   return width
+}
+
+/**
+ * Fica `true` dois quadros depois de a largura ser medida (`width` deixa de ser `null`): até lá, as
+ * transições da linha inferior ficam desligadas, para o primeiro layout não aparecer animado.
+ */
+function useAnimatedAfterMeasure(width: number | null) {
+  const [animated, setAnimated] = useState(false)
+  const measured = width !== null
+  useEffect(() => {
+    if (!measured || animated) return
+    // Dois quadros: o primeiro desenha a posição medida; só no seguinte a transição liga (num quadro só,
+    // a posição nova e a transição podem entrar no mesmo cálculo de estilo e animar mesmo assim).
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setAnimated(true))
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [measured, animated])
+  return animated
 }
 
 /** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */

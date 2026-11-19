@@ -36,7 +36,8 @@ barra inferior.
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
   visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
-  só o cabeçalho. Abre aberto.
+  só o cabeçalho. Abre aberto. O cabeçalho tem 32 px de altura com mouse e 44 px em telas de toque
+  (a área de toque mínima).
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
@@ -109,8 +110,9 @@ barra inferior.
   devolve os mesmos. A camada liga e desliga pelo estado da interface
   (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
   2D), o mapa aparece só com o terreno, sem decoração.
-- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm` do mundo aberto ou criado
-  pelo assistente; sem valor válido, 800 km): a
+- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`). Hoje ela é sempre
+  800 km: o editor abre o mundo padrão e o assistente não pergunta o tamanho (o `worldStore` já
+  aceita outro valor, para quando houver mundos salvos). A
   barra tem 32 px, e o texto é quantos km cabem nela no zoom atual (inteiro a partir de 10 km;
   abaixo, uma casa decimal, com vírgula). A porcentagem é o zoom relativo (100% = mapa inteiro na
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.
@@ -126,7 +128,7 @@ barra inferior.
 - Se a área livre tem menos de 360 px (estreita demais para o minimapa e o controle de zoom lado a
   lado: tablet com a sidebar aberta, celular estreito), o minimapa sobe para 12 px acima do
   controle de zoom, sem sobreposição. Com a área de novo larga (ex.: sidebar recolhida), ele volta
-  para o lado.
+  para o lado, deslizando; ao abrir o editor numa área estreita, ele já aparece no lugar.
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.

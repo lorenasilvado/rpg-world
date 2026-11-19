@@ -13,21 +13,23 @@ import {
   minimapKeyStep,
   minimapViewRect,
 } from './mapControls'
-import { MINIMAP_HEADER_HEIGHT, MINIMAP_PADDING, PANEL_BORDER } from './bottomBarLayout'
+import { MINIMAP_PADDING, PANEL_BORDER, minimapHeaderHeight } from './bottomBarLayout'
 import { MINIMAP_RES, createTerrainPainter } from './minimapTerrain'
+import { useCoarsePointer } from './useCoarsePointer'
 
 /**
  * Minimapa (navegacao.md, AC-F2-08): o terreno do mapa exibido em 160 × 100, com o retângulo da
  * área visível, que acompanha a câmera. Arrastar o retângulo move a área visível; tocar fora dele
  * centra a câmera ali (e o arrasto continua dali). Com o foco no minimapa, as setas movem a área
  * visível 10 px do minimapa (1/10 do mapa). O cabeçalho "Minimapa" recolhe e abre (`minimapOpen` do
- * `ui`).
+ * `ui`); em tela de toque, ele tem 44 px de altura (a área de toque mínima).
  *
  * O retângulo é posto direto no estilo, a cada mudança do `camera`, sem render do React. Para os
  * testes, o minimapa expõe em `data-drawn` o tamanho do campo desenhado (vazio antes do primeiro).
  */
 export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore; camera: CameraStore }) {
   const open = useStore(ui, (s) => s.minimapOpen)
+  const touch = useCoarsePointer()
   const bodyId = useId()
   return (
     <section
@@ -43,7 +45,7 @@ export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore;
         aria-controls={bodyId}
         title={open ? 'Ocultar minimapa' : 'Mostrar minimapa'}
         onClick={() => ui.getState().setMinimapOpen(!open)}
-        style={{ height: MINIMAP_HEADER_HEIGHT }}
+        style={{ height: minimapHeaderHeight(touch) }}
         className="flex w-full items-center gap-1.5 pr-1.5 pl-2.5 text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase hover:text-ink"
       >
         <MapIcon size={15} aria-hidden="true" />
@@ -162,6 +164,7 @@ function MinimapSurface({ world, camera }: { world: WorldStore; camera: CameraSt
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      onLostPointerCapture={endDrag}
       className="relative cursor-pointer touch-none overflow-hidden rounded-[6px] bg-map-canvas select-none"
       style={{ width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
     >
