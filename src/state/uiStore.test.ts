@@ -30,4 +30,15 @@ describe('uiStore', () => {
     ui.getState().setSidebarCollapsed(false)
     expect(ui.getState().sidebarCollapsed).toBe(false)
   })
+
+  it('abre com o minimapa aberto; recolhe e abre, e só avisa quando muda (AC-F2-08)', () => {
+    const ui = createUiStore()
+    expect(ui.getState().minimapOpen).toBe(true)
+    const listener = vi.fn()
+    ui.subscribe(listener)
+    ui.getState().setMinimapOpen(false)
+    ui.getState().setMinimapOpen(false)
+    expect(ui.getState().minimapOpen).toBe(false)
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
 })

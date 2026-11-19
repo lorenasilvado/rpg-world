@@ -15,14 +15,15 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
   await expect(toast).toHaveCSS('background-color', 'rgb(179, 58, 46)')
-  // Acima da linha inferior, à esquerda do drawer (400 px) com 16 px de folga.
+  // À esquerda do drawer (400 px) com 12 px de folga (alinhado com o zoom), acima do controle de zoom (16 px da base,
+  // 56 px de altura e 12 px de folga: 84 px).
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([1440 - 400 - 16, 900 - 16])
+    .toEqual([1440 - 400 - 12, 900 - 84])
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)
@@ -34,7 +35,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await expect(toast).toBeHidden()
 })
 
-test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
+test('celular 390×844: o toast ocupa a largura (16 px à esquerda, 12 à direita, alinhado com o zoom), acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.route(WORKER, (route) => route.abort())
   await gotoEditor(page)
@@ -47,7 +48,18 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de 
       const box = await toast.boundingBox()
       return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([16, 390 - 16, 844 - 16])
+    .toEqual([16, 390 - 12, 844 - 168])
+  // O minimapa aberto (140 px, 16 px da base) fica inteiro abaixo do toast, com 12 px de folga.
+  const minimap = await page.getByTestId('minimap').boundingBox()
+  expect(Math.round(minimap!.y)).toBe(844 - 16 - 140)
+  // Com o minimapa recolhido, o toast desce para acima do controle de zoom.
+  await page.getByRole('button', { name: 'Minimapa' }).click()
+  await expect
+    .poll(async () => {
+      const b = await toast.boundingBox()
+      return b && Math.round(b.y + b.height)
+    })
+    .toBe(844 - 84)
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)
@@ -55,6 +67,59 @@ test('celular 390×844: o toast ocupa a largura com 16 px de folga e "Tentar de 
   await loaded
   await expect(toast).toBeHidden()
 })
+
+test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima dos dois (AC-F1-12)', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.route(WORKER, (route) => route.abort())
+  await gotoEditor(page)
+  const toast = page.getByRole('alert')
+  await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
+  const bottom = async (testId: string) => {
+    const b = await page.getByTestId(testId).boundingBox()
+    return { top: Math.round(b!.y), bottom: Math.round(b!.y + b!.height) }
+  }
+  // Minimapa empilhado 12 px acima do zoom; toast 12 px acima do minimapa.
+  await expect.poll(async () => (await bottom('zoom-controls')).top - (await bottom('minimap')).bottom).toBe(12)
+  await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
+  // Recolhido, o toast desce para 12 px acima do cabeçalho do minimapa.
+  await page.getByRole('button', { name: 'Minimapa' }).click()
+  await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
+})
+
+// O toast nunca cobre o minimapa nem o controle de zoom e fica dentro da área livre (entre a
+// sidebar e o drawer), em larguras de área livre dos dois lados dos limites de 568 e 360 px.
+for (const { name, width, height, collapse, left } of [
+  { name: '1440 com a sidebar aberta (720 px)', width: 1440, height: 900, collapse: false, left: 320 },
+  { name: '1024 com a sidebar recolhida (576 px)', width: 1024, height: 768, collapse: true, left: 48 },
+  { name: '820 com a sidebar recolhida (372 px)', width: 820, height: 1180, collapse: true, left: 48 },
+  { name: '1024 com a sidebar aberta (304 px, minimapa empilhado)', width: 1024, height: 768, collapse: false, left: 320 },
+]) {
+  test(`${name}: o toast não cobre o minimapa nem o zoom (AC-F1-12)`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    await page.route(WORKER, (route) => route.abort())
+    await gotoEditor(page)
+    await expect(page.getByRole('alert')).toHaveText(/Não foi possível gerar o mapa/)
+    if (collapse) await page.getByRole('button', { name: 'Recolher painel' }).click()
+    const rect = async (testId: string) => {
+      const b = (await page.getByTestId(testId).boundingBox())!
+      return { left: Math.round(b.x), right: Math.round(b.x + b.width), top: Math.round(b.y), bottom: Math.round(b.y + b.height) }
+    }
+    type R = Awaited<ReturnType<typeof rect>>
+    const apart = (a: R, b: R) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
+    // Espera a animação de entrada e a transição da sidebar.
+    await expect
+      .poll(async () => {
+        const toast = await rect('generation-error-toast')
+        return (
+          apart(toast, await rect('minimap')) &&
+          apart(toast, await rect('zoom-controls')) &&
+          toast.left >= left &&
+          toast.right <= width - 400
+        )
+      })
+      .toBe(true)
+  })
+}
 
 test('com o worker funcionando, o toast não aparece', async ({ page }) => {
   await gotoEditor(page)

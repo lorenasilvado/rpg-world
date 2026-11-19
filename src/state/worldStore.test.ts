@@ -3,7 +3,7 @@ import { DEFAULT_WORLD_PARAMS, generateField, type CoreField } from '../core'
 import type { GenerateRequest, GenerateResult } from '../workers/generatorApi'
 import { createNewerOnly } from '../workers/newerOnly'
 import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
-import { createWorldStore, isGenerating } from './worldStore'
+import { DEFAULT_SIZE_KM, createWorldStore, isGenerating } from './worldStore'
 
 /** Gerador falso: cada pedido fica parado até o teste chamar `finish` (ou `fail`). */
 function fakeGenerator() {
@@ -223,5 +223,28 @@ describe('createWorld (assistente de novo mundo, AC-F1-19)', () => {
     await tick()
     expect(store.getState().field?.width).toBe(MAP_SIZE)
     expect(store.getState().status).toBe('idle')
+  })
+})
+
+describe('worldStore: largura do mundo em km (escala, AC-F2-09)', () => {
+  it('vem dos dados iniciais, como o nome e a seed; sem ela, 800 km', () => {
+    expect(createWorldStore(fakeGenerator().gen).getState().sizeKm).toBe(DEFAULT_SIZE_KM)
+    expect(DEFAULT_SIZE_KM).toBe(800)
+    expect(createWorldStore(fakeGenerator().gen, { sizeKm: 1200 }).getState().sizeKm).toBe(1200)
+  })
+
+  it('um valor inválido (zero, negativo ou não finito) volta para a padrão', () => {
+    for (const sizeKm of [0, -5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(createWorldStore(fakeGenerator().gen, { sizeKm }).getState().sizeKm).toBe(DEFAULT_SIZE_KM)
+    }
+  })
+
+  it('o mundo novo do assistente traz a sua, ou a padrão', () => {
+    const store = createWorldStore(fakeGenerator().gen, { sizeKm: 1200 })
+    const params = store.getState().params
+    store.getState().createWorld({ name: 'Novo', sizeKm: 400, seed: 's', params })
+    expect(store.getState().sizeKm).toBe(400)
+    store.getState().createWorld({ name: 'Outro', seed: 't', params })
+    expect(store.getState().sizeKm).toBe(DEFAULT_SIZE_KM)
   })
 })

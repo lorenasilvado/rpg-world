@@ -1,7 +1,12 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { Minimap } from '../features/map/Minimap'
+import { useCoarsePointer } from '../features/map/useCoarsePointer'
+import { ZoomControls } from '../features/map/ZoomControls'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
+import { createCameraStore } from '../state/cameraStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
@@ -27,6 +32,12 @@ import { useTheme } from './useTheme'
  * `data-generation-status` (os testes esperam por ele). O `ui` guarda as camadas do mapa ligadas e
  * a sidebar recolhida (`uiStore.ts`). `createRenderer` troca o
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
+ *
+ * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
+ * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
+ * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
+ * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
+ * renderer (`cameraStore.ts`).
  */
 export function EditorLayout({
   world,
@@ -44,6 +55,14 @@ export function EditorLayout({
   const [drawerOpen, setDrawerOpen] = useState(false)
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
+  const [camera] = useState(createCameraStore)
+  const minimapOpen = useStore(ui, (s) => s.minimapOpen)
+  const bottomBar = useRef<HTMLDivElement>(null)
+  const barWidth = useWidth(bottomBar)
+  const layout = bottomBarLayout(barWidth, minimapOpen, useCoarsePointer())
+  // O minimapa só desliza entre ao lado e acima do zoom depois da primeira medição da linha: ao
+  // abrir o editor numa área estreita, ele já aparece no lugar, sem subir animado.
+  const barAnimated = useAnimatedAfterMeasure(barWidth)
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -93,7 +112,34 @@ export function EditorLayout({
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} ui={ui} inert={anyOpen} createRenderer={createRenderer} />
+      <MapView world={world} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
+
+      <div
+        ref={bottomBar}
+        data-testid="bottom-bar"
+        data-stacked={layout.stacked}
+        inert={anyOpen}
+        style={{ bottom: BAR_BOTTOM }}
+        className={[
+          'pointer-events-none absolute right-0 left-0 z-10',
+          'transition-[left] duration-200 ease-[var(--ease-panel)]',
+          'md:right-[var(--drawer-width)]',
+          sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
+        ].join(' ')}
+      >
+        <div
+          data-testid="minimap-slot"
+          data-animated={barAnimated}
+          style={{ left: BAR_SIDE, bottom: layout.minimapBottom }}
+          className={`pointer-events-auto absolute ${barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : ''}`}
+        >
+          <Minimap world={world} ui={ui} camera={camera} />
+        </div>
+        <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
+          <ZoomControls world={world} camera={camera} areaWidth={barWidth} />
+        </div>
+        <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} />
+      </div>
 
       {anyOpen && (
         <div
@@ -168,8 +214,6 @@ export function EditorLayout({
         </IconButton>
       </div>
 
-      <GenerationErrorToast world={world} inert={anyOpen} />
-
       <aside
         aria-label="Detalhes"
         data-testid="drawer"
@@ -192,6 +236,38 @@ export function EditorLayout({
       </aside>
     </div>
   )
+}
+
+/** Largura do elemento, acompanhada pelo `ResizeObserver` (`null` antes de medir, ou sem ele, como no jsdom). */
+function useWidth(ref: RefObject<HTMLElement | null>) {
+  const [width, setWidth] = useState<number | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref])
+  return width
+}
+
+/**
+ * Fica `true` dois quadros depois de a largura ser medida (`width` deixa de ser `null`): até lá, as
+ * transições da linha inferior ficam desligadas, para o primeiro layout não aparecer animado.
+ */
+function useAnimatedAfterMeasure(width: number | null) {
+  const [animated, setAnimated] = useState(false)
+  const measured = width !== null
+  useEffect(() => {
+    if (!measured || animated) return
+    // Dois quadros: o primeiro desenha a posição medida; só no seguinte a transição liga (num quadro só,
+    // a posição nova e a transição podem entrar no mesmo cálculo de estilo e animar mesmo assim).
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setAnimated(true))
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [measured, animated])
+  return animated
 }
 
 /** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */

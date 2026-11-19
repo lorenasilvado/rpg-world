@@ -164,7 +164,7 @@ Sempre âmbar e visível:
 ```
 
 **Área de toque mínima:** 44×44 px (botões de ícone, ferramentas, itens de menu). Exceção atual:
-controles de zoom em 36 px no desktop.
+controles de zoom com 40 px de largura (e 44 de altura) com mouse; em telas de toque, 44×44.
 
 ## Movimento
 

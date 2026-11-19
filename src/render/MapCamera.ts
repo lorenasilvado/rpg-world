@@ -102,6 +102,24 @@ export class MapCamera {
     this.moveTo(fitView(this.area))
   }
 
+  /**
+   * Zoom no centro da área livre, deslizando (os botões + e − e as teclas). Toques seguidos somam a
+   * partir do destino do deslizamento em curso.
+   */
+  zoomBy(factor: number) {
+    const base = this.tween?.to ?? this.currentView()
+    const { min, max } = zoomLimits(this.area)
+    this.moveTo({ ...base, scale: Math.min(max, Math.max(min, base.scale * factor)) })
+  }
+
+  /** Põe o ponto do mundo (cx, cy) no centro da área livre na hora (o minimapa), sem mudar o zoom. */
+  centerOn(cx: number, cy: number) {
+    if (!this.fitted) return
+    this.tween = null
+    this.viewport.plugins.get('decelerate')?.reset()
+    this.jump({ cx, cy, scale: this.viewport.scale.x })
+  }
+
   destroy() {
     document.removeEventListener('keydown', this.onKeyDown)
     this.reducedMotion.removeEventListener('change', this.applyMotion)
@@ -193,9 +211,7 @@ export class MapCamera {
       const step = (KEY_PAN_STEP * Math.min(this.area.width, this.area.height)) / base.scale
       this.moveTo({ ...base, cx: base.cx + action.dx * step, cy: base.cy + action.dy * step })
     } else {
-      // Zoom no centro da área livre.
-      const { min, max } = zoomLimits(this.area)
-      this.moveTo({ ...base, scale: Math.min(max, Math.max(min, base.scale * action.factor)) })
+      this.zoomBy(action.factor)
     }
   }
 }

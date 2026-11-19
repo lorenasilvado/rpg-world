@@ -1,8 +1,9 @@
 import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
+import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
-import { WORLD_SIZE, mapRect, type Area } from './camera'
+import { KEY_ZOOM_STEP, WORLD_SIZE, mapRect, type Area } from './camera'
 import { DecorLayer, bindDecorLayer, destroyDecorTextures, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { worldView } from './layers/decorCull'
@@ -15,6 +16,11 @@ export type MapInsets = { left: number; right: number; top: number; bottom: numb
 export type MapRenderer = {
   /** Recalcula a área livre (ex.: os painéis mudaram), mantendo o centro e o zoom. */
   refit(): void
+  /**
+   * Os comandos da câmera, que quem guarda o renderer registra no `cameraStore` (os renderers falsos
+   * dos testes do jsdom não têm).
+   */
+  controls?: CameraControls
   destroy(): void
 }
 
@@ -39,12 +45,18 @@ export type MapRenderer = {
  * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não é desenhado,
  * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, mesmo com `layers.decor`
  * ligada no `ui`, e o console avisa.
+ *
+ * A câmera aparece para a interface no `cameraState` (`cameraStore.ts`): a cada quadro em que muda,
+ * o zoom e a parte visível do mundo. Os comandos de zoom, centralizar e centrar num ponto ficam em
+ * `controls`: quem guarda o renderer os registra no store (um renderer descartado antes de ficar
+ * pronto, como no StrictMode, não pode apagar os do que ficou).
  */
 export async function createMapRenderer(
   host: HTMLElement,
   world: WorldStore,
   insets: () => MapInsets = () => ({ left: 0, right: 0, top: 0, bottom: 0 }),
   ui: UiStore = createUiStore(),
+  cameraState: CameraStore = createCameraStore(),
 ): Promise<MapRenderer> {
   const app = new Application()
   // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
@@ -88,8 +100,11 @@ export async function createMapRenderer(
   const decor = textures ? new DecorLayer(textures) : null
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
+    const area = freeArea()
+    const view = worldView(t, area)
+    cameraState.getState().update({ zoom, scale: t.scale, view })
     if (decor) {
-      decor.frame(worldView(t, freeArea()), zoom)
+      decor.frame(view, zoom)
       writeDecorState(host, decor)
     } else {
       if (host.dataset.decorLayer !== 'off') host.dataset.decorLayer = 'off'
@@ -164,6 +179,12 @@ export async function createMapRenderer(
 
   return {
     refit: () => camera.resize(app.screen.width, app.screen.height),
+    controls: {
+      zoomIn: () => camera.zoomBy(KEY_ZOOM_STEP),
+      zoomOut: () => camera.zoomBy(1 / KEY_ZOOM_STEP),
+      center: () => camera.center(),
+      centerOn: (x, y) => camera.centerOn(x, y),
+    },
     destroy() {
       unsubscribe()
       unsubscribeUi()
