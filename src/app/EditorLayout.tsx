@@ -1,7 +1,9 @@
-import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
+import { CircleHelp, Compass, Download, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
-import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, ZOOM_BAR_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { MapToolbar } from '../features/map/MapToolbar'
+import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
 import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
@@ -10,7 +12,7 @@ import { createCameraStore } from '../state/cameraStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
-import { inDialog } from '../render/camera'
+import { inDialog, isFieldTarget } from '../render/camera'
 import { MapView, type CreateMapRenderer } from './MapView'
 import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
@@ -37,7 +39,14 @@ import { useTheme } from './useTheme'
  * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
  * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
- * renderer (`cameraStore.ts`).
+ * renderer (`cameraStore.ts`). No centro da linha fica a toolbar de ferramentas (`MapToolbar`), ou em
+ * pé acima do zoom quando não cabe deitada.
+ *
+ * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar, Desfazer,
+ * Refazer e Exportar ficam desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
+ * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
+ * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
+ * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
  */
 export function EditorLayout({
   world,
@@ -53,6 +62,13 @@ export function EditorLayout({
   const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  /** Quem tinha o foco ao abrir a Ajuda: recebe o foco de volta ao fechar. */
+  const helpReturn = useRef<HTMLElement | null>(null)
+  const openHelp = () => {
+    helpReturn.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setHelpOpen(true)
+  }
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   const [camera] = useState(createCameraStore)
@@ -64,6 +80,7 @@ export function EditorLayout({
   // abrir o editor numa área estreita, ele já aparece no lugar, sem subir animado.
   const barAnimated = useAnimatedAfterMeasure(barWidth)
   const anyOpen = sidebarOpen || drawerOpen
+  const searchLabel = desktop && (barWidth === null || barWidth >= SEARCH_LABEL_FROM)
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
   const drawerOpener = useRef<HTMLButtonElement>(null)
@@ -102,6 +119,17 @@ export function EditorLayout({
   }, [ui])
 
   useEffect(() => {
+    if (anyOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '?' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented || isFieldTarget(e.target) || inDialog(e.target)) return
+      e.preventDefault()
+      openHelp()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyOpen])
+
+  useEffect(() => {
     if (!anyOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeAll()
@@ -135,10 +163,17 @@ export function EditorLayout({
         >
           <Minimap world={world} ui={ui} camera={camera} />
         </div>
+        <div
+          data-testid="toolbar-slot"
+          style={layout.toolbarVertical ? { right: ZOOM_SIDE, bottom: ZOOM_BAR_HEIGHT + BAR_GAP } : { left: '50%', bottom: 0 }}
+          className={`pointer-events-auto absolute ${layout.toolbarVertical ? '' : '-translate-x-1/2'}`}
+        >
+          <MapToolbar ui={ui} vertical={layout.toolbarVertical} />
+        </div>
         <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
           <ZoomControls world={world} camera={camera} areaWidth={barWidth} />
         </div>
-        <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} />
+        <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} right={layout.toastRight} />
       </div>
 
       {anyOpen && (
@@ -196,7 +231,7 @@ export function EditorLayout({
         data-testid="actions"
         inert={anyOpen}
         className={[
-          'absolute top-3 right-3 z-10 flex h-14 items-center gap-1 rounded-panel bg-paper px-2 shadow-md backdrop-blur-[14px]',
+          'absolute top-3 right-3 z-10 flex h-14 items-center rounded-panel bg-paper px-1 shadow-md backdrop-blur-[14px] md:gap-0.5 md:px-1.5',
           'md:right-[calc(var(--drawer-width)+12px)]',
         ].join(' ')}
       >
@@ -206,13 +241,28 @@ export function EditorLayout({
         <IconButton ref={drawerOpener} label="Abrir detalhes" className="md:hidden" onClick={() => setDrawerOpen(true)}>
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
+        <SearchButton label={searchLabel} />
+        <IconButton label="Desfazer" title="Desfazer (Ctrl+Z)" disabled>
+          <Undo2 size={20} aria-hidden="true" />
+        </IconButton>
+        <IconButton label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled>
+          <Redo2 size={20} aria-hidden="true" />
+        </IconButton>
+        <IconButton label="Exportar" disabled>
+          <Download size={20} aria-hidden="true" />
+        </IconButton>
         <IconButton
           label={theme === 'light' ? 'Usar tema escuro' : 'Usar tema claro'}
           onClick={toggle}
         >
           {theme === 'light' ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
         </IconButton>
+        <IconButton label="Ajuda" title="Ajuda ( ? )" keyShortcuts="?" onClick={openHelp}>
+          <CircleHelp size={20} aria-hidden="true" />
+        </IconButton>
       </div>
+
+      <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} returnFocus={helpReturn} />
 
       <aside
         aria-label="Detalhes"
@@ -307,17 +357,62 @@ function usePanelFocus(
   }, [open, closeButton, opener])
 }
 
+/** A partir desta largura da área livre (e de 768 px de tela), Buscar mostra o rótulo e o atalho. */
+const SEARCH_LABEL_FROM = 420
+
+/**
+ * Buscar (Ctrl K), desabilitado até a busca existir (M2). Com `label`, parece um campo com o rótulo
+ * e a tecla; sem, só o ícone (área livre estreita e celular).
+ */
+function SearchButton({ label }: { label: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-label="Buscar"
+      title="Buscar (Ctrl+K)"
+      disabled
+      data-testid="search-button"
+      data-label={label}
+      className={
+        label
+          ? 'mr-1.5 flex h-10 shrink-0 items-center gap-2 rounded-control border border-line bg-field pr-2 pl-2.5 text-[13px] font-semibold text-ink-2 disabled:opacity-55'
+          : 'grid size-11 shrink-0 place-items-center rounded-control text-ink disabled:opacity-40'
+      }
+    >
+      <Search size={label ? 18 : 20} aria-hidden="true" />
+      {label && (
+        <>
+          <span aria-hidden="true">Buscar</span>
+          <kbd aria-hidden="true" className="rounded-[4px] border border-line bg-sunken px-[5px] font-sans text-[11px]/[18px] font-bold">
+            Ctrl K
+          </kbd>
+        </>
+      )}
+    </button>
+  )
+}
+
+/**
+ * Botão de ícone da barra (44 × 44). `title` é o texto do tooltip (o rótulo, se não vier). Com
+ * `disabled`, a função ainda não existe: opacidade .4 (design system → Botão de ícone).
+ */
 function IconButton({
   ref,
   label,
+  title = label,
+  keyShortcuts,
+  disabled = false,
   className = '',
   onClick,
   children,
 }: {
   ref?: Ref<HTMLButtonElement>
   label: string
+  title?: string
+  keyShortcuts?: string
+  disabled?: boolean
   className?: string
-  onClick: () => void
+  onClick?: () => void
   children: ReactNode
 }) {
   return (
@@ -325,9 +420,11 @@ function IconButton({
       ref={ref}
       type="button"
       aria-label={label}
-      title={label}
+      aria-keyshortcuts={keyShortcuts}
+      title={title}
+      disabled={disabled}
       onClick={onClick}
-      className={`grid size-11 place-items-center rounded-control text-ink hover:bg-hover active:bg-press ${className}`}
+      className={`grid size-11 shrink-0 place-items-center rounded-control text-ink enabled:hover:bg-hover enabled:active:bg-press disabled:opacity-40 ${className}`}
     >
       {children}
     </button>

@@ -35,7 +35,7 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   await expect(toast).toBeHidden()
 })
 
-test('celular 390×844: o toast ocupa a largura (16 px à esquerda, 12 à direita, alinhado com o zoom), acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
+test('celular 390×844: o toast ocupa a largura (16 px à esquerda; à direita, 12 px antes da toolbar em pé), acima do minimapa (sem cobri-lo), e "Tentar de novo" funciona (AC-F1-12)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.route(WORKER, (route) => route.abort())
   await gotoEditor(page)
@@ -48,7 +48,10 @@ test('celular 390×844: o toast ocupa a largura (16 px à esquerda, 12 à direit
       const box = await toast.boundingBox()
       return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([16, 390 - 12, 844 - 168])
+    .toEqual([16, 390 - 80, 844 - 168])
+  // A toolbar em pé fica à direita do toast, sem ser coberta por ele.
+  const toolbar = await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox()
+  expect(Math.round(toolbar!.x)).toBe(390 - 12 - 56)
   // O minimapa aberto (140 px, 16 px da base) fica inteiro abaixo do toast, com 12 px de folga.
   const minimap = await page.getByTestId('minimap').boundingBox()
   expect(Math.round(minimap!.y)).toBe(844 - 16 - 140)
@@ -86,7 +89,7 @@ test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima 
   await expect.poll(async () => (await bottom('minimap')).top - (await bottom('generation-error-toast')).bottom).toBe(12)
 })
 
-// O toast nunca cobre o minimapa nem o controle de zoom e fica dentro da área livre (entre a
+// O toast nunca cobre o minimapa, o controle de zoom nem a toolbar (deitada ou em pé) e fica dentro da área livre (entre a
 // sidebar e o drawer), em larguras de área livre dos dois lados dos limites de 568 e 360 px.
 for (const { name, width, height, collapse, left } of [
   { name: '1440 com a sidebar aberta (720 px)', width: 1440, height: 900, collapse: false, left: 320 },
@@ -94,7 +97,7 @@ for (const { name, width, height, collapse, left } of [
   { name: '820 com a sidebar recolhida (372 px)', width: 820, height: 1180, collapse: true, left: 48 },
   { name: '1024 com a sidebar aberta (304 px, minimapa empilhado)', width: 1024, height: 768, collapse: false, left: 320 },
 ]) {
-  test(`${name}: o toast não cobre o minimapa nem o zoom (AC-F1-12)`, async ({ page }) => {
+  test(`${name}: o toast não cobre o minimapa, o zoom nem a toolbar (AC-F1-12)`, async ({ page }) => {
     await page.setViewportSize({ width, height })
     await page.route(WORKER, (route) => route.abort())
     await gotoEditor(page)
@@ -113,6 +116,7 @@ for (const { name, width, height, collapse, left } of [
         return (
           apart(toast, await rect('minimap')) &&
           apart(toast, await rect('zoom-controls')) &&
+          apart(toast, await rect('map-toolbar')) &&
           toast.left >= left &&
           toast.right <= width - 400
         )

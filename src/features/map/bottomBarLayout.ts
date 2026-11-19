@@ -54,6 +54,24 @@ export const ZOOM_BUTTON_TOUCH = 44
 /** O controle de zoom compacto (só −, + e centralizar) no maior caso, o de toque. */
 export const ZOOM_COMPACT_MAX_WIDTH = 2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + 3 * ZOOM_BUTTON_TOUCH
 
+/**
+ * Toolbar de ferramentas (design-system.md → Ferramenta da toolbar): 6 ferramentas de 44 px, 4 px
+ * entre elas, um separador antes de Camadas (1 px com 4 px de margem dos lados) e 5 px de folga nas
+ * pontas. Na linha, fica deitada e centrada; em pé, tem a largura `TOOLBAR_THICKNESS`.
+ */
+export const TOOLBAR_TOOLS = 6
+export const TOOLBAR_BUTTON = 44
+export const TOOLBAR_GAP = 4
+export const TOOLBAR_PADDING = 5
+export const TOOLBAR_SEPARATOR = 1 + 2 * 4
+export const TOOLBAR_THICKNESS = 56
+/** Comprimento da toolbar (a largura deitada, a altura em pé): 309 px. */
+export const TOOLBAR_LENGTH =
+  2 * PANEL_BORDER + 2 * TOOLBAR_PADDING + TOOLBAR_TOOLS * TOOLBAR_BUTTON + TOOLBAR_TOOLS * TOOLBAR_GAP + TOOLBAR_SEPARATOR
+
+/** Controle de zoom completo (escala e porcentagem), no maior caso, o de toque. */
+export const ZOOM_FULL_MAX_WIDTH = 2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + 46 + 44 + 3 * ZOOM_BUTTON_TOUCH
+
 /** Largura do toast quando fica no canto direito. */
 export const TOAST_WIDTH = 352
 
@@ -61,6 +79,12 @@ export const TOAST_WIDTH = 352
 export const STACK_BELOW = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + ZOOM_COMPACT_MAX_WIDTH + ZOOM_SIDE
 /** A partir desta largura, o toast cabe no canto direito sem chegar ao minimapa. */
 export const TOAST_BESIDE_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOAST_WIDTH + ZOOM_SIDE
+
+/**
+ * A partir desta largura da área livre, a toolbar cabe deitada no centro da linha (a grade
+ * `1fr auto 1fr`), sem chegar ao minimapa nem ao zoom: 713 px.
+ */
+export const TOOLBAR_ROW_FROM = 2 * (BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP) + TOOLBAR_LENGTH
 
 export type BottomBarLayout = {
   /** O minimapa fica acima do zoom, em vez de ao lado. */
@@ -71,6 +95,10 @@ export type BottomBarLayout = {
   toastBeside: boolean
   /** Base do toast, a partir da base da linha. */
   toastBottom: number
+  /** Distância do toast à direita da linha (passa para a esquerda da toolbar em pé). */
+  toastRight: number
+  /** A toolbar fica em pé, acima do controle de zoom, em vez de deitada no centro da linha. */
+  toolbarVertical: boolean
 }
 
 /**
@@ -79,15 +107,20 @@ export type BottomBarLayout = {
  * toque), o cabeçalho do minimapa é mais alto, e o toast sobe junto.
  *
  * - Abaixo de `STACK_BELOW`, o minimapa sobe para `BAR_GAP` acima do zoom.
- * - A partir de `TOAST_BESIDE_FROM`, o toast fica no canto direito, `BAR_GAP` acima do zoom.
- *   Abaixo, ele ocupa a largura e fica `BAR_GAP` acima do mais alto entre o minimapa (aberto ou
- *   recolhido) e o zoom.
+ * - A partir de `TOOLBAR_ROW_FROM`, a toolbar fica deitada no centro da linha. Abaixo, ela fica em
+ *   pé, `BAR_GAP` acima do zoom e alinhada à direita dele, e o toast passa para a esquerda dela.
+ * - A partir de `TOAST_BESIDE_FROM` (mais a toolbar em pé, quando ela está ali), o toast fica no
+ *   canto direito, `BAR_GAP` acima do zoom. Abaixo, ele ocupa a largura e fica `BAR_GAP` acima do
+ *   mais alto entre o minimapa (aberto ou recolhido) e o zoom.
  */
 export function bottomBarLayout(width: number | null, minimapOpen: boolean, touch = false): BottomBarLayout {
   const stacked = width !== null && width < STACK_BELOW
   const minimapBottom = stacked ? ZOOM_BAR_HEIGHT + BAR_GAP : 0
   const minimapTop = minimapBottom + minimapCardHeight(minimapOpen, touch)
-  const toastBeside = width === null || width >= TOAST_BESIDE_FROM
+  const toolbarVertical = width !== null && width < TOOLBAR_ROW_FROM
+  const toolbarSpace = toolbarVertical ? TOOLBAR_THICKNESS + BAR_GAP : 0
+  const toastRight = ZOOM_SIDE + toolbarSpace
+  const toastBeside = width === null || width - toolbarSpace >= TOAST_BESIDE_FROM
   const toastBottom = (toastBeside ? ZOOM_BAR_HEIGHT : Math.max(minimapTop, ZOOM_BAR_HEIGHT)) + BAR_GAP
-  return { stacked, minimapBottom, toastBeside, toastBottom }
+  return { stacked, minimapBottom, toastBeside, toastBottom, toastRight, toolbarVertical }
 }

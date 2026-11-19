@@ -98,6 +98,49 @@ describe('Layout vazio do editor', () => {
   })
 })
 
+describe('Barras do editor e Ajuda', () => {
+  it('a barra superior tem Buscar, Desfazer, Refazer e Exportar desabilitados, e tema e Ajuda ativos (AC-F2-10)', () => {
+    render(<App world={world()} createRenderer={noRenderer} />)
+    const actions = screen.getByTestId('actions')
+    for (const name of ['Buscar', 'Desfazer', 'Refazer', 'Exportar']) {
+      const button = actions.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)
+      expect(button?.disabled, name).toBe(true)
+    }
+    for (const name of ['Usar tema escuro', 'Ajuda']) {
+      expect(actions.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)?.disabled, name).toBe(false)
+    }
+    expect(screen.getByRole('toolbar', { name: 'Ferramentas' })).toBeTruthy()
+  })
+
+  it('Ajuda abre o modal "Atalhos de teclado" com os atalhos que funcionam, e Fechar o fecha (AC-F2-12)', () => {
+    render(<App world={world()} createRenderer={noRenderer} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Ajuda' }))
+    const dialog = screen.getByRole('dialog', { name: 'Atalhos de teclado' })
+    const rows = Array.from(dialog.querySelectorAll('dt')).map((dt) => `${dt.textContent} ${dt.nextElementSibling?.textContent}`)
+    expect(rows).toEqual(['Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
+    expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
+  })
+
+  it('a tecla ? abre o modal, menos com o foco num campo (AC-F2-12)', () => {
+    render(<App world={world()} createRenderer={noRenderer} />)
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    seed.focus()
+    fireEvent.keyDown(seed, { key: '?' })
+    expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
+    seed.blur()
+    fireEvent.keyDown(document.body, { key: '?' })
+    expect(screen.getByRole('dialog', { name: 'Atalhos de teclado' })).toBeTruthy()
+  })
+
+  it('com um painel aberto (celular), a tecla ? não abre o modal', () => {
+    render(<App world={world()} createRenderer={noRenderer} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir painel' }))
+    fireEvent.keyDown(document.body, { key: '?' })
+    expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
+  })
+})
+
 describe('Sem WebGL2 (AC-F1-20)', () => {
   it('mostra o aviso com os navegadores suportados no lugar do editor', () => {
     render(<App world={world()} createRenderer={noRenderer} webgl2={false} />)
