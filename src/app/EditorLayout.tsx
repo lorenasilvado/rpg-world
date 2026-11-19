@@ -52,6 +52,7 @@ export function EditorLayout({
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   const [camera] = useState(createCameraStore)
+  const minimapOpen = useStore(ui, (s) => s.minimapOpen)
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -194,7 +195,7 @@ export function EditorLayout({
         </IconButton>
       </div>
 
-      <GenerationErrorToast world={world} inert={anyOpen} />
+      <GenerationErrorToast world={world} inert={anyOpen} aboveMinimap={minimapOpen} />
 
       <aside
         aria-label="Detalhes"

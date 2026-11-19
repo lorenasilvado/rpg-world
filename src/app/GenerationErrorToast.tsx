@@ -6,9 +6,18 @@ import type { WorldStore } from '../state/worldStore'
  * novo falha (a geração ou o worker) e some quando uma geração nova começa. "Tentar de novo" gera
  * o mapa final de novo, com a seed e os parâmetros atuais. Fica no canto inferior direito da área
  * do mapa, logo acima do controle de zoom (design-system.md → Layout do Editor): 56 px dele e 12 px de
- * folga sobre os 16 px da base.
+ * folga sobre os 16 px da base. Abaixo de 768 px, ele ocupa a largura da tela, e com o minimapa aberto
+ * (`aboveMinimap`) sobe para acima dele, para não cobri-lo.
  */
-export function GenerationErrorToast({ world, inert }: { world: WorldStore; inert?: boolean }) {
+export function GenerationErrorToast({
+  world,
+  inert,
+  aboveMinimap = false,
+}: {
+  world: WorldStore
+  inert?: boolean
+  aboveMinimap?: boolean
+}) {
   const status = useStore(world, (s) => s.status)
   if (status !== 'error') return null
   return (
@@ -17,8 +26,11 @@ export function GenerationErrorToast({ world, inert }: { world: WorldStore; iner
       data-testid="generation-error-toast"
       inert={inert}
       className={[
-        'toast-in absolute right-4 bottom-[84px] left-4 z-10 flex items-center gap-3 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg',
-        'md:left-auto md:right-[calc(var(--drawer-width)+16px)]',
+        'toast-in absolute right-4 left-4 z-10 flex items-center gap-3 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg',
+        // No celular, o toast ocupa a largura: com o minimapa aberto (140 px de altura), ele sobe acima
+        // dele; recolhido, o controle de zoom (56 px) é o mais alto da linha inferior.
+        aboveMinimap ? 'bottom-[168px]' : 'bottom-[84px]',
+        'md:bottom-[84px] md:left-auto md:right-[calc(var(--drawer-width)+16px)]',
       ].join(' ')}
     >
       <span className="flex-1 font-semibold">Não foi possível gerar o mapa</span>

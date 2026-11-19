@@ -215,3 +215,29 @@ for (const { name, width, height } of [
     await zoomed(page, 1.25)
   })
 }
+
+test('com mouse, os botões de zoom têm 40 px de largura (a exceção do zoom no desktop)', async ({ page }) => {
+  await open(page)
+  for (const label of ['Afastar', 'Aproximar', 'Centralizar']) {
+    const b = await box(page.getByRole('button', { name: label }))
+    expect([b.width, b.height]).toEqual([40, 44])
+  }
+})
+
+test.describe('tela de toque', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+
+  test('os botões de zoom têm a área de toque mínima, 44 × 44 px', async ({ page }) => {
+    await gotoEditor(page)
+    await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
+    for (const label of ['Afastar', 'Aproximar', 'Centralizar']) {
+      const b = await box(page.getByRole('button', { name: label }))
+      expect([b.width, b.height]).toEqual([44, 44])
+    }
+    // Continuam à vista e sem cobrir o minimapa.
+    const zoom = await box(page.getByTestId('zoom-controls'))
+    const minimap = await box(page.getByTestId('minimap'))
+    expect(zoom.x).toBeGreaterThan(minimap.x + minimap.width)
+    expect(zoom.x + zoom.width).toBeLessThanOrEqual(390 - 12)
+  })
+})

@@ -40,7 +40,8 @@ barra inferior.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
-  controle de zoom.
+  controle de zoom; abaixo de 768 px, onde o toast ocupa a largura da tela, ele fica acima do
+  minimapa aberto (sem cobri-lo).
 - Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
@@ -109,6 +110,8 @@ barra inferior.
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.
 - Com a área livre abaixo de 860 px (ex.: 1440 px com a sidebar aberta e o drawer: 720 px), o
   controle de zoom fica só com −, + e centralizar.
+- Os botões −, + e centralizar têm 44 × 44 px em telas de toque (celular e tablet) e 40 × 44 px
+  com mouse.
 - Minimapa: o mapa (quadrado) aparece inteiro e centrado nos 160 × 100, com o fundo do oceano dos
   lados, e é redesenhado a cada mapa novo (a prévia e o final). O retângulo da área visível é
   cortado na borda do mapa (afastado, ele cobre o mapa todo) e acompanha a câmera a cada quadro.

@@ -9,7 +9,8 @@ import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapCo
  * Controle de zoom do canto inferior direito (navegacao.md, AC-F2-09): a barra de escala em km
  * (a partir do `sizeKm` do mundo), Afastar, a porcentagem do zoom, Aproximar e Centralizar. Os
  * botões fazem o mesmo que as teclas −, + e 0. Com a área livre abaixo de 860 px, a escala e a
- * porcentagem somem e ficam só os botões.
+ * porcentagem somem e ficam só os botões. Os botões têm 44 × 44 px em telas de toque (a área de toque
+ * mínima do design system) e 40 px de largura com mouse (a exceção do zoom no desktop).
  */
 export function ZoomControls({ world, camera }: { world: WorldStore; camera: CameraStore }) {
   const sizeKm = useStore(world, (s) => s.sizeKm)
@@ -60,7 +61,7 @@ function ZoomButton({ label, shortcut, onClick, children }: { label: string; sho
       aria-keyshortcuts={shortcut === '−' ? '-' : shortcut}
       title={`${label} ( ${shortcut} )`}
       onClick={onClick}
-      className="grid h-11 w-10 place-items-center rounded-control text-ink hover:bg-hover active:bg-press"
+      className="grid h-11 w-11 place-items-center rounded-control text-ink hover:bg-hover active:bg-press pointer-fine:w-10"
     >
       {children}
     </button>
