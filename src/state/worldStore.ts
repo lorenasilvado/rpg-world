@@ -27,6 +27,8 @@ export type WorldGenerator = Pick<NewerOnly<GenerateRequest, GenerateResult>, 'r
 export type WorldState = {
   /** Nome do mundo, na barra da sidebar. */
   name: string
+  /** Largura do mundo em km (a barra de escala é calculada a partir dela). */
+  sizeKm: number
   seed: string
   params: WorldParams
   /** Campo exibido: o resultado mais novo entregue até agora (`null` antes do primeiro). */
@@ -68,6 +70,8 @@ export function isGenerating(state: Pick<WorldState, 'status' | 'field'>): boole
 export const DEFAULT_SEED = 'rpg-world'
 /** Nome do mundo padrão, o que fica atrás do assistente ao abrir o app (o do protótipo). */
 export const DEFAULT_WORLD_NAME = 'Terras de Valdora'
+/** Largura do mundo padrão, em km (navegacao.md → Regras: barra de escala). */
+export const DEFAULT_SIZE_KM = 800
 
 export function createWorldStore(
   generator: WorldGenerator,
@@ -100,6 +104,7 @@ export function createWorldStore(
 
     return {
       name: initial.name ?? DEFAULT_WORLD_NAME,
+      sizeKm: DEFAULT_SIZE_KM,
       seed: initial.seed ?? DEFAULT_SEED,
       params: { ...(initial.params ?? DEFAULT_WORLD_PARAMS) },
       field: null,

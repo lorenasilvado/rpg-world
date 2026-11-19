@@ -1,7 +1,10 @@
 import { Compass, Moon, PanelLeftOpen, PanelRightOpen, Sun, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import { Minimap } from '../features/map/Minimap'
+import { ZoomControls } from '../features/map/ZoomControls'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
+import { createCameraStore } from '../state/cameraStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
@@ -27,6 +30,10 @@ import { useTheme } from './useTheme'
  * `data-generation-status` (os testes esperam por ele). O `ui` guarda as camadas do mapa ligadas e
  * a sidebar recolhida (`uiStore.ts`). `createRenderer` troca o
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
+ *
+ * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
+ * de zoom à direita (por cima do minimapa, se a área livre for estreita demais para os dois). Os
+ * dois leem a câmera do renderer (`cameraStore.ts`).
  */
 export function EditorLayout({
   world,
@@ -44,6 +51,7 @@ export function EditorLayout({
   const [drawerOpen, setDrawerOpen] = useState(false)
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
+  const [camera] = useState(createCameraStore)
   const anyOpen = sidebarOpen || drawerOpen
   const sidebarOpener = useRef<HTMLButtonElement>(null)
   const sidebarClose = useRef<HTMLButtonElement>(null)
@@ -93,7 +101,25 @@ export function EditorLayout({
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} ui={ui} inert={anyOpen} createRenderer={createRenderer} />
+      <MapView world={world} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
+
+      <div
+        data-testid="bottom-bar"
+        inert={anyOpen}
+        className={[
+          'pointer-events-none absolute right-0 bottom-4 left-0 z-10',
+          'transition-[left] duration-200 ease-[var(--ease-panel)]',
+          'md:right-[var(--drawer-width)]',
+          sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
+        ].join(' ')}
+      >
+        <div className="pointer-events-auto absolute bottom-0 left-4">
+          <Minimap world={world} ui={ui} camera={camera} />
+        </div>
+        <div className="pointer-events-auto absolute right-3 bottom-0 z-[1]">
+          <ZoomControls world={world} camera={camera} />
+        </div>
+      </div>
 
       {anyOpen && (
         <div

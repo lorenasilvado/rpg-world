@@ -10,9 +10,10 @@ Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; 
 o comportamento atualiza esta spec.
 
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
-> reduzido) e a camada de decoração, com culling e nível de detalhe, ligada e desligada pelo estado
-> (sem interruptor na tela). O resto (minimapa, escala, controles de zoom, barras, Camadas, Ajuda,
-> medir distância) ainda não existe: vem do material de design e do PRD.
+> reduzido), a camada de decoração, com culling e nível de detalhe, ligada e desligada pelo estado
+> (sem interruptor na tela), o minimapa e o controle de zoom (escala, porcentagem, −, + e
+> centralizar). O resto (barra de ações completa, toolbar inferior, Camadas, Ajuda, medir
+> distância) ainda não existe: vem do material de design e do PRD.
 
 ## Resumo
 
@@ -34,8 +35,12 @@ barra inferior.
   estrada, rota automática, camadas, medir distância. Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
-  visível arrastável.
+  visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
+  só o cabeçalho. Abre aberto.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
+- Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
+  (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
+  controle de zoom.
 - Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
@@ -59,6 +64,7 @@ barra inferior.
 | Botões + / − (atalhos + / −) | Zoom |
 | Centralizar (atalho 0) | Centraliza o mapa |
 | Arrastar o retângulo do minimapa | Move a área visível |
+| Tocar no minimapa fora do retângulo | Centra a área visível no ponto tocado (e o arrasto continua dali) |
 | Recolher o minimapa | Esconde o minimapa |
 | Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa |
 | Ajuda | Abre o modal "Atalhos de teclado" |
@@ -97,7 +103,19 @@ barra inferior.
   devolve os mesmos. A camada liga e desliga pelo estado da interface
   (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
   2D), o mapa aparece só com o terreno, sem decoração.
-- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão).
+- Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`, 800 km por padrão): a
+  barra tem 32 px, e o texto é quantos km cabem nela no zoom atual (inteiro a partir de 10 km;
+  abaixo, uma casa decimal, com vírgula). A porcentagem é o zoom relativo (100% = mapa inteiro na
+  área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.
+- Com a área livre abaixo de 860 px (ex.: 1440 px com a sidebar aberta e o drawer: 720 px), o
+  controle de zoom fica só com −, + e centralizar.
+- Minimapa: o mapa (quadrado) aparece inteiro e centrado nos 160 × 100, com o fundo do oceano dos
+  lados, e é redesenhado a cada mapa novo (a prévia e o final). O retângulo da área visível é
+  cortado na borda do mapa (afastado, ele cobre o mapa todo) e acompanha a câmera a cada quadro.
+  Arrastar o retângulo move a área visível na hora, sem deslizar, mantendo o ponto pego sob o
+  ponteiro, dentro dos limites de pan.
+- Se a área livre é estreita demais para o minimapa e o controle de zoom (tablet com a sidebar
+  aberta), o controle de zoom fica por cima do minimapa.
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.
