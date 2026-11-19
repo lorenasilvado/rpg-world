@@ -167,7 +167,7 @@ describe('MapCamera', () => {
     now.mockRestore()
   })
 
-  it('o teclado não vale com o mapa inerte nem com o foco num campo', () => {
+  it('o teclado não vale com o mapa inerte, com o foco num campo ou dentro de um modal', () => {
     setReduced(true)
     const { camera, host, last, key } = setup()
     camera.showWorld()
@@ -181,6 +181,15 @@ describe('MapCamera', () => {
     const input = document.createElement('input')
     document.body.appendChild(input)
     expect(key('ArrowRight', input)).toBe(true)
+    expect(last().t).toEqual(fit)
+
+    // Foco num botão dentro de um modal (o assistente): o mapa atrás dele não se mexe.
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    const button = document.createElement('button')
+    dialog.appendChild(button)
+    document.body.appendChild(dialog)
+    for (const k of ['+', '-', '0', 'ArrowRight']) expect(key(k, button), k).toBe(true)
     expect(last().t).toEqual(fit)
 
     // Fora disso o atalho vale e não deixa o navegador agir (preventDefault). No 1× o mapa tem a

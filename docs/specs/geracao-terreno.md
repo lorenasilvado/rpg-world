@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -67,7 +67,7 @@ de dados em [overview.md](../overview.md).
 - Recolher: o botão ao lado de "Gerar mundo" (ou a tecla `[`) recolhe o painel a 48 px, um trilho
   com o logo, o botão de abrir e um ícone por seção; o ícone abre o painel com aquela seção aberta.
   O mapa passa a caber na área livre maior, com o mesmo centro e zoom relativo. A tecla `[` não vale
-  com o foco num campo de texto nem com Ctrl, Alt ou Meta. Abaixo de 768 px não há botão de
+  com o foco num campo de texto ou dentro do assistente de novo mundo nem com Ctrl, Alt ou Meta. Abaixo de 768 px não há botão de
   recolher: a tecla `[` abre e fecha o painel sobreposto.
 - Rodapé, fixo abaixo das seções: barra "Distribuição do mapa" com a porcentagem real de cada
   bioma no mapa exibido (contada célula a célula), legenda e botão "Restaurar padrão" (`rotate-ccw`), que volta os 9

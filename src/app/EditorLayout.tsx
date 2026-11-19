@@ -5,6 +5,7 @@ import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
+import { inDialog } from '../render/camera'
 import { MapView, type CreateMapRenderer } from './MapView'
 import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
@@ -215,10 +216,6 @@ function isTextField(target: EventTarget | null) {
   return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type)
 }
 
-/** Foco dentro de um modal (o assistente): a tecla `[` não mexe no painel atrás dele. */
-function inDialog(target: EventTarget | null) {
-  return target instanceof Element && target.closest('[role="dialog"]') !== null
-}
 
 /** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */
 function usePanelFocus(

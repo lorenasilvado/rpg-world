@@ -139,6 +139,19 @@ describe('Assistente de novo mundo (AC-F1-19)', () => {
     expect(requests).toEqual([])
   })
 
+  it('a tecla [ com o foco no assistente não recolhe a sidebar atrás dele', () => {
+    const { world } = recordingWorld()
+    render(<App world={world} createRenderer={noRenderer} newWorld />)
+    const sidebar = screen.getByTestId('sidebar')
+    expect(sidebar.dataset.collapsed).toBe('false')
+    fireEvent.keyDown(within(dialog()).getByRole('button', { name: 'Cancelar' }), { key: '[' })
+    expect(sidebar.dataset.collapsed).toBe('false')
+    // Fechado o assistente, a tecla volta a valer.
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Cancelar' }))
+    fireEvent.keyDown(document.body, { key: '[' })
+    expect(sidebar.dataset.collapsed).toBe('true')
+  })
+
   it('pede as miniaturas dos 4 presets com a seed do campo, e de novo depois da pausa ao trocá-la', async () => {
     vi.useFakeTimers()
     const asked: { seed: string; preset: number }[] = []

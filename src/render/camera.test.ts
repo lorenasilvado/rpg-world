@@ -7,6 +7,7 @@ import {
   easeCamera,
   fitScale,
   fitView,
+  inDialog,
   isFieldTarget,
   keyAction,
   lerpView,
@@ -141,5 +142,13 @@ describe('atalhos (AC-F2-04)', () => {
     expect(isFieldTarget(document.getElementById('b'))).toBe(false)
     expect(isFieldTarget(document.body)).toBe(false)
     expect(isFieldTarget(null)).toBe(false)
+  })
+
+  it('sabe se o foco está dentro de um modal', () => {
+    document.body.innerHTML = `<div role="dialog"><button id="in">ok</button></div><button id="out">ok</button>`
+    expect(inDialog(document.getElementById('in'))).toBe(true)
+    expect(inDialog(document.getElementById('out'))).toBe(false)
+    expect(inDialog(document.body)).toBe(false)
+    expect(inDialog(null)).toBe(false)
   })
 })
