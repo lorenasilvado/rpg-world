@@ -4,8 +4,8 @@ import { gotoEditor } from './editor.ts'
 
 // Camada de decoração (#48): os ícones aparecem, o culling tira os que ficam fora da tela e o nível
 // de detalhe tira parte deles no zoom baixo. O renderer expõe no mapa os ícones com desenho no
-// spritesheet (`data-decor-total`) e os desenhados (`data-decor-drawn`). O fps (AC-F2-07) é medido à
-// mão, em /sprites.html: o Chrome do teste não usa a GPU.
+// spritesheet (`data-decor-total`) e os desenhados (`data-decor-drawn`). O fps (AC-F2-07) é medido no
+// editor, com 5.000 ícones, em e2e/fps.spec.ts (projeto desempenho; as metas valem só com GPU).
 
 test.describe.configure({ timeout: 60_000 })
 

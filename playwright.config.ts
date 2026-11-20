@@ -9,13 +9,16 @@ import { defineConfig, devices } from '@playwright/test'
 // - determinismo-chrome, -firefox e -webkit: o hash do núcleo de geração nos 3 motores
 //   (#8, RNF-4), no servidor de desenvolvimento. Firefox e WebKit são os do Playwright:
 //   instale uma vez com `npx playwright install firefox webkit`;
+// - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 de ponta a ponta (#55), no
+//   servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
 // - desempenho: a medição da geração no worker (#9, RNF-2), no servidor de desenvolvimento.
 //   Roda depois de todos os outros projetos e sozinha: em paralelo com eles, a disputa pela CPU
 //   atrasa os quadros da UI e a medição deixa de valer. Para rodar só ela:
 //   `npx playwright test --project=desempenho --no-deps`.
 const DEV = 'http://localhost:5199'
 const DETERMINISMO = /determinismo\.spec\.ts/
-const DESEMPENHO = /desempenho\.spec\.ts/
+const DESEMPENHO = /(desempenho|fps)\.spec\.ts/
+const FLUXOS = /fluxos\.spec\.ts/
 const PREVIEW = 'npx vite preview --port 5198 --strictPort'
 
 export default defineConfig({
@@ -49,9 +52,27 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'], baseURL: DEV },
     },
     {
+      name: 'fluxos-firefox',
+      testMatch: FLUXOS,
+      use: { ...devices['Desktop Firefox'], baseURL: DEV },
+    },
+    {
+      name: 'fluxos-webkit',
+      testMatch: FLUXOS,
+      use: { ...devices['Desktop Safari'], baseURL: DEV },
+    },
+    {
       name: 'desempenho',
       testMatch: DESEMPENHO,
-      dependencies: ['app', 'pages', 'determinismo-chrome', 'determinismo-firefox', 'determinismo-webkit'],
+      dependencies: [
+        'app',
+        'pages',
+        'determinismo-chrome',
+        'determinismo-firefox',
+        'determinismo-webkit',
+        'fluxos-firefox',
+        'fluxos-webkit',
+      ],
       use: { channel: 'chrome', baseURL: DEV },
     },
   ],
