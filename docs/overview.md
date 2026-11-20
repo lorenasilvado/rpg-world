@@ -167,8 +167,7 @@ memória, a transferência sem cópia e a ordem de entrega.
 
 O spike dos 5.000 sprites (M0) fica em `src/sprites/` e abre em `/sprites.html`, no dev e no build
 (`http://localhost:5173/sprites.html`): terreno em textura única, 5.000 ícones do mesmo spritesheet
-na camada de decoração do editor (`DecorLayer`, com culling e nível de detalhe; a página serve para
-medir o AC-F2-07), e pixi-viewport com pan, zoom no cursor e pinça. O botão
+na camada de decoração do editor (`DecorLayer`, com culling e nível de detalhe), e pixi-viewport com pan, zoom no cursor e pinça. O botão
 "Medir automático" roda 30 s de câmera roteirizada, igual em toda máquina; "Medir manual" conta os
 30 s enquanto a pessoa faz pan e zoom, e não vale se faltar um dos dois gestos. O fps mínimo é o da
 pior janela de 1 s, e o relatório traz o
@@ -178,8 +177,25 @@ Chrome e outra com ele aberto há pelo menos 1 minuto. Na RX 7600, as medições
 foram as piores (uma chegou a 1 fps, sem causa confirmada). A hipótese é a atividade de partida do
 navegador: o JS ficou abaixo de 7 ms por quadro e não houve tarefas longas, mas isso não descarta
 custo na GPU ou no driver. O
-`e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do teste não
+`e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do CI não
 usa a GPU.
+
+O AC-F2-07 é medido no editor, com o app completo, pelo `e2e/fps.spec.ts`, no mesmo projeto do
+`desempenho.spec.ts` (sozinho e por último). O editor não passa de uns 3.600 ícones, então o
+teste serve o `src/core/decor/decor.ts` com uma distância mínima menor (`DECOR_SPACING` de 0,005)
+e o limite `MAX_DECOR` corta em 5.000. Durante 30 s ele faz roda, Ctrl+roda, pinça de dois dedos
+e arrasto, do zoom 0,4× ao 4×, e guarda o instante de cada quadro; a média e o mínimo saem da
+mesma conta da página de sprites. A máquina, a GPU, a tela e os números vão para as anotações e
+para o anexo `fps.json`, e a medição é registrada no PR. As metas só são conferidas fora do CI;
+fora dele, um renderer por software faz o teste falhar. Para medir com a janela à vista:
+`npx playwright test e2e/fps.spec.ts --project=desempenho --no-deps --headed`.
+
+Os fluxos principais do M1 rodam de ponta a ponta no `e2e/fluxos.spec.ts`: criar um mundo pelo
+assistente, mexer nos 9 sliders só com o teclado, aplicar um preset e navegar. Ele roda no Chrome
+(projeto `app`) e nos projetos `fluxos-firefox` e `fluxos-webkit`. Numa pasta de usuário com
+acento, o Firefox do Playwright não abre (o Windows não acha o `mozglue`): copie os navegadores de
+`%LOCALAPPDATA%\ms-playwright` para uma pasta sem acento e rode com `PLAYWRIGHT_BROWSERS_PATH`
+apontando para ela.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.

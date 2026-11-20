@@ -16,8 +16,8 @@ import { gotoEditor } from './editor.ts'
 // dedos e arrasto), e um laço de requestAnimationFrame guarda o instante de cada quadro. A média e
 // o mínimo (pior janela de 1 s) saem de `summarizeFrames`, a mesma conta do spike de 5.000 sprites.
 //
-// As metas só são conferidas fora do CI e com GPU de verdade: sem GPU, o Chrome desenha por
-// software e o número não vale. A máquina, a GPU e os números vão para as anotações e para o
+// As metas só são conferidas fora do CI. No CI, sem GPU, o Chrome desenha por software e o número
+// não vale; fora dele, um renderer por software faz o teste falhar, em vez de passar sem medir. A máquina, a GPU e os números vão para as anotações e para o
 // anexo `fps.json` (e para o PR). Para medir com a janela à vista:
 // `npx playwright test e2e/fps.spec.ts --project=desempenho --no-deps --headed`.
 
@@ -168,7 +168,9 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
   expect(stats.frames).toBeGreaterThan(0)
   expect(report.visible, 'a aba ficou escondida: a medição não vale').toBe(true)
 
-  if (CONFERE_FPS && hardware) {
+  if (CONFERE_FPS) {
+    // Fora do CI, um verde por software não pode passar por medição do AC-F2-07.
+    expect(hardware, `sem GPU de verdade (${machine.gpu ?? 'sem WebGL2'}): a medição não vale; rode numa máquina com GPU`).toBe(true)
     // "60 fps de média" num monitor de 60 Hz: a média arredondada é 60.
     expect(stats.avgFps).toBeGreaterThanOrEqual(TARGET_AVG - 0.5)
     expect(stats.minFps).toBeGreaterThanOrEqual(TARGET_MIN)
