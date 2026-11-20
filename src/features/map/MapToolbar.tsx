@@ -9,7 +9,8 @@ import { LAYERS, TOOLS, type Tool } from './tools'
  * Toolbar de ferramentas da linha inferior (navegacao.md → Elementos do editor, AC-F2-10 e AC-F2-11):
  * Navegar (a única ferramenta, ativa), Adicionar pin, Desenhar estrada, Rota automática, Camadas e
  * Medir distância. As ferramentas de funções que ainda não existem ficam desabilitadas (opacidade
- * .55). Hover ou foco do teclado mostra o tooltip com o nome e o atalho.
+ * .55). O hover (mesmo nas desabilitadas) ou o foco do teclado (só nas habilitadas: as
+ * desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
  *
  * Camadas abre um popover com um interruptor por camada do mapa (hoje, "Decoração", que liga e
  * desliga `layers.decor` do `ui`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)

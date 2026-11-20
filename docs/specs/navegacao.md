@@ -38,8 +38,9 @@ barra inferior.
 - Barra de ferramentas inferior (h 56, 309 px): navegar (ativa, em âmbar), adicionar pin, desenhar
   estrada, rota automática, um separador, camadas, medir distância. Adicionar pin, desenhar
   estrada, rota automática e medir distância aparecem desabilitadas (opacidade .55), até as funções
-  existirem. Hover com o mouse ou foco do teclado numa ferramenta (mesmo desabilitada) mostra o
-  tooltip com o nome e o atalho. Ícones e atalhos em
+  existirem. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
+  ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
+  Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - Com a área livre de pelo menos 713 px, a toolbar fica deitada no centro da linha inferior (entre o
   minimapa e o zoom, sem chegar a eles). De 341 a 712 px (ex.: 1280 com a sidebar e o drawer: 560

@@ -43,6 +43,24 @@ test('a barra superior e a toolbar: funções que ainda não existem desabilitad
   await expect(page.getByRole('tooltip')).toHaveText('Adicionar pinP')
 })
 
+test('o foco do teclado numa ferramenta habilitada mostra o tooltip; o Tab pula as desabilitadas (AC-F2-10)', async ({ page }) => {
+  await open(page)
+  const toolbar = page.getByRole('toolbar', { name: 'Ferramentas' })
+  await page.mouse.move(700, 300)
+  await toolbar.getByRole('button', { name: 'Navegar' }).focus()
+  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press('Tab')
+  await expect(toolbar.getByRole('button', { name: 'Navegar' })).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('NavegarV')
+  // Do Navegar, o Tab vai direto para Camadas (as três desabilitadas não recebem foco).
+  await page.keyboard.press('Tab')
+  await expect(toolbar.getByRole('button', { name: 'Camadas' })).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Camadas')
+  // Sem o foco, o tooltip some.
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+})
+
 test('1440 com a sidebar e o drawer: a toolbar fica deitada, centrada entre eles, 16 px da base', async ({ page }) => {
   await open(page)
   await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
@@ -99,6 +117,11 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   const dialog = page.getByRole('dialog', { name: 'Atalhos de teclado' })
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('dt')).toHaveText(['Mover o mapa', 'Zoom', 'Centralizar mapa', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
+  // Duas colunas a partir de 640 px: "Zoom" fica ao lado de "Mover o mapa", na mesma linha.
+  const first = (await dialog.locator('dt').nth(0).boundingBox())!
+  const second = (await dialog.locator('dt').nth(1).boundingBox())!
+  expect(Math.round(second.y)).toBe(Math.round(first.y))
+  expect(second.x).toBeGreaterThan(first.x + first.width)
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
   await expect(help).toBeFocused()
@@ -177,4 +200,10 @@ test('celular 390: a barra superior cabe na tela, e a toolbar fica deitada numa 
   const dialog = await page.getByRole('dialog', { name: 'Atalhos de teclado' }).boundingBox()
   expect(dialog!.x).toBeGreaterThanOrEqual(16)
   expect(dialog!.x + dialog!.width).toBeLessThanOrEqual(390 - 16)
+  // Uma coluna abaixo de 640 px: "Zoom" fica abaixo de "Mover o mapa", alinhado à esquerda.
+  const rows = page.getByRole('dialog', { name: 'Atalhos de teclado' }).locator('dt')
+  const first = (await rows.nth(0).boundingBox())!
+  const second = (await rows.nth(1).boundingBox())!
+  expect(second.y).toBeGreaterThan(first.y + first.height)
+  expect(Math.round(second.x)).toBe(Math.round(first.x))
 })
