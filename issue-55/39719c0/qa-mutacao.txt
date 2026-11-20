@@ -1,0 +1,3 @@
+M1 e M2 foram aplicadas uma por vez em src/, no commit 39719c0, e desfeitas com git checkout; rodadas com e2e/fluxos.spec.ts no projeto app.
+M1 slider fora do Tab (tabIndex -1 no Thumb) =>     Error: locator.getAttribute: Test timeout of 240000ms exceeded.   1 failed 
+M2 preset da sidebar sem efeito =>     Error: expect(locator).toHaveAttribute(expected) failed     Expected: "true"     Received: "false"   1 failed 
