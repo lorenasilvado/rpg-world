@@ -10,10 +10,10 @@ Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; 
 o comportamento atualiza esta spec.
 
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
-> reduzido), a camada de decoração, com culling e nível de detalhe, ligada e desligada pelo estado
-> (sem interruptor na tela), o minimapa e o controle de zoom (escala, porcentagem, −, + e
-> centralizar). O resto (barra de ações completa, toolbar inferior, Camadas, Ajuda, medir
-> distância) ainda não existe: vem do material de design e do PRD.
+> reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
+> (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
+> que ainda não existem desabilitadas), Camadas (interruptor "Decoração") e Ajuda (modal "Atalhos
+> de teclado"). Medir distância ainda não existe: vem do material de design e do PRD.
 
 ## Resumo
 
@@ -30,10 +30,32 @@ barra inferior.
 ### Elementos do editor
 
 - Barra flutuante no topo direito (pílula, h 56): Buscar (Ctrl K), desfazer, refazer, exportar,
-  alternar tema, ajuda.
-- Barra de ferramentas inferior central: navegar (ativa por padrão), adicionar pin, desenhar
-  estrada, rota automática, camadas, medir distância. Ícones e atalhos em
+  alternar tema, ajuda. Buscar, desfazer, refazer e exportar aparecem desabilitados (opacidade
+  .4), até as funções existirem. Buscar aparece como um campo com "Buscar" e a tecla "Ctrl K" a
+  partir de 768 px de tela e com a área livre de pelo menos 420 px; senão, só com o ícone. Abaixo de
+  768 px, os botões de abrir o painel e os detalhes vêm antes, e os botões ficam sem folga entre si
+  (a barra tem 360 px e cabe numa tela de 390).
+- Barra de ferramentas inferior (h 56, 309 px): navegar (ativa, em âmbar), adicionar pin, desenhar
+  estrada, rota automática, um separador, camadas, medir distância. Adicionar pin, desenhar
+  estrada, rota automática e medir distância aparecem desabilitadas (opacidade .55), até as funções
+  existirem. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
+  ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
+  Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
+- Com a área livre de pelo menos 713 px, a toolbar fica deitada no centro da linha inferior (entre o
+  minimapa e o zoom, sem chegar a eles). De 341 a 712 px (ex.: 1280 com a sidebar e o drawer: 560
+  px; celular 390), ela fica deitada e centrada numa segunda linha, 12 px acima do mais alto entre o
+  minimapa (aberto ou recolhido) e o zoom, e sobe e desce junto quando o minimapa abre e recolhe. Em
+  ambos, o tooltip e o popover de Camadas abrem acima dela. Abaixo de 341 px (tablet com a sidebar
+  aberta: 304 px), ela fica em pé, 12 px acima do controle de zoom e alinhada à direita dele; o
+  tooltip abre à esquerda, e o popover, acima, alinhado à direita.
+- Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
+  só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
+  ou um clique fora dele (inclusive no mapa).
+- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: mover o
+  mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
+  (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
+  volta para onde estava ao abrir.
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
   visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
   só o cabeçalho. Abre aberto. O cabeçalho tem 32 px de altura com mouse e 44 px em telas de toque
@@ -41,9 +63,12 @@ barra inferior.
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
 - Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
   (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
-  controle de zoom, no canto direito. Se a área livre tem menos de 566 px (onde o toast cobriria o
-  minimapa), o toast ocupa a largura da área livre e fica acima do minimapa aberto (ou do zoom, com
-  o minimapa recolhido), inclusive quando o minimapa está empilhado.
+  controle de zoom, no canto direito. Com a toolbar na segunda linha, o toast fica 12 px acima
+  dela; com a toolbar em pé, à esquerda dela (12 px). Se a área livre tem menos de 566 px (à
+  esquerda da toolbar em pé, quando ela está ali), onde o toast cobriria o minimapa, o toast ocupa a
+  largura da área livre (até a toolbar em pé) e fica acima da toolbar na segunda linha, ou do
+  minimapa aberto (ou do zoom, com o minimapa recolhido), inclusive quando o minimapa está
+  empilhado.
 - Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
   drawer.
 
@@ -69,8 +94,10 @@ barra inferior.
 | Tocar no minimapa fora do retângulo | Centra a área visível no ponto tocado (e o arrasto continua dali) |
 | Setas com o foco no minimapa | Movem a área visível 1/10 do mapa (10 px do minimapa), na hora |
 | Recolher o minimapa | Esconde o minimapa |
-| Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa |
-| Ajuda | Abre o modal "Atalhos de teclado" |
+| Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa (hoje, "Decoração") |
+| Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
+| Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
+| Buscar, desfazer, refazer, exportar, adicionar pin, desenhar estrada, rota automática, medir distância | Desabilitados: as funções ainda não existem |
 | Medir distância (M) (Should) | Mede a distância entre dois pontos |
 
 ## Regras
@@ -106,8 +133,8 @@ barra inferior.
   da área livre (culling, com uma folga de 25% de cada lado). Abaixo de 0,8× de zoom, aparece metade
   dos ícones, e abaixo de 0,55×, um quarto; o nível de detalhe nunca tira montanhas e montanhas
   nevadas (o culling, sim, quando estão longe da área livre). Afastar só tira ícones, e aproximar
-  devolve os mesmos. A camada liga e desliga pelo estado da interface
-  (`uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
+  devolve os mesmos. A camada liga e desliga pelo interruptor "Decoração" de Camadas
+  (o estado fica no `uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
   2D), o mapa aparece só com o terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`). Hoje ela é sempre
   800 km: o editor abre o mundo padrão e o assistente não pergunta o tamanho (o `worldStore` já
@@ -128,6 +155,8 @@ barra inferior.
   lado: tablet com a sidebar aberta, celular estreito), o minimapa sobe para 12 px acima do
   controle de zoom, sem sobreposição. Com a área de novo larga (ex.: sidebar recolhida), ele volta
   para o lado, deslizando; ao abrir o editor numa área estreita, ele já aparece no lugar.
+- A tecla ? abre a Ajuda, com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
+  num campo, dentro de um modal, painel sobreposto aberto no celular).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.

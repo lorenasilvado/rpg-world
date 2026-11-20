@@ -69,8 +69,8 @@ test.describe('Layout vazio do editor', () => {
     await opener.click()
     await expect(page.getByRole('button', { name: 'Fechar painel' })).toBeFocused()
 
-    // O ponto do botão de tema (na barra de ações) fica sob o scrim, não sob o botão.
-    const theme = await page.getByRole('button', { name: 'Usar tema escuro' }).boundingBox()
+    // O ponto do botão Ajuda (o último da barra de ações, fora da sidebar) fica sob o scrim, não sob o botão.
+    const theme = await page.getByRole('button', { name: 'Ajuda' }).boundingBox()
     const topmost = await page.evaluate(
       ([x, y]) => document.elementFromPoint(x, y)?.getAttribute('data-testid'),
       [theme!.x + theme!.width / 2, theme!.y + theme!.height / 2],
