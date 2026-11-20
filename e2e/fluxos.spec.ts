@@ -113,8 +113,16 @@ test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e nave
   const visited: string[] = []
   for (let tabs = 0; visited.length < SLIDERS.length && tabs < 80; tabs++) {
     await page.keyboard.press('Tab')
+    // Lido na hora, sem esperar: se o foco sai da página, o laço para, e a lista abaixo diz quais
+    // sliders o Tab alcançou.
+    const active = await page.evaluate(() => {
+      const el = document.activeElement
+      if (!el || el === document.body) return null
+      return { role: el.getAttribute('role'), expanded: el.getAttribute('aria-expanded'), controls: el.getAttribute('aria-controls') }
+    })
+    if (!active) break
     const focused = page.locator(':focus')
-    if ((await focused.getAttribute('role')) === 'slider') {
+    if (active.role === 'slider') {
       const name = await focusedSlider(page)
       expect(name, 'slider sem rótulo').not.toBeNull()
       const value = Number(await focused.getAttribute('aria-valuenow'))
@@ -125,20 +133,18 @@ test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e nave
       visited.push(name!)
       continue
     }
-    const expanded = await focused.getAttribute('aria-expanded')
-    const controls = await focused.getAttribute('aria-controls')
-    if (expanded === 'false' && controls) {
+    if (active.expanded === 'false' && active.controls) {
       await page.keyboard.press('Enter')
       await expect(focused).toHaveAttribute('aria-expanded', 'true')
     }
   }
-  // Cada slider foi alcançado e mudou, com rótulo, sem o mouse.
+  // Cada slider foi alcançado pelo Tab, na ordem, e mudou, com rótulo, sem o mouse.
+  expect(visited, 'sliders alcançados só com o teclado').toEqual(SLIDERS)
   for (const name of SLIDERS) {
     const slider = page.getByRole('slider', { name })
     const value = Number(await slider.getAttribute('aria-valuenow'))
     expect(Math.abs(value - FROZEN[name]), name).toBe(1)
   }
-  expect(visited).toEqual(SLIDERS)
   // A câmera não se mexeu com as setas nos sliders.
   await expect(map(page)).toHaveAttribute('data-zoom', '1.000')
   await expect.poll(async () => (await mapShot(page)).equals(created)).toBe(false)
