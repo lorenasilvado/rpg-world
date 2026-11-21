@@ -80,6 +80,8 @@ function MeasureLayer({ ui, world, camera, disabled }: { ui: UiStore; world: Wor
     }
     const onDown = (e: PointerEvent) => {
       if (!mapUnder(e.target)) return
+      // Um toque esquece onde o mouse estava: a linha provisória não vai até lá (aparelho híbrido).
+      if (e.pointerType === 'touch') setCursor(null)
       down.add(e.pointerId)
       press = down.size === 1 && e.button === 0 ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null
     }

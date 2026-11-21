@@ -175,6 +175,9 @@ barra inferior.
   o pan e o zoom. A tecla M tem as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
   num campo, dentro de um modal, painel sobreposto aberto no celular), e o Esc também não vale com
   o foco num campo ou dentro de um modal. Com o popover de Camadas aberto, o Esc fecha só o popover. Voltar para Navegar apaga a medida.
+  Um mapa novo (seed, preset, slider ou um mundo novo pelo assistente) não apaga a medida: os pontos
+  ficam no mesmo lugar, e a distância segue a largura do mundo (um mundo de outro tamanho muda os
+  km).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.

@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { DEFAULT_WORLD_PARAMS } from '../../core'
 import { createCameraStore } from '../../state/cameraStore'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
@@ -30,7 +31,7 @@ function setup({ sizeKm = 800, disabled = false } = {}) {
       <MeasureTool ui={ui} world={world} camera={camera} disabled={disabled} />
     </div>,
   )
-  return { ui, camera, ...utils }
+  return { ui, camera, world, ...utils }
 }
 
 const canvas = () => screen.getByTestId('canvas')
@@ -189,6 +190,28 @@ describe('Medir distância (AC-F2-13)', () => {
     expect(ui.getState().tool).toBe('measure')
     // O Esc seguinte já é da ferramenta.
     fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(distance()).toBeNull()
+  })
+
+  it('um mapa novo mantém a medida; um mundo de outro tamanho muda os km', () => {
+    const { ui, world } = setup()
+    act(() => ui.getState().setTool('measure'))
+    click(0, 0)
+    click(512, 0)
+    act(() => world.getState().setSeed('outra-seed'))
+    expect(distance()).toBe('400 km')
+    act(() => world.getState().createWorld({ name: 'Maior', sizeKm: 1600, seed: 'maior', params: DEFAULT_WORLD_PARAMS }))
+    expect(distance()).toBe('800 km')
+    expect(screen.getByTestId('measure-layer').dataset.points).toBe('2')
+  })
+
+  it('um toque esquece onde o mouse estava: a linha não vai até lá', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    fireEvent.pointerMove(canvas(), { pointerId: 1, clientX: 900, clientY: 900, pointerType: 'mouse' })
+    fireEvent.pointerDown(canvas(), { pointerId: 2, button: 0, clientX: 100, clientY: 100, pointerType: 'touch' })
+    fireEvent.pointerUp(canvas(), { pointerId: 2, button: 0, clientX: 100, clientY: 100, pointerType: 'touch' })
+    expect(screen.getByTestId('measure-layer').dataset.points).toBe('1')
     expect(distance()).toBeNull()
   })
 })
