@@ -4,6 +4,7 @@
  * (pins, estradas, busca, desfazer) entram aqui junto com elas.
  */
 export const SHORTCUTS: readonly { action: string; keys: string }[] = [
+  { action: 'Navegar', keys: 'V' },
   { action: 'Medir distância', keys: 'M' },
   { action: 'Mover o mapa', keys: 'Setas / WASD' },
   { action: 'Zoom', keys: '+ / −' },

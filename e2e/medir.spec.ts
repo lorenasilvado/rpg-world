@@ -150,3 +150,14 @@ test.describe('celular 390 com toque', () => {
     await expect(page.getByTestId('map')).toHaveAttribute('data-tool', 'measure')
   })
 })
+
+test('o leitor de tela ouve a distância, e a tecla V volta para Navegar (AC-F2-13)', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('m')
+  await page.mouse.click(500, 450)
+  await page.mouse.click(860, 450)
+  await expect(page.getByRole('status').filter({ hasText: 'Distância' })).toHaveText('Clique em dois pontos para medir. Distância: 400 km')
+  await page.keyboard.press('v')
+  await expect(toolbar(page).getByRole('button', { name: 'Navegar' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('measure-layer')).toHaveCount(0)
+})

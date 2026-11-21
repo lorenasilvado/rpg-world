@@ -52,7 +52,7 @@ barra inferior.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
   só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
-- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: medir
+- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), medir
   distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
@@ -62,7 +62,8 @@ barra inferior.
   com borda escura); até o segundo, uma linha tracejada clara vai dele até o mouse, com a distância
   em km numa pílula escura acima do meio da linha (com o mouse sobre um controle, como a toolbar ou
   o minimapa, a linha fica no último ponto do mapa). O segundo clique fixa a outra ponta e a
-  distância.
+  distância. Com as duas pontas, a região de status da dica anuncia ao leitor de tela a distância
+  ("Distância: 400 km").
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
   visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
   só o cabeçalho. Abre aberto. O cabeçalho tem 32 px de altura com mouse e 44 px em telas de toque
@@ -107,7 +108,7 @@ barra inferior.
 | Buscar, desfazer, refazer, exportar, adicionar pin, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
 | Medir distância (atalho M) | Liga a ferramenta de medir |
 | Dois cliques no mapa, com Medir distância | Marcam as pontas e mostram a distância em km entre elas; um terceiro clique começa outra medida |
-| Navegar | Volta para a navegação (sem medida) |
+| Navegar (atalho V) | Volta para a navegação (sem medida) |
 | Esc, com Medir distância | Apaga a medida; sem medida, volta para Navegar |
 
 ## Regras
@@ -172,7 +173,7 @@ barra inferior.
   casa decimal, com vírgula): 32 px na tela medem o mesmo que a barra. Um clique é apertar e soltar
   sem andar mais de 5 px; arrastar continua fazendo pan (e a pinça, zoom), sem marcar ponto. Um
   clique fora do mapa (no fundo) marca a borda mais próxima. A medida fica presa ao mapa: acompanha
-  o pan e o zoom. A tecla M tem as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
+  o pan e o zoom. As teclas M e V (Navegar) têm as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
   num campo, dentro de um modal, painel sobreposto aberto no celular), e o Esc também não vale com
   o foco num campo ou dentro de um modal. Com o popover de Camadas aberto, o Esc fecha só o popover. Voltar para Navegar apaga a medida.
   Um mapa novo (seed, preset, slider ou um mundo novo pelo assistente) não apaga a medida: os pontos

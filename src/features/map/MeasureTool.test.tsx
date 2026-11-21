@@ -214,4 +214,28 @@ describe('Medir distância (AC-F2-13)', () => {
     expect(screen.getByTestId('measure-layer').dataset.points).toBe('1')
     expect(distance()).toBeNull()
   })
+
+  it('a tecla V volta para Navegar, com as mesmas exceções da tecla M', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    seed.focus()
+    fireEvent.keyDown(seed, { key: 'v' })
+    fireEvent.keyDown(document.body, { key: 'v', ctrlKey: true })
+    expect(ui.getState().tool).toBe('measure')
+    fireEvent.keyDown(document.body, { key: 'V' })
+    expect(ui.getState().tool).toBe('nav')
+    expect(screen.queryByTestId('measure-layer')).toBeNull()
+  })
+
+  it('com as duas pontas, a região de status anuncia a distância ao leitor de tela', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    click(0, 0)
+    expect(screen.getByRole('status').textContent).toBe('Clique no ponto final')
+    click(512, 0)
+    expect(screen.getByRole('status').textContent).toBe('Clique em dois pontos para medir. Distância: 400 km')
+    // A dica visível continua a mesma.
+    expect(screen.getByTestId('measure-hint').textContent).toBe('Clique em dois pontos para medir')
+  })
 })

@@ -120,7 +120,7 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   await help.click()
   const dialog = page.getByRole('dialog', { name: 'Atalhos de teclado' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator('dt')).toHaveText(['Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
+  await expect(dialog.locator('dt')).toHaveText(['Navegar', 'Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
   // Duas colunas a partir de 640 px: "Zoom" fica ao lado de "Mover o mapa", na mesma linha.
   const first = (await dialog.locator('dt').nth(0).boundingBox())!
   const second = (await dialog.locator('dt').nth(1).boundingBox())!

@@ -13,14 +13,15 @@ export const HINT_TOP_PX = 84
 
 /**
  * Medir distância (navegacao.md, AC-F2-13). A tecla M (ou a ferramenta da toolbar) liga a ferramenta,
- * com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco num campo, dentro de um
+ * e a tecla V volta para Navegar, com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco num campo, dentro de um
  * modal, `disabled`: painel sobreposto aberto no celular). Com ela ligada, dois cliques no mapa
  * marcam as pontas, e a distância em km aparece no meio da linha; um terceiro clique recomeça.
  * Arrastar continua fazendo pan (só conta como clique quem anda até `CLICK_SLOP_PX`). Esc apaga os
  * pontos marcados e, sem pontos, volta para Navegar; com o foco num campo, o Esc é do campo.
  *
  * O desenho (a linha, as pontas, a distância e a dica) é um SVG por cima do mapa, sem eventos, que
- * acompanha a câmera pelo `camera` (a parte visível do mundo e a origem da área livre).
+ * acompanha a câmera pelo `camera` (a parte visível do mundo e a origem da área livre). A dica é a
+ * região `status`: com as duas pontas, ela anuncia também a distância ao leitor de tela.
  */
 export function MeasureTool({ ui, world, camera, disabled }: { ui: UiStore; world: WorldStore; camera: CameraStore; disabled: boolean }) {
   const active = useStore(ui, (s) => s.tool === 'measure')
@@ -28,10 +29,12 @@ export function MeasureTool({ ui, world, camera, disabled }: { ui: UiStore; worl
   useEffect(() => {
     if (disabled) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'm' || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return
+      const key = e.key.toLowerCase()
+      const tool = key === 'm' ? 'measure' : key === 'v' ? 'nav' : null
+      if (!tool || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return
       if (isFieldTarget(e.target) || inDialog(e.target)) return
       e.preventDefault()
-      ui.getState().setTool('measure')
+      ui.getState().setTool(tool)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
@@ -149,11 +152,13 @@ function MeasureLayer({ ui, world, camera, disabled }: { ui: UiStore; world: Wor
       )}
       <div
         role="status"
-        data-testid="measure-hint"
+        data-testid="measure-status"
         style={{ left: hintLeft, top: HINT_TOP_PX }}
         className="absolute -translate-x-1/2 rounded-full bg-[#2B2420] px-3.5 py-2 text-[13px]/[18px] font-semibold whitespace-nowrap text-[#F7F1E3] shadow-md"
       >
-        {measureHint(points)}
+        <span data-testid="measure-hint">{measureHint(points)}</span>
+        {/* Só para o leitor de tela: a medida pronta (a pílula da distância é visual). */}
+        {points.length === 2 && <span className="sr-only">{`. Distância: ${formatKm(distanceKm(points[0], points[1], sizeKm))}`}</span>}
       </div>
     </div>
   )
