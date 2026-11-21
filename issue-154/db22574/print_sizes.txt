@@ -1,0 +1,9 @@
+commit: db225749ff1e4d7f7447d8b190b399d80f6b5499
+ac-f4-01-a-antes-de-recarregar.png  1440x900  d995ae409d1040d8a40c9ab35c46a5f13aae6f71c3a13c907f8c155497bb8c99
+ac-f4-01-b-depois-de-recarregar.png  1440x900  6cf03d40cd5ffbf5255d2bfe465bfeb91c25b1dfe83daecd84c462fbe21d74f2
+ac-f4-02-a-salvando.png  1440x900  9fe1986e930610126d82ebb8d23b001b2255316cebfce5c1d2cfb52b757b9fd5
+ac-f4-02-b-salvo.png  1440x900  d995ae409d1040d8a40c9ab35c46a5f13aae6f71c3a13c907f8c155497bb8c99
+ac-f4-02-c-erro-ao-salvar.png  1440x900  792fb2c1a9808174dff141fc65fa896055ba883897597572cb9b860fba0628ab
+ac-f4-02-d-menu-do-erro.png  1440x900  fed79c501eaeed5bca80b4dfb647697abafab02460acbacd510fdceecb016afd
+ac-f4-02-e-tentar-de-novo-salvo.png  1440x900  6a9fb6b34055a9105d9fbade54c9e15dcab177a25c031906372191984b92316e
+ac-f4-03-registro-salvo.png  1440x900  84829e6ab8b4ccea545d8f3b93b5a1a50ee7e6b31a3ab2cbaee58f9180785b91
