@@ -12,7 +12,7 @@ function cameraWith(view = { x: 256, y: 256, width: 512, height: 512 }) {
   const camera = createCameraStore()
   const controls = { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn() }
   camera.getState().setControls(controls)
-  camera.getState().update({ zoom: 2, scale: 1, view })
+  camera.getState().update({ zoom: 2, scale: 1, view, origin: { x: 0, y: 0 } })
   return { camera, controls }
 }
 
@@ -59,7 +59,7 @@ describe('Controle de zoom (AC-F2-09)', () => {
 
   it('antes de a câmera estar pronta, fica compacto (data-compact)', () => {
     const camera = createCameraStore()
-    camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 } })
+    camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
     camera.getState().setControls(null)
     render(<ZoomControls world={createWorldStore(idleGenerator)} camera={camera} areaWidth={992} />)
     expect(screen.getByTestId('zoom-controls').dataset.compact).toBe('true')

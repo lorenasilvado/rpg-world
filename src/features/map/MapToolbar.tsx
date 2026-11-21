@@ -1,14 +1,15 @@
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useStore } from 'zustand'
-import type { MapLayer, UiStore } from '../../state/uiStore'
+import type { MapLayer, MapTool, UiStore } from '../../state/uiStore'
 import { PANEL_BORDER, TOOLBAR_GAP, TOOLBAR_PADDING, TOOLBAR_THICKNESS } from './bottomBarLayout'
 import { LAYERS, TOOLS, type Tool } from './tools'
 
 /**
- * Toolbar de ferramentas da linha inferior (navegacao.md → Elementos do editor, AC-F2-10 e AC-F2-11):
- * Navegar (a única ferramenta, ativa), Adicionar pin, Desenhar estrada, Rota automática, Camadas e
- * Medir distância. As ferramentas de funções que ainda não existem ficam desabilitadas (opacidade
+ * Toolbar de ferramentas da linha inferior (navegacao.md → Elementos do editor, AC-F2-10, AC-F2-11 e
+ * AC-F2-13): Navegar, Adicionar pin, Desenhar estrada, Rota automática, Camadas e Medir distância.
+ * Navegar e Medir distância trocam a ferramenta do mapa (`tool` do `ui`), e a ferramenta em uso fica
+ * ativa, em âmbar. As ferramentas de funções que ainda não existem ficam desabilitadas (opacidade
  * .55). O hover (mesmo nas desabilitadas) ou o foco do teclado (só nas habilitadas: as
  * desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
  *
@@ -26,6 +27,7 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
   const root = useRef<HTMLDivElement>(null)
   const layersButton = useRef<HTMLButtonElement>(null)
   const popoverId = useId()
+  const activeTool = useStore(ui, (s) => s.tool)
 
   useEffect(() => {
     if (!layersOpen) return
@@ -38,10 +40,11 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
     const onPointerDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) setLayersOpen(false)
     }
-    document.addEventListener('keydown', onKeyDown)
+    // Na captura: o Esc fecha o popover antes de chegar às outras teclas (a de Medir distância).
+    document.addEventListener('keydown', onKeyDown, true)
     document.addEventListener('pointerdown', onPointerDown)
     return () => {
-      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keydown', onKeyDown, true)
       document.removeEventListener('pointerdown', onPointerDown)
     }
   }, [layersOpen])
@@ -69,7 +72,8 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
         {TOOLS.map((tool) => {
           const Icon = tool.icon
           const isLayers = tool.id === 'layers'
-          const on = isLayers ? layersOpen : tool.id === 'nav'
+          const isMapTool = tool.id === 'nav' || tool.id === 'measure'
+          const on = isLayers ? layersOpen : tool.id === activeTool
           const showTip = tip === tool.id && !(isLayers && layersOpen)
           return (
             <div key={tool.id} className={`flex items-center ${vertical ? 'flex-col' : ''}`} style={{ gap: TOOLBAR_GAP }}>
@@ -90,7 +94,13 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
                     ? { 'aria-expanded': layersOpen, 'aria-controls': layersOpen ? popoverId : undefined, 'aria-haspopup': 'true' as const }
                     : { 'aria-pressed': on })}
                   data-on={on}
-                  onClick={isLayers ? () => setLayersOpen((open) => !open) : undefined}
+                  onClick={
+                    isLayers
+                      ? () => setLayersOpen((open) => !open)
+                      : isMapTool
+                        ? () => ui.getState().setTool(tool.id as MapTool)
+                        : undefined
+                  }
                   onFocus={(e) => e.currentTarget.matches(':focus-visible') && setTip(tool.id)}
                   onBlur={() => setTip((t) => (t === tool.id ? null : t))}
                   className={[

@@ -1,9 +1,11 @@
 /**
  * Os atalhos que já funcionam no editor (navegacao.md → Regras; design-system.md → Ícones de
  * interface), na ordem do modal "Atalhos de teclado". Os das ferramentas que ainda não existem
- * (pins, estradas, busca, desfazer, medir) entram aqui junto com elas.
+ * (pins, estradas, busca, desfazer) entram aqui junto com elas.
  */
 export const SHORTCUTS: readonly { action: string; keys: string }[] = [
+  { action: 'Navegar', keys: 'V' },
+  { action: 'Medir distância', keys: 'M' },
   { action: 'Mover o mapa', keys: 'Setas / WASD' },
   { action: 'Zoom', keys: '+ / −' },
   { action: 'Centralizar mapa', keys: '0' },

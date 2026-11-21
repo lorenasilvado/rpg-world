@@ -14,10 +14,30 @@ describe('Toolbar de ferramentas (AC-F2-10)', () => {
     const nav = screen.getByRole('button', { name: 'Navegar' })
     expect(nav.getAttribute('aria-pressed')).toBe('true')
     expect((nav as HTMLButtonElement).disabled).toBe(false)
-    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática', 'Medir distância']) {
+    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
     }
-    expect((screen.getByRole('button', { name: 'Camadas' }) as HTMLButtonElement).disabled).toBe(false)
+    for (const name of ['Camadas', 'Medir distância']) {
+      expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false)
+    }
+  })
+
+  it('Medir distância e Navegar trocam a ferramenta, e a ferramenta em uso fica ativa (AC-F2-13)', () => {
+    const ui = createUiStore()
+    render(<MapToolbar ui={ui} />)
+    const nav = screen.getByRole('button', { name: 'Navegar' })
+    const measure = screen.getByRole('button', { name: 'Medir distância' })
+    expect(measure.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(measure)
+    expect(ui.getState().tool).toBe('measure')
+    expect(measure.getAttribute('aria-pressed')).toBe('true')
+    expect(nav.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(nav)
+    expect(ui.getState().tool).toBe('nav')
+    expect(nav.getAttribute('aria-pressed')).toBe('true')
+    // Pela tecla (fora da toolbar), a toolbar acompanha.
+    act(() => ui.getState().setTool('measure'))
+    expect(measure.getAttribute('aria-pressed')).toBe('true')
   })
 
   it('o hover do mouse mostra o tooltip com o nome e o atalho', () => {

@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-19
+updated: 2026-11-20
 ---
 
 # F2 · Câmera e navegação
@@ -12,8 +12,8 @@ o comportamento atualiza esta spec.
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
 > (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
-> que ainda não existem desabilitadas), Camadas (interruptor "Decoração") e Ajuda (modal "Atalhos
-> de teclado"). Medir distância ainda não existe: vem do material de design e do PRD.
+> que ainda não existem desabilitadas), Camadas (interruptor "Decoração"), Ajuda (modal "Atalhos
+> de teclado") e Medir distância.
 
 ## Resumo
 
@@ -35,10 +35,10 @@ barra inferior.
   partir de 768 px de tela e com a área livre de pelo menos 420 px; senão, só com o ícone. Abaixo de
   768 px, os botões de abrir o painel e os detalhes vêm antes, e os botões ficam sem folga entre si
   (a barra tem 360 px e cabe numa tela de 390).
-- Barra de ferramentas inferior (h 56, 309 px): navegar (ativa, em âmbar), adicionar pin, desenhar
-  estrada, rota automática, um separador, camadas, medir distância. Adicionar pin, desenhar
-  estrada, rota automática e medir distância aparecem desabilitadas (opacidade .55), até as funções
-  existirem. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
+- Barra de ferramentas inferior (h 56, 309 px): navegar, adicionar pin, desenhar estrada, rota
+  automática, um separador, camadas, medir distância. A ferramenta em uso (navegar, ao abrir, ou
+  medir distância) fica ativa, em âmbar. Adicionar pin, desenhar estrada e rota automática aparecem
+  desabilitadas (opacidade .55), até as funções existirem. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
   ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
@@ -52,10 +52,18 @@ barra inferior.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
   só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
-- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: mover o
-  mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
+- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), medir
+  distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
+- Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica
+  (pílula escura, 84 px do topo, centrada na área livre) diz "Clique em dois pontos para medir" e,
+  depois do primeiro ponto, "Clique no ponto final". O primeiro clique marca um ponto (círculo claro
+  com borda escura); até o segundo, uma linha tracejada clara vai dele até o mouse, com a distância
+  em km numa pílula escura acima do meio da linha (com o mouse sobre um controle, como a toolbar ou
+  o minimapa, a linha fica no último ponto do mapa). O segundo clique fixa a outra ponta e a
+  distância. Com as duas pontas, a região de status da dica anuncia ao leitor de tela a distância
+  ("Distância: 400 km").
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
   visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
   só o cabeçalho. Abre aberto. O cabeçalho tem 32 px de altura com mouse e 44 px em telas de toque
@@ -97,8 +105,11 @@ barra inferior.
 | Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa (hoje, "Decoração") |
 | Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
-| Buscar, desfazer, refazer, exportar, adicionar pin, desenhar estrada, rota automática, medir distância | Desabilitados: as funções ainda não existem |
-| Medir distância (M) (Should) | Mede a distância entre dois pontos |
+| Buscar, desfazer, refazer, exportar, adicionar pin, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
+| Medir distância (atalho M) | Liga a ferramenta de medir |
+| Dois cliques no mapa, com Medir distância | Marcam as pontas e mostram a distância em km entre elas; um terceiro clique começa outra medida |
+| Navegar (atalho V) | Volta para a navegação (sem medida) |
+| Esc, com Medir distância | Apaga a medida; sem medida, volta para Navegar |
 
 ## Regras
 
@@ -157,6 +168,17 @@ barra inferior.
   para o lado, deslizando; ao abrir o editor numa área estreita, ele já aparece no lugar.
 - A tecla ? abre a Ajuda, com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
   num campo, dentro de um modal, painel sobreposto aberto no celular).
+- Medir distância: a distância é a reta entre os dois pontos, em km, pela largura do mundo
+  (`sizeKm`), com o mesmo arredondamento da barra de escala (inteiro a partir de 10 km; abaixo, uma
+  casa decimal, com vírgula): 32 px na tela medem o mesmo que a barra. Um clique é apertar e soltar
+  sem andar mais de 5 px; arrastar continua fazendo pan (e a pinça, zoom), sem marcar ponto. Um
+  clique fora do mapa (no fundo) marca a borda mais próxima. A medida fica presa ao mapa: acompanha
+  o pan e o zoom. As teclas M e V (Navegar) têm as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
+  num campo, dentro de um modal, painel sobreposto aberto no celular), e o Esc também não vale com
+  o foco num campo ou dentro de um modal. Com o popover de Camadas aberto, o Esc fecha só o popover. Voltar para Navegar apaga a medida.
+  Um mapa novo (seed, preset, slider ou um mundo novo pelo assistente) não apaga a medida: os pontos
+  ficam no mesmo lugar, e a distância segue a largura do mundo (um mundo de outro tamanho muda os
+  km).
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.
