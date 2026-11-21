@@ -323,6 +323,7 @@ type Pin = {
   icon: { kind: 'builtin'; key: string } | { kind: 'image'; blobId: string };
   description: string;            // HTML do TipTap
   tags: string[]; fields: Record<string, string>;
+  parentId?: string;              // pin pai (hierarquia, sem ciclo)
 };
 
 type Road = { id: string; kind: 'road' | 'trail' | 'sea';
@@ -336,9 +337,6 @@ type WorldField = { width: number; height: number;
   oases: { u: number; v: number }[]; // centro de cada oásis (o lago e o anel estão em `biome`)
   decor: { u: Float32Array; v: Float32Array; kind: Uint8Array } }; // ícones, de cima para baixo
 ```
-
-> Pendente: como o `Pin` guarda a hierarquia (um pin pertence a outro, ex.: vila de um reino)? O
-> modelo acima ainda não tem esse campo.
 
 > Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
 > mantidas?

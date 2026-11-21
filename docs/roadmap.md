@@ -58,8 +58,9 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
 - **Critério de saída:** criar, editar, mover e excluir pin (com Desfazer); recarregar a página
   mantém tudo; JSON exportado reimporta idêntico; um usuário novo cria um mundo e marca 10 pins
   em menos de 10 minutos; pan e zoom sem travar com 500 pins.
-- **Depende de / decisões abertas:** fim do M1. Em aberto: regras da hierarquia de pins e o campo
-  dela no `Pin`; conteúdo das abas Detalhes e Conexões; outros motivos de recusa na importação.
+- **Depende de / decisões abertas:** fim do M1. Hierarquia de pins, abas Detalhes e Conexões e
+  motivos de recusa na importação decididos no [plano do M2](milestones/m2.md). Em aberto: quantas
+  versões antigas do gerador manter.
 - **Tamanho:** G
 
 ### M3 — Estradas e rotas
@@ -122,3 +123,25 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 34 | #56 | [feat] Medir distância | done | specs/navegacao.md | #146 |
 | 35 | #104 | [chore] E2E do mapa: nome dos testes do tablet e do celular | done | specs/geracao-terreno.md | #151 |
 | 36 | #105 | [chore] E2E do mapa: conferir o enquadramento em 767 e 768 px | done | specs/geracao-terreno.md | #153 |
+
+### M2 — Pins e mundos (v1)
+
+| Ordem | Issue | Título | Status | Spec | PR |
+|---|---|---|---|---|---|
+| 37 | #154 | [feat] Mundos: salvar no navegador e reabrir | todo | specs/mundos.md | |
+| 38 | #155 | [feat] Lista de mundos: tela inicial, vazia e abrir | todo | specs/mundos.md | |
+| 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | todo | specs/mundos.md | |
+| 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | todo | specs/pins.md | |
+| 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | todo | specs/pins.md | |
+| 42 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | todo | specs/pins.md | |
+| 43 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | todo | specs/navegacao.md | |
+| 44 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | todo | specs/pins.md | |
+| 45 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
+| 46 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
+| 47 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
+| 48 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
+| 49 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
+| 50 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
+| 51 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
+| 52 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
+| 53 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
