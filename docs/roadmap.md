@@ -120,5 +120,5 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 32 | #54 | [feat] Barras do editor, Camadas e Ajuda | done | specs/navegacao.md | #139 |
 | 33 | #55 | [chore] E2E dos fluxos e medição de saída do M1 | done | specs/geracao-terreno.md | #142 |
 | 34 | #56 | [feat] Medir distância | done | specs/navegacao.md | #146 |
-| 35 | #104 | [chore] E2E do mapa: nome dos testes do tablet e do celular | doing | specs/geracao-terreno.md | |
+| 35 | #104 | [chore] E2E do mapa: nome dos testes do tablet e do celular | done | specs/geracao-terreno.md | |
 | 36 | #105 | [chore] E2E do mapa: conferir o enquadramento em 767 e 768 px | todo | specs/geracao-terreno.md | |
