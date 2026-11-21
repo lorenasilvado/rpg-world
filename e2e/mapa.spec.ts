@@ -90,7 +90,7 @@ for (const [label, width, height, expected] of [
   // Sem recuos: o mapa 390², centrado na altura (844 − 390) / 2.
   ['celular 390', 390, 844, { x: 0, y: 227, width: 390, height: 390 }],
 ] as const) {
-  test(`${label}: o mapa aparece inteiro na área livre (AC-F1-22)`, async ({ page }) => {
+  test(`${label}: o mapa ocupa o retângulo exato da área livre (AC-F1-22)`, async ({ page }) => {
     const { rect, errors } = await openMap(page, width, height)
     expect(rect).toEqual(expected)
     const colors = await sampleColors(page, rect, 12)
