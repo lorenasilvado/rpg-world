@@ -1,0 +1,4 @@
+M1, M2 e M3 foram aplicadas uma por vez no commit 90af840 (M1 e M2 em src/, M3 em e2e/fps.spec.ts) e desfeitas com git checkout. M1 e M2 rodaram o e2e/fluxos.spec.ts no projeto app; M3, o e2e/fps.spec.ts no projeto desempenho, fora do CI.
+M1 slider fora do Tab (tabIndex -1 no Thumb) =>  Error: sliders alcançados só com o teclado  1 failed  (24 s com o servidor)
+M2 preset da sidebar sem efeito =>  Error: expect(locator).toHaveAttribute(expected) failed  Expected: "true"  Received: "false"  1 failed  (40 s com o servidor)
+M3 GPU tratada como software, fora do CI (SOFTWARE_GPU casa AMD) =>  Error: sem GPU de verdade (ANGLE (AMD, AMD Radeon RX 7600 (0x00007480) Direct3D11 vs_5_0 ps_5_0, D3D11)): a medição não vale; rode numa máquina com GPU  Expected: true  Received: false  1 failed  (55 s com o servidor)
