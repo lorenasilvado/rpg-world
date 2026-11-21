@@ -192,7 +192,11 @@ fora dele, um renderer por software faz o teste falhar. Para medir com a janela 
 
 Os fluxos principais do M1 rodam de ponta a ponta no `e2e/fluxos.spec.ts`: criar um mundo pelo
 assistente, mexer nos 9 sliders só com o teclado, aplicar um preset e navegar. Ele roda no Chrome
-(projeto `app`) e nos projetos `fluxos-firefox` e `fluxos-webkit`. Numa pasta de usuário com
+(projeto `app`) e nos projetos `fluxos-firefox` e `fluxos-webkit`. Sem WebGL2, o app mostra só o
+aviso do AC-F1-20, e o teste é pulado com o motivo (no Chrome, o aviso é falha); o log traz
+`[fluxos] <navegador>: WebGL2 sim|não`. O Firefox do CI (Linux, sem GPU) não oferecia WebGL2, e o
+projeto `fluxos-firefox` liga `webgl.force-enabled` para pedir o WebGL2 por software: se o log do
+CI mostrar `WebGL2 não`, o fluxo no Firefox fica coberto só localmente. Numa pasta de usuário com
 acento, o Firefox do Playwright não abre (o Windows não acha o `mozglue`): copie os navegadores de
 `%LOCALAPPDATA%\ms-playwright` para uma pasta sem acento e rode com `PLAYWRIGHT_BROWSERS_PATH`
 apontando para ela.

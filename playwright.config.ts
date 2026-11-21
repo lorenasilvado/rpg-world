@@ -54,7 +54,13 @@ export default defineConfig({
     {
       name: 'fluxos-firefox',
       testMatch: FLUXOS,
-      use: { ...devices['Desktop Firefox'], baseURL: DEV },
+      // No Linux sem GPU do CI, o Firefox desliga o WebGL2; `webgl.force-enabled` pede que ele o
+      // ligue mesmo assim, por software. Se continuar sem, o fluxo é pulado com o motivo.
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: DEV,
+        launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+      },
     },
     {
       name: 'fluxos-webkit',
