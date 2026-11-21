@@ -1,0 +1,6 @@
+M1 a M4 foram aplicadas uma por vez no commit 18d850b (M1 e M2 em src/, M3 em e2e/fps.spec.ts, M4 em e2e/fluxos.spec.ts) e desfeitas com git checkout. M1, M2 e M4a rodaram no projeto app; M3 no projeto desempenho, fora do CI; M4b no fluxos-firefox.
+M1 slider fora do Tab (tabIndex -1 no Thumb) =>  Error: sliders alcançados só com o teclado  1 failed  (16 s com o servidor)
+M2 preset da sidebar sem efeito =>  Error: expect(locator).toHaveAttribute(expected) failed  Expected: "true"  Received: "false"  1 failed  (28 s com o servidor)
+M3 GPU tratada como software, fora do CI (SOFTWARE_GPU casa AMD) =>  Error: sem GPU de verdade (ANGLE (AMD, AMD Radeon RX 7600 (0x00007480) Direct3D11 vs_5_0 ps_5_0, D3D11)): a medição não vale; rode numa máquina com GPU  Expected: true  Received: false  1 failed  (50 s com o servidor)
+M4a sem WebGL2 no Chrome (getContext('webgl2') devolve null) =>  Error: o Chrome sempre tem WebGL2: o aviso aqui é um erro  Expected: not "chromium"  1 failed  (13 s com o servidor)
+M4b sem WebGL2 no Firefox (idem) =>  1 skipped  (16 s com o servidor)
