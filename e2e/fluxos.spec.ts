@@ -87,14 +87,28 @@ async function focusedSlider(page: Page) {
 
 const zoom = async (page: Page) => Number(await map(page).getAttribute('data-zoom'))
 
-test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e navega (critério de saída do M1)', async ({ page }) => {
+test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e navega (critério de saída do M1)', async ({ page, browserName }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
 
-  // 1. Criar um mundo pelo assistente (AC-F1-19).
+  // Sem WebGL2, o app mostra só o aviso (AC-F1-20) e o fluxo não tem como rodar. O Firefox do CI
+  // (Linux, sem GPU) pode não oferecer WebGL2: nele, o teste é pulado com o motivo. No Chrome, que
+  // sempre tem WebGL2 (por software no CI), o aviso é falha.
   const wizard = page.getByRole('dialog', { name: 'Novo mundo' })
+  const notice = page.getByTestId('no-webgl2')
+  await expect(wizard.or(notice), 'nem o assistente nem o aviso sem WebGL2 apareceram').toBeVisible({ timeout: 30_000 })
+  const webgl2 = !(await notice.isVisible())
+  const agent = await page.evaluate(() => navigator.userAgent)
+  console.log(`[fluxos] ${browserName}: WebGL2 ${webgl2 ? 'sim' : 'não'} · ${agent}`)
+  if (!webgl2) {
+    test.info().annotations.push({ type: 'sem WebGL2', description: agent })
+    expect(browserName, 'o Chrome sempre tem WebGL2: o aviso aqui é um erro').not.toBe('chromium')
+    test.skip(true, `${browserName} sem WebGL2 nesta máquina: o fluxo do editor não roda (AC-F1-20)`)
+  }
+
+  // 1. Criar um mundo pelo assistente (AC-F1-19).
   await expect(wizard.getByRole('textbox', { name: 'Nome do mundo' })).toBeFocused()
   await wizard.getByRole('textbox', { name: 'Nome do mundo' }).fill('Picos de Gelo')
   await wizard.getByRole('button', { name: /Terras geladas/ }).click()
