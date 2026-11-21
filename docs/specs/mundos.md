@@ -1,7 +1,7 @@
 ---
 feature: F4
 area: area:mundos
-updated: 2026-11-04
+updated: 2026-11-21
 ---
 
 # F4 · Mundos e persistência
@@ -54,6 +54,10 @@ PNG e o histórico de desfazer/refazer do mundo.
   (.json) e tente de novo."
 - Dica "Arraste outro arquivo .json para esta janela ou escolha no computador."; botões Cancelar e
   "Escolher outro arquivo".
+- Motivos de recusa: o arquivo não é JSON; não é um mundo do RPG World Builder; falta a parte do
+  terreno (seed ou parâmetros); o mundo é de uma versão do gerador mais nova que a do app. Cada um
+  tem a causa e o passo para corrigir. TODO: texto de cada motivo, além de "falta o terreno"
+  (revisto por print no PR).
 
 ## Estados
 
@@ -72,8 +76,10 @@ PNG e o histórico de desfazer/refazer do mundo.
 
 | Ação | Resultado |
 |---|---|
+| Abrir o app | Mostra a Lista de mundos (01 ou 02) |
 | Clicar num cartão | Abre o mundo no editor (E1) |
-| Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)) |
+| Voltar à lista (cabeçalho da sidebar do editor) | Volta à Lista de mundos; o mundo já está salvo |
+| Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
 | Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |
 | Renomear | TODO: tela não descrita no material |
@@ -87,7 +93,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 - Salvamento automático local do mundo ativo; não existe botão "Salvar".
 - Salva só seed, parâmetros, pins e estradas; o terreno é regerado (RNF-5).
 - Imagens enviadas ficam no IndexedDB como blobs.
-- O JSON importado é validado por schema; um JSON exportado reimporta idêntico.
+- O JSON importado é validado por schema; um JSON exportado reimporta idêntico. As imagens enviadas
+  vão embutidas no JSON (base64).
 - Desfazer e refazer usam um histórico único por mundo.
 - O mundo guarda `generatorVersion`, para ser regerado igual.
 
@@ -96,10 +103,22 @@ PNG e o histórico de desfazer/refazer do mundo.
 IDs `AC-F4-NN`, em sequência. AC novo recebe o próximo número livre; AC removido sai da
 lista e o número não volta a ser usado.
 
-Nenhum ainda: os ACs nascem no `/planejar M<n>`.
+- AC-F4-01: as mudanças no mundo aberto (nome, seed, parâmetros e pins) são salvas sozinhas no IndexedDB, e recarregar a página reabre o mundo igual (mesmo terreno, pins e fichas)
+- AC-F4-02: o indicador mostra "Salvando…" e "Salvo"; se o salvamento falha, mostra "Erro ao salvar", tenta de novo a cada mudança, e clicar nele oferece "Tentar de novo" e "Exportar .json"
+- AC-F4-03: o mundo salvo guarda só seed, parâmetros, pins, estradas, `sizeKm` e `generatorVersion` (e as imagens como blobs); o terreno é regerado
+- AC-F4-04: a Lista de mundos é a tela inicial e mostra "Seus mundos" com a contagem e um cartão por mundo (miniatura 16:10, nome, "Editado há X · N pins" ou "sem pins"), com cartões esqueleto enquanto carrega
+- AC-F4-05: sem mundos salvos, a lista mostra "Nenhum mundo ainda", o botão "Criar meu primeiro mundo" e o link "ou importe um arquivo .json"
+- AC-F4-06: clicar num cartão abre o mundo no editor; "Novo mundo" abre o assistente, que salva e abre o mundo criado, e Cancelar volta à lista; o editor volta à lista pelo cabeçalho da sidebar
+- AC-F4-07: o menu "⋯" do cartão renomeia, duplica e exclui o mundo; excluir pede confirmação num modal e não pode ser desfeito
+- AC-F4-08: desfazer e refazer (Ctrl+Z, Ctrl+Shift+Z e os botões da barra) cobrem mudanças em pins e nos parâmetros de geração, num histórico único por mundo
+- AC-F4-09: Exportar › Arquivo do mundo (.json) baixa o mundo, e importar esse arquivo cria um mundo idêntico (mesmo terreno, pins, fichas e imagens)
+- AC-F4-10: importar um arquivo inválido mostra o modal "Importar mundo" com o motivo e o passo para corrigir, e outro arquivo pode ser solto ou escolhido sem fechar o modal
+- AC-F4-11: Exportar › Imagem (.png) baixa o mapa em 1×, 2× ou 4× (com o terreno regerado na resolução maior), com ou sem pins e rótulos
+- AC-F4-12: sem WebGL2, a Lista de mundos funciona (menu "⋯", importar, excluir), e abrir um mundo mostra o aviso no lugar do editor
 
 ## Pendências
 
 Exportar (JSON e PNG), Renomear e o modal de confirmação de Excluir: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
-> Pendente: outros motivos de recusa na importação, além de "falta o terreno", e o texto de cada um.
+> Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
+> mantidas ([overview.md](../overview.md)).

@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-04
+updated: 2026-11-21
 ---
 
 # F3 · Pins e drawer
@@ -34,7 +34,10 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
 - Descrição: editor de texto com negrito, itálico, título H2, lista e link.
 - Tags: chips removíveis (ex.: capital, porto), campo "+ tag" e sugestões "Usadas no mundo".
 - Rodapé fixo: Centralizar, Duplicar, Excluir (botão destrutivo vermelho).
-- A aba Conexões lista estradas e pins ligados ao pin.
+- Aba Detalhes: tipo, ícone (biblioteca embutida ou imagem enviada), pin pai e campos livres
+  chave/valor.
+- Aba Conexões: o pin pai e os pins filhos, clicáveis (clicar seleciona o pin). As estradas
+  ligadas ao pin entram com F5.
 
 ### Tipos de pin
 
@@ -61,12 +64,12 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 
 | Ação | Resultado |
 |---|---|
-| Ferramenta "Adicionar pin" (P) + clique no mapa | Cria um pin naquele ponto (quique de 420–460 ms) |
+| Ferramenta "Adicionar pin" (P) + clique no mapa | Cria um pin naquele ponto (quique de 420–460 ms), do último tipo usado no mundo (Cidade no primeiro), com o nome "Novo pin"; o drawer abre com o nome em edição |
 | Clicar num pin | Abre o drawer (E2) |
 | Arrastar um pin | Muda a posição |
 | Ocultar por tipo | Esconde os pins daquele tipo |
 | Excluir (Delete) | Exclui na hora, sem confirmação; o toast "Pin excluído" oferece "Desfazer", e Ctrl+Z também desfaz |
-| Duplicar | TODO: não descrito no material |
+| Duplicar | Cria uma cópia ao lado do pin, "<nome> (cópia)", com a mesma ficha e sem os filhos |
 | Centralizar | Centraliza a câmera no pin |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
 | Clicar num grupo | Zoom no grupo |
@@ -74,7 +77,10 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 
 ## Regras
 
-- Pins têm hierarquia: um pin pode pertencer a outro (ex.: uma vila pertence a um reino).
+- Pins têm hierarquia: um pin pode pertencer a outro (ex.: uma vila pertence a um reino), pelo
+  campo opcional `parentId`. Qualquer tipo pode ser pai, sem limite de níveis; o pai não pode ser
+  o próprio pin nem um descendente dele (sem ciclo). O pai é escolhido na aba Detalhes. Excluir o
+  pai deixa os filhos sem pai, e Desfazer restaura o pai e os vínculos.
 - Pins mantêm tamanho constante na tela (32 px) em qualquer zoom; o rótulo com o nome aparece a
   partir do zoom 1,5×.
 - Pins guardam coordenadas `(u, v)` de 0 a 1, independentes da projeção (RNF-9).
@@ -86,14 +92,25 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 IDs `AC-F3-NN`, em sequência. AC novo recebe o próximo número livre; AC removido sai da
 lista e o número não volta a ser usado.
 
-Nenhum ainda: os ACs nascem no `/planejar M<n>`.
+- AC-F3-01: com "Adicionar pin" (P), clicar no mapa cria um pin naquele ponto, com o quique, do último tipo usado (Cidade no primeiro) e o nome "Novo pin", e abre o drawer com o nome em edição
+- AC-F3-02: cada tipo tem a forma e as cores do design system, com 32 px na tela em qualquer zoom e âncora na base; o rótulo com o nome aparece a partir do zoom 1,5×, no hover e na seleção
+- AC-F3-03: clicar num pin o seleciona (anel âmbar e pulsação), abre o drawer e centraliza a câmera na área livre entre os painéis; Esc fecha o drawer
+- AC-F3-04: arrastar um pin muda a posição, com o estado Arrastando, e a posição fica em (u, v) de 0 a 1
+- AC-F3-05: Excluir (Delete ou o botão do drawer) remove o pin na hora, sem confirmação, com o toast "Pin excluído" e "Desfazer", que o devolve com a ficha inteira
+- AC-F3-06: o cabeçalho do drawer mostra o ícone, o nome editável, o tipo, o bioma (automático) e as coordenadas do pin
+- AC-F3-07: a descrição aceita negrito, itálico, título H2, lista e link, e é salva com o pin
+- AC-F3-08: as tags são adicionadas pelo campo "+ tag", removidas pelo chip e sugeridas em "Usadas no mundo"
+- AC-F3-09: Centralizar centraliza a câmera no pin, e Duplicar cria uma cópia ao lado, "<nome> (cópia)", com a mesma ficha e sem os filhos
+- AC-F3-10: a aba Detalhes edita o tipo, o ícone (biblioteca embutida ou imagem), o pin pai e os campos livres chave/valor
+- AC-F3-11: uma imagem PNG, JPG ou SVG de até 1 MB é reduzida para 256 px e guardada como blob; acima de 1 MB, o usuário escolhe recusar ou aceitar com a redução; outro formato é recusado com a mensagem dos formatos aceitos; nos casos recusados, o ícone anterior continua
+- AC-F3-12: o pai pode ser qualquer pin, menos o próprio e os descendentes dele; excluir o pai deixa os filhos sem pai, e Desfazer restaura o pai e os vínculos
+- AC-F3-13: a aba Conexões lista o pin pai e os filhos, e clicar num deles o seleciona
+- AC-F3-14: com zoom abaixo de 0,8×, pins a menos de 34 px uns dos outros viram um grupo com contador, e clicar no grupo dá zoom nele
+- AC-F3-15: Camadas mostra e esconde os pins de cada tipo
+- AC-F3-16: Buscar (Ctrl K) acha pins por nome e por tag, e escolher um resultado foca a câmera nele e o seleciona
+- AC-F3-17: com 500 pins e 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
+- AC-F3-18: abaixo de 768 px, o drawer é um painel sobreposto, e a ficha do pin pode ser consultada no celular (390 px)
 
 ## Pendências
-
-> Pendente: hierarquia de pins. Quais tipos podem ser pai de quais? Quantos níveis? Onde o usuário
-> escolhe o pai (aba Detalhes?) e o que acontece com os filhos quando o pai é excluído?
-
-> Pendente: conteúdo das abas Detalhes e Conexões (sem tela no material; os campos livres
-> chave/valor ficam em Detalhes?).
 
 Busca (Ctrl K), escolha de ícone/upload e abas Detalhes e Conexões: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
