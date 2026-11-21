@@ -1,4 +1,4 @@
-import { TARGET_FPS, type FrameStats } from './report'
+import { TARGET_FPS, type FrameStats } from './report.ts'
 
 const WINDOW_MS = 1000
 const round1 = (v: number) => Math.round(v * 10) / 10
