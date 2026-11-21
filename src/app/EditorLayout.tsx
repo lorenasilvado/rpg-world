@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject }
 import { useStore } from 'zustand'
 import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { MapToolbar } from '../features/map/MapToolbar'
+import { MeasureTool } from '../features/map/MeasureTool'
 import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
 import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
@@ -40,7 +41,8 @@ import { useTheme } from './useTheme'
  * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
  * renderer (`cameraStore.ts`). A toolbar de ferramentas (`MapToolbar`) fica no centro da linha, numa
- * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`).
+ * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`). A
+ * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa.
  *
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar, Desfazer,
  * Refazer e Exportar ficam desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
@@ -141,6 +143,7 @@ export function EditorLayout({
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
       <MapView world={world} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
+      <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
 
       <div
         ref={bottomBar}

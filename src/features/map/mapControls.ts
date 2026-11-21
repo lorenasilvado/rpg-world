@@ -1,6 +1,7 @@
 import { WORLD_SIZE } from '../../render/camera'
 import type { WorldRect } from '../../state/cameraStore'
 import { MINIMAP_HEIGHT, MINIMAP_WIDTH } from './bottomBarLayout'
+import { formatKm } from './measure'
 
 /**
  * Matemática do minimapa e do controle de zoom (TS puro, sem React): escala, porcentagem e a
@@ -20,9 +21,7 @@ export { MINIMAP_HEIGHT, MINIMAP_WIDTH }
  * casa decimal (com vírgula).
  */
 export function scaleLabel(scale: number, sizeKm: number, world = WORLD_SIZE): string {
-  const km = (SCALE_BAR_PX * sizeKm) / (world * scale)
-  const value = km >= 10 ? Math.round(km) : Math.round(km * 10) / 10
-  return `${String(value).replace('.', ',')} km`
+  return formatKm((SCALE_BAR_PX * sizeKm) / (world * scale))
 }
 
 /** Porcentagem do zoom relativo (1 = 100% = mapa inteiro na área livre). */

@@ -32,11 +32,12 @@ test('a barra superior e a toolbar: funções que ainda não existem desabilitad
   const toolbar = page.getByRole('toolbar', { name: 'Ferramentas' })
   await expect(toolbar.getByRole('button', { name: 'Navegar' })).toHaveAttribute('aria-pressed', 'true')
   await expect(toolbar.getByRole('button', { name: 'Navegar' })).toHaveCSS('background-color', 'rgb(200, 137, 43)')
-  for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática', 'Medir distância']) {
+  for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática']) {
     await expect(toolbar.getByRole('button', { name })).toBeDisabled()
     await expect(toolbar.getByRole('button', { name })).toHaveCSS('opacity', '0.55')
   }
   await expect(toolbar.getByRole('button', { name: 'Camadas' })).toBeEnabled()
+  await expect(toolbar.getByRole('button', { name: 'Medir distância' })).toBeEnabled()
 
   // Hover numa ferramenta (mesmo desabilitada) mostra o tooltip com o atalho.
   await toolbar.getByRole('button', { name: 'Adicionar pin' }).hover({ force: true })
@@ -56,6 +57,9 @@ test('o foco do teclado numa ferramenta habilitada mostra o tooltip; o Tab pula 
   await page.keyboard.press('Tab')
   await expect(toolbar.getByRole('button', { name: 'Camadas' })).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('Camadas')
+  await page.keyboard.press('Tab')
+  await expect(toolbar.getByRole('button', { name: 'Medir distância' })).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Medir distânciaM')
   // Sem o foco, o tooltip some.
   await page.keyboard.press('Tab')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
@@ -116,7 +120,7 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   await help.click()
   const dialog = page.getByRole('dialog', { name: 'Atalhos de teclado' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator('dt')).toHaveText(['Mover o mapa', 'Zoom', 'Centralizar mapa', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
+  await expect(dialog.locator('dt')).toHaveText(['Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
   // Duas colunas a partir de 640 px: "Zoom" fica ao lado de "Mover o mapa", na mesma linha.
   const first = (await dialog.locator('dt').nth(0).boundingBox())!
   const second = (await dialog.locator('dt').nth(1).boundingBox())!

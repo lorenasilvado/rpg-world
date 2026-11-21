@@ -7,7 +7,7 @@ export type Tool = {
   icon: LucideIcon
   /** Tecla do atalho, mostrada no tooltip (design-system.md → Ícones de interface). */
   shortcut?: string
-  /** A função ainda não existe (pins e estradas no M2; medir distância em outra task do M1). */
+  /** A função ainda não existe (pins e estradas no M2). */
   disabled?: boolean
 }
 
@@ -18,7 +18,7 @@ export const TOOLS: readonly Tool[] = [
   { id: 'road', label: 'Desenhar estrada', icon: Route, shortcut: 'R', disabled: true },
   { id: 'route', label: 'Rota automática', icon: Waypoints, shortcut: 'A', disabled: true },
   { id: 'layers', label: 'Camadas', icon: Layers },
-  { id: 'measure', label: 'Medir distância', icon: Ruler, shortcut: 'M', disabled: true },
+  { id: 'measure', label: 'Medir distância', icon: Ruler, shortcut: 'M' },
 ]
 
 /** As camadas que o popover de Camadas liga e desliga (só as que existem no mapa). */

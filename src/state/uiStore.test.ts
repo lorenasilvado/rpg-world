@@ -41,4 +41,17 @@ describe('uiStore', () => {
     expect(ui.getState().minimapOpen).toBe(false)
     expect(listener).toHaveBeenCalledTimes(1)
   })
+
+  it('abre em Navegar e troca de ferramenta, só avisando quando muda', () => {
+    const ui = createUiStore()
+    expect(ui.getState().tool).toBe('nav')
+    const listener = vi.fn()
+    ui.subscribe(listener)
+    ui.getState().setTool('measure')
+    ui.getState().setTool('measure')
+    expect(ui.getState().tool).toBe('measure')
+    expect(listener).toHaveBeenCalledTimes(1)
+    ui.getState().setTool('nav')
+    expect(ui.getState().tool).toBe('nav')
+  })
 })

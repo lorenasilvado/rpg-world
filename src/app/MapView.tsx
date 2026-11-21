@@ -25,7 +25,8 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera) 
  * Durante a geração (`isGenerating`: o pedido mais novo não chegou, ou o mapa é a prévia), o mapa
  * fica `aria-busy` e `data-blurred`; o desfoque do terreno e da decoração é do renderer (AC-F1-18).
  * O renderer publica a câmera no `camera`, e o `MapView` registra nele os comandos do renderer que
- * guardou (o minimapa e o controle de zoom leem e comandam por ele).
+ * guardou (o minimapa e o controle de zoom leem e comandam por ele). Com a ferramenta Medir distância
+ * (`tool` do `ui`), o cursor sobre o mapa é a cruz, e a ferramenta fica em `data-tool`.
  */
 export function MapView({
   world,
@@ -42,6 +43,7 @@ export function MapView({
 }) {
   const host = useRef<HTMLElement>(null)
   const blurred = useStore(world, isGenerating)
+  const tool = useStore(ui, (s) => s.tool)
 
   useEffect(() => {
     const el = host.current
@@ -77,9 +79,10 @@ export function MapView({
       aria-label="Mapa"
       data-testid="map"
       data-blurred={blurred}
+      data-tool={tool}
       aria-busy={blurred}
       inert={inert}
-      className="absolute inset-0 bg-map-canvas"
+      className={`absolute inset-0 bg-map-canvas ${tool === 'measure' ? 'cursor-crosshair' : ''}`}
     />
   )
 }

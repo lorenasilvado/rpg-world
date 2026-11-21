@@ -22,6 +22,8 @@ export type CameraView = {
   scale: number
   /** Parte do mundo à vista na área livre. */
   view: WorldRect
+  /** Canto superior esquerdo da área livre na área do mapa, em px CSS (o ponto `view.x`, `view.y`). */
+  origin: { x: number; y: number }
 }
 
 export type CameraState = CameraView & {
@@ -46,6 +48,7 @@ export function createCameraStore(): CameraStore {
     zoom: 1,
     scale: 1,
     view: { x: 0, y: 0, width: 0, height: 0 },
+    origin: { x: 0, y: 0 },
     controls: null,
     update(next) {
       const s = get()
@@ -57,9 +60,11 @@ export function createCameraStore(): CameraStore {
         v.x === next.view.x &&
         v.y === next.view.y &&
         v.width === next.view.width &&
-        v.height === next.view.height
+        v.height === next.view.height &&
+        s.origin.x === next.origin.x &&
+        s.origin.y === next.origin.y
       if (same) return
-      set({ ...next, view: { ...next.view }, ready: true })
+      set({ ...next, view: { ...next.view }, origin: { ...next.origin }, ready: true })
     },
     setControls(controls) {
       set(controls ? { controls } : { controls: null, ready: false })
