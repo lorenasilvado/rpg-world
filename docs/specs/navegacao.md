@@ -172,8 +172,8 @@ barra inferior.
   sem andar mais de 5 px; arrastar continua fazendo pan (e a pinça, zoom), sem marcar ponto. Um
   clique fora do mapa (no fundo) marca a borda mais próxima. A medida fica presa ao mapa: acompanha
   o pan e o zoom. A tecla M tem as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco
-  num campo, dentro de um modal, painel sobreposto aberto no celular). Com o popover de Camadas
-  aberto, o Esc fecha só o popover. Voltar para Navegar apaga a medida.
+  num campo, dentro de um modal, painel sobreposto aberto no celular), e o Esc também não vale com
+  o foco num campo ou dentro de um modal. Com o popover de Camadas aberto, o Esc fecha só o popover. Voltar para Navegar apaga a medida.
 - Rótulos dos pins aparecem a partir do zoom 1,5×, ou em hover/seleção.
 - `prefers-reduced-motion: reduce` → sem deslizamento de câmera (saltos diretos) e sem inércia ao
   soltar o arrasto. Vale também se a preferência muda com o editor aberto.

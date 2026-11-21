@@ -99,3 +99,51 @@ test('Esc apaga a medida e, de novo, volta para Navegar (AC-F2-13)', async ({ pa
   await expect(toolbar(page).getByRole('button', { name: 'Navegar' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('map')).not.toHaveCSS('cursor', 'crosshair')
 })
+
+test('com Camadas aberto, Esc fecha só o popover e a medida fica (AC-F2-13)', async ({ page }) => {
+  await open(page)
+  await page.keyboard.press('m')
+  await page.mouse.click(500, 450)
+  await page.mouse.click(860, 450)
+  await toolbar(page).getByRole('button', { name: 'Camadas' }).click()
+  await expect(page.getByTestId('layers-popover')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('layers-popover')).toHaveCount(0)
+  await expect(page.getByTestId('measure-distance')).toHaveText('400 km')
+  await expect(toolbar(page).getByRole('button', { name: 'Medir distância' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test.describe('celular 390 com toque', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test('tocar em dois pontos mede a distância, e a dica fica centrada (AC-F2-13)', async ({ page }) => {
+    await gotoEditor(page)
+    const map = page.getByTestId('map')
+    await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
+    // Abaixo de 768 px, o mapa usa a tela toda: 390 px de largura = 800 km.
+    const [, , width] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+    expect(width).toBe(390)
+    await toolbar(page).getByRole('button', { name: 'Medir distância' }).tap()
+    const hint = page.getByTestId('measure-hint')
+    await expect(hint).toHaveText('Clique em dois pontos para medir')
+    const box = (await hint.boundingBox())!
+    expect(Math.abs(box.x + box.width / 2 - 195)).toBeLessThanOrEqual(1)
+    await page.touchscreen.tap(50, 400)
+    await expect(hint).toHaveText('Clique no ponto final')
+    await page.touchscreen.tap(245, 400)
+    // 195 px de 390: metade do mundo.
+    await expect(page.getByTestId('measure-distance')).toHaveText('400 km')
+  })
+
+  test('com o painel sobreposto aberto, a tecla M não liga a ferramenta (AC-F2-13)', async ({ page }) => {
+    await gotoEditor(page)
+    await page.getByRole('button', { name: 'Abrir painel' }).tap()
+    await expect(page.getByTestId('sidebar')).toHaveAttribute('data-open', 'true')
+    await page.keyboard.press('m')
+    await expect(page.getByTestId('map')).toHaveAttribute('data-tool', 'nav')
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('sidebar')).toHaveAttribute('data-open', 'false')
+    await page.keyboard.press('m')
+    await expect(page.getByTestId('map')).toHaveAttribute('data-tool', 'measure')
+  })
+})

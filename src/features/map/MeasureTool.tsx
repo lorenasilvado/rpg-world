@@ -17,7 +17,7 @@ export const HINT_TOP_PX = 84
  * modal, `disabled`: painel sobreposto aberto no celular). Com ela ligada, dois cliques no mapa
  * marcam as pontas, e a distância em km aparece no meio da linha; um terceiro clique recomeça.
  * Arrastar continua fazendo pan (só conta como clique quem anda até `CLICK_SLOP_PX`). Esc apaga os
- * pontos marcados e, sem pontos, volta para Navegar.
+ * pontos marcados e, sem pontos, volta para Navegar; com o foco num campo, o Esc é do campo.
  *
  * O desenho (a linha, as pontas, a distância e a dica) é um SVG por cima do mapa, sem eventos, que
  * acompanha a câmera pelo `camera` (a parte visível do mundo e a origem da área livre).
@@ -60,7 +60,7 @@ function MeasureLayer({ ui, world, camera, disabled }: { ui: UiStore; world: Wor
   useEffect(() => {
     if (disabled) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented || inDialog(e.target)) return
+      if (e.key !== 'Escape' || e.defaultPrevented || isFieldTarget(e.target) || inDialog(e.target)) return
       e.preventDefault()
       if (pointsRef.current.length === 0) ui.getState().setTool('nav')
       else setPoints([])

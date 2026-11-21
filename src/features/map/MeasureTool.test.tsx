@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createCameraStore } from '../../state/cameraStore'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
+import { MapToolbar } from './MapToolbar'
 import { MeasureTool } from './MeasureTool'
 
 const idleGenerator: WorldGenerator = { request: () => new Promise(() => {}), latestVersion: () => 0 }
@@ -25,6 +26,7 @@ function setup({ sizeKm = 800, disabled = false } = {}) {
       </main>
       <button type="button">fora do mapa</button>
       <input aria-label="Seed" />
+      <MapToolbar ui={ui} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={disabled} />
     </div>,
   )
@@ -140,5 +142,37 @@ describe('Medir distância (AC-F2-13)', () => {
     act(() => ui.getState().setTool('nav'))
     act(() => ui.getState().setTool('measure'))
     expect(screen.getByTestId('measure-layer').dataset.points).toBe('0')
+  })
+
+  it('Esc com o foco num campo é do campo: não apaga a medida nem volta para Navegar', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    click(0, 0)
+    click(512, 0)
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    seed.focus()
+    fireEvent.keyDown(seed, { key: 'Escape' })
+    expect(distance()).toBe('400 km')
+    act(() => ui.getState().setTool('measure'))
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    fireEvent.keyDown(seed, { key: 'Escape' })
+    expect(ui.getState().tool).toBe('measure')
+  })
+
+  it('com o popover de Camadas aberto, Esc fecha só o popover e a medida fica', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    click(0, 0)
+    click(512, 0)
+    fireEvent.click(screen.getByRole('button', { name: 'Camadas' }))
+    const decor = screen.getByRole('switch', { name: 'Decoração' })
+    decor.focus()
+    fireEvent.keyDown(decor, { key: 'Escape' })
+    expect(screen.queryByRole('group', { name: 'Camadas' })).toBeNull()
+    expect(distance()).toBe('400 km')
+    expect(ui.getState().tool).toBe('measure')
+    // O Esc seguinte já é da ferramenta.
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(distance()).toBeNull()
   })
 })
