@@ -1,0 +1,8 @@
+commit: 1a790e179e4310402b60369ceab4f48e47fcaadc
+ac-01-1-assistente-terras-geladas.png  1280x800  5a5cf2f6697fb94f5db8347fb1f7ad0fd68f1aa48f83d17636428fc11c189d6c
+ac-01-2-mundo-criado.png  1280x800  bea15133b84b239bc0f3ad56251169ac397e0b05f146f2f27af0e9d41b03c9b7
+ac-01-3-sliders-pelo-teclado-foco-no-ultimo.png  1280x800  33ab01bfe1bbbd8d9e6a729b22eb0eacb82ab687de266ea72e8e259a6635f605
+ac-01-4-preset-deserto-arido.png  1280x800  9a3743a663a8d57f0a81d1e7a361cbf0f6e7ab37848229eb3845d4977fe9016c
+ac-01-5-navegacao-zoom-e-pan.png  1280x800  11834fbc3801ece083218059afe29388caceddb40a0ba04674cd08fe3be25330
+ac-02-1-editor-5000-icones-zoom.png  1280x800  c87b2a940f324a2ce2cccb7861798d4c21122c406b9680bad78e6540f3bfd6fe
+ac-02-2-relatorio-fps.png  1280x800  badc84938b0d36adaffe316a8be3bab7910c4ef4691696ac360b662053a73971
