@@ -91,3 +91,52 @@ test('se a gravação falha, o indicador mostra "Erro ao salvar" e oferece "Tent
   await expect(page.getByTestId('world-name')).toHaveText('Ilhas de Cinza')
   await expect(page.getByRole('slider', { name: 'Oceano' })).toHaveAttribute('aria-valuenow', '43')
 })
+
+test('celular 390: o indicador aparece no painel sobreposto, e o Esc fecha só o menu do erro (AC-F4-02)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await createWorld(page, 'Ilhas de Cinza', 'cinza-0001')
+  await waitFinalMap(page)
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  const sidebar = page.getByTestId('sidebar')
+  await expect(sidebar).toHaveAttribute('data-open', 'true')
+  await expect(sidebar.getByTestId('save-indicator')).toBeVisible()
+  await expect(indicator(page)).toHaveAttribute('data-status', 'saved')
+
+  const ocean = page.getByRole('slider', { name: 'Oceano' })
+  await ocean.focus()
+  await ocean.press('ArrowRight')
+  await expect(indicator(page)).toHaveAttribute('data-status', 'saving')
+  await expect(indicator(page)).toContainText('Salvando…')
+  await expect(indicator(page)).toHaveAttribute('data-status', 'saved')
+  await expect(indicator(page)).toContainText('Salvo')
+
+  // Toda escrita no IndexedDB falha.
+  await page.evaluate(() => {
+    IDBObjectStore.prototype.put = function () {
+      throw new DOMException('Cota cheia', 'QuotaExceededError')
+    }
+  })
+  await ocean.press('ArrowRight')
+  const error = sidebar.getByRole('button', { name: 'Erro ao salvar' })
+  await expect(error).toBeVisible()
+  await error.click()
+  const menu = page.getByRole('menu', { name: 'Erro ao salvar' })
+  const retry = menu.getByRole('menuitem', { name: 'Tentar de novo' })
+  const exportJson = menu.getByRole('menuitem', { name: 'Exportar .json' })
+  await expect(retry).toBeVisible()
+  await expect(exportJson).toBeVisible()
+  await expect(exportJson).toBeDisabled()
+  // O menu fica por cima do conteúdo do painel e cabe na tela.
+  const box = (await menu.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(390)
+  const center = { x: box.x + box.width / 2, y: box.y + box.height * 0.25 }
+  expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[role="menu"]') !== null, center)).toBe(true)
+
+  await page.keyboard.press('Escape')
+  await expect(menu).toHaveCount(0)
+  await expect(error).toBeFocused()
+  await expect(sidebar).toHaveAttribute('data-open', 'true')
+  await expect(page.getByTestId('scrim')).toBeVisible()
+})
