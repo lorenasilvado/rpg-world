@@ -248,3 +248,26 @@ describe('worldStore: largura do mundo em km (escala, AC-F2-09)', () => {
     expect(store.getState().sizeKm).toBe(DEFAULT_SIZE_KM)
   })
 })
+
+describe('worldStore: identidade do mundo salvo (AC-F4-01)', () => {
+  it('vem dos dados iniciais; sem ela, um id e um createdAt novos', () => {
+    const now = () => new Date('2026-11-21T12:00:00.000Z')
+    const kept = createWorldStore(fakeGenerator().gen, { id: 'w1', createdAt: '2026-11-01T00:00:00.000Z' }, { newId: () => 'x', now })
+    expect(kept.getState()).toMatchObject({ id: 'w1', createdAt: '2026-11-01T00:00:00.000Z' })
+    const fresh = createWorldStore(fakeGenerator().gen, {}, { newId: () => 'x', now })
+    expect(fresh.getState()).toMatchObject({ id: 'x', createdAt: '2026-11-21T12:00:00.000Z' })
+    expect(createWorldStore(fakeGenerator().gen).getState().id).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('o mundo novo do assistente ganha outro id e outro createdAt', () => {
+    let n = 0
+    let t = 0
+    const store = createWorldStore(fakeGenerator().gen, {}, { newId: () => `id-${++n}`, now: () => new Date(Date.UTC(2026, 10, 21, ++t)) })
+    expect(store.getState().id).toBe('id-1')
+    store.getState().createWorld({ name: 'Brumas', seed: 'b', params: DEFAULT_WORLD_PARAMS })
+    expect(store.getState()).toMatchObject({ id: 'id-2', createdAt: '2026-11-21T02:00:00.000Z' })
+    // Mexer no mundo não troca a identidade.
+    store.getState().setSeed('c')
+    expect(store.getState().id).toBe('id-2')
+  })
+})

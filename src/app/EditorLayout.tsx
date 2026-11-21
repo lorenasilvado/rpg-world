@@ -9,6 +9,8 @@ import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
+import { SaveIndicator } from '../features/worlds/SaveIndicator'
+import type { SaveStore } from '../persistence/autosave'
 import { createCameraStore } from '../state/cameraStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
@@ -26,7 +28,8 @@ import { useTheme } from './useTheme'
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
- * O cabeçalho da sidebar mostra o nome do mundo. A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
+ * O cabeçalho da sidebar mostra o nome do mundo e, abaixo dele, o indicador de salvamento
+ * (`SaveIndicator`, com o `save`). A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
  * recolhe a 48 px e abre de novo pelo botão ou pela tecla `[`; abaixo disso, a tecla abre e fecha o
  * painel sobreposto. A tecla não vale com o foco num campo de texto nem com Ctrl, Alt ou Meta.
  *
@@ -53,10 +56,13 @@ import { useTheme } from './useTheme'
 export function EditorLayout({
   world,
   ui,
+  save,
   createRenderer,
 }: {
   world: WorldStore
   ui: UiStore
+  /** O status do salvamento automático (`createAutosave`); sem ele (testes), não há indicador. */
+  save?: SaveStore
   createRenderer?: CreateMapRenderer
 }) {
   const { theme, toggle } = useTheme()
@@ -216,9 +222,12 @@ export function EditorLayout({
             <Compass size={20} aria-hidden="true" />
           </span>
           {!sidebarCollapsed && (
-            <span className="min-w-0 truncate font-title text-base/5 font-semibold" data-testid="world-name" title={worldName}>
-              {worldName}
-            </span>
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+              <span className="max-w-full min-w-0 truncate px-1.5 font-title text-base/5 font-semibold" data-testid="world-name" title={worldName}>
+                {worldName}
+              </span>
+              {save && <SaveIndicator save={save} />}
+            </div>
           )}
           <IconButton
             ref={sidebarClose}

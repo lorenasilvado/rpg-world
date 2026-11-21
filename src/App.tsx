@@ -3,6 +3,7 @@ import { EditorLayout } from './app/EditorLayout'
 import type { CreateMapRenderer } from './app/MapView'
 import { NoWebGL2Notice } from './app/NoWebGL2Notice'
 import { NewWorldWizard } from './features/wizard/NewWorldWizard'
+import type { SaveStore } from './persistence/autosave'
 import type { CreateThumbnails } from './features/wizard/thumbnails'
 import { createUiStore, type UiStore } from './state/uiStore'
 import type { WorldStore } from './state/worldStore'
@@ -13,12 +14,13 @@ import type { WorldStore } from './state/worldStore'
  * não passam `webgl2` (o padrão é ter).
  *
  * Com `newWorld`, o assistente de novo mundo (AC-F1-19) abre sobre o editor, com o mundo padrão por
- * trás: até a Lista de mundos (M2), é assim que o app abre (`main.tsx`). `createThumbnails` dá as
+ * trás: até a Lista de mundos (M2), é assim que o app abre quando não há mundo salvo (`main.tsx`). `createThumbnails` dá as
  * miniaturas dos presets do assistente (sem ele, os cartões ficam sem miniatura).
  */
 function App({
   world,
   ui,
+  save,
   createRenderer,
   webgl2 = true,
   newWorld = false,
@@ -26,6 +28,8 @@ function App({
 }: {
   world: WorldStore
   ui?: UiStore
+  /** O status do salvamento automático, para o indicador da sidebar. */
+  save?: SaveStore
   createRenderer?: CreateMapRenderer
   webgl2?: boolean
   newWorld?: boolean
@@ -37,7 +41,7 @@ function App({
   if (!webgl2) return <NoWebGL2Notice />
   return (
     <>
-      <EditorLayout world={world} ui={uiStore} createRenderer={createRenderer} />
+      <EditorLayout world={world} ui={uiStore} save={save} createRenderer={createRenderer} />
       <NewWorldWizard
         world={world}
         open={wizardOpen}

@@ -25,6 +25,10 @@ export type GenerationStatus = 'idle' | 'generating' | 'error'
 export type WorldGenerator = Pick<NewerOnly<GenerateRequest, GenerateResult>, 'request' | 'latestVersion'>
 
 export type WorldState = {
+  /** Identidade do mundo salvo (`World.id`); o assistente dá um novo a cada mundo criado. */
+  id: string
+  /** Quando o mundo foi criado (ISO 8601). */
+  createdAt: string
   /** Nome do mundo, na barra da sidebar. */
   name: string
   /**
@@ -54,8 +58,8 @@ export type WorldState = {
   /** Gera o mapa final com a seed e os parâmetros atuais. */
   generate(): void
   /**
-   * Mundo novo do assistente: troca o nome, a largura em km (a padrão, sem `sizeKm`), a seed e os 9
-   * parâmetros e pede o mapa final 1024².
+   * Mundo novo do assistente: um `id` e um `createdAt` novos; troca o nome, a largura em km (a
+   * padrão, sem `sizeKm`), a seed e os 9 parâmetros e pede o mapa final 1024².
    */
   createWorld(world: { name: string; sizeKm?: number; seed: string; params: Readonly<WorldParams> }): void
 }
@@ -84,9 +88,22 @@ export function validSizeKm(sizeKm: number | undefined): number {
   return sizeKm !== undefined && Number.isFinite(sizeKm) && sizeKm > 0 ? sizeKm : DEFAULT_SIZE_KM
 }
 
+/** Um `id` novo de mundo. */
+export function newWorldId(): string {
+  return crypto.randomUUID()
+}
+
+export type WorldStoreOptions = {
+  /** Gera o `id` de um mundo novo (padrão: `newWorldId`). */
+  newId?: () => string
+  /** A hora atual, para o `createdAt` (padrão: `new Date()`). */
+  now?: () => Date
+}
+
 export function createWorldStore(
   generator: WorldGenerator,
-  initial: { name?: string; sizeKm?: number; seed?: string; params?: WorldParams } = {},
+  initial: { id?: string; createdAt?: string; name?: string; sizeKm?: number; seed?: string; params?: WorldParams } = {},
+  { newId = newWorldId, now = () => new Date() }: WorldStoreOptions = {},
 ): WorldStore {
   return createStore<WorldState>()((set, get) => {
     const request = (size: number) => {
@@ -114,6 +131,8 @@ export function createWorldStore(
     }
 
     return {
+      id: initial.id ?? newId(),
+      createdAt: initial.createdAt ?? now().toISOString(),
       name: initial.name ?? DEFAULT_WORLD_NAME,
       sizeKm: validSizeKm(initial.sizeKm),
       seed: initial.seed ?? DEFAULT_SEED,
@@ -149,7 +168,14 @@ export function createWorldStore(
         request(MAP_SIZE)
       },
       createWorld({ name, sizeKm, seed, params }) {
-        set({ name, sizeKm: validSizeKm(sizeKm), seed, params: applyParamChange(get().params, params).params })
+        set({
+          id: newId(),
+          createdAt: now().toISOString(),
+          name,
+          sizeKm: validSizeKm(sizeKm),
+          seed,
+          params: applyParamChange(get().params, params).params,
+        })
         request(MAP_SIZE)
       },
     }

@@ -9,7 +9,14 @@ updated: 2026-11-21
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Nada implementado ainda: o conteúdo abaixo vem do material de design e do PRD.
+> Hoje existe o salvamento automático do mundo aberto no IndexedDB (Dexie, em `src/persistence/`),
+> com o indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar
+> (só com a sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed,
+> nos parâmetros ou num mundo novo do assistente (e já, ao esconder ou sair da página). Como a Lista
+> de mundos ainda não existe, o app reabre o último mundo salvo ao recarregar; sem mundo salvo, abre
+> com o assistente sobre o mundo padrão, que só é salvo depois da primeira mudança. No menu do erro,
+> "Exportar .json" fica desabilitado até a exportação do mundo existir. Os pins ainda não existem: o
+> mundo é salvo com a lista de pins e de estradas vazia. O resto vem do material de design e do PRD.
 
 ## Resumo
 

@@ -128,7 +128,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
-| 37 | #154 | [feat] Mundos: salvar no navegador e reabrir | todo | specs/mundos.md | |
+| 37 | #154 | [feat] Mundos: salvar no navegador e reabrir | doing | specs/mundos.md | |
 | 38 | #155 | [feat] Lista de mundos: tela inicial, vazia e abrir | todo | specs/mundos.md | |
 | 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | todo | specs/mundos.md | |
 | 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | todo | specs/pins.md | |
