@@ -89,6 +89,11 @@ for (const [label, width, height, expected] of [
   ['tablet 1024', 1024, 768, { x: 320, y: 232, width: 304, height: 304 }],
   // Sem recuos: o mapa 390², centrado na altura (844 − 390) / 2.
   ['celular 390', 390, 844, { x: 0, y: 227, width: 390, height: 390 }],
+  // Dos dois lados do limite de 768 px (#105): se o breakpoint de `panelInsets` mudar, um deles falha.
+  // 767: ainda sem recuos, o mapa 767², centrado na altura (867 − 767) / 2.
+  ['limite 767', 767, 867, { x: 0, y: 50, width: 767, height: 767 }],
+  // 768: já com os recuos, a área livre é 768 − 320 − 400 = 48 px: o mapa 48², centrado em (900 − 48) / 2.
+  ['limite 768', 768, 900, { x: 320, y: 426, width: 48, height: 48 }],
 ] as const) {
   test(`${label}: o mapa ocupa o retângulo exato da área livre (AC-F1-22)`, async ({ page }) => {
     const { rect, errors } = await openMap(page, width, height)
