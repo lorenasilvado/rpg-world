@@ -37,6 +37,9 @@ test('a ferramenta da toolbar mede a distância em km entre dois cliques (AC-F2-
   // A linha segue o mouse até o segundo clique.
   await page.mouse.move(680, 450)
   await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(180 * KM_PER_PX)} km`)
+  // Sobre a toolbar, a linha fica no último ponto do mapa.
+  await toolbar(page).getByRole('button', { name: 'Camadas' }).hover()
+  await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(180 * KM_PER_PX)} km`)
   await page.mouse.click(860, 450)
   // 360 px de 720: metade do mundo de 800 km.
   await expect(page.getByTestId('measure-distance')).toHaveText('400 km')

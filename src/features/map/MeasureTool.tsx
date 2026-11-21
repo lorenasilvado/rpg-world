@@ -99,8 +99,9 @@ function MeasureLayer({ ui, world, camera, disabled }: { ui: UiStore; world: Wor
     }
     const onMove = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return
+      // Sobre um controle (toolbar, minimapa, barras), a linha fica no último ponto do mapa.
       const map = mapUnder(e.target)
-      setCursor(map && camera.getState().ready ? clampToWorld(toWorld(e, map)) : null)
+      if (map && camera.getState().ready) setCursor(clampToWorld(toWorld(e, map)))
     }
     document.addEventListener('pointerdown', onDown)
     document.addEventListener('pointerup', onUp)

@@ -153,10 +153,26 @@ describe('Medir distância (AC-F2-13)', () => {
     seed.focus()
     fireEvent.keyDown(seed, { key: 'Escape' })
     expect(distance()).toBe('400 km')
-    act(() => ui.getState().setTool('measure'))
+    expect(ui.getState().tool).toBe('measure')
+    // Sem medida, o Esc no campo também não volta para Navegar.
+    seed.blur()
     fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(distance()).toBeNull()
+    seed.focus()
     fireEvent.keyDown(seed, { key: 'Escape' })
     expect(ui.getState().tool).toBe('measure')
+  })
+
+  it('com o mouse sobre um controle, a linha fica no último ponto do mapa', () => {
+    const { ui } = setup()
+    act(() => ui.getState().setTool('measure'))
+    click(0, 0)
+    fireEvent.pointerMove(canvas(), { pointerId: 1, clientX: 256, clientY: 0, pointerType: 'mouse' })
+    expect(distance()).toBe('200 km')
+    fireEvent.pointerMove(screen.getByRole('button', { name: 'fora do mapa' }), { pointerId: 1, clientX: 900, clientY: 900, pointerType: 'mouse' })
+    expect(distance()).toBe('200 km')
+    fireEvent.pointerMove(screen.getByRole('button', { name: 'Camadas' }), { pointerId: 1, clientX: 900, clientY: 900, pointerType: 'mouse' })
+    expect(distance()).toBe('200 km')
   })
 
   it('com o popover de Camadas aberto, Esc fecha só o popover e a medida fica', () => {

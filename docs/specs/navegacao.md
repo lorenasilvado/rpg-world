@@ -60,7 +60,8 @@ barra inferior.
   (pílula escura, 84 px do topo, centrada na área livre) diz "Clique em dois pontos para medir" e,
   depois do primeiro ponto, "Clique no ponto final". O primeiro clique marca um ponto (círculo claro
   com borda escura); até o segundo, uma linha tracejada clara vai dele até o mouse, com a distância
-  em km numa pílula escura acima do meio da linha. O segundo clique fixa a outra ponta e a
+  em km numa pílula escura acima do meio da linha (com o mouse sobre um controle, como a toolbar ou
+  o minimapa, a linha fica no último ponto do mapa). O segundo clique fixa a outra ponta e a
   distância.
 - Minimapa recolhível no canto inferior esquerdo da área do mapa (160 × 100), com retângulo da área
   visível arrastável. O cabeçalho "Minimapa" (ícone `map` e seta) recolhe e abre; recolhido, fica
