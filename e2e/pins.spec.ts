@@ -370,3 +370,72 @@ test('Ctrl+Z desfaz o arrasto de um pin e a mudança de um slider, num históric
   await expect(ocean).toHaveAttribute('aria-valuenow', String(start + 1))
   await expect.poll(async () => (await savedPins(page))[0].pos.u).not.toBeCloseTo(0.45, 2)
 })
+
+test('celular 390×844 com toque: arrastar um pin o move sem pan; Desfazer da barra o devolve, e Refazer fica habilitado (AC-F3-04, AC-F4-08)', async ({ browser, browserName }) => {
+  test.skip(browserName !== 'chromium', 'o toque é simulado pelo CDP do Chrome')
+  test.setTimeout(90_000)
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+  const page = await ctx.newPage()
+  try {
+    await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
+    await waitFinalMap(page)
+    const rectBefore = await map(page).getAttribute('data-map-rect')
+    const from = await screenOf(page, 0.45, 0.5)
+    const to = await screenOf(page, 0.55, 0.4)
+    const cdp = await ctx.newCDPSession(page)
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0) =>
+      cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] })
+
+    await touch('touchStart', from.x, from.y - 10)
+    for (let i = 1; i <= 10; i++) await touch('touchMove', from.x + ((to.x - from.x) * i) / 10, from.y - 10 + ((to.y - from.y) * i) / 10)
+    await expect(map(page)).toHaveAttribute('data-pin-dragging', 'p-cheio')
+    await touch('touchEnd')
+    await expect(map(page)).toHaveAttribute('data-pin-dragging', '')
+    // A câmera não fez pan, e o arrasto não selecionou o pin (o drawer sobreposto continua fechado).
+    expect(await map(page).getAttribute('data-map-rect')).toBe(rectBefore)
+    await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'false')
+    const [moved] = await savedPins(page)
+    expect(moved.pos.u).toBeCloseTo(0.55, 2)
+    expect(moved.pos.v).toBeCloseTo(0.4, 2)
+
+    // A barra de ações do celular: Desfazer devolve o pin, e Refazer fica habilitado.
+    const actions = page.getByTestId('actions')
+    const redo = actions.getByRole('button', { name: 'Refazer' })
+    await expect(redo).toBeDisabled()
+    await actions.getByRole('button', { name: 'Desfazer' }).click()
+    await expect.poll(async () => (await savedPins(page))[0].pos).toEqual({ u: 0.45, v: 0.5 })
+    await expect(actions.getByRole('button', { name: 'Desfazer' })).toBeDisabled()
+    await expect(redo).toBeEnabled()
+    await redo.click()
+    await expect.poll(async () => (await savedPins(page))[0].pos.u).toBeCloseTo(0.55, 2)
+  } finally {
+    await ctx.close()
+  }
+})
+
+test('1280×800 com a sidebar e o drawer: o toast "Pin excluído" ocupa a largura da área livre (16 px à esquerda, 12 à direita), acima da toolbar na segunda linha (AC-F3-05)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
+  await waitFinalMap(page)
+  await clickPin(page, 0.45, 0.5)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-cheio')
+  await page.mouse.move(10, 400)
+  await page.keyboard.press('Delete')
+
+  const toast = page.getByTestId('pin-deleted-toast')
+  await expect(toast).toContainText('Pin excluído')
+  // Área livre de 560 px (entre a sidebar de 320 e o drawer de 400): o toast não cabe ao lado do
+  // zoom. Fica de 320 + 16 até 1280 − 400 − 12, 12 px acima da toolbar, que está numa segunda linha
+  // 12 px acima do minimapa aberto (cartão de 140 px, 16 px da base).
+  // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
+  await expect
+    .poll(async () => {
+      const box = await toast.boundingBox()
+      return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
+    })
+    .toEqual([320 + 16, 1280 - 400 - 12, 800 - 16 - 220])
+  const toolbar = (await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox())!
+  const box = (await toast.boundingBox())!
+  expect(Math.round(toolbar.y - (box.y + box.height))).toBe(12)
+})
