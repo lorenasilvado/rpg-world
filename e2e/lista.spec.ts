@@ -68,6 +68,46 @@ test('alterna entre dois mundos, cada um com a sua seed (AC-F4-06)', async ({ pa
   await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue('valdora-7f3a')
 })
 
+test('celular 390: o editor volta à lista pelo logo do painel sobreposto, também com "Erro ao salvar" (AC-F4-06)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await putWorlds(page, [defaultWorld({ seed: 'valdora-7f3a' })])
+  await page.reload()
+  await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
+  await expect(page.getByTestId('editor')).toBeVisible()
+
+  // Abaixo de 768 px, o logo fica no cabeçalho do painel sobreposto: abre o painel e clica nele.
+  const sidebar = page.getByTestId('sidebar')
+  const back = sidebar.getByRole('button', { name: 'Voltar à lista de mundos' })
+  await expect(back).toBeHidden()
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  await expect(sidebar).toHaveAttribute('data-open', 'true')
+  await back.click()
+  await expect(list(page)).toHaveAttribute('data-state', 'ready')
+  await expect(cards(page)).toHaveCount(1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  // Com a gravação falhando, voltar pergunta antes; o modal cabe na tela e "Voltar sem salvar" volta.
+  await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
+  await page.evaluate(() => {
+    IDBObjectStore.prototype.put = function () {
+      throw new DOMException('Cota cheia', 'QuotaExceededError')
+    }
+  })
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  const seed = page.getByRole('textbox', { name: 'Seed' })
+  await seed.fill('valdora-novo')
+  await seed.press('Enter')
+  await expect(sidebar.getByRole('button', { name: 'Erro ao salvar' })).toBeVisible()
+  await back.click()
+  const dialog = page.getByRole('dialog', { name: 'Mudanças não salvas' })
+  await expect(dialog).toBeInViewport({ ratio: 1 })
+  await dialog.getByRole('button', { name: 'Voltar sem salvar' }).click()
+  await expect(list(page)).toHaveAttribute('data-state', 'ready')
+  await expect(cards(page).getByTestId('world-card-name')).toHaveText('Terras de Valdora')
+})
+
 for (const [width, height, columns] of [
   [1440, 900, 4],
   [1024, 768, 3],
