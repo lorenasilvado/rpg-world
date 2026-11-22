@@ -64,15 +64,15 @@ export async function putWorlds(page: Page, worlds: World[]) {
 }
 
 /**
- * Abre o editor com o mundo padrão (`defaultWorld`): cada teste tem um contexto novo, com o banco
- * vazio, então o mundo é gravado no IndexedDB, a página recarrega e o cartão dele é aberto na Lista
- * de mundos (a tela inicial).
+ * Abre o editor com o mundo padrão (`defaultWorld`, ou o `world` dado): cada teste tem um contexto
+ * novo, com o banco vazio, então o mundo é gravado no IndexedDB, a página recarrega e o cartão dele é
+ * aberto na Lista de mundos (a tela inicial).
  */
-export async function gotoEditor(page: Page, url = '/') {
+export async function gotoEditor(page: Page, url = '/', world = defaultWorld()) {
   await page.goto(url)
-  await putWorlds(page, [defaultWorld()])
+  await putWorlds(page, [world])
   await page.reload()
-  await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
+  await page.getByRole('button', { name: new RegExp(`^${world.name}`) }).click()
   await expect(page.getByTestId('editor').or(page.getByTestId('no-webgl2'))).toBeVisible()
 }
 

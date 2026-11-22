@@ -1,0 +1,157 @@
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createCameraStore } from '../../state/cameraStore'
+import { createPinsStore } from '../../state/pinsStore'
+import { createUiStore } from '../../state/uiStore'
+import { MeasureTool } from '../map/MeasureTool'
+import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
+import { PinDrawer } from './PinDrawer'
+import { PinTool } from './PinTool'
+
+const idleGenerator: WorldGenerator = { request: () => new Promise(() => {}), latestVersion: () => 0 }
+
+afterEach(cleanup)
+
+/**
+ * O editor de mentira: a área do mapa (`data-testid="map"`, em 0,0 no jsdom), o drawer e as
+ * ferramentas. A câmera mostra o mundo com 1 px por unidade, da origem 0,0: o px da tela é a unidade
+ * do mundo, e (u, v) = px / 1024.
+ */
+function setup() {
+  const ui = createUiStore()
+  const camera = createCameraStore()
+  camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
+  let n = 0
+  const pins = createPinsStore([], { newId: () => `p${++n}` })
+  const world = createWorldStore(idleGenerator)
+  render(
+    <div>
+      <main data-testid="map">
+        <canvas data-testid="canvas" />
+      </main>
+      <aside>
+        <PinDrawer pins={pins} />
+      </aside>
+      <MeasureTool ui={ui} world={world} camera={camera} disabled={false} />
+      <PinTool ui={ui} pins={pins} camera={camera} disabled={false} />
+    </div>,
+  )
+  return { ui, pins, camera }
+}
+
+function click(x: number, y: number, moveTo: [number, number] = [x, y]) {
+  const canvas = screen.getByTestId('canvas')
+  fireEvent.pointerDown(canvas, { pointerId: 1, button: 0, clientX: x, clientY: y, pointerType: 'mouse' })
+  fireEvent.pointerUp(canvas, { pointerId: 1, button: 0, clientX: moveTo[0], clientY: moveTo[1], pointerType: 'mouse' })
+}
+
+const nameField = () => screen.getByRole('textbox', { name: 'Nome do pin' }) as HTMLInputElement
+
+describe('Adicionar pin (AC-F3-01)', () => {
+  it('com P, um clique no mapa cria um Novo pin ali, abre o drawer com o nome em edição e volta para Navegar', () => {
+    const { ui, pins } = setup()
+    fireEvent.keyDown(document.body, { key: 'p' })
+    expect(ui.getState().tool).toBe('pin')
+    act(() => click(256, 512))
+    expect(pins.getState().pins).toEqual([expect.objectContaining({ id: 'p1', type: 'cidade', name: 'Novo pin', pos: { u: 0.25, v: 0.5 } })])
+    expect(pins.getState().selectedId).toBe('p1')
+    expect(ui.getState().tool).toBe('nav')
+    expect(nameField().value).toBe('Novo pin')
+    expect(document.activeElement).toBe(nameField())
+    expect(nameField().selectionStart).toBe(0)
+    expect(nameField().selectionEnd).toBe('Novo pin'.length)
+    expect(screen.getByTestId('pin-drawer-type').textContent).toBe('Cidade')
+  })
+
+  it('arrastar (pan) não cria pin, e Navegar não cria pin', () => {
+    const { ui, pins } = setup()
+    click(100, 100)
+    expect(pins.getState().pins).toHaveLength(0)
+    act(() => ui.getState().setTool('pin'))
+    click(100, 100, [140, 100])
+    expect(pins.getState().pins).toHaveLength(0)
+  })
+
+  it('Esc, com Adicionar pin e sem pin selecionado, volta para Navegar', () => {
+    const { ui } = setup()
+    fireEvent.keyDown(document.body, { key: 'P' })
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(ui.getState().tool).toBe('nav')
+  })
+
+  it('o nome muda a cada tecla; vazio, volta o último nome ao sair do campo', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    fireEvent.change(nameField(), { target: { value: 'Valdora' } })
+    expect(pins.getState().pins[0].name).toBe('Valdora')
+    fireEvent.change(nameField(), { target: { value: '  ' } })
+    fireEvent.blur(nameField())
+    expect(nameField().value).toBe('Valdora')
+    expect(pins.getState().pins[0].name).toBe('Valdora')
+  })
+})
+
+describe('Selecionar pin (AC-F3-03)', () => {
+  it('clicar num pin o seleciona e abre o drawer (sem o nome em edição); Esc fecha', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    act(() => pins.getState().select(null))
+    expect(screen.queryByTestId('pin-drawer')).toBeNull()
+    // O pin tem a âncora em (256, 512): o desenho fica acima dela.
+    act(() => click(256, 500))
+    expect(pins.getState().selectedId).toBe('p1')
+    expect(screen.getByTestId('pin-drawer').dataset.pinId).toBe('p1')
+    expect(document.activeElement).not.toBe(nameField())
+    act(() => {
+      fireEvent.keyDown(document.body, { key: 'Escape' })
+    })
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.queryByTestId('pin-drawer')).toBeNull()
+  })
+
+  it('com Adicionar pin, clicar num pin o seleciona em vez de criar outro', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    act(() => pins.getState().select(null))
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 500))
+    expect(pins.getState().pins).toHaveLength(1)
+    expect(pins.getState().selectedId).toBe('p1')
+  })
+
+  it('Esc no campo do nome fecha o drawer; o botão Fechar também', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    fireEvent.keyDown(nameField(), { key: 'Escape' })
+    expect(pins.getState().selectedId).toBeNull()
+    act(() => pins.getState().select('p1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
+    expect(pins.getState().selectedId).toBeNull()
+  })
+
+  it('com Medir distância, o clique é da medida: não seleciona nem cria', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    act(() => pins.getState().select(null))
+    act(() => ui.getState().setTool('measure'))
+    act(() => click(256, 500))
+    expect(pins.getState().selectedId).toBeNull()
+    expect(pins.getState().pins).toHaveLength(1)
+  })
+
+  it('o mouse sobre um pin o marca como hover', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 512))
+    const canvas = screen.getByTestId('canvas')
+    fireEvent.pointerMove(canvas, { clientX: 256, clientY: 500, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBe('p1')
+    fireEvent.pointerMove(canvas, { clientX: 600, clientY: 600, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBeNull()
+  })
+})

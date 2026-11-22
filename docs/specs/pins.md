@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 # F3 · Pins e drawer
@@ -9,7 +9,9 @@ updated: 2026-11-21
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Nada implementado ainda: o conteúdo abaixo vem do material de design e do PRD.
+> Hoje funcionam: Adicionar pin (P), o desenho dos 7 tipos no mapa, o hover e a seleção, com o
+> drawer mostrando o ícone, o nome editável e o tipo. O resto (arrastar, excluir, a ficha completa,
+> agrupamento, busca) vem do material de design e do PRD e ainda não existe.
 
 ## Resumo
 
@@ -50,9 +52,11 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Nenhum selecionado | Padrão do editor | Ferramenta Navegar ativa, sem drawer |
-| Selecionado | Clique num pin | Drawer aberto; o pin ganha rótulo com o nome, anel âmbar e pulsação; a câmera centraliza o pin na área livre entre os dois painéis |
-| Hover | Mouse sobre o pin | `scale(1.1)` + nome |
+| Nenhum selecionado | Padrão do editor | Ferramenta Navegar ativa, sem pin no drawer (a partir de 768 px, o painel do drawer fica vazio; abaixo, fechado) |
+| Pin novo | Clique no mapa com Adicionar pin | O pin cai e quica no lugar (460 ms); fica selecionado, e o drawer abre com o nome "Novo pin" em edição (o campo com o foco e o texto selecionado) |
+| Selecionado | Clique num pin | Drawer aberto (abaixo de 768 px, sobreposto); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (no zoom 1×, o mapa não se move) |
+| Hover | Mouse sobre o pin | `scale(1.1)` + nome; cursor de mãozinha |
+| Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, marca tracejada no chão |
 | Agrupado | Zoom < 0,8 e pins a < 34 px | Círculo com contador |
 | Excluído | Excluir | O pin encolhe (180 ms); toast "Pin excluído" com a ação "Desfazer" |
@@ -64,8 +68,9 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 
 | Ação | Resultado |
 |---|---|
-| Ferramenta "Adicionar pin" (P) + clique no mapa | Cria um pin naquele ponto (quique de 420–460 ms), do último tipo usado no mundo (Cidade no primeiro), com o nome "Novo pin"; o drawer abre com o nome em edição |
-| Clicar num pin | Abre o drawer (E2) |
+| Ferramenta "Adicionar pin" (P) + clique no mapa | Cria um pin naquele ponto (quique de 460 ms), do tipo do último pin do mundo (Cidade no primeiro), com o nome "Novo pin"; o drawer abre com o nome em edição, e a ferramenta volta para Navegar. Clicar num pin com a ferramenta o seleciona, sem criar outro; arrastar faz pan, sem criar |
+| Clicar num pin (Navegar ou Adicionar pin) | Seleciona o pin e abre o drawer (E2). Com Medir distância, o clique é da medida |
+| Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo |
 | Arrastar um pin | Muda a posição |
 | Ocultar por tipo | Esconde os pins daquele tipo |
 | Excluir (Delete) | Exclui na hora, sem confirmação; o toast "Pin excluído" oferece "Desfazer", e Ctrl+Z também desfaz |
@@ -73,7 +78,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Centralizar | Centraliza a câmera no pin |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
 | Clicar num grupo | Zoom no grupo |
-| Fechar o drawer (Esc) | Fecha o drawer |
+| Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. Esc com Adicionar pin e sem pin selecionado volta para Navegar |
 
 ## Regras
 
@@ -81,8 +86,12 @@ entre recusar o arquivo ou aceitá-lo com a redução.
   campo opcional `parentId`. Qualquer tipo pode ser pai, sem limite de níveis; o pai não pode ser
   o próprio pin nem um descendente dele (sem ciclo). O pai é escolhido na aba Detalhes. Excluir o
   pai deixa os filhos sem pai, e Desfazer restaura o pai e os vínculos.
-- Pins mantêm tamanho constante na tela (32 px) em qualquer zoom; o rótulo com o nome aparece a
-  partir do zoom 1,5×.
+- Pins mantêm tamanho constante na tela (32 px de largura, 38,4 de altura) em qualquer zoom, com a
+  âncora na base central; o rótulo com o nome (Cinzel 700 13/16 com contorno claro) aparece abaixo
+  da âncora a partir do zoom 1,5×, no hover e na seleção.
+- Os pins ficam acima do terreno e da decoração, fora do desfoque da geração. O pin mais ao sul
+  cobre o de cima; o do hover e o selecionado ficam por cima de todos, e o clique acerta o de cima.
+- Um clique fora do mapa (no fundo do canvas) não cria pin.
 - Pins guardam coordenadas `(u, v)` de 0 a 1, independentes da projeção (RNF-9).
 - Desfazer e refazer cobrem pins (ver [mundos.md](mundos.md)).
 - Pan e zoom sem travar com 500 pins.

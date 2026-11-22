@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION } from '../core'
+import { createPinsStore } from '../state/pinsStore'
 import { createWorldStore, type WorldGenerator } from '../state/worldStore'
 import { createAutosave, SAVE_DELAY_MS } from './autosave'
 import type { World } from './types'
@@ -173,5 +174,25 @@ describe('salvamento automático (AC-F4-01, AC-F4-02)', () => {
     world.getState().releaseParams({ ocean: 31 })
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS * 2)
     expect(repo.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('criar e renomear um pin grava os pins do mundo, que o mundo reaberto traz de volta (AC-F3-01)', async () => {
+    const world = createWorldStore(generator, { id: 'w1', createdAt: '2026-11-20T09:00:00.000Z' })
+    const pins = createPinsStore([], { newId: () => 'p1' })
+    const repo = { save: vi.fn((_w: World) => Promise.resolve()) }
+    const autosave = createAutosave({ world, pins, repo, now: () => NOW })
+    pins.getState().addPin({ u: 0.3, v: 0.6 })
+    expect(autosave.store.getState().status).toBe('saving')
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+    expect(repo.save.mock.calls[0][0].pins).toEqual([expect.objectContaining({ id: 'p1', name: 'Novo pin', pos: { u: 0.3, v: 0.6 } })])
+    pins.getState().rename('p1', 'Valdora')
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+    expect(repo.save.mock.calls[1][0].pins[0].name).toBe('Valdora')
+    // Selecionar e passar o mouse não gravam.
+    pins.getState().select(null)
+    pins.getState().setHovered('p1')
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS * 2)
+    expect(repo.save).toHaveBeenCalledTimes(2)
+    autosave.dispose()
   })
 })

@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 # F2 · Câmera e navegação
@@ -36,8 +36,8 @@ barra inferior.
   768 px, os botões de abrir o painel e os detalhes vêm antes, e os botões ficam sem folga entre si
   (a barra tem 360 px e cabe numa tela de 390).
 - Barra de ferramentas inferior (h 56, 309 px): navegar, adicionar pin, desenhar estrada, rota
-  automática, um separador, camadas, medir distância. A ferramenta em uso (navegar, ao abrir, ou
-  medir distância) fica ativa, em âmbar. Adicionar pin, desenhar estrada e rota automática aparecem
+  automática, um separador, camadas, medir distância. A ferramenta em uso (navegar, ao abrir,
+  adicionar pin ou medir distância) fica ativa, em âmbar. Desenhar estrada e rota automática aparecem
   desabilitadas (opacidade .55), até as funções existirem. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
   ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
@@ -52,8 +52,8 @@ barra inferior.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
   só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
-- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), medir
-  distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
+- Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
+  pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
 - Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica
@@ -105,7 +105,8 @@ barra inferior.
 | Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa (hoje, "Decoração") |
 | Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
-| Buscar, desfazer, refazer, exportar, adicionar pin, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
+| Buscar, desfazer, refazer, exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
+| Adicionar pin (atalho P) | Liga a ferramenta de criar pin (ver [pins.md](pins.md)) |
 | Medir distância (atalho M) | Liga a ferramenta de medir |
 | Dois cliques no mapa, com Medir distância | Marcam as pontas e mostram a distância em km entre elas; um terceiro clique começa outra medida |
 | Navegar (atalho V) | Volta para a navegação (sem medida) |

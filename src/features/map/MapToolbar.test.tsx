@@ -14,12 +14,21 @@ describe('Toolbar de ferramentas (AC-F2-10)', () => {
     const nav = screen.getByRole('button', { name: 'Navegar' })
     expect(nav.getAttribute('aria-pressed')).toBe('true')
     expect((nav as HTMLButtonElement).disabled).toBe(false)
-    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática']) {
+    for (const name of ['Desenhar estrada', 'Rota automática']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
     }
-    for (const name of ['Camadas', 'Medir distância']) {
+    for (const name of ['Adicionar pin', 'Camadas', 'Medir distância']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false)
     }
+  })
+
+  it('Adicionar pin troca a ferramenta e fica ativa (AC-F3-01)', () => {
+    const ui = createUiStore()
+    render(<MapToolbar ui={ui} />)
+    const pin = screen.getByRole('button', { name: 'Adicionar pin' })
+    fireEvent.click(pin)
+    expect(ui.getState().tool).toBe('pin')
+    expect(pin.getAttribute('aria-pressed')).toBe('true')
   })
 
   it('Medir distância e Navegar trocam a ferramenta, e a ferramenta em uso fica ativa (AC-F2-13)', () => {

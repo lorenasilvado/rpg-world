@@ -8,8 +8,11 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
  */
 export type MapLayer = 'decor'
 
-/** Ferramenta do mapa em uso: navegar (pan e zoom) ou medir distância (navegacao.md, AC-F2-13). */
-export type MapTool = 'nav' | 'measure'
+/**
+ * Ferramenta do mapa em uso: navegar (pan e zoom), adicionar pin (pins.md, AC-F3-01) ou medir
+ * distância (navegacao.md, AC-F2-13).
+ */
+export type MapTool = 'nav' | 'pin' | 'measure'
 
 export type UiState = {
   /** Camadas do mapa à vista (todas ligadas ao abrir). */

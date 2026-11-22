@@ -3,6 +3,7 @@ import { EditorLayout } from './app/EditorLayout'
 import type { CreateMapRenderer } from './app/MapView'
 import { NoWebGL2Notice } from './app/NoWebGL2Notice'
 import type { SaveStore } from './persistence/autosave'
+import { createPinsStore, type PinsStore } from './state/pinsStore'
 import { createUiStore, type UiStore } from './state/uiStore'
 import type { WorldStore } from './state/worldStore'
 
@@ -14,6 +15,7 @@ import type { WorldStore } from './state/worldStore'
  */
 function App({
   world,
+  pins,
   ui,
   save,
   createRenderer,
@@ -21,6 +23,8 @@ function App({
   onBack,
 }: {
   world: WorldStore
+  /** Os pins do mundo; sem ele (testes), o App cria um store vazio. */
+  pins?: PinsStore
   ui?: UiStore
   /** O status do salvamento automático, para o indicador da sidebar. */
   save?: SaveStore
@@ -30,8 +34,9 @@ function App({
 }) {
   // Sem `ui` na prop (os testes), o App cria o seu, uma vez.
   const [uiStore] = useState(() => ui ?? createUiStore())
+  const [pinsStore] = useState(() => pins ?? createPinsStore())
   if (!webgl2) return <NoWebGL2Notice onBack={onBack} />
-  return <EditorLayout world={world} ui={uiStore} save={save} createRenderer={createRenderer} onBack={onBack} />
+  return <EditorLayout world={world} pins={pinsStore} ui={uiStore} save={save} createRenderer={createRenderer} onBack={onBack} />
 }
 
 export default App

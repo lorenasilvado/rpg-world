@@ -120,6 +120,16 @@ export class MapCamera {
     this.jump({ cx, cy, scale: this.viewport.scale.x })
   }
 
+  /**
+   * Leva o ponto do mundo (cx, cy) ao centro da área livre, sem mudar o zoom, deslizando em 350 ms
+   * (com movimento reduzido, salta). Os limites de pan valem: no zoom 1×, o mapa não sai do lugar.
+   */
+  panTo(cx: number, cy: number) {
+    if (!this.fitted) return
+    const base = this.tween?.to ?? this.currentView()
+    this.moveTo({ cx, cy, scale: base.scale })
+  }
+
   destroy() {
     document.removeEventListener('keydown', this.onKeyDown)
     this.reducedMotion.removeEventListener('change', this.applyMotion)
