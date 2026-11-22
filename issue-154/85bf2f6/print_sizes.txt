@@ -1,0 +1,11 @@
+commit: 85bf2f6826cd8dbe64fe40b0a393db1e01ae6909
+ac-f4-01-depois-de-recarregar.png  1440x900  6cf03d40cd5ffbf5255d2bfe465bfeb91c25b1dfe83daecd84c462fbe21d74f2
+ac-f4-02-a-salvando.png  1440x900  3d09d27f5d166edd6c06a96369081a22057317ad965386ca41f27e81e9f2a8fd
+ac-f4-02-b-salvo.png  1440x900  d995ae409d1040d8a40c9ab35c46a5f13aae6f71c3a13c907f8c155497bb8c99
+ac-f4-02-c-erro-ao-salvar.png  1440x900  792fb2c1a9808174dff141fc65fa896055ba883897597572cb9b860fba0628ab
+ac-f4-02-d-menu-do-erro.png  1440x900  fed79c501eaeed5bca80b4dfb647697abafab02460acbacd510fdceecb016afd
+ac-f4-02-e-tentar-de-novo-salvo.png  1440x900  6a9fb6b34055a9105d9fbade54c9e15dcab177a25c031906372191984b92316e
+ac-f4-02-f-celular-salvo.png  390x844  649d3e67acee1b6de09e9f1fd2ed01548b76c8164f7a25be79505ddbf5c1ea77
+ac-f4-02-g-celular-menu-do-erro.png  390x844  7d13fc4264b9831de0c7e37bfe64e2ff0858ad58ded17ce2b2dc2e20469efa38
+ac-f4-02-h-celular-esc-fecha-so-o-menu.png  390x844  727075d1bbac69260c34c3c802b3fd9d077251e05c6b492022101722f21b641e
+ac-f4-03-registro-salvo.png  1440x900  779c76ac4c43115cf7253d37b1028f0bcfbafcecb001c79bab723b984883cee7
