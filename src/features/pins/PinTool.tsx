@@ -56,10 +56,8 @@ export function PinTool({
         return
       }
       if (e.key !== 'Escape') return
-      if (pins.getState().dragging) {
-        e.preventDefault()
-        pins.getState().endDrag(false)
-      } else if (pins.getState().selectedId !== null) {
+      // O Esc no meio do arrasto é do arrasto (o efeito do ponteiro, na captura).
+      if (pins.getState().selectedId !== null) {
         e.preventDefault()
         pins.getState().select(null)
       } else if (ui.getState().tool === 'pin') {
@@ -144,6 +142,14 @@ export function PinTool({
       down.delete(e.pointerId)
       if (press?.id === e.pointerId) cancelDrag()
     }
+    // Esc no meio do arrasto devolve o pin e encerra o aperto: mexer depois não arrasta de novo, e
+    // soltar não grava nada. Na captura, antes das outras teclas (Esc fecharia o drawer).
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !press?.dragging) return
+      e.preventDefault()
+      e.stopPropagation()
+      cancelDrag()
+    }
     const onMove = (e: PointerEvent) => {
       const p = press
       if (p?.pin && p.id === e.pointerId) {
@@ -165,7 +171,9 @@ export function PinTool({
     document.addEventListener('pointerup', onUp)
     document.addEventListener('pointercancel', onCancel)
     document.addEventListener('pointermove', onMove)
+    document.addEventListener('keydown', onEscape, true)
     return () => {
+      document.removeEventListener('keydown', onEscape, true)
       document.removeEventListener('pointerdown', onDown, true)
       document.removeEventListener('pointerup', onUp)
       document.removeEventListener('pointercancel', onCancel)

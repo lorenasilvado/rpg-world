@@ -243,14 +243,27 @@ describe('Arrastar pin (AC-F3-04)', () => {
     expect(pins.getState().selectedId).toBe('p1')
   })
 
-  it('Esc e o pointercancel devolvem o pin ao lugar', () => {
-    const { pins } = withPin()
+  it('Esc devolve o pin e encerra o arrasto: mexer depois não arrasta, soltar não grava, o pan é solto e a seleção fica', () => {
+    const { pins, camera } = withPin()
+    const holdPan = vi.fn()
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    act(() => pins.getState().select('p1'))
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerMove(canvas(), pointer(700, 700))
     fireEvent.keyDown(document.body, { key: 'Escape' })
     expect(pins.getState().dragging).toBeNull()
-    fireEvent.pointerUp(canvas(), pointer(700, 700))
+    expect(holdPan).toHaveBeenLastCalledWith(false)
+    // O Esc foi do arrasto: o drawer continua aberto.
+    expect(pins.getState().selectedId).toBe('p1')
+    fireEvent.pointerMove(canvas(), pointer(800, 300))
+    expect(pins.getState().dragging).toBeNull()
+    fireEvent.pointerUp(canvas(), pointer(800, 300))
     expect(pins.getState().pins[0].pos).toEqual({ u: 0.5, v: 0.5 })
+    expect(pins.getState().selectedId).toBe('p1')
+  })
+
+  it('o pointercancel devolve o pin ao lugar', () => {
+    const { pins } = withPin()
 
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerMove(canvas(), pointer(700, 700))
