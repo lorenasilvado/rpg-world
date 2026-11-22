@@ -8,10 +8,13 @@ import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
 import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
+import { PinDrawer } from '../features/pins/PinDrawer'
+import { PinTool } from '../features/pins/PinTool'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
 import { createCameraStore } from '../state/cameraStore'
+import type { PinsStore } from '../state/pinsStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
@@ -48,6 +51,10 @@ import { useTheme } from './useTheme'
  * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`). A
  * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa.
  *
+ * Os pins (`pins`, pins.md): o renderer os desenha, e o `PinTool` cria (Adicionar pin, tecla P) e
+ * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
+ * um pin abre o drawer sobreposto, e fechá-lo (Esc, o botão ou o scrim) tira a seleção.
+ *
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar, Desfazer,
  * Refazer e Exportar ficam desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
@@ -56,12 +63,14 @@ import { useTheme } from './useTheme'
  */
 export function EditorLayout({
   world,
+  pins,
   ui,
   save,
   createRenderer,
   onBack,
 }: {
   world: WorldStore
+  pins: PinsStore
   ui: UiStore
   /** O status do salvamento automático (`createAutosave`); sem ele (testes), não há indicador. */
   save?: SaveStore
@@ -103,12 +112,34 @@ export function EditorLayout({
   const closeAll = () => {
     setSidebarOpen(false)
     setDrawerOpen(false)
+    pins.getState().select(null)
   }
+  const closeDrawer = () => {
+    setDrawerOpen(false)
+    pins.getState().select(null)
+  }
+
+  // Abaixo de 768 px, o pin selecionado abre o drawer sobreposto; sem seleção, ele fecha.
+  useEffect(
+    () =>
+      pins.subscribe((state, prev) => {
+        if (state.selectedId === prev.selectedId) return
+        if (state.selectedId === null) setDrawerOpen(false)
+        else if (!window.matchMedia(DESKTOP_QUERY).matches) {
+          setSidebarOpen(false)
+          setDrawerOpen(true)
+        }
+      }),
+    [pins],
+  )
 
   useEffect(() => {
     const desktop = window.matchMedia(DESKTOP_QUERY)
     const onChange = (e: MediaQueryListEvent) => {
-      if (e.matches) closeAll()
+      if (e.matches) {
+        setSidebarOpen(false)
+        setDrawerOpen(false)
+      }
     }
     desktop.addEventListener('change', onChange)
     return () => desktop.removeEventListener('change', onChange)
@@ -144,16 +175,20 @@ export function EditorLayout({
   useEffect(() => {
     if (!anyOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeAll()
+      if (e.key !== 'Escape') return
+      setSidebarOpen(false)
+      setDrawerOpen(false)
+      pins.getState().select(null)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [anyOpen])
+  }, [anyOpen, pins])
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
+      <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
+      <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} />
 
       <div
         ref={bottomBar}
@@ -312,11 +347,11 @@ export function EditorLayout({
         ].join(' ')}
       >
         <div className="flex h-14 shrink-0 items-center justify-end px-3 md:hidden">
-          <IconButton ref={drawerClose} label="Fechar detalhes" onClick={() => setDrawerOpen(false)}>
+          <IconButton ref={drawerClose} label="Fechar detalhes" onClick={closeDrawer}>
             <X size={20} aria-hidden="true" />
           </IconButton>
         </div>
-        <div className="flex-1" />
+        <PinDrawer pins={pins} />
       </aside>
     </div>
   )
@@ -377,7 +412,10 @@ function isTextField(target: EventTarget | null) {
 }
 
 
-/** Ao abrir o painel, foca o botão de fechar; ao fechar, devolve o foco a quem o abriu. */
+/**
+ * Ao abrir o painel, foca o botão de fechar (se o foco já não está dentro dele: o nome do pin novo,
+ * em edição); ao fechar, devolve o foco a quem o abriu.
+ */
 function usePanelFocus(
   open: boolean,
   closeButton: RefObject<HTMLButtonElement | null>,
@@ -385,7 +423,9 @@ function usePanelFocus(
 ) {
   const wasOpen = useRef(false)
   useEffect(() => {
-    if (open) closeButton.current?.focus()
+    if (open) {
+      if (!closeButton.current?.closest('aside')?.contains(document.activeElement)) closeButton.current?.focus()
+    }
     else if (wasOpen.current) opener.current?.focus()
     wasOpen.current = open
   }, [open, closeButton, opener])

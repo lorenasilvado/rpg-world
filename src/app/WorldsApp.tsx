@@ -8,6 +8,7 @@ import { createAutosave, type Autosave } from '../persistence/autosave'
 import type { World } from '../persistence/types'
 import { copyName, loadWorlds, newWorldRecord, worldStoreInitial } from '../persistence/worldRecord'
 import type { WorldsRepo } from '../persistence/worldsRepo'
+import { createPinsStore, type PinsStore } from '../state/pinsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { createWorldStore, newWorldId, type WorldGenerator, type WorldStore } from '../state/worldStore'
 import type { CreateMapRenderer } from './MapView'
@@ -15,8 +16,8 @@ import type { CreateMapRenderer } from './MapView'
 /** O relógio padrão (estável: entra nas dependências dos efeitos). */
 const currentTime = () => new Date()
 
-/** O mundo aberto no editor: o estado dele e o salvamento automático. */
-type Session = { world: WorldStore; autosave: Autosave }
+/** O mundo aberto no editor: o estado dele, os pins e o salvamento automático. */
+type Session = { world: WorldStore; pins: PinsStore; autosave: Autosave }
 
 /**
  * O app (mundos.md → Ações, AC-F4-04 a AC-F4-06, AC-F4-12): a Lista de mundos é a tela inicial;
@@ -24,7 +25,7 @@ type Session = { world: WorldStore; autosave: Autosave }
  * "Novo mundo" abre o assistente sobre a lista: "Criar mundo" salva o mundo novo já e o abre no
  * editor; Cancelar fecha e a lista continua.
  *
- * Cada mundo aberto ganha um `worldStore` e um salvamento automático próprios, sobre o mesmo
+ * Cada mundo aberto ganha um `worldStore`, um `pinsStore` e um salvamento automático próprios, sobre o mesmo
  * gerador (o worker do editor). Voltar à lista grava o que esperava a pausa e lê a lista de novo
  * (cartões esqueleto enquanto isso); se a gravação falha ("Erro ao salvar"), o mundo não fecha:
  * o modal `UnsavedLeaveDialog` pergunta antes, para as mudanças não se perderem sem aviso. Ao
@@ -99,9 +100,10 @@ export function WorldsApp({
     (record: World): Session => {
       const world = createWorldStore(generator, worldStoreInitial(record), { newId, now })
       if (webgl2) world.getState().generate()
-      const autosave = createAutosave({ world, repo, loaded: record, now })
-      setSession({ world, autosave })
-      return { world, autosave }
+      const pins = createPinsStore(record.pins)
+      const autosave = createAutosave({ world, pins, repo, loaded: record, now })
+      setSession({ world, pins, autosave })
+      return { world, pins, autosave }
     },
     [generator, repo, webgl2, newId, now],
   )
@@ -135,6 +137,7 @@ export function WorldsApp({
         <App
           key={session.world.getState().id}
           world={session.world}
+          pins={session.pins}
           ui={uiStore}
           save={session.autosave.store}
           webgl2={webgl2}

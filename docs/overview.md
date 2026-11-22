@@ -121,6 +121,18 @@ canvas ao abrir, no estilo Medieval do design system (`style/decorInk.ts`); o
 culling pela área livre e o nível de detalhe pelo zoom ficam em `layers/decorCull.ts`, TS puro,
 testado no Vitest. A camada liga e desliga pelo `src/state/uiStore.ts` (camadas do mapa). Os testes do jsdom, sem WebGL, passam um renderer falso ao `App`.
 
+Os pins ficam no `src/state/pinsStore.ts` (Zustand vanilla, um por mundo aberto): a lista que o
+mundo salva e, fora dela, o pin selecionado, o do hover e o recém-criado. Os 7 tipos estão em
+`src/state/pinTypes.ts`, e o desenho deles (formas, cores e glifos do design system, como paths do
+SVG) em `src/render/style/pinShapes.ts`, que serve ao canvas do mapa e ao `<svg>` do drawer
+(`src/features/pins/PinIcon.tsx`). O renderer desenha os pins na `layers/PinLayer.ts`, acima do
+grupo borrado, com a escala da câmera desfeita a cada quadro (32 px na tela) e o quique e a
+pulsação; a matemática (tela ↔ (u, v), o pin sob o ponteiro, a ordem de desenho, o rótulo e as
+animações) fica em `layers/pinMath.ts`, TS puro, testada no Vitest. O `src/features/pins/PinTool.tsx`
+ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra o pin
+selecionado no drawer. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O
+`e2e/pins.spec.ts` cobre criar, desenhar, selecionar e recarregar.
+
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): nome, seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
 status da geração. Arrastar um slider
@@ -156,8 +168,8 @@ A persistência fica em `src/persistence/` ([ADR 0001](adr/0001-stack-da-v1.md),
 [ADR 0003](adr/0003-app-so-local-na-v1.md)): `db.ts` abre o banco do Dexie (tabelas `worlds`, por
 `id` e `updatedAt`, e `images`, com os blobs), `worldsRepo.ts` lê e grava (`list` dá os mundos do
 editado por último ao mais antigo), `worldRecord.ts` converte entre o mundo salvo e o `worldStore`, e
-`types.ts` tem o `World` salvo. O `autosave.ts` ouve o `worldStore` e grava o mundo 500 ms depois da
-última mudança no nome, na seed, nos parâmetros ou no `sizeKm`, uma gravação de cada vez; o status
+`types.ts` tem o `World` salvo. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
+última mudança no nome, na seed, nos parâmetros, no `sizeKm` ou nos pins, uma gravação de cada vez; o status
 (`saved`, `saving`, `error`) vai para o indicador da sidebar (`src/features/worlds/`). O `WorldsApp`
 grava já o que espera a pausa ao voltar à lista e ao esconder ou sair da página. Os testes do Vitest
 usam o `fake-indexeddb` (o repositório) e um repositório em memória (`src/test/memoryRepo.ts`); o
@@ -265,14 +277,15 @@ src/
     generatorClient.ts  # cria o worker; entrega o mais novo (newerOnly.ts)
   render/
     MapRenderer.ts      # cria app Pixi + viewport
-    layers/             # TerrainLayer (+ terrainPixels), DecorLayer, RoadLayer, PinLayer, LabelLayer
+    layers/             # TerrainLayer (+ terrainPixels), DecorLayer, PinLayer (+ pinMath), RoadLayer, LabelLayer
     style/palette.ts    # cores e tons por bioma, costa e rio
   state/
     worldStore.ts       # seed, parâmetros, status da geração
-    pinsStore.ts        # pins + undo
+    pinsStore.ts        # pins, seleção, hover e pin novo (undo vem depois)
+    pinTypes.ts         # os 7 tipos de pin
     roadsStore.ts
     params.ts           # limite Desertos + Florestas (applyParamChange)
-    uiStore.ts          # camadas do mapa, sidebar recolhida, ferramenta ativa, pin selecionado
+    uiStore.ts          # camadas do mapa, sidebar recolhida, minimapa, ferramenta ativa
   features/
     sidebar/  pins/  roads/  worlds/
   persistence/

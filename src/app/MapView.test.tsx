@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MapRenderer } from '../render/MapRenderer'
 import { createCameraStore } from '../state/cameraStore'
+import { createPinsStore } from '../state/pinsStore'
 import { createUiStore } from '../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../state/worldStore'
 import { MapView, type CreateMapRenderer } from './MapView'
@@ -31,7 +32,7 @@ describe('MapView', () => {
     const createRenderer: CreateMapRenderer = () => new Promise((resolve) => pending.push(resolve))
     const view = render(
       <StrictMode>
-        <MapView world={createWorldStore(idleGenerator)} ui={createUiStore()} camera={camera} inert={false} createRenderer={createRenderer} />
+        <MapView world={createWorldStore(idleGenerator)} pins={createPinsStore()} ui={createUiStore()} camera={camera} inert={false} createRenderer={createRenderer} />
       </StrictMode>,
     )
     // O StrictMode monta, desmonta e monta de novo: dois renderers pedidos, o primeiro descartado.

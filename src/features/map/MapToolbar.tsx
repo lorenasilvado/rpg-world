@@ -8,7 +8,7 @@ import { LAYERS, TOOLS, type Tool } from './tools'
 /**
  * Toolbar de ferramentas da linha inferior (navegacao.md → Elementos do editor, AC-F2-10, AC-F2-11 e
  * AC-F2-13): Navegar, Adicionar pin, Desenhar estrada, Rota automática, Camadas e Medir distância.
- * Navegar e Medir distância trocam a ferramenta do mapa (`tool` do `ui`), e a ferramenta em uso fica
+ * Navegar, Adicionar pin e Medir distância trocam a ferramenta do mapa (`tool` do `ui`), e a ferramenta em uso fica
  * ativa, em âmbar. As ferramentas de funções que ainda não existem ficam desabilitadas (opacidade
  * .55). O hover (mesmo nas desabilitadas) ou o foco do teclado (só nas habilitadas: as
  * desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
@@ -72,7 +72,7 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
         {TOOLS.map((tool) => {
           const Icon = tool.icon
           const isLayers = tool.id === 'layers'
-          const isMapTool = tool.id === 'nav' || tool.id === 'measure'
+          const isMapTool = tool.id === 'nav' || tool.id === 'pin' || tool.id === 'measure'
           const on = isLayers ? layersOpen : tool.id === activeTool
           const showTip = tip === tool.id && !(isLayers && layersOpen)
           return (
