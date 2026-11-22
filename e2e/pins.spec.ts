@@ -208,3 +208,25 @@ test('celular 390: tocar num pin abre o drawer sobreposto, e fechá-lo tira a se
   await expect(drawer).toHaveAttribute('data-open', 'false')
   await expect(map(page)).toHaveAttribute('data-pin-selected', '')
 })
+
+test('celular 390: com P, tocar no mapa cria o pin e abre o drawer sobreposto com o nome em edição; Esc fecha e tira a seleção (AC-F3-01)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await gotoEditor(page)
+  await waitFinalMap(page)
+  await page.keyboard.press('p')
+  const at = await screenOf(page, 0.5, 0.5)
+  await page.mouse.click(at.x, at.y)
+
+  const drawer = page.getByTestId('drawer')
+  await expect(map(page)).toHaveAttribute('data-pins', '1')
+  await expect(drawer).toHaveAttribute('data-open', 'true')
+  await expect(nameField(page)).toBeFocused()
+  await expect(nameField(page)).toHaveValue('Novo pin')
+  expect(await nameField(page).evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd])).toEqual([0, 8])
+
+  await page.keyboard.press('Escape')
+  await expect(drawer).toHaveAttribute('data-open', 'false')
+  await expect(map(page)).toHaveAttribute('data-pin-selected', '')
+  await expect(page.getByTestId('pin-drawer')).toHaveCount(0)
+})
