@@ -1,6 +1,6 @@
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION, type WorldParams } from '../core'
 import { DEFAULT_SIZE_KM } from '../state/worldStore'
-import type { World } from './types'
+import type { StoredImage, World } from './types'
 import type { WorldsRepo } from './worldsRepo'
 
 /**
@@ -52,5 +52,38 @@ export function newWorldRecord(
     roads: [],
     createdAt: at,
     updatedAt: at,
+  }
+}
+
+/** O nome da cópia de um mundo (Duplicar, na Lista de mundos). */
+export function copyName(name: string): string {
+  return `${name} (cópia)`
+}
+
+/**
+ * A cópia de um mundo (Duplicar): os mesmos seed, parâmetros, pins e estradas, com o id e o nome
+ * novos e as duas datas em `now`. As imagens do mundo ganham ids novos (`newId`) e a cópia como
+ * dona, e os pins da cópia apontam para elas.
+ */
+export function copyWorldRecord(
+  world: World,
+  images: readonly StoredImage[],
+  { id, name, now, newId }: { id: string; name: string; now: Date; newId: () => string },
+): { world: World; images: StoredImage[] } {
+  const imageIds = new Map(images.map((image) => [image.id, newId()]))
+  const at = now.toISOString()
+  const copy: World = {
+    ...structuredClone(world),
+    id,
+    name,
+    createdAt: at,
+    updatedAt: at,
+  }
+  copy.pins = copy.pins.map((pin) =>
+    pin.icon.kind === 'image' && imageIds.has(pin.icon.blobId) ? { ...pin, icon: { kind: 'image', blobId: imageIds.get(pin.icon.blobId)! } } : pin,
+  )
+  return {
+    world: copy,
+    images: images.map((image) => ({ id: imageIds.get(image.id)!, worldId: id, blob: image.blob })),
   }
 }

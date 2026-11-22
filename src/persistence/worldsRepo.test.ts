@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION } from '../core'
 import { openDb, type RpgWorldDb } from './db'
-import { loadWorlds, newWorldRecord, worldStoreInitial } from './worldRecord'
+import { copyName, loadWorlds, newWorldRecord, worldStoreInitial } from './worldRecord'
 import type { World } from './types'
 import { createWorldsRepo } from './worldsRepo'
 
@@ -91,6 +91,68 @@ describe('worldsRepo (IndexedDB, AC-F4-01)', () => {
     expect(stored?.blob).toBeInstanceOf(Blob)
     expect(stored?.blob.type).toBe('image/png')
     expect(new Uint8Array(await stored!.blob.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
+  })
+})
+
+const imagePin = (id: string, blobId: string): World['pins'][number] => ({
+  id,
+  type: 'Cidade',
+  name: id,
+  pos: { u: 0.5, v: 0.5 },
+  icon: { kind: 'image', blobId },
+  description: '',
+  tags: [],
+  fields: {},
+})
+
+describe('renomear, duplicar e excluir (AC-F4-07)', () => {
+  const NOW = new Date('2026-11-22T09:00:00.000Z')
+
+  it('rename troca o nome e o updatedAt, e mais nada', async () => {
+    const repo = createWorldsRepo(freshDb())
+    await repo.save(world())
+    await repo.rename('w1', 'Brumas', NOW)
+    expect(await repo.get('w1')).toEqual(world({ name: 'Brumas', updatedAt: NOW.toISOString() }))
+    await repo.rename('nao-existe', 'X', NOW)
+    expect(await repo.list()).toHaveLength(1)
+  })
+
+  it('duplicate grava a cópia com os pins e as imagens, em ids novos, e o original fica igual', async () => {
+    const repo = createWorldsRepo(freshDb())
+    const original = world({ pins: [imagePin('p1', 'img1')], roads: [{ id: 'r1', kind: 'road', points: [{ u: 0, v: 0 }] }] })
+    await repo.save(original)
+    await repo.saveImage({ id: 'img1', worldId: 'w1', blob: new Blob([new Uint8Array([7, 8])], { type: 'image/png' }) })
+    await repo.saveImage({ id: 'outra', worldId: 'w2', blob: new Blob([]) })
+    let n = 0
+    const copy = await repo.duplicate('w1', { id: 'w1-copia', name: copyName(original.name), now: NOW, newId: () => `nova-${++n}` })
+
+    expect(copy).toEqual({
+      ...original,
+      id: 'w1-copia',
+      name: 'Terras de Valdora (cópia)',
+      pins: [imagePin('p1', 'nova-1')],
+      createdAt: NOW.toISOString(),
+      updatedAt: NOW.toISOString(),
+    })
+    expect(await repo.get('w1-copia')).toEqual(copy)
+    expect(await repo.get('w1')).toEqual(original)
+    const image = await repo.getImage('nova-1')
+    expect(image?.worldId).toBe('w1-copia')
+    expect(new Uint8Array(await image!.blob.arrayBuffer())).toEqual(new Uint8Array([7, 8]))
+    expect(n).toBe(1)
+    expect(await repo.duplicate('nao-existe', { id: 'x', name: 'x', now: NOW, newId: () => 'y' })).toBeUndefined()
+  })
+
+  it('remove exclui o mundo e as imagens dele, e só elas', async () => {
+    const repo = createWorldsRepo(freshDb())
+    await repo.save(world({ id: 'w1' }))
+    await repo.save(world({ id: 'w2' }))
+    await repo.saveImage({ id: 'a', worldId: 'w1', blob: new Blob([]) })
+    await repo.saveImage({ id: 'b', worldId: 'w2', blob: new Blob([]) })
+    await repo.remove('w1')
+    expect((await repo.list()).map((w) => w.id)).toEqual(['w2'])
+    expect(await repo.getImage('a')).toBeUndefined()
+    expect(await repo.getImage('b')).toBeDefined()
   })
 })
 

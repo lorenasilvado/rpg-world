@@ -129,3 +129,113 @@ for (const [width, height, columns] of [
     expect(Math.round(header.height)).toBe(72)
   })
 }
+
+test('menu "⋯": renomear, duplicar (a contagem sobe) e excluir com confirmação (AC-F4-07)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  await putWorlds(page, [
+    defaultWorld({ id: 'a', name: 'Terras de Valdora', seed: 'valdora-7f3a', updatedAt: '2026-11-21T10:00:00.000Z' }),
+    defaultWorld({ id: 'b', name: 'Vale Sombrio', seed: 'sombrio-0001', updatedAt: '2026-11-20T10:00:00.000Z' }),
+  ])
+  await page.reload()
+  const names = cards(page).getByTestId('world-card-name')
+  await expect(names).toHaveText(['Terras de Valdora', 'Vale Sombrio'])
+
+  // O menu: o cartão ganha o contorno âmbar; Exportar fica desabilitado.
+  await page.getByRole('button', { name: 'Mais ações de Vale Sombrio' }).click()
+  const menu = page.getByRole('menu', { name: 'Ações de Vale Sombrio' })
+  await expect(menu.getByRole('menuitem')).toHaveText(['Renomear', 'Duplicar', 'Exportar', 'Excluir'])
+  await expect(menu.getByRole('menuitem', { name: 'Exportar' })).toBeDisabled()
+  await expect(cards(page).nth(1)).toHaveAttribute('data-menu-open', 'true')
+  await expect(menu).toBeInViewport({ ratio: 1 })
+
+  // Renomear: o mundo sobe para o topo, editado agora.
+  await menu.getByRole('menuitem', { name: 'Renomear' }).click()
+  const rename = page.getByRole('dialog', { name: 'Renomear mundo' })
+  await rename.getByLabel('Nome do mundo').fill('Vale das Brumas')
+  await rename.getByRole('button', { name: 'Renomear' }).click()
+  await expect(rename).toBeHidden()
+  await expect(names).toHaveText(['Vale das Brumas', 'Terras de Valdora'])
+  await expect(cards(page).first().getByTestId('world-card-caption')).toHaveText('Editado agora · sem pins')
+
+  // Duplicar: a cópia vai para o topo e a contagem sobe.
+  await page.getByRole('button', { name: 'Mais ações de Terras de Valdora' }).click()
+  await page.getByRole('menuitem', { name: 'Duplicar' }).click()
+  await expect(page.getByTestId('world-count')).toHaveText('3 mundos')
+  await expect(names).toHaveText(['Terras de Valdora (cópia)', 'Vale das Brumas', 'Terras de Valdora'])
+
+  // Excluir: Cancelar mantém; confirmar tira da lista, e recarregar confirma.
+  await page.getByRole('button', { name: 'Mais ações de Terras de Valdora (cópia)' }).click()
+  await page.getByRole('menuitem', { name: 'Excluir' }).click()
+  const remove = page.getByRole('dialog', { name: 'Excluir “Terras de Valdora (cópia)”?' })
+  await expect(remove).toContainText('Isso não pode ser desfeito.')
+  await remove.getByRole('button', { name: 'Cancelar' }).click()
+  await expect(page.getByTestId('world-count')).toHaveText('3 mundos')
+  await page.getByRole('button', { name: 'Mais ações de Terras de Valdora (cópia)' }).click()
+  await page.getByRole('menuitem', { name: 'Excluir' }).click()
+  await remove.getByRole('button', { name: 'Excluir mundo' }).click()
+  await expect(page.getByTestId('world-count')).toHaveText('2 mundos')
+  await page.reload()
+  await expect(names).toHaveText(['Vale das Brumas', 'Terras de Valdora'])
+})
+
+test('menu "⋯" só com teclado: abrir, andar, renomear e excluir (AC-F4-07)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  await putWorlds(page, [defaultWorld({ seed: 'valdora-7f3a' })])
+  await page.reload()
+  const more = page.getByRole('button', { name: 'Mais ações de Terras de Valdora' })
+  await more.focus()
+
+  // Enter abre com o foco em Renomear; as setas pulam o Exportar desabilitado; Esc devolve ao "⋯".
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('menuitem', { name: 'Renomear' })).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: 'Excluir' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(more).toBeFocused()
+
+  // Renomear pelo teclado: o nome vem selecionado, digitar substitui, Enter grava.
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('Ilhas do Corvo')
+  await page.keyboard.press('Enter')
+  await expect(page.getByTestId('world-card-name')).toHaveText('Ilhas do Corvo')
+  const renamed = page.getByRole('button', { name: 'Mais ações de Ilhas do Corvo' })
+  await expect(renamed).toBeFocused()
+
+  // Excluir: o foco começa em Cancelar; Tab vai a "Excluir mundo".
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('End')
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Excluir “Ilhas do Corvo”?' })
+  await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(dialog.getByRole('button', { name: 'Excluir mundo' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Nenhum mundo ainda' })).toBeVisible()
+  // O cartão saiu: o foco vai ao "Novo mundo".
+  await expect(page.getByRole('button', { name: 'Novo mundo' })).toBeFocused()
+})
+
+for (const [width, height] of [
+  [1024, 768],
+  [390, 844],
+] as const) {
+  test(`${width} px: o menu "⋯" e os modais cabem na tela (AC-F4-07)`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    await page.goto('/')
+    await putWorlds(
+      page,
+      Array.from({ length: 3 }, (_, i) => defaultWorld({ id: `m${i}`, name: `Mundo ${i + 1}`, seed: `seed-${i}` })),
+    )
+    await page.reload()
+    await page.getByRole('button', { name: 'Mais ações de Mundo 3' }).click()
+    await expect(page.getByRole('menu')).toBeInViewport({ ratio: 1 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await page.getByRole('menuitem', { name: 'Excluir' }).click()
+    await expect(page.getByRole('dialog')).toBeInViewport({ ratio: 1 })
+  })
+}
