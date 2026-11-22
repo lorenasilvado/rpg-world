@@ -13,6 +13,11 @@ export type CameraControls = {
   center(): void
   /** Põe o ponto do mundo (x, y) no centro da área livre na hora, sem mudar o zoom (dentro dos limites). */
   centerOn(x: number, y: number): void
+  /**
+   * Segura o pan (o arrasto da câmera) enquanto `held`: um aperto num pin é do pin. O evento segue
+   * para o resto da página (o "clique fora" dos popovers continua valendo).
+   */
+  holdPan?(held: boolean): void
 }
 
 export type CameraView = {

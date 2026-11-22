@@ -21,7 +21,8 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  *
  * Apertar num pin e andar mais que `CLICK_SLOP_PX` o arrasta (`dragTo`), com o ponto onde ele foi
  * pego preso ao ponteiro, e soltar o deixa ali (`endDrag`): a posição fica presa entre 0 e 1. O
- * aperto num pin não chega ao canvas (é ouvido na captura, antes dele), então a câmera não faz pan.
+ * aperto num pin é ouvido na captura, antes do canvas, e segura o pan da câmera (`holdPan`) até
+ * soltar; o evento segue, e o "clique fora" dos popovers e menus continua valendo.
  * Esc, um segundo dedo ou o `pointercancel` devolvem o pin ao lugar. A seleção não muda no arrasto.
  *
  * Esc fecha o drawer (tira a seleção); sem pin selecionado, com Adicionar pin, volta para Navegar.
@@ -83,9 +84,17 @@ export function PinTool({
       const s = pins.getState()
       return pinAt(x, y, s.pins, camera.getState(), s.selectedId, s.hoveredId)
     }
+    /** O pan da câmera está seguro por um aperto num pin. */
+    let panHeld = false
+    const holdPan = (held: boolean) => {
+      if (panHeld === held) return
+      panHeld = held
+      camera.getState().controls?.holdPan?.(held)
+    }
     const cancelDrag = () => {
       if (press?.dragging) pins.getState().endDrag(false)
       press = null
+      holdPan(false)
     }
     const onDown = (e: PointerEvent) => {
       const map = mapUnder(e.target)
@@ -103,14 +112,15 @@ export function PinTool({
       if (!hit) return
       const anchor = pinToScreen(hit.pos, camera.getState())
       press.pin = { id: hit.id, dx: at.x - anchor.x, dy: at.y - anchor.y }
-      // O aperto é do pin: o canvas (e a câmera) não o recebe.
-      e.stopPropagation()
+      // O aperto é do pin: a câmera não faz pan até soltar.
+      holdPan(true)
     }
     const onUp = (e: PointerEvent) => {
       down.delete(e.pointerId)
       const p = press
       if (!p || p.id !== e.pointerId) return
       press = null
+      holdPan(false)
       if (p.dragging) {
         pins.getState().endDrag(true)
         return
@@ -150,7 +160,7 @@ export function PinTool({
       const hit = map && camera.getState().ready && ui.getState().tool !== 'measure' ? under(local(e, map).x, local(e, map).y) : null
       pins.getState().setHovered(hit ? hit.id : null)
     }
-    // Na captura: o aperto num pin para aqui, antes do canvas.
+    // Na captura: o aperto num pin segura o pan antes de o canvas (e a câmera) o receber.
     document.addEventListener('pointerdown', onDown, true)
     document.addEventListener('pointerup', onUp)
     document.addEventListener('pointercancel', onCancel)
@@ -161,6 +171,7 @@ export function PinTool({
       document.removeEventListener('pointercancel', onCancel)
       document.removeEventListener('pointermove', onMove)
       if (press?.dragging) pins.getState().endDrag(false)
+      holdPan(false)
       pins.getState().setHovered(null)
     }
   }, [ui, pins, camera, disabled])

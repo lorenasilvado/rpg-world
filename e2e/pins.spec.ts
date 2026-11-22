@@ -439,3 +439,44 @@ test('1280×800 com a sidebar e o drawer: o toast "Pin excluído" ocupa a largur
   const box = (await toast.boundingBox())!
   expect(Math.round(toolbar.y - (box.y + box.height))).toBe(12)
 })
+
+test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e arrastar o pin continua sem pan (AC-F3-04)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
+  await waitFinalMap(page)
+  const rectBefore = await map(page).getAttribute('data-map-rect')
+  const popover = page.getByTestId('layers-popover')
+
+  // Clique num pin: o popover fecha, e o pin é selecionado.
+  await page.getByRole('toolbar', { name: 'Ferramentas' }).getByRole('button', { name: 'Camadas' }).click()
+  await expect(popover).toBeVisible()
+  await clickPin(page, 0.45, 0.5)
+  await expect(popover).toBeHidden()
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-cheio')
+  await page.keyboard.press('Escape')
+
+  // Arrasto de um pin: o popover fecha, e a câmera não faz pan.
+  await page.getByRole('toolbar', { name: 'Ferramentas' }).getByRole('button', { name: 'Camadas' }).click()
+  await expect(popover).toBeVisible()
+  const from = await screenOf(page, 0.45, 0.5)
+  await page.mouse.move(from.x, from.y - 10)
+  await page.mouse.down()
+  await expect(popover).toBeHidden()
+  await page.mouse.move(from.x + 60, from.y + 30, { steps: 8 })
+  await expect(map(page)).toHaveAttribute('data-pin-dragging', 'p-cheio')
+  await page.mouse.up()
+  expect(await map(page).getAttribute('data-map-rect')).toBe(rectBefore)
+  await expect.poll(async () => (await savedPins(page))[0].pos.u).not.toBeCloseTo(0.45, 2)
+
+  // Fora dos pins, o arrasto ainda faz pan (o pan solto ao largar o pin).
+  await page.keyboard.press('=')
+  await page.keyboard.press('=')
+  await expect(map(page)).toHaveAttribute('data-zoom', '1.563')
+  const zoomed = await map(page).getAttribute('data-map-rect')
+  const empty = await screenOf(page, 0.2, 0.8)
+  await page.mouse.move(empty.x, empty.y)
+  await page.mouse.down()
+  await page.mouse.move(empty.x + 80, empty.y - 40, { steps: 8 })
+  await page.mouse.up()
+  await expect.poll(() => map(page).getAttribute('data-map-rect')).not.toBe(zoomed)
+})

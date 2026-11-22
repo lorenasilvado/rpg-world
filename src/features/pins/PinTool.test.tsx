@@ -184,15 +184,46 @@ describe('Arrastar pin (AC-F3-04)', () => {
     expect(pins.getState().selectedId).toBeNull()
   })
 
-  it('o aperto no pin não chega ao canvas (a câmera não faz pan); fora dos pins, chega', () => {
-    withPin()
+  it('o aperto no pin segura o pan da câmera até soltar e segue para a página (o "clique fora" dos popovers); fora dos pins, não segura', () => {
+    const { camera } = withPin()
+    const holdPan = vi.fn()
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
     const onCanvas = vi.fn()
+    const onDocument = vi.fn()
     canvas().addEventListener('pointerdown', onCanvas)
+    document.addEventListener('pointerdown', onDocument)
+    try {
+      fireEvent.pointerDown(canvas(), pointer(512, 500))
+      expect(holdPan).toHaveBeenLastCalledWith(true)
+      expect(onCanvas).toHaveBeenCalledTimes(1)
+      expect(onDocument).toHaveBeenCalledTimes(1)
+      fireEvent.pointerMove(canvas(), pointer(600, 420))
+      fireEvent.pointerUp(canvas(), pointer(600, 420))
+      expect(holdPan).toHaveBeenLastCalledWith(false)
+      expect(holdPan).toHaveBeenCalledTimes(2)
+
+      fireEvent.pointerDown(canvas(), pointer(100, 100))
+      fireEvent.pointerUp(canvas(), pointer(100, 100))
+      expect(holdPan).toHaveBeenCalledTimes(2)
+    } finally {
+      document.removeEventListener('pointerdown', onDocument)
+    }
+  })
+
+  it('o segundo dedo e o pointercancel soltam o pan', () => {
+    const { camera } = withPin()
+    const holdPan = vi.fn()
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
     fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerDown(canvas(), { ...pointer(700, 700), pointerId: 2, pointerType: 'touch' })
+    expect(holdPan).toHaveBeenLastCalledWith(false)
     fireEvent.pointerUp(canvas(), pointer(512, 500))
-    expect(onCanvas).not.toHaveBeenCalled()
-    fireEvent.pointerDown(canvas(), pointer(100, 100))
-    expect(onCanvas).toHaveBeenCalledTimes(1)
+    fireEvent.pointerUp(canvas(), { ...pointer(700, 700), pointerId: 2, pointerType: 'touch' })
+
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    expect(holdPan).toHaveBeenLastCalledWith(true)
+    fireEvent.pointerCancel(canvas(), pointer(512, 500))
+    expect(holdPan).toHaveBeenLastCalledWith(false)
   })
 
   it('para fora do mapa, a posição fica presa entre 0 e 1', () => {

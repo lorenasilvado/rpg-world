@@ -130,6 +130,16 @@ export class MapCamera {
     this.moveTo({ cx, cy, scale: base.scale })
   }
 
+  /** Segura o pan enquanto `held` (o arrasto de um pin); a pinça e a roda continuam. */
+  holdPan(held: boolean) {
+    if (held) {
+      this.viewport.plugins.pause('drag')
+      this.viewport.plugins.get('decelerate')?.reset()
+    } else {
+      this.viewport.plugins.resume('drag')
+    }
+  }
+
   destroy() {
     document.removeEventListener('keydown', this.onKeyDown)
     this.reducedMotion.removeEventListener('change', this.applyMotion)
