@@ -31,6 +31,15 @@ export const PIN_DROP_MS = 460
 /** Período da pulsação do pin selecionado. */
 export const PIN_PULSE_MS = 1600
 
+/** Quanto o pin arrastado sobe, em px na tela (pins.md → Estados: Arrastando). */
+export const PIN_DRAG_LIFT_PX = 14
+
+/** Opacidade do pin arrastado. */
+export const PIN_DRAG_ALPHA = 0.6
+
+/** Duração do encolher do pin excluído. */
+export const PIN_SHRINK_MS = 180
+
 /** Ponto do mundo (0–1024) de uma posição (u, v). */
 export function pinToWorld(pos: PinPos, world = WORLD_SIZE): { x: number; y: number } {
   return { x: pos.u * world, y: pos.v * world }
@@ -57,11 +66,25 @@ export function screenToPin(px: number, py: number, cam: PinCamera, world = WORL
 }
 
 /**
- * Ordem de desenho, de baixo para cima: os pins mais ao norte primeiro (o de baixo cobre o de cima,
- * como a decoração), depois o pin sob o mouse e, por último, o selecionado.
+ * Posição (u, v) sob o ponto (px CSS) da área do mapa, presa entre 0 e 1: o pin arrastado para fora
+ * do mapa fica na borda.
  */
-export function drawOrder<T extends PinLike>(pins: readonly T[], selectedId: string | null, hoveredId: string | null): T[] {
-  const rank = (p: T) => (p.id === selectedId ? 2 : p.id === hoveredId ? 1 : 0)
+export function screenToPinClamped(px: number, py: number, cam: PinCamera, world = WORLD_SIZE): PinPos {
+  const pos = worldToPin({ x: cam.view.x + (px - cam.origin.x) / cam.scale, y: cam.view.y + (py - cam.origin.y) / cam.scale }, world)
+  return { u: Math.min(1, Math.max(0, pos.u)), v: Math.min(1, Math.max(0, pos.v)) }
+}
+
+/**
+ * Ordem de desenho, de baixo para cima: os pins mais ao norte primeiro (o de baixo cobre o de cima,
+ * como a decoração), depois o pin sob o mouse, o selecionado e, por último, o arrastado.
+ */
+export function drawOrder<T extends PinLike>(
+  pins: readonly T[],
+  selectedId: string | null,
+  hoveredId: string | null,
+  draggingId: string | null = null,
+): T[] {
+  const rank = (p: T) => (p.id === draggingId ? 3 : p.id === selectedId ? 2 : p.id === hoveredId ? 1 : 0)
   return pins
     .map((p, i) => ({ p, i }))
     .sort((a, b) => rank(a.p) - rank(b.p) || a.p.pos.v - b.p.pos.v || a.i - b.i)
@@ -151,3 +174,13 @@ export function pulseFrame(ms: number): { scale: number; alpha: number } {
   const k = pulseEase((((ms % PIN_PULSE_MS) + PIN_PULSE_MS) % PIN_PULSE_MS) / PIN_PULSE_MS)
   return { scale: 0.7 + 1.1 * k, alpha: 0.9 * (1 - k) }
 }
+
+/** O encolher do pin excluído `ms` depois da exclusão: a escala e a opacidade vão de 1 a 0 em 180 ms (`ease-in`). */
+export function shrinkFrame(ms: number): { scale: number; alpha: number } {
+  const t = Math.min(1, Math.max(0, ms / PIN_SHRINK_MS))
+  const k = shrinkEase(t)
+  return { scale: 1 - k, alpha: 1 - k }
+}
+
+/** `ease-in` do CSS. */
+const shrinkEase = cubicBezier(0.42, 0, 1, 1)

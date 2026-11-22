@@ -130,8 +130,18 @@ grupo borrado, com a escala da câmera desfeita a cada quadro (32 px na tela) e 
 pulsação; a matemática (tela ↔ (u, v), o pin sob o ponteiro, a ordem de desenho, o rótulo e as
 animações) fica em `layers/pinMath.ts`, TS puro, testada no Vitest. O `src/features/pins/PinTool.tsx`
 ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra o pin
-selecionado no drawer. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O
-`e2e/pins.spec.ts` cobre criar, desenhar, selecionar e recarregar.
+selecionado no drawer. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
+também arrasta: o aperto num pin é ouvido na captura e não chega ao canvas, então o pixi-viewport não
+faz pan; a posição do arrasto fica em `dragging` no `pinsStore`, e a lista só muda ao soltar. Delete
+exclui o selecionado, e a `PinLayer` encolhe o pin que sai (180 ms). O `e2e/pins.spec.ts` cobre criar,
+desenhar, selecionar, recarregar, arrastar, excluir e desfazer.
+
+O histórico de desfazer fica no `src/state/history.ts`, um por mundo aberto: o middleware `temporal`
+do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, params }`, que ouve o
+`pinsStore` e o `worldStore` e troca o espelho a cada mudança que vale um passo (os parâmetros só ao
+soltar o slider: `paramsDragging` do `worldStore`). Desfazer devolve os pins pelo `replacePins` e os
+parâmetros pelo `setParams`, que pede só o mapa final. O `EditorLayout` liga os botões Desfazer e
+Refazer da barra, as teclas e o toast "Pin excluído" (`src/features/pins/PinDeletedToast.tsx`).
 
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): nome, seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
@@ -281,7 +291,8 @@ src/
     style/palette.ts    # cores e tons por bioma, costa e rio
   state/
     worldStore.ts       # seed, parâmetros, status da geração
-    pinsStore.ts        # pins, seleção, hover e pin novo (undo vem depois)
+    pinsStore.ts        # pins, seleção, hover, pin novo e arrasto
+    history.ts          # desfazer e refazer do mundo (zundo), pins e parâmetros
     pinTypes.ts         # os 7 tipos de pin
     roadsStore.ts
     params.ts           # limite Desertos + Florestas (applyParamChange)

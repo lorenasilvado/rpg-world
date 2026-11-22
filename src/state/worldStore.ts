@@ -44,6 +44,11 @@ export type WorldState = {
   terrainRgba: Uint8ClampedArray<ArrayBuffer> | null
   /** Versão do pedido que gerou o `field` (0 sem campo). */
   fieldVersion: number
+  /**
+   * Um slider está sendo arrastado (`dragParams`) e ainda não foi solto (`releaseParams`): os
+   * parâmetros dessas prévias não entram no histórico de desfazer, só o valor ao soltar.
+   */
+  paramsDragging: boolean
   /** `generating` enquanto o pedido mais novo não chegou; `error` se ele falhou. */
   status: GenerationStatus
   error: unknown
@@ -140,6 +145,7 @@ export function createWorldStore(
       field: null,
       terrainRgba: null,
       fieldVersion: 0,
+      paramsDragging: false,
       status: 'idle',
       error: null,
       setSeed(seed) {
@@ -148,20 +154,20 @@ export function createWorldStore(
       },
       dragParams(change) {
         const { params, receded } = applyParamChange(get().params, change)
-        set({ params })
+        set({ params, paramsDragging: true })
         request(PREVIEW_SIZE)
         return receded
       },
       releaseParams(change = {}) {
         const { params, receded } = applyParamChange(get().params, change)
-        set({ params })
+        set({ params, paramsDragging: false })
         request(MAP_SIZE)
         return receded
       },
       setParams(params) {
         // Os presets e o padrão já respeitam Desertos + Florestas ≤ 100; o `applyParamChange` só
         // garante isso para qualquer valor.
-        set({ params: applyParamChange(get().params, params).params })
+        set({ params: applyParamChange(get().params, params).params, paramsDragging: false })
         request(MAP_SIZE)
       },
       generate() {

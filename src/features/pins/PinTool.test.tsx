@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCameraStore } from '../../state/cameraStore'
 import { createPinsStore } from '../../state/pinsStore'
 import { createUiStore } from '../../state/uiStore'
@@ -17,7 +17,7 @@ afterEach(cleanup)
  * ferramentas. A câmera mostra o mundo com 1 px por unidade, da origem 0,0: o px da tela é a unidade
  * do mundo, e (u, v) = px / 1024.
  */
-function setup() {
+function setup({ onDelete }: { onDelete?: (id: string) => void } = {}) {
   const ui = createUiStore()
   const camera = createCameraStore()
   camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
@@ -33,7 +33,7 @@ function setup() {
         <PinDrawer pins={pins} />
       </aside>
       <MeasureTool ui={ui} world={world} camera={camera} disabled={false} />
-      <PinTool ui={ui} pins={pins} camera={camera} disabled={false} />
+      <PinTool ui={ui} pins={pins} camera={camera} disabled={false} onDelete={onDelete} />
     </div>,
   )
   return { ui, pins, camera }
@@ -153,5 +153,93 @@ describe('Selecionar pin (AC-F3-03)', () => {
     expect(pins.getState().hoveredId).toBe('p1')
     fireEvent.pointerMove(canvas, { clientX: 600, clientY: 600, pointerType: 'mouse' })
     expect(pins.getState().hoveredId).toBeNull()
+  })
+})
+
+describe('Arrastar pin (AC-F3-04)', () => {
+  /** Um pin em (0,5; 0,5): a âncora fica em 512, 512 na tela. */
+  function withPin() {
+    const t = setup()
+    act(() => {
+      t.pins.getState().addPin({ u: 0.5, v: 0.5 })
+      t.pins.getState().select(null)
+    })
+    return t
+  }
+  const canvas = () => screen.getByTestId('canvas')
+  const pointer = (x: number, y: number) => ({ pointerId: 1, button: 0, clientX: x, clientY: y, pointerType: 'mouse' })
+
+  it('apertar no pin e andar o arrasta, com o ponto pego preso ao ponteiro; soltar o deixa ali', () => {
+    const { pins } = withPin()
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerMove(canvas(), pointer(560, 460))
+    expect(pins.getState().dragging).toEqual({ id: 'p1', pos: { u: 560 / 1024, v: 472 / 1024 } })
+    // Durante o arrasto, a lista ainda não mudou.
+    expect(pins.getState().pins[0].pos).toEqual({ u: 0.5, v: 0.5 })
+    fireEvent.pointerMove(canvas(), pointer(612, 400))
+    fireEvent.pointerUp(canvas(), pointer(612, 400))
+    expect(pins.getState().dragging).toBeNull()
+    expect(pins.getState().pins[0].pos).toEqual({ u: 612 / 1024, v: 412 / 1024 })
+    // O arrasto não seleciona.
+    expect(pins.getState().selectedId).toBeNull()
+  })
+
+  it('o aperto no pin não chega ao canvas (a câmera não faz pan); fora dos pins, chega', () => {
+    withPin()
+    const onCanvas = vi.fn()
+    canvas().addEventListener('pointerdown', onCanvas)
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerUp(canvas(), pointer(512, 500))
+    expect(onCanvas).not.toHaveBeenCalled()
+    fireEvent.pointerDown(canvas(), pointer(100, 100))
+    expect(onCanvas).toHaveBeenCalledTimes(1)
+  })
+
+  it('para fora do mapa, a posição fica presa entre 0 e 1', () => {
+    const { pins } = withPin()
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerMove(canvas(), pointer(-400, 3000))
+    fireEvent.pointerUp(canvas(), pointer(-400, 3000))
+    expect(pins.getState().pins[0].pos).toEqual({ u: 0, v: 1 })
+  })
+
+  it('andar até a folga do clique seleciona, sem arrastar', () => {
+    const { pins } = withPin()
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerMove(canvas(), pointer(514, 501))
+    fireEvent.pointerUp(canvas(), pointer(514, 501))
+    expect(pins.getState().pins[0].pos).toEqual({ u: 0.5, v: 0.5 })
+    expect(pins.getState().selectedId).toBe('p1')
+  })
+
+  it('Esc e o pointercancel devolvem o pin ao lugar', () => {
+    const { pins } = withPin()
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerMove(canvas(), pointer(700, 700))
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(pins.getState().dragging).toBeNull()
+    fireEvent.pointerUp(canvas(), pointer(700, 700))
+    expect(pins.getState().pins[0].pos).toEqual({ u: 0.5, v: 0.5 })
+
+    fireEvent.pointerDown(canvas(), pointer(512, 500))
+    fireEvent.pointerMove(canvas(), pointer(700, 700))
+    fireEvent.pointerCancel(canvas(), pointer(700, 700))
+    expect(pins.getState().dragging).toBeNull()
+    expect(pins.getState().pins[0].pos).toEqual({ u: 0.5, v: 0.5 })
+  })
+})
+
+describe('Excluir pin (AC-F3-05)', () => {
+  it('Delete pede a exclusão do pin selecionado; sem seleção, nada', () => {
+    const onDelete = vi.fn()
+    const { pins } = setup({ onDelete })
+    act(() => {
+      pins.getState().addPin({ u: 0.5, v: 0.5 })
+    })
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(onDelete).toHaveBeenCalledWith('p1')
+    act(() => pins.getState().select(null))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(onDelete).toHaveBeenCalledTimes(1)
   })
 })
