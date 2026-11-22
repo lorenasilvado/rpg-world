@@ -130,7 +130,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 |---|---|---|---|---|---|
 | 37 | #154 | [feat] Mundos: salvar no navegador e reabrir | done | specs/mundos.md | #170 |
 | 38 | #155 | [feat] Lista de mundos: tela inicial, vazia e abrir | done | specs/mundos.md | #176 |
-| 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | done | specs/mundos.md | |
+| 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | done | specs/mundos.md | #183 |
 | 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | todo | specs/pins.md | |
 | 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | todo | specs/pins.md | |
 | 42 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | todo | specs/pins.md | |
