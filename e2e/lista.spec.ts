@@ -39,6 +39,8 @@ test('lista vazia → criar → voltar → o cartão aparece → abrir (AC-F4-04
   await expect(cards(page).locator('canvas[data-ready="true"]')).toHaveCount(1, { timeout: 30_000 })
   const thumb = (await cards(page).locator('canvas').boundingBox())!
   expect(thumb.width / thumb.height).toBeCloseTo(16 / 10, 1)
+  // O mapa quadrado aparece inteiro (sem cortar o alto e o pé do continente), com o mar dos lados.
+  expect(await cards(page).locator('canvas').evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain')
 
   // Recarregar continua na lista; o cartão abre o mundo.
   await page.reload()

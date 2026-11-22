@@ -44,7 +44,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 - Grade de cartões, do editado por último ao mais antigo, com 24 px entre eles: 4 colunas a partir de
   1280 px, 3 a partir de 1024, 2 a partir de 640 e 1 no celular. Cartão: miniatura do mapa 16:10
   (o terreno com a seed e os parâmetros do mundo, 256², gerado num worker só das miniaturas, uma por
-  vez; até chegar, o fundo do mar), nome, "Editado há X · N pins" (ou "sem pins") e botão "⋯".
+  vez; o mapa quadrado aparece inteiro, centrado, com o fundo do mar dos lados; até chegar, só o
+  fundo do mar), nome, "Editado há X · N pins" (ou "sem pins") e botão "⋯".
 - "Editado há X" conta do `updatedAt` (a última gravação): "agora" (menos de 1 min), "N min",
   "N h", "ontem" (de 24 a 48 h), "N dias", "N semana(s)" (a partir de 7 dias), "N mês/meses" (a
   partir de 30 dias) e "N ano(s)" (a partir de 365 dias), arredondado para baixo.

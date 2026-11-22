@@ -183,7 +183,10 @@ function WorldCard({
   )
 }
 
-/** Miniatura 16:10 (o quadrado do terreno cortado ao centro); sem imagem, o fundo do mar. */
+/**
+ * Miniatura 16:10: o mapa quadrado inteiro, centrado, com o fundo do mar (`--map-canvas`, a cor da
+ * borda do mapa) dos lados, como no editor; sem imagem, só o fundo do mar.
+ */
 function WorldThumbnail({ rgba }: { rgba: Uint8ClampedArray<ArrayBuffer> | undefined }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
@@ -198,7 +201,7 @@ function WorldThumbnail({ rgba }: { rgba: Uint8ClampedArray<ArrayBuffer> | undef
       height={LIST_THUMBNAIL_SIZE}
       aria-hidden="true"
       data-ready={rgba !== undefined}
-      className="aspect-[16/10] w-full bg-map-canvas object-cover"
+      className="aspect-[16/10] w-full bg-map-canvas object-contain"
     />
   )
 }
