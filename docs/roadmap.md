@@ -132,7 +132,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 38 | #155 | [feat] Lista de mundos: tela inicial, vazia e abrir | done | specs/mundos.md | #176 |
 | 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | done | specs/mundos.md | #183 |
 | 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | done | specs/pins.md | #188 |
-| 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | done | specs/pins.md | |
+| 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | done | specs/pins.md | #192 |
 | 42 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | todo | specs/pins.md | |
 | 43 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | todo | specs/navegacao.md | |
 | 44 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | todo | specs/pins.md | |
