@@ -63,6 +63,8 @@ PNG e o histórico de desfazer/refazer do mundo.
   excluídos deste navegador. Isso não pode ser desfeito." ("O mundo e o pin dele…" com um pin; "O
   mundo será excluído…" sem pins); Cancelar (com o foco ao abrir) e "Excluir mundo" (destrutivo,
   `--brick`, com `trash-2`).
+- Enquanto um desses modais grava ou exclui, os botões ficam desabilitados e nem Esc nem o clique
+  fora o fecham.
 - Fechar um desses modais devolve o foco ao "⋯" do cartão; depois de excluir, ao "Novo mundo".
 
 ### 02 · Lista vazia
@@ -113,7 +115,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
 | Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |
 | Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
-| Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe |
+| Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
 | Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
 | Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z) | Desfaz ou refaz mudanças em pins, estradas e parâmetros de geração |

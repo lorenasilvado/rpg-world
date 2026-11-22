@@ -263,6 +263,91 @@ describe('Menu "⋯" do cartão (AC-F4-07)', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('Duplicar com falha mostra o toast; "Tentar de novo" duplica e o toast some', async () => {
+    const { repo } = setup([VALDORA], { newId: () => 'copia' })
+    await settle()
+    const duplicate = repo.duplicate
+    repo.duplicate = () => Promise.reject(new Error('cota'))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    await settle()
+    const toast = screen.getByTestId('duplicate-error-toast')
+    expect(toast.getAttribute('role')).toBe('alert')
+    expect(toast.textContent).toContain('Não foi possível duplicar o mundo')
+    expect(names()).toEqual(['Terras de Valdora'])
+
+    repo.duplicate = duplicate
+    fireEvent.click(within(toast).getByRole('button', { name: 'Tentar de novo' }))
+    await settle()
+    await settle()
+    expect(screen.queryByTestId('duplicate-error-toast')).toBeNull()
+    expect(names()).toEqual(['Terras de Valdora (cópia)', 'Terras de Valdora'])
+  })
+
+  it('o toast de falha ao duplicar fecha pelo X', async () => {
+    const { repo } = setup([VALDORA])
+    await settle()
+    repo.duplicate = () => Promise.reject(new Error('cota'))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    await settle()
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso' }))
+    expect(screen.queryByTestId('duplicate-error-toast')).toBeNull()
+  })
+
+  it('enquanto grava ou exclui, Esc não fecha o modal e Cancelar fica desabilitado; a falha aparece nele', async () => {
+    const { repo } = setup([VALDORA])
+    await settle()
+    let fail: (e: Error) => void = () => {}
+    repo.rename = () => new Promise((_, reject) => (fail = reject))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Outro' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear' }))
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', true)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Renomear mundo' })).toBeTruthy()
+    await act(async () => fail(new Error('cota')))
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível renomear o mundo. Tente de novo.')
+    // Com a gravação terminada, Esc volta a fechar.
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    repo.remove = () => new Promise((_, reject) => (fail = reject))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Excluir' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir mundo' }))
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', true)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Excluir “Terras de Valdora”?' })).toBeTruthy()
+    await act(async () => fail(new Error('falha')))
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível excluir o mundo. Tente de novo.')
+  })
+
+  it('as miniaturas são guardadas pelo terreno: renomear não refaz, e a cópia usa a do original', async () => {
+    const asked: string[] = []
+    const thumbnails: Thumbnails = {
+      async render(seed) {
+        asked.push(seed)
+        return new Uint8ClampedArray(4)
+      },
+      dispose() {},
+    }
+    setup([VALDORA, SOMBRIO], { createThumbnails: () => thumbnails, newId: () => 'copia' })
+    for (let i = 0; i < 3; i++) await settle()
+    expect(asked).toEqual(['valdora-7f3a', 'sombrio'])
+
+    fireEvent.click(within(openMenu('Vale Sombrio')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Vale das Brumas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear' }))
+    for (let i = 0; i < 3; i++) await settle()
+    expect(names()).toEqual(['Vale das Brumas', 'Terras de Valdora'])
+
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    for (let i = 0; i < 3; i++) await settle()
+    // O relógio do teste é fixo: a cópia e o renomeado têm o mesmo `updatedAt`.
+    expect(names().sort()).toEqual(['Terras de Valdora', 'Terras de Valdora (cópia)', 'Vale das Brumas'])
+    expect(asked).toEqual(['valdora-7f3a', 'sombrio'])
+    expect(card('Terras de Valdora (cópia)').querySelector('canvas')?.dataset.ready).toBe('true')
+    expect(screen.getByTestId('world-list').querySelectorAll('canvas[data-ready="true"]')).toHaveLength(3)
+  })
+
   it('Renomear grava o nome novo, sem os espaços das pontas, e o mundo sobe para o topo', async () => {
     const { repo } = setup([VALDORA, SOMBRIO])
     await settle()

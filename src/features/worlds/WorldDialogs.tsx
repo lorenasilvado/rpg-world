@@ -6,8 +6,8 @@ import type { World } from '../../persistence/types'
 /**
  * Renomear, pelo menu "⋯" do cartão (mundos.md → Ações, AC-F4-07): o campo "Nome do mundo" vem
  * com o nome atual selecionado; "Renomear" (ou Enter) grava o nome sem os espaços das pontas e
- * fecha, e fica desabilitado com o campo vazio. Cancelar, Esc ou o clique fora fecham sem mudar.
- * Se a gravação falha, o modal continua aberto com o aviso.
+ * fecha, e fica desabilitado com o campo vazio. Cancelar, Esc ou o clique fora fecham sem mudar;
+ * enquanto grava, nada fecha o modal. Se a gravação falha, o modal continua aberto com o aviso.
  */
 export function RenameWorldDialog({
   world,
@@ -21,19 +21,36 @@ export function RenameWorldDialog({
   onClose: () => void
   onCloseAutoFocus: (e: Event) => void
 }) {
+  const [busy, setBusy] = useState(false)
   return (
-    <Dialog.Root open={world !== null} onOpenChange={(next) => !next && onClose()}>
+    <Dialog.Root open={world !== null} onOpenChange={(next) => !next && !busy && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim" />
-        <Dialog.Content data-testid="rename-world-dialog" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus} className={CONTENT}>
-          {world && <RenameForm key={world.id} world={world} onRename={onRename} onClose={onClose} />}
+        <Dialog.Content
+          data-testid="rename-world-dialog"
+          aria-describedby={undefined}
+          onCloseAutoFocus={onCloseAutoFocus}
+          {...holdWhile(busy)}
+          className={CONTENT}
+        >
+          {world && <RenameForm key={world.id} world={world} onRename={onRename} onClose={onClose} onBusyChange={setBusy} />}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   )
 }
 
-function RenameForm({ world, onRename, onClose }: { world: World; onRename: (world: World, name: string) => Promise<void>; onClose: () => void }) {
+function RenameForm({
+  world,
+  onRename,
+  onClose,
+  onBusyChange,
+}: {
+  world: World
+  onRename: (world: World, name: string) => Promise<void>
+  onClose: () => void
+  onBusyChange: (busy: boolean) => void
+}) {
   const [name, setName] = useState(world.name)
   const [state, setState] = useState<'idle' | 'saving' | 'error'>('idle')
   const inputId = useId()
@@ -43,12 +60,16 @@ function RenameForm({ world, onRename, onClose }: { world: World; onRename: (wor
     if (!trimmed || state === 'saving') return
     if (trimmed === world.name) return onClose()
     setState('saving')
+    onBusyChange(true)
     try {
       await onRename(world, trimmed)
-      onClose()
     } catch {
       setState('error')
+      return
+    } finally {
+      onBusyChange(false)
     }
+    onClose()
   }
 
   return (
@@ -76,7 +97,7 @@ function RenameForm({ world, onRename, onClose }: { world: World; onRename: (wor
       />
       {state === 'error' && <ErrorNote>Não foi possível renomear o mundo. Tente de novo.</ErrorNote>}
       <Buttons>
-        <Dialog.Close type="button" className={SECONDARY}>
+        <Dialog.Close type="button" disabled={state === 'saving'} className={SECONDARY}>
           Cancelar
         </Dialog.Close>
         <button type="submit" disabled={!trimmed || state === 'saving'} className={PRIMARY}>
@@ -90,7 +111,8 @@ function RenameForm({ world, onRename, onClose }: { world: World; onRename: (wor
 /**
  * A confirmação de Excluir, pelo menu "⋯" do cartão (mundos.md → Ações, AC-F4-07): avisa que o
  * mundo e os pins dele saem deste navegador e que não dá para desfazer. O foco começa em Cancelar;
- * "Excluir mundo" (destrutivo) exclui e fecha. Se a exclusão falha, o modal continua com o aviso.
+ * "Excluir mundo" (destrutivo) exclui e fecha; enquanto exclui, nada fecha o modal. Se a exclusão
+ * falha, o modal continua com o aviso.
  */
 export function DeleteWorldDialog({
   world,
@@ -104,30 +126,45 @@ export function DeleteWorldDialog({
   onClose: () => void
   onCloseAutoFocus: (e: Event) => void
 }) {
+  const [busy, setBusy] = useState(false)
   return (
-    <Dialog.Root open={world !== null} onOpenChange={(next) => !next && onClose()}>
+    <Dialog.Root open={world !== null} onOpenChange={(next) => !next && !busy && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim" />
-        <Dialog.Content data-testid="delete-world-dialog" onCloseAutoFocus={onCloseAutoFocus} className={CONTENT}>
-          {world && <DeleteBody key={world.id} world={world} onDelete={onDelete} onClose={onClose} />}
+        <Dialog.Content data-testid="delete-world-dialog" onCloseAutoFocus={onCloseAutoFocus} {...holdWhile(busy)} className={CONTENT}>
+          {world && <DeleteBody key={world.id} world={world} onDelete={onDelete} onClose={onClose} onBusyChange={setBusy} />}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   )
 }
 
-function DeleteBody({ world, onDelete, onClose }: { world: World; onDelete: (world: World) => Promise<void>; onClose: () => void }) {
+function DeleteBody({
+  world,
+  onDelete,
+  onClose,
+  onBusyChange,
+}: {
+  world: World
+  onDelete: (world: World) => Promise<void>
+  onClose: () => void
+  onBusyChange: (busy: boolean) => void
+}) {
   const [state, setState] = useState<'idle' | 'deleting' | 'error'>('idle')
   const busy = state === 'deleting'
 
   const confirm = async () => {
     setState('deleting')
+    onBusyChange(true)
     try {
       await onDelete(world)
-      onClose()
     } catch {
       setState('error')
+      return
+    } finally {
+      onBusyChange(false)
     }
+    onClose()
   }
 
   return (
@@ -152,6 +189,14 @@ function DeleteBody({ world, onDelete, onClose }: { world: World; onDelete: (wor
 function deleteMessage(pins: number): string {
   const what = pins === 0 ? 'O mundo será excluído' : pins === 1 ? 'O mundo e o pin dele serão excluídos' : `O mundo e os ${pins} pins dele serão excluídos`
   return `${what} deste navegador. Isso não pode ser desfeito.`
+}
+
+/** Enquanto grava ou exclui, Esc e o clique fora não fecham o modal (o resultado aparece nele). */
+function holdWhile(busy: boolean) {
+  const hold = (e: Event) => {
+    if (busy) e.preventDefault()
+  }
+  return { onEscapeKeyDown: hold, onInteractOutside: hold }
 }
 
 function Buttons({ children }: { children: ReactNode }) {

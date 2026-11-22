@@ -163,11 +163,9 @@ export function WorldsApp({
           await repo.rename(world.id, name, now())
           refreshList()
         }}
-        onDuplicate={(world) => {
-          void repo
-            .duplicate(world.id, { id: newId(), name: copyName(world.name), now: now(), newId })
-            .catch(() => undefined)
-            .then(refreshList)
+        onDuplicate={async (world) => {
+          await repo.duplicate(world.id, { id: newId(), name: copyName(world.name), now: now(), newId })
+          refreshList()
         }}
         onDelete={async (world) => {
           await repo.remove(world.id)

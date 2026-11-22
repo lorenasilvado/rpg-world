@@ -1,4 +1,4 @@
-import { CircleHelp, Compass, Moon, Plus, Sun, Upload } from 'lucide-react'
+import { CircleHelp, Compass, Moon, Plus, Sun, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTheme } from '../../app/useTheme'
 import type { World } from '../../persistence/types'
@@ -20,7 +20,7 @@ import { DeleteWorldDialog, RenameWorldDialog } from './WorldDialogs'
  *
  * Cada cartão abre o mundo (`onOpen`) e tem a miniatura 16:10, o nome, "Editado há X · N pins" e o
  * botão "⋯" com o menu do mundo (AC-F4-07): Renomear e Excluir abrem os modais deles, Duplicar
- * chama `onDuplicate` já; com o menu aberto, o cartão ganha o contorno âmbar. Um menu aberto por
+ * chama `onDuplicate` já (se falha, o toast de erro oferece "Tentar de novo"); com o menu aberto, o cartão ganha o contorno âmbar. Um menu aberto por
  * vez. Ao fechar um modal, o foco volta ao "⋯" do cartão (ou ao "Novo mundo", se o mundo saiu).
  * As miniaturas são geradas num worker só delas (`createThumbnails`), uma por vez, na ordem da
  * lista; até chegar, o cartão mostra o fundo do mar.
@@ -43,7 +43,8 @@ export function WorldList({
   onNew: () => void
   /** Grava o nome novo (já sem os espaços das pontas); uma falha mantém o modal aberto. */
   onRename: (world: World, name: string) => Promise<void>
-  onDuplicate: (world: World) => void
+  /** Grava a cópia; uma falha mostra o toast "Não foi possível duplicar". */
+  onDuplicate: (world: World) => Promise<void>
   /** Exclui o mundo de vez; uma falha mantém o modal aberto. */
   onDelete: (world: World) => Promise<void>
   /** Sem ele (os testes do jsdom), os cartões ficam sem miniatura. */
@@ -66,8 +67,14 @@ export function WorldList({
   }
   /** O mundo do último modal aberto: quando o modal termina de fechar, `dialog` já é nulo. */
   const dialogWorld = useRef<string | null>(null)
+  /** O mundo cuja cópia falhou (o toast de erro), ou `null`. */
+  const [duplicateFailed, setDuplicateFailed] = useState<World | null>(null)
+  const duplicate = (world: World) => {
+    setDuplicateFailed(null)
+    onDuplicate(world).catch(() => setDuplicateFailed(world))
+  }
   const act = (world: World, action: WorldMenuAction) => {
-    if (action === 'duplicate') return onDuplicate(world)
+    if (action === 'duplicate') return duplicate(world)
     dialogWorld.current = world.id
     setDialog({ kind: action, world })
   }
@@ -151,6 +158,31 @@ export function WorldList({
         )}
       </main>
 
+      {duplicateFailed && (
+        <div
+          role="alert"
+          data-testid="duplicate-error-toast"
+          className="toast-in fixed bottom-4 left-1/2 z-30 flex w-[min(440px,calc(100vw-32px))] -translate-x-1/2 items-center gap-2 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg"
+        >
+          <span className="min-w-0 flex-1 font-semibold">Não foi possível duplicar o mundo</span>
+          <button
+            type="button"
+            onClick={() => duplicate(duplicateFailed)}
+            className="h-11 shrink-0 rounded-control bg-white/18 px-3 font-extrabold hover:bg-white/28 active:bg-white/36"
+          >
+            Tentar de novo
+          </button>
+          <button
+            type="button"
+            aria-label="Fechar aviso"
+            title="Fechar aviso"
+            onClick={() => setDuplicateFailed(null)}
+            className="grid size-11 shrink-0 place-items-center rounded-control hover:bg-white/18 active:bg-white/28"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <RenameWorldDialog
         world={dialog?.kind === 'rename' ? dialog.world : null}
         onRename={onRename}
