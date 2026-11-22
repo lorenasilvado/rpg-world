@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import App from '../App'
 import { NewWorldWizard } from '../features/wizard/NewWorldWizard'
 import type { CreateThumbnails } from '../features/wizard/thumbnails'
+import { UnsavedLeaveDialog } from '../features/worlds/UnsavedLeaveDialog'
 import { WorldList } from '../features/worlds/WorldList'
 import { createAutosave, type Autosave } from '../persistence/autosave'
 import type { World } from '../persistence/types'
@@ -25,7 +26,9 @@ type Session = { world: WorldStore; autosave: Autosave }
  *
  * Cada mundo aberto ganha um `worldStore` e um salvamento automático próprios, sobre o mesmo
  * gerador (o worker do editor). Voltar à lista grava o que esperava a pausa e lê a lista de novo
- * (cartões esqueleto enquanto isso); ao esconder ou sair da página, o mundo aberto é gravado já.
+ * (cartões esqueleto enquanto isso); se a gravação falha ("Erro ao salvar"), o mundo não fecha:
+ * o modal `UnsavedLeaveDialog` pergunta antes, para as mudanças não se perderem sem aviso. Ao
+ * esconder ou sair da página, o mundo aberto é gravado já.
  * Sem WebGL2, a lista funciona e nada é gerado: abrir um mundo mostra o aviso no lugar do editor.
  * As preferências do editor (`ui`: camadas, sidebar recolhida) valem para todos os mundos.
  */
@@ -54,6 +57,8 @@ export function WorldsApp({
   const [worlds, setWorlds] = useState<World[] | null>(null)
   const [listedAt, setListedAt] = useState(now)
   const [wizardOpen, setWizardOpen] = useState(false)
+  /** O modal "Mudanças não salvas" (voltar com erro ao salvar) e se "Tentar de novo" está gravando. */
+  const [unsaved, setUnsaved] = useState<'closed' | 'open' | 'retrying'>('closed')
 
   // A lista é lida de novo a cada vez que ela aparece (`back` a esvazia, para os cartões esqueleto).
   useEffect(() => {
@@ -95,25 +100,49 @@ export function WorldsApp({
     [generator, repo, webgl2, newId, now],
   )
 
-  const back = useCallback(async () => {
+  const leave = useCallback(() => {
     if (!session) return
-    await session.autosave.flush()
     session.autosave.dispose()
+    setUnsaved('closed')
     setWorlds(null)
     setSession(null)
   }, [session])
 
+  const back = useCallback(async () => {
+    if (!session) return
+    await session.autosave.flush()
+    if (session.autosave.store.getState().status === 'error') setUnsaved('open')
+    else leave()
+  }, [session, leave])
+
+  const retryAndLeave = useCallback(async () => {
+    if (!session) return
+    setUnsaved('retrying')
+    await session.autosave.saveNow()
+    if (session.autosave.store.getState().status === 'error') setUnsaved('open')
+    else leave()
+  }, [session, leave])
+
   if (session) {
     return (
-      <App
-        key={session.world.getState().id}
-        world={session.world}
-        ui={uiStore}
-        save={session.autosave.store}
-        webgl2={webgl2}
-        createRenderer={createRenderer}
-        onBack={() => void back()}
-      />
+      <>
+        <App
+          key={session.world.getState().id}
+          world={session.world}
+          ui={uiStore}
+          save={session.autosave.store}
+          webgl2={webgl2}
+          createRenderer={createRenderer}
+          onBack={() => void back()}
+        />
+        <UnsavedLeaveDialog
+          open={unsaved !== 'closed'}
+          retrying={unsaved === 'retrying'}
+          onRetry={() => void retryAndLeave()}
+          onLeave={leave}
+          onStay={() => setUnsaved((state) => (state === 'retrying' ? state : 'closed'))}
+        />
+      </>
     )
   }
 

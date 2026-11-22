@@ -215,6 +215,62 @@ describe('Abrir e voltar (AC-F4-06)', () => {
   })
 })
 
+describe('Voltar com "Erro ao salvar" (AC-F4-02, AC-F4-06)', () => {
+  /** Abre o Vale Sombrio com o banco falhando, muda a seed e tenta voltar à lista. */
+  async function backWithSaveError() {
+    const repo = memoryRepo([VALDORA, SOMBRIO])
+    const save = repo.save
+    const failing = { fail: true }
+    repo.save = (w) => (failing.fail ? Promise.reject(new Error('cota')) : save(w))
+    const { generator } = recordingGenerator()
+    render(<WorldsApp repo={repo} generator={generator} createRenderer={noRenderer} now={() => NOW} />)
+    await settle()
+    fireEvent.click(screen.getByRole('button', { name: /^Vale Sombrio/ }))
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    fireEvent.change(seed, { target: { value: 'sombrio-2' } })
+    fireEvent.keyDown(seed, { key: 'Enter' })
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar à lista de mundos' }))
+    await settle()
+    await settle()
+    return { repo, failing }
+  }
+  const dialog = () => screen.getByRole('dialog', { name: 'Mudanças não salvas' })
+
+  it('não fecha o mundo: pergunta antes, e "Ficar no mundo" mantém o editor', async () => {
+    await backWithSaveError()
+    expect(dialog()).toBeTruthy()
+    expect(screen.getByTestId('editor')).toBeTruthy()
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Ficar no mundo' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect((screen.getByRole('textbox', { name: 'Seed' }) as HTMLInputElement).value).toBe('sombrio-2')
+  })
+
+  it('"Tentar de novo" grava e volta à lista se der certo; se falhar de novo, o modal continua', async () => {
+    const { repo, failing } = await backWithSaveError()
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Tentar de novo' }))
+    await settle()
+    await settle()
+    expect(dialog()).toBeTruthy()
+    expect(screen.getByTestId('editor')).toBeTruthy()
+
+    failing.fail = false
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Tentar de novo' }))
+    await settle()
+    await settle()
+    await settle()
+    expect(screen.queryByTestId('editor')).toBeNull()
+    expect(repo.worlds.get('sombrio')?.seed).toBe('sombrio-2')
+  })
+
+  it('"Voltar sem salvar" volta à lista, e o mundo fica como estava no banco', async () => {
+    const { repo } = await backWithSaveError()
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Voltar sem salvar' }))
+    await settle()
+    expect(screen.queryByTestId('editor')).toBeNull()
+    expect(repo.worlds.get('sombrio')?.seed).toBe('sombrio')
+  })
+})
+
 describe('Sem WebGL2 (AC-F4-12)', () => {
   it('a lista funciona; abrir um mundo mostra o aviso no lugar do editor, sem gerar, e o aviso volta à lista', async () => {
     const { requests } = setup([VALDORA], { webgl2: false })

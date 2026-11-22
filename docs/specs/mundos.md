@@ -16,7 +16,8 @@ o comportamento atualiza esta spec.
 > existirem. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
 > indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
 > sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
-> parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página). No menu do
+> parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página); com
+> "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. No menu do
 > erro, "Exportar .json" fica desabilitado até a exportação do mundo existir. Os pins ainda não
 > existem: o mundo é salvo com a lista de pins e de estradas vazia. O resto vem do material de
 > design e do PRD.
@@ -95,7 +96,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 |---|---|
 | Abrir o app | Mostra a Lista de mundos (01 ou 02), depois dos cartões esqueleto; se o banco não abre, a lista vazia |
 | Clicar num cartão | Abre o mundo no editor (E1), que gera o mapa dele |
-| Voltar à lista (o logo no cabeçalho da sidebar do editor, "Voltar à lista de mundos") | Grava o que esperava a pausa e volta à Lista de mundos, lida de novo; o mundo editado vai para o topo |
+| Voltar à lista (o logo no cabeçalho da sidebar do editor, "Voltar à lista de mundos") | Grava o que esperava a pausa e volta à Lista de mundos, lida de novo; o mundo editado vai para o topo. Se a gravação falha ("Erro ao salvar"), o mundo não fecha: o modal "Mudanças não salvas" avisa que as últimas mudanças se perdem e oferece "Tentar de novo" (grava e volta, se der certo), "Voltar sem salvar" e "Ficar no mundo" (ou Esc) |
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
 | Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |
