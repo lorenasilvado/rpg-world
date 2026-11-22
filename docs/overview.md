@@ -137,11 +137,22 @@ livre do mapa e chama o `refit` do renderer quando ela muda.
 
 O assistente de novo mundo fica em `src/features/wizard/`: `NewWorldWizard.tsx` (o modal, com o
 `Dialog` do Radix, `@radix-ui/react-dialog`) e `thumbnails.ts` (as miniaturas dos presets). Até a
-Lista de mundos (M2), o `main.tsx` abre o app com ele sobre o editor; "Criar mundo" chama o
-`createWorld` do `worldStore`, que troca o nome, a seed e os parâmetros e pede um mapa final só. As
+Lista de mundos (M2), o `main.tsx` abre o app com ele sobre o editor quando não há mundo salvo;
+"Criar mundo" chama o `createWorld` do `worldStore`, que dá um `id` novo ao mundo, troca o nome, a
+seed e os parâmetros e pede um mapa final só. As
 miniaturas usam um worker de geração só delas (`createGenerator()`), criado ao abrir o assistente e
 encerrado ao fechá-lo, para não trocar a seed guardada no worker do editor. Os E2E do editor abrem o
-app e cancelam o assistente (`e2e/editor.ts`).
+app e cancelam o assistente (`e2e/editor.ts`); cada teste tem um contexto novo, com o banco vazio.
+
+A persistência fica em `src/persistence/` ([ADR 0001](adr/0001-stack-da-v1.md),
+[ADR 0003](adr/0003-app-so-local-na-v1.md)): `db.ts` abre o banco do Dexie (tabelas `worlds`, por
+`id` e `updatedAt`, e `images`, com os blobs), `worldsRepo.ts` lê e grava, e `types.ts` tem o
+`World` salvo. O `autosave.ts` ouve o `worldStore` e grava o mundo 500 ms depois da última mudança
+no nome, na seed, nos parâmetros, no `sizeKm` ou no `id` (um mundo novo), uma gravação de cada vez;
+o status (`saved`, `saving`, `error`) vai para o indicador da sidebar (`src/features/worlds/`). O
+`main.tsx` grava já o que espera a pausa ao esconder ou sair da página e, até a Lista de mundos,
+reabre o último mundo salvo (`lastWorld.ts`). Os testes do Vitest usam o `fake-indexeddb`; o
+`e2e/salvar.spec.ts` recarrega a página e força a falha de gravação.
 
 O rodapé da sidebar tem a barra "Distribuição do mapa" (`MapDistribution.tsx`), com a fração de
 cada bioma contada no campo exibido (`distribution.ts`, TS puro). Enquanto gera (`isGenerating`, do
@@ -255,7 +266,9 @@ src/
   features/
     sidebar/  pins/  roads/  worlds/
   persistence/
-    db.ts               # Dexie
+    db.ts               # Dexie (mundos e imagens)
+    worldsRepo.ts       # ler e gravar mundos e imagens
+    autosave.ts         # salvamento automático do mundo aberto
     exportImport.ts     # JSON + schema zod
   app/
     App.tsx  routes.tsx

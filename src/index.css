@@ -21,6 +21,8 @@
   --color-scrim: var(--scrim);
   --color-ok: var(--ok);
   --color-brick: var(--brick);
+  --color-brick-ink: var(--brick-ink);
+  --color-brick-soft: var(--brick-soft);
   --color-map-canvas: var(--map-canvas);
   --font-sans: 'Nunito', system-ui, sans-serif;
   --font-title: 'Cinzel', serif;
