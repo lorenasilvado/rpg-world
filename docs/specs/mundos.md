@@ -9,14 +9,17 @@ updated: 2026-11-21
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Hoje existe o salvamento automático do mundo aberto no IndexedDB (Dexie, em `src/persistence/`),
-> com o indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar
-> (só com a sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed,
-> nos parâmetros ou num mundo novo do assistente (e já, ao esconder ou sair da página). Como a Lista
-> de mundos ainda não existe, o app reabre o último mundo salvo ao recarregar; sem mundo salvo, abre
-> com o assistente sobre o mundo padrão, que só é salvo depois da primeira mudança. No menu do erro,
-> "Exportar .json" fica desabilitado até a exportação do mundo existir. Os pins ainda não existem: o
-> mundo é salvo com a lista de pins e de estradas vazia. O resto vem do material de design e do PRD.
+> Hoje o app abre na Lista de mundos: os cartões dos mundos salvos (miniatura, nome, "Editado há
+> X · N pins"), cartões esqueleto enquanto lê o banco, a lista vazia no primeiro acesso, abrir um
+> mundo, Novo mundo pelo assistente e a volta do editor para a lista pelo logo da sidebar. Importar,
+> o link "importe um arquivo .json" e o menu "⋯" ficam desabilitados até a importação e o menu
+> existirem. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
+> indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
+> sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
+> parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página). No menu do
+> erro, "Exportar .json" fica desabilitado até a exportação do mundo existir. Os pins ainda não
+> existem: o mundo é salvo com a lista de pins e de estradas vazia. O resto vem do material de
+> design e do PRD.
 
 ## Resumo
 
@@ -34,11 +37,17 @@ PNG e o histórico de desfazer/refazer do mundo.
 
 ### 01 · Lista de mundos
 
-- Cabeçalho de 72 px: logo e "RPG World Builder"; à direita, alternar tema e ajuda.
-- Título "Seus mundos" com a contagem (ex.: "8 mundos"); botões Importar (secundário) e Novo mundo
-  (primário, âmbar).
-- Grade de 4 colunas de cartões: miniatura do mapa 16:10, nome, "Editado há X · N pins" (ou "sem
-  pins") e botão "⋯".
+- Cabeçalho de 72 px: logo e "RPG World Builder"; à direita, alternar tema e ajuda (o modal
+  "Atalhos de teclado").
+- Título "Seus mundos" com a contagem (ex.: "8 mundos", "1 mundo"); botões Importar (secundário) e
+  Novo mundo (primário, âmbar).
+- Grade de cartões, do editado por último ao mais antigo, com 24 px entre eles: 4 colunas a partir de
+  1280 px, 3 a partir de 1024, 2 a partir de 640 e 1 no celular. Cartão: miniatura do mapa 16:10
+  (o terreno com a seed e os parâmetros do mundo, 256², gerado num worker só das miniaturas, uma por
+  vez; até chegar, o fundo do mar), nome, "Editado há X · N pins" (ou "sem pins") e botão "⋯".
+- "Editado há X" conta do `updatedAt` (a última gravação): "agora" (menos de 1 min), "N min",
+  "N h", "ontem" (de 24 a 48 h), "N dias", "N semana(s)" (a partir de 7 dias), "N mês/meses" (a
+  partir de 30 dias) e "N ano(s)" (a partir de 365 dias), arredondado para baixo.
 - Menu "⋯": Renomear, Duplicar, Exportar e, após um separador, Excluir em vermelho. Com o menu
   aberto, o cartão ganha contorno âmbar.
 
@@ -76,16 +85,16 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Salvando | Mudança no mundo ativo | Indicador "Salvando…" (`loader-circle` girando) |
 | Salvo | Salvamento concluído | Indicador "Salvo" (`cloud`, verde) |
 | Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup) |
-| Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor (ver [geracao-terreno.md](geracao-terreno.md)) |
+| Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor, com o botão "Voltar à lista" (ver [geracao-terreno.md](geracao-terreno.md)) |
 | Carregando | Lista sendo lida do IndexedDB | Grade de 4 colunas com cartões esqueleto (em `--sunken` no lugar da miniatura e do texto), sem pular de layout quando os dados chegam |
 
 ## Ações
 
 | Ação | Resultado |
 |---|---|
-| Abrir o app | Mostra a Lista de mundos (01 ou 02) |
-| Clicar num cartão | Abre o mundo no editor (E1) |
-| Voltar à lista (cabeçalho da sidebar do editor) | Volta à Lista de mundos; o mundo já está salvo |
+| Abrir o app | Mostra a Lista de mundos (01 ou 02), depois dos cartões esqueleto; se o banco não abre, a lista vazia |
+| Clicar num cartão | Abre o mundo no editor (E1), que gera o mapa dele |
+| Voltar à lista (o logo no cabeçalho da sidebar do editor, "Voltar à lista de mundos") | Grava o que esperava a pausa e volta à Lista de mundos, lida de novo; o mundo editado vai para o topo |
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
 | Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |

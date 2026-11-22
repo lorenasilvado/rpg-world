@@ -3,18 +3,22 @@ import type { Generator } from '../../workers/generatorClient'
 
 /**
  * Miniaturas dos presets do assistente (spec F1 → 04 · Assistente): o mapa de cada preset com a
- * seed do assistente, em baixa resolução, gerado no worker. As miniaturas usam um worker só delas,
- * criado ao abrir o assistente e encerrado ao fechá-lo: o worker do editor guarda o ruído só da seed
+ * seed do assistente, em baixa resolução, gerado no worker. As da Lista de mundos usam o mesmo
+ * caminho, com a seed e os parâmetros de cada mundo. As miniaturas usam um worker só delas,
+ * criado ao abrir o assistente (ou a lista) e encerrado ao fechá-lo: o worker do editor guarda o ruído só da seed
  * mais recente, e as miniaturas com outra seed o fariam refazer tudo.
  */
 export const THUMBNAIL_SIZE = 128
+
+/** As miniaturas dos cartões da Lista de mundos, maiores que as do assistente (cartão de até ~320 px). */
+export const LIST_THUMBNAIL_SIZE = 256
 
 /** Pausa depois da última mudança da seed antes de gerar as miniaturas de novo. */
 export const THUMBNAIL_SEED_MS = 300
 
 export type Thumbnails = {
-  /** RGBA `THUMBNAIL_SIZE² × 4` do terreno do preset, ou `null` se o pedido foi substituído. */
-  render(seed: string, params: Readonly<WorldParams>): Promise<Uint8ClampedArray<ArrayBuffer> | null>
+  /** RGBA `size² × 4` (padrão: `THUMBNAIL_SIZE`) do terreno, ou `null` se o pedido foi substituído. */
+  render(seed: string, params: Readonly<WorldParams>, size?: number): Promise<Uint8ClampedArray<ArrayBuffer> | null>
   dispose(): void
 }
 
@@ -26,8 +30,8 @@ export type CreateThumbnails = () => Thumbnails
  */
 export function createThumbnails(generator: Pick<Generator, 'request' | 'terminate'>): Thumbnails {
   return {
-    async render(seed, params) {
-      const delivered = await generator.request({ seed, size: THUMBNAIL_SIZE, params: { ...params } })
+    async render(seed, params, size = THUMBNAIL_SIZE) {
+      const delivered = await generator.request({ seed, size, params: { ...params } })
       return delivered?.result.terrainRgba ?? null
     },
     dispose: () => generator.terminate(),

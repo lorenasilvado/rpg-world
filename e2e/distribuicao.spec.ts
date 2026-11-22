@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { gotoEditor } from './editor.ts'
+import { defaultWorld, gotoEditor, putWorlds } from './editor.ts'
 
 // Distribuição do mapa, "Gerando" e sem WebGL2 (#51).
 
@@ -150,7 +150,7 @@ for (const [label, width, height] of [
   ['tela larga 1440', 1440, 900],
   ['celular 390', 390, 844],
 ] as const) {
-  test(`AC-F1-20 (${label}): sem WebGL2, um aviso com os navegadores suportados aparece no lugar do editor`, async ({ page }) => {
+  test(`AC-F1-20, AC-F4-12 (${label}): sem WebGL2, a lista funciona e abrir um mundo mostra o aviso no lugar do editor`, async ({ page }) => {
     // Desliga o WebGL2 antes de o app carregar: o canvas não dá o contexto `webgl2`.
     await page.addInitScript(() => {
       const getContext = HTMLCanvasElement.prototype.getContext
@@ -159,12 +159,13 @@ for (const [label, width, height] of [
         return (getContext as (...a: unknown[]) => unknown).call(this, type, ...args)
       } as typeof getContext
     })
-    const workers: string[] = []
-    page.on('worker', (w) => workers.push(w.url()))
     await page.setViewportSize({ width, height })
-    // Sem WebGL2, o editor não abre, e o assistente também não.
+    // Sem WebGL2, a Lista de mundos funciona; abrir o mundo mostra o aviso, e o editor não abre.
     await page.goto('/')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await putWorlds(page, [defaultWorld()])
+    await page.reload()
+    await expect(page.getByTestId('world-card')).toHaveCount(1)
+    await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
     const notice = page.getByTestId('no-webgl2').locator('section')
     await expect(page.getByRole('heading', { name: 'Este navegador não tem WebGL2' })).toBeVisible()
     const browsers = page.getByRole('list', { name: 'Navegadores suportados' }).getByRole('listitem')
@@ -174,7 +175,8 @@ for (const [label, width, height] of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await expect(page.getByTestId('editor')).toHaveCount(0)
     await expect(page.getByRole('main', { name: 'Mapa' })).toHaveCount(0)
-    // Nada é gerado: o worker de geração nem é criado.
-    expect(workers).toEqual([])
+    // O aviso volta à lista.
+    await page.getByRole('button', { name: 'Voltar à lista' }).click()
+    await expect(page.getByTestId('world-card')).toHaveCount(1)
   })
 }

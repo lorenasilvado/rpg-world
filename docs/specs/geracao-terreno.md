@@ -16,10 +16,10 @@ o comportamento atualiza esta spec.
 > e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
 > a 48 px; o rodapé tem a barra "Distribuição do mapa", e o mapa fica borrado durante a geração.
-> Sem WebGL2, o aviso toma o lugar do editor. O app reabre o último mundo salvo; sem mundo salvo,
-> abre com o assistente de novo mundo sobre o editor, com o mundo padrão por trás. A barra da
-> sidebar mostra o nome do mundo e, abaixo dele, o status de salvamento (ver
-> [mundos.md](mundos.md)). Os cartões de preset da sidebar não têm miniatura (os do assistente
+> Sem WebGL2, o aviso toma o lugar do editor. O app abre na Lista de mundos, que abre o editor de
+> um mundo e o assistente de novo mundo (ver [mundos.md](mundos.md)). A barra da sidebar mostra o
+> logo, que volta à lista, o nome do mundo e, abaixo dele, o status de salvamento. Os cartões de
+> preset da sidebar não têm miniatura (os do assistente
 > têm). A câmera e os ícones de decoração estão em [navegacao.md](navegacao.md). O resto vem do
 > material de design e do PRD.
 
@@ -41,8 +41,9 @@ de dados em [overview.md](../overview.md).
 ### E1 · Sidebar "Gerar mundo"
 
 - Painel esquerdo de 320 px, recolhível (48 px recolhido).
+- O logo (bússola) é o botão "Voltar à lista de mundos" (ver [mundos.md](mundos.md)).
 - Nome do mundo, em Cinzel, cortado com reticências se não couber; recolhida a 48 px, a barra
-  mostra só o logo. O mundo padrão, que abre atrás do assistente, chama "Terras de Valdora". Abaixo
+  mostra só o logo. Abaixo
   do nome, o status de salvamento: "Salvando…", "Salvo" ou "Erro ao salvar" (ver
   [mundos.md](mundos.md)).
 - Seed com botões sortear (`dices`) e copiar (`copy`); a seed fica visível e copiável, em
@@ -168,8 +169,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Escolher preset | Aplica os 9 parâmetros do preset, mantém a seed e gera o mapa final |
 | "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final (já no padrão, não faz nada) |
 | Recolher / abrir painel (`[`) | Sidebar passa a 48 px / volta a 320 px (abaixo de 768 px, a tecla abre e fecha o painel sobreposto) |
-| "Criar mundo →" no assistente | Troca o nome, a seed e os 9 parâmetros pelos do assistente (os do preset escolhido), gera o mapa final e fecha o assistente: o editor (E1) mostra o mundo novo, que é salvo como um mundo à parte (ver [mundos.md](mundos.md)) |
-| Cancelar, `x` ou Esc no assistente | Fecha o assistente e mantém o mundo padrão |
+| "Criar mundo →" no assistente | Cria um mundo com o nome, a seed e os 9 parâmetros do assistente (os do preset escolhido), salva o mundo, fecha o assistente e o abre no editor (E1), que gera o mapa final (ver [mundos.md](mundos.md)) |
+| Cancelar, `x` ou Esc no assistente | Fecha o assistente e volta à Lista de mundos, sem criar nada |
 
 ## Regras
 

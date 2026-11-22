@@ -33,6 +33,8 @@ export type Autosave = {
   store: SaveStore
   /** Grava já o que está esperando o debounce e resolve quando o banco terminar. */
   flush(): Promise<void>
+  /** Grava já o mundo atual, mesmo sem mudança (o mundo novo do assistente), com o status no indicador. */
+  saveNow(): Promise<void>
   /** Para de ouvir o mundo (o que esperava o debounce não é gravado). */
   dispose(): void
 }
@@ -122,6 +124,7 @@ export function createAutosave({
     flush() {
       return timer !== null ? write() : chain
     },
+    saveNow: write,
     dispose() {
       unsubscribe()
       if (timer !== null) clearTimeout(timer)

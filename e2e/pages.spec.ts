@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
+import { gotoEditor } from './editor.ts'
 
 // O build de produção abre no caminho base do GitHub Pages, como em
 // https://lorenasilvado.github.io/rpg-world/ (AC-M0-05).
@@ -22,7 +23,7 @@ test('o build abre em /rpg-world/ sem erro, com os assets no caminho base (AC-M0
   page.on('pageerror', (e) => problems.push(`erro ${e.message}`))
 
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('./')
+  await gotoEditor(page, './')
   await expect(page.getByTestId('sidebar')).toBeVisible()
   await expect(page.getByTestId('map')).toBeVisible()
 

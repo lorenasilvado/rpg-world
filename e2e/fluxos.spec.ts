@@ -93,12 +93,21 @@ test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e nave
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
 
-  // Sem WebGL2, o app mostra só o aviso (AC-F1-20) e o fluxo não tem como rodar. O Firefox do CI
-  // (Linux, sem GPU) pode não oferecer WebGL2: nele, o teste é pulado com o motivo. No Chrome, que
-  // sempre tem WebGL2 (por software no CI), o aviso é falha.
+  // 1. Criar um mundo pelo assistente, a partir da Lista de mundos vazia (AC-F1-19, AC-F4-05, AC-F4-06).
   const wizard = page.getByRole('dialog', { name: 'Novo mundo' })
+  await page.getByRole('button', { name: 'Criar meu primeiro mundo' }).click()
+  await expect(wizard.getByRole('textbox', { name: 'Nome do mundo' })).toBeFocused()
+  await wizard.getByRole('textbox', { name: 'Nome do mundo' }).fill('Picos de Gelo')
+  await wizard.getByRole('button', { name: /Terras geladas/ }).click()
+  await wizard.getByRole('textbox', { name: /^Seed/ }).fill('gelo-55')
+  await wizard.getByRole('button', { name: 'Criar mundo' }).click()
+  await expect(wizard).toBeHidden()
+
+  // Sem WebGL2, o mundo abre com o aviso no lugar do editor (AC-F1-20, AC-F4-12) e o fluxo não tem
+  // como rodar. O Firefox do CI (Linux, sem GPU) pode não oferecer WebGL2: nele, o teste é pulado
+  // com o motivo. No Chrome, que sempre tem WebGL2 (por software no CI), o aviso é falha.
   const notice = page.getByTestId('no-webgl2')
-  await expect(wizard.or(notice), 'nem o assistente nem o aviso sem WebGL2 apareceram').toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('editor').or(notice), 'nem o editor nem o aviso sem WebGL2 apareceram').toBeVisible({ timeout: 30_000 })
   const webgl2 = !(await notice.isVisible())
   const agent = await page.evaluate(() => navigator.userAgent)
   console.log(`[fluxos] ${browserName}: WebGL2 ${webgl2 ? 'sim' : 'não'} · ${agent}`)
@@ -108,13 +117,6 @@ test('cria um mundo, mexe nos sliders só com o teclado, aplica um preset e nave
     test.skip(true, `${browserName} sem WebGL2 nesta máquina: o fluxo do editor não roda (AC-F1-20)`)
   }
 
-  // 1. Criar um mundo pelo assistente (AC-F1-19).
-  await expect(wizard.getByRole('textbox', { name: 'Nome do mundo' })).toBeFocused()
-  await wizard.getByRole('textbox', { name: 'Nome do mundo' }).fill('Picos de Gelo')
-  await wizard.getByRole('button', { name: /Terras geladas/ }).click()
-  await wizard.getByRole('textbox', { name: /^Seed/ }).fill('gelo-55')
-  await wizard.getByRole('button', { name: 'Criar mundo' }).click()
-  await expect(wizard).toBeHidden()
   await expect(page.getByTestId('world-name')).toHaveText('Picos de Gelo')
   await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue('gelo-55')
   await expectSliders(page, FROZEN)

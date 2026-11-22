@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { stableMapShot } from './editor.ts'
 
 // Salvamento automático no IndexedDB e reabrir ao recarregar (#154, AC-F4-01 e AC-F4-02). Cada teste
-// tem um contexto novo do navegador, então o banco começa vazio e o app abre com o assistente.
+// tem um contexto novo do navegador, então o banco começa vazio e o app abre na Lista vazia.
 
 async function waitFinalMap(page: Page) {
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 30_000 })
@@ -12,6 +12,7 @@ async function waitFinalMap(page: Page) {
 
 async function createWorld(page: Page, name: string, seed: string) {
   await page.goto('/')
+  await page.getByRole('button', { name: 'Criar meu primeiro mundo' }).click()
   const dialog = page.getByRole('dialog', { name: 'Novo mundo' })
   await dialog.getByRole('textbox', { name: 'Nome do mundo' }).fill(name)
   await dialog.getByRole('textbox', { name: /^Seed/ }).fill(seed)
@@ -43,7 +44,7 @@ test('mexer no mundo salva sozinho, e recarregar reabre o mundo igual (AC-F4-01,
   const before = await stableMapShot(page)
 
   await page.reload()
-  await expect(page.getByRole('dialog', { name: 'Novo mundo' })).toHaveCount(0)
+  await page.getByRole('button', { name: /^Mar de Brumas/ }).click()
   await expect(page.getByTestId('world-name')).toHaveText('Mar de Brumas')
   await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue('brumas-0042')
   await expect(page.getByRole('slider', { name: 'Oceano' })).toHaveAttribute('aria-valuenow', '47')
@@ -88,6 +89,7 @@ test('se a gravação falha, o indicador mostra "Erro ao salvar" e oferece "Tent
   await expect(indicator(page)).toHaveAttribute('data-status', 'saved')
 
   await page.reload()
+  await page.getByRole('button', { name: /^Ilhas de Cinza/ }).click()
   await expect(page.getByTestId('world-name')).toHaveText('Ilhas de Cinza')
   await expect(page.getByRole('slider', { name: 'Oceano' })).toHaveAttribute('aria-valuenow', '43')
 })

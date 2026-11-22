@@ -2,8 +2,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import { gotoEditor, mapShot, stableMapShot } from './editor.ts'
 
-// Assistente de novo mundo (#52, AC-F1-19): até a Lista de mundos (M2), ele abre sobre o editor ao
-// carregar o app, com o mundo padrão por trás.
+// Assistente de novo mundo (#52, AC-F1-19): abre sobre a Lista de mundos por "Novo mundo" (#155,
+// AC-F4-06). Cada teste tem um contexto novo, com o banco vazio: a lista começa vazia.
 
 const ARCHIPELAGO: Record<string, number> = {
   Oceano: 66,
@@ -24,10 +24,16 @@ async function waitFinalMap(page: Page) {
 
 const wizard = (page: Page) => page.getByRole('dialog', { name: 'Novo mundo' })
 
+/** Abre o app (a Lista de mundos vazia) e o assistente pelo botão Novo mundo do título. */
+async function openWizard(page: Page) {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Novo mundo', exact: true }).click()
+}
+
 test('cria o mundo com o nome, o preset e a seed escolhidos e mostra o mapa dele (AC-F1-19)', async ({ page, browser }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/')
+  await openWizard(page)
   const dialog = wizard(page)
   await expect(dialog).toBeVisible()
   // 800 px, centrado.
@@ -69,32 +75,31 @@ test('cria o mundo com o nome, o preset e a seed escolhidos e mostra o mapa dele
   await expect.poll(async () => (await mapShot(page)).equals(expected), { timeout: 10_000 }).toBe(true)
 })
 
-test('Cancelar fecha o assistente e mantém o mundo padrão', async ({ page }) => {
-  test.setTimeout(90_000)
+test('Cancelar fecha o assistente e volta à lista, sem criar mundo (AC-F4-06)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/')
+  await openWizard(page)
   await wizard(page).getByRole('textbox', { name: 'Nome do mundo' }).fill('Não vale')
   await wizard(page).getByRole('button', { name: /Terras geladas/ }).click()
   await wizard(page).getByRole('button', { name: 'Cancelar' }).click()
   await expect(wizard(page)).toBeHidden()
-  await expect(page.getByTestId('world-name')).toHaveText('Terras de Valdora')
-  await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue('rpg-world')
-  await expect(page.getByRole('slider', { name: 'Oceano' })).toHaveAttribute('aria-valuenow', '45')
-  await waitFinalMap(page)
+  await expect(page.getByRole('heading', { name: 'Nenhum mundo ainda' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Nenhum mundo ainda' })).toBeVisible()
 })
 
-test('Esc também fecha o assistente sem mudar o mundo', async ({ page }) => {
-  await page.goto('/')
+test('Esc também fecha o assistente e volta à lista', async ({ page }) => {
+  await openWizard(page)
   await expect(wizard(page)).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(wizard(page)).toBeHidden()
-  await expect(page.getByTestId('world-name')).toHaveText('Terras de Valdora')
+  await expect(page.getByRole('heading', { name: 'Nenhum mundo ainda' })).toBeVisible()
 })
 
 test('celular 390: o assistente cabe na tela, rola e cria o mundo (AC-F1-19)', async ({ page }) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
+  await page.getByRole('button', { name: 'Criar meu primeiro mundo' }).click()
   const dialog = wizard(page)
   await expect(dialog).toBeVisible()
   const box = (await dialog.boundingBox())!

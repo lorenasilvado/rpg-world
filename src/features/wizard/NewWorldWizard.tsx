@@ -1,34 +1,37 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { ArrowRight, Check, ChevronDown, Dices, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
+import type { WorldParams } from '../../core'
 import { PRESETS, type Preset, type PresetId } from '../../state/presets'
 import { randomSeed } from '../../state/seed'
-import type { WorldStore } from '../../state/worldStore'
 import { CopySeedButton, SeedButton } from '../sidebar/SeedButtons'
 import { useCopySeed } from '../sidebar/useCopySeed'
 import { loadThumbnails, THUMBNAIL_SEED_MS, THUMBNAIL_SIZE, type CreateThumbnails, type Thumbnails } from './thumbnails'
 
 /**
  * 04 · Assistente de novo mundo (AC-F1-19): modal de 800 px com o nome do mundo, os 4 presets em
- * cartões com miniatura ("Ponto de partida") e a seção Avançado com a seed. "Criar mundo →" troca o
- * nome, a seed e os parâmetros do mundo (`createWorld`), que gera o mapa final, e fecha. Cancelar,
- * o X e o Esc fecham sem mudar o mundo; um clique fora do modal não fecha, para não perder o que foi
- * digitado.
+ * cartões com miniatura ("Ponto de partida") e a seção Avançado com a seed. Abre sobre a Lista de
+ * mundos. "Criar mundo →" entrega o nome, a seed e os parâmetros do preset (`onCreate`: quem abriu
+ * salva e abre o mundo novo) e fecha. Cancelar, o X e o Esc fecham sem criar nada; um clique fora do
+ * modal não fecha, para não perder o que foi digitado.
  *
  * O nome é obrigatório: sem nome (só espaços contam como vazio), "Criar mundo" fica desabilitado.
  * A seed começa sorteada; vazia, vale a sorteada ao abrir (a "opcional" do campo). As miniaturas
  * usam essa seed e são geradas no worker das miniaturas (`thumbnails.ts`), de novo 300 ms depois da
  * última mudança da seed; até chegar, o cartão mostra o fundo do mar.
  */
+/** O que o assistente entrega ao criar o mundo. */
+export type NewWorldValues = { name: string; seed: string; params: Readonly<WorldParams> }
+
 export function NewWorldWizard({
-  world,
   open,
   onClose,
+  onCreate,
   createThumbnails,
 }: {
-  world: WorldStore
   open: boolean
   onClose: () => void
+  onCreate: (values: NewWorldValues) => void
   /** Sem ele (os testes do jsdom), os cartões ficam sem miniatura. */
   createThumbnails?: CreateThumbnails
 }) {
@@ -45,7 +48,7 @@ export function NewWorldWizard({
           ].join(' ')}
           data-testid="new-world-wizard"
         >
-          <WizardForm world={world} onClose={onClose} createThumbnails={createThumbnails} />
+          <WizardForm onCreate={onCreate} onClose={onClose} createThumbnails={createThumbnails} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -53,11 +56,11 @@ export function NewWorldWizard({
 }
 
 function WizardForm({
-  world,
+  onCreate,
   onClose,
   createThumbnails,
 }: {
-  world: WorldStore
+  onCreate: (values: NewWorldValues) => void
   onClose: () => void
   createThumbnails?: CreateThumbnails
 }) {
@@ -80,7 +83,7 @@ function WizardForm({
   const create = () => {
     if (!trimmedName) return
     const preset = PRESETS.find((p) => p.id === presetId) ?? PRESETS[0]
-    world.getState().createWorld({ name: trimmedName, seed, params: preset.params })
+    onCreate({ name: trimmedName, seed, params: preset.params })
     onClose()
   }
 

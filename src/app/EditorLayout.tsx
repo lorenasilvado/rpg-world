@@ -28,7 +28,8 @@ import { useTheme } from './useTheme'
  * do painel ao abrir e volta ao botão que o abriu ao fechar. Com um painel aberto, o resto da tela
  * fica `inert` (o Tab não sai do painel). Ao passar para 768 px ou mais, os painéis fecham.
  *
- * O cabeçalho da sidebar mostra o nome do mundo e, abaixo dele, o indicador de salvamento
+ * O cabeçalho da sidebar mostra o logo, que volta à Lista de mundos (`onBack`, AC-F4-06), o nome do
+ * mundo e, abaixo dele, o indicador de salvamento
  * (`SaveIndicator`, com o `save`). A sidebar tem as seções e os sliders de geração (`GenerateSidebar`). A partir de 768 px, ela
  * recolhe a 48 px e abre de novo pelo botão ou pela tecla `[`; abaixo disso, a tecla abre e fecha o
  * painel sobreposto. A tecla não vale com o foco num campo de texto nem com Ctrl, Alt ou Meta.
@@ -58,12 +59,15 @@ export function EditorLayout({
   ui,
   save,
   createRenderer,
+  onBack,
 }: {
   world: WorldStore
   ui: UiStore
   /** O status do salvamento automático (`createAutosave`); sem ele (testes), não há indicador. */
   save?: SaveStore
   createRenderer?: CreateMapRenderer
+  /** Volta à Lista de mundos; sem ele (testes), o logo não é um botão. */
+  onBack?: () => void
 }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
@@ -218,9 +222,21 @@ export function EditorLayout({
         <header
           className={`flex h-[var(--editor-header-height)] shrink-0 items-center gap-3 border-b border-line ${sidebarCollapsed ? 'px-2' : 'px-3'}`}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
-            <Compass size={20} aria-hidden="true" />
-          </span>
+          {onBack ? (
+            <button
+              type="button"
+              aria-label="Voltar à lista de mundos"
+              title="Voltar à lista de mundos"
+              onClick={onBack}
+              className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber hover:bg-[var(--amber-hover)] active:bg-[var(--amber-press)] focus-visible:shadow-[0_0_0_2px_var(--paper-solid),0_0_0_4px_var(--amber)] focus-visible:outline-none"
+            >
+              <Compass size={20} aria-hidden="true" />
+            </button>
+          ) : (
+            <span className="grid size-8 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
+              <Compass size={20} aria-hidden="true" />
+            </span>
+          )}
           {!sidebarCollapsed && (
             <div className="flex min-w-0 flex-col items-start gap-0.5">
               <span className="max-w-full min-w-0 truncate px-1.5 font-title text-base/5 font-semibold" data-testid="world-name" title={worldName}>

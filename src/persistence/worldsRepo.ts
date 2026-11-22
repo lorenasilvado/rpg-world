@@ -8,6 +8,8 @@ export type WorldsRepo = {
   get(id: string): Promise<World | undefined>
   /** O mundo salvo por último (o maior `updatedAt`), ou `undefined` sem mundos. */
   latest(): Promise<World | undefined>
+  /** Todos os mundos, do editado por último ao mais antigo (a Lista de mundos). */
+  list(): Promise<World[]>
   saveImage(image: StoredImage): Promise<void>
   getImage(id: string): Promise<StoredImage | undefined>
 }
@@ -22,6 +24,9 @@ export function createWorldsRepo(db: RpgWorldDb): WorldsRepo {
     },
     latest() {
       return db.worlds.orderBy('updatedAt').last()
+    },
+    list() {
+      return db.worlds.orderBy('updatedAt').reverse().toArray()
     },
     async saveImage(image) {
       await db.images.put(image)

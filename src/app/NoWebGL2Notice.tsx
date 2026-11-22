@@ -1,13 +1,14 @@
-import { Compass, Moon, Sun, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Compass, Moon, Sun, TriangleAlert } from 'lucide-react'
 import { useTheme } from './useTheme'
 import { SUPPORTED_BROWSERS } from './webgl2'
 
 /**
  * Aviso no lugar do editor quando o navegador não tem WebGL2 (AC-F1-20): o mapa não teria como ser
  * desenhado, então o editor nem abre. Diz por quê e lista os navegadores suportados. Tem o mesmo
- * botão de tema claro e escuro do editor.
+ * botão de tema claro e escuro do editor e, com `onBack`, o de voltar à Lista de mundos, que
+ * funciona sem WebGL2 (AC-F4-12).
  */
-export function NoWebGL2Notice() {
+export function NoWebGL2Notice({ onBack }: { onBack?: () => void }) {
   const { theme, toggle } = useTheme()
   const themeLabel = theme === 'light' ? 'Usar tema escuro' : 'Usar tema claro'
   return (
@@ -51,6 +52,16 @@ export function NoWebGL2Notice() {
         <p className="text-sm/5 text-ink-2">
           Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações.
         </p>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-11 items-center gap-2 self-start rounded-control border border-line-2 bg-field px-4 text-sm font-bold text-ink hover:border-ink-3 hover:bg-sunken active:bg-press"
+          >
+            <ArrowLeft size={18} aria-hidden="true" />
+            Voltar à lista
+          </button>
+        )}
       </section>
     </main>
   )

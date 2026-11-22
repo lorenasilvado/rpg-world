@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION } from '../core'
 import { openDb, type RpgWorldDb } from './db'
-import { loadLastWorld, worldStoreInitial } from './lastWorld'
+import { loadWorlds, newWorldRecord, worldStoreInitial } from './worldRecord'
 import type { World } from './types'
 import { createWorldsRepo } from './worldsRepo'
 
@@ -73,6 +73,15 @@ describe('worldsRepo (IndexedDB, AC-F4-01)', () => {
     expect((await repo.latest())?.id).toBe('b')
   })
 
+  it('list devolve todos, do editado por último ao mais antigo (AC-F4-04)', async () => {
+    const repo = createWorldsRepo(freshDb())
+    expect(await repo.list()).toEqual([])
+    await repo.save(world({ id: 'a', updatedAt: '2026-11-21T12:00:00.000Z' }))
+    await repo.save(world({ id: 'b', updatedAt: '2026-11-21T13:00:00.000Z' }))
+    await repo.save(world({ id: 'c', updatedAt: '2026-11-21T11:00:00.000Z' }))
+    expect((await repo.list()).map((w) => w.id)).toEqual(['b', 'a', 'c'])
+  })
+
   it('guarda as imagens como blobs (AC-F4-03)', async () => {
     const repo = createWorldsRepo(freshDb())
     const blob = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })
@@ -85,12 +94,19 @@ describe('worldsRepo (IndexedDB, AC-F4-01)', () => {
   })
 })
 
-describe('loadLastWorld e worldStoreInitial', () => {
-  it('devolve o último mundo, ou nada se o banco falha', async () => {
+describe('loadWorlds, worldStoreInitial e newWorldRecord', () => {
+  it('devolve os mundos, ou a lista vazia se o banco falha', async () => {
     const repo = createWorldsRepo(freshDb())
     await repo.save(world())
-    expect((await loadLastWorld(repo))?.id).toBe('w1')
-    expect(await loadLastWorld({ latest: () => Promise.reject(new Error('bloqueado')) })).toBeUndefined()
+    expect((await loadWorlds(repo)).map((w) => w.id)).toEqual(['w1'])
+    expect(await loadWorlds({ list: () => Promise.reject(new Error('bloqueado')) })).toEqual([])
+  })
+
+  it('o mundo novo nasce sem pins nem estradas, na largura padrão, com as duas datas iguais', () => {
+    const params = { ...DEFAULT_WORLD_PARAMS, desert: 40 }
+    expect(newWorldRecord({ id: 'n', name: 'Brumas', seed: 'b', params }, new Date('2026-11-21T10:00:00.000Z'))).toEqual(
+      world({ id: 'n', name: 'Brumas', seed: 'b', params }),
+    )
   })
 
   it('completa os parâmetros que faltam com os padrão', () => {
