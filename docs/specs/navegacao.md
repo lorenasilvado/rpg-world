@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-20
+updated: 2026-11-21
 ---
 
 # F2 · Câmera e navegação
@@ -148,8 +148,7 @@ barra inferior.
   (o estado fica no `uiStore`, ligada ao abrir). Se o spritesheet dos ícones não pode ser desenhado (sem o canvas
   2D), o mapa aparece só com o terreno, sem decoração.
 - Barra de escala em km, calculada a partir da largura do mundo (`sizeKm`). Hoje ela é sempre
-  800 km: o editor abre o mundo padrão e o assistente não pergunta o tamanho (o `worldStore` já
-  aceita outro valor, para quando houver mundos salvos). A
+  800 km: o assistente não pergunta o tamanho, e o mundo salvo guarda o dele (`sizeKm`). A
   barra tem 32 px, e o texto é quantos km cabem nela no zoom atual (inteiro a partir de 10 km;
   abaixo, uma casa decimal, com vírgula). A porcentagem é o zoom relativo (100% = mapa inteiro na
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.

@@ -352,7 +352,7 @@ test('tablet 1024 com a sidebar aberta: ao abrir o editor, o minimapa já aparec
       }
     }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style', 'class'] })
   })
-  await page.goto('/')
+  await gotoEditor(page)
   await expect(page.getByTestId('minimap-slot')).toHaveAttribute('data-animated', 'true', { timeout: 15_000 })
   const moves = await page.evaluate(() => (window as unknown as { minimapMoves: { bottom: string; transition: string }[] }).minimapMoves)
   // Ele sobe uma vez para 68 px (acima do zoom), sem transição; depois, a transição fica ligada.
