@@ -1,0 +1,20 @@
+commit: 8056f4cfa4195aa682236f92e7304882f79f8725
+ac-f4-07-celular-390-duplicar-falha-toast.png  390x844  497ce7bfdf961422ed60244da7f47585937151d2737742c2c6a7ba12fa8ab458
+ac-f4-07-celular-390-excluir.png  390x844  5b7659cdb967fc39fad619c4f2ad91f745217a551cdcc0b6f45cac7683ca92e1
+ac-f4-07-celular-390-menu-abre-para-cima.png  390x844  09458c06acd13cac258f5f9fa2864e9c0c65cf73ebffc0b8e0e8654962ea155a
+ac-f4-07-celular-390-renomear.png  390x844  114ff633b412929fd5ab90e99cf4c9aabf1a67c591925bb2e5ccd4194cabac5a
+ac-f4-07-duplicado-contagem-sobe.png  1280x800  f712204a76acf60eb4bd8c0d7206eb46fea623ddbb5d8ba37b36e7986b474d93
+ac-f4-07-duplicar-falha-toast.png  1280x800  6afab8f8f0bb67ab0ea6b7e4ddc2f0bd99281a7d2df64ecc0a11146ce6242758
+ac-f4-07-excluido-sai-da-lista.png  1280x800  dff97dd92aeefab96b85574a99eeed29da709e5ce41f8a3c6ca6c4168f61cc63
+ac-f4-07-excluir-confirmacao.png  1280x800  caaf428dc271e11e0acdf27b17037631e5d5385fb0eccefeb5cadf1b81988096
+ac-f4-07-excluir-falha.png  1280x800  b8e438dc5af10431163e26cf9dd24958efbb0844cfd46625b122b6149ce7666d
+ac-f4-07-excluir-o-ultimo-lista-vazia.png  1280x800  d39ba3b193ed0fc94df7a5fec783e498cfd14cc53a5b66213eebd8e5ee2ddeb7
+ac-f4-07-menu-aberto-claro.png  1280x800  1e8962a91bc6cc12b4fd2a68b0f78a186e19a89c4ab443ff9f44fc54333249ca
+ac-f4-07-menu-aberto-escuro.png  1280x800  84eb03a111af9021df50c512c9976e482e82d49e796f6dbe0332156ab7473e41
+ac-f4-07-renomeado-no-topo.png  1280x800  8b5cd4b64e283bdbe9eb8672dcf9320abd70b8df0c3ee16f0f8e8f8796134b96
+ac-f4-07-renomear-falha.png  1280x800  7cdf9f0db2d7f0fd59e50fdd39025f937f1e4cb038a8185759281b0e2ad976db
+ac-f4-07-renomear-modal.png  1280x800  9745a96a10742773698e72596db42363b1599aedf0ea876884895263da29eb11
+ac-f4-07-renomear-vazio-desabilitado.png  1280x800  f1cd483cc522635bf9a4ce7635f69a07377d4df7339594e26cf7b99a7acfbff3
+ac-f4-07-tablet-1024-menu.png  1024x768  3e419fc9b63cd06f160b03c1371ad522bd899a95435e41475974dd9b426e3cb9
+ac-f4-07-teclado-foco-em-excluir.png  1280x800  4852e7d6f542f161d42f0a8200f602c18cda473e48bf59cb7d6c98d0baa30263
+ac-f4-12-sem-webgl2-menu-funciona.png  1280x800  2ba81a36421f6f042087a755ca1b23a7b2b937c1d1b3642073da2dac16cb647a
