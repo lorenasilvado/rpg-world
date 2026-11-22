@@ -6,7 +6,7 @@ import { UnsavedLeaveDialog } from '../features/worlds/UnsavedLeaveDialog'
 import { WorldList } from '../features/worlds/WorldList'
 import { createAutosave, type Autosave } from '../persistence/autosave'
 import type { World } from '../persistence/types'
-import { loadWorlds, newWorldRecord, worldStoreInitial } from '../persistence/worldRecord'
+import { copyName, loadWorlds, newWorldRecord, worldStoreInitial } from '../persistence/worldRecord'
 import type { WorldsRepo } from '../persistence/worldsRepo'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { createWorldStore, newWorldId, type WorldGenerator, type WorldStore } from '../state/worldStore'
@@ -31,6 +31,9 @@ type Session = { world: WorldStore; autosave: Autosave }
  * esconder ou sair da página, o mundo aberto é gravado já.
  * Sem WebGL2, a lista funciona e nada é gerado: abrir um mundo mostra o aviso no lugar do editor.
  * As preferências do editor (`ui`: camadas, sidebar recolhida) valem para todos os mundos.
+ *
+ * O menu "⋯" dos cartões (AC-F4-07) renomeia, duplica (a cópia, "<nome> (cópia)", vai para o topo)
+ * e exclui pelo repositório; depois de cada um, a lista é lida de novo sem os cartões esqueleto.
  */
 export function WorldsApp({
   repo,
@@ -42,7 +45,7 @@ export function WorldsApp({
   now = currentTime,
   newId = newWorldId,
 }: {
-  repo: Pick<WorldsRepo, 'list' | 'save'>
+  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove'>
   generator: WorldGenerator
   webgl2?: boolean
   ui?: UiStore
@@ -59,6 +62,9 @@ export function WorldsApp({
   const [wizardOpen, setWizardOpen] = useState(false)
   /** O modal "Mudanças não salvas" (voltar com erro ao salvar) e se "Tentar de novo" está gravando. */
   const [unsaved, setUnsaved] = useState<'closed' | 'open' | 'retrying'>('closed')
+  /** Sobe depois de renomear, duplicar ou excluir: a lista é lida de novo. */
+  const [listVersion, setListVersion] = useState(0)
+  const refreshList = useCallback(() => setListVersion((v) => v + 1), [])
 
   // A lista é lida de novo a cada vez que ela aparece (`back` a esvazia, para os cartões esqueleto).
   useEffect(() => {
@@ -72,7 +78,7 @@ export function WorldsApp({
     return () => {
       job.cancelled = true
     }
-  }, [session, repo, now])
+  }, [session, repo, now, listVersion])
 
   // O que espera a pausa do salvamento é gravado ao esconder ou sair da página.
   useEffect(() => {
@@ -148,7 +154,25 @@ export function WorldsApp({
 
   return (
     <>
-      <WorldList worlds={worlds} now={listedAt} onOpen={open} onNew={() => setWizardOpen(true)} createThumbnails={createThumbnails} />
+      <WorldList
+        worlds={worlds}
+        now={listedAt}
+        onOpen={open}
+        onNew={() => setWizardOpen(true)}
+        onRename={async (world, name) => {
+          await repo.rename(world.id, name, now())
+          refreshList()
+        }}
+        onDuplicate={async (world) => {
+          await repo.duplicate(world.id, { id: newId(), name: copyName(world.name), now: now(), newId })
+          refreshList()
+        }}
+        onDelete={async (world) => {
+          await repo.remove(world.id)
+          refreshList()
+        }}
+        createThumbnails={createThumbnails}
+      />
       <NewWorldWizard
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}

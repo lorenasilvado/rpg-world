@@ -1,7 +1,7 @@
 ---
 feature: F4
 area: area:mundos
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 # F4 · Mundos e persistência
@@ -11,8 +11,9 @@ o comportamento atualiza esta spec.
 
 > Hoje o app abre na Lista de mundos: os cartões dos mundos salvos (miniatura, nome, "Editado há
 > X · N pins"), cartões esqueleto enquanto lê o banco, a lista vazia no primeiro acesso, abrir um
-> mundo, Novo mundo pelo assistente e a volta do editor para a lista pelo logo da sidebar. Importar,
-> o link "importe um arquivo .json" e o menu "⋯" ficam desabilitados até a importação e o menu
+> mundo, Novo mundo pelo assistente, a volta do editor para a lista pelo logo da sidebar e o menu
+> "⋯" do cartão, que renomeia, duplica e exclui (com confirmação). Importar, o link "importe um
+> arquivo .json" e o Exportar do menu ficam desabilitados até a importação e a exportação
 > existirem. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
 > indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
 > sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
@@ -50,8 +51,21 @@ PNG e o histórico de desfazer/refazer do mundo.
 - "Editado há X" conta do `updatedAt` (a última gravação): "agora" (menos de 1 min), "N min",
   "N h", "ontem" (de 24 a 48 h), "N dias", "N semana(s)" (a partir de 7 dias), "N mês/meses" (a
   partir de 30 dias) e "N ano(s)" (a partir de 365 dias), arredondado para baixo.
-- Menu "⋯": Renomear, Duplicar, Exportar e, após um separador, Excluir em vermelho. Com o menu
-  aberto, o cartão ganha contorno âmbar.
+- Menu "⋯": Renomear (`pencil`), Duplicar (`copy`), Exportar (`download`) e, após um separador,
+  Excluir (`trash-2`) em vermelho. Abre abaixo do "⋯", alinhado à direita do cartão (acima, se não
+  cabe abaixo, como no último cartão no celular), com o foco em Renomear; um menu aberto por vez.
+  Com o menu aberto, o cartão ganha contorno âmbar. Teclado: Enter, Espaço ou seta para baixo no
+  "⋯" abrem; setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao "⋯";
+  Tab ou um clique fora fecham.
+- Modal "Renomear mundo" (480 px): campo "Nome do mundo" com o nome atual selecionado; Cancelar e
+  "Renomear" (primário, desabilitado com o campo vazio). Enter grava.
+- Modal de Excluir (480 px): título "Excluir “<nome>”?", o texto "O mundo e os N pins dele serão
+  excluídos deste navegador. Isso não pode ser desfeito." ("O mundo e o pin dele…" com um pin; "O
+  mundo será excluído…" sem pins); Cancelar (com o foco ao abrir) e "Excluir mundo" (destrutivo,
+  `--brick`, com `trash-2`).
+- Enquanto um desses modais grava ou exclui, os botões ficam desabilitados e nem Esc nem o clique
+  fora o fecham.
+- Fechar um desses modais devolve o foco ao "⋯" do cartão; depois de excluir, ao "Novo mundo".
 
 ### 02 · Lista vazia
 
@@ -100,10 +114,10 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
 | Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |
-| Renomear | TODO: tela não descrita no material |
-| Duplicar | Cria uma cópia do mundo |
+| Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
+| Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
 | Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
-| Excluir | Pede confirmação num modal; não pode ser desfeito (o histórico é do mundo). TODO: tela e texto do modal |
+| Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
 | Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z) | Desfaz ou refaz mudanças em pins, estradas e parâmetros de geração |
 
 ## Regras
@@ -136,7 +150,7 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-Exportar (JSON e PNG), Renomear e o modal de confirmação de Excluir: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
+Exportar (JSON e PNG): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
 > Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
 > mantidas ([overview.md](../overview.md)).

@@ -1,4 +1,4 @@
-import { CircleHelp, Compass, Ellipsis, Moon, Plus, Sun, Upload } from 'lucide-react'
+import { CircleHelp, Compass, Moon, Plus, Sun, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTheme } from '../../app/useTheme'
 import type { World } from '../../persistence/types'
@@ -6,6 +6,8 @@ import { worldStoreInitial } from '../../persistence/worldRecord'
 import { ShortcutsDialog } from '../help/ShortcutsDialog'
 import { LIST_THUMBNAIL_SIZE, type CreateThumbnails, type Thumbnails } from '../wizard/thumbnails'
 import { worldCaption } from './editedAgo'
+import { WorldCardMenu, type WorldMenuAction } from './WorldCardMenu'
+import { DeleteWorldDialog, RenameWorldDialog } from './WorldDialogs'
 
 /**
  * 01 · Lista de mundos e 02 · Lista vazia (mundos.md, AC-F4-04, AC-F4-05): a tela inicial do app.
@@ -17,14 +19,20 @@ import { worldCaption } from './editedAgo'
  * importar (desabilitado como o botão).
  *
  * Cada cartão abre o mundo (`onOpen`) e tem a miniatura 16:10, o nome, "Editado há X · N pins" e o
- * botão "⋯" (desabilitado até o menu existir). As miniaturas são geradas num worker só delas
- * (`createThumbnails`), uma por vez, na ordem da lista; até chegar, o cartão mostra o fundo do mar.
+ * botão "⋯" com o menu do mundo (AC-F4-07): Renomear e Excluir abrem os modais deles, Duplicar
+ * chama `onDuplicate` já (se falha, o toast de erro oferece "Tentar de novo"); com o menu aberto, o cartão ganha o contorno âmbar. Um menu aberto por
+ * vez. Ao fechar um modal, o foco volta ao "⋯" do cartão (ou ao "Novo mundo", se o mundo saiu).
+ * As miniaturas são geradas num worker só delas (`createThumbnails`), uma por vez, na ordem da
+ * lista; até chegar, o cartão mostra o fundo do mar.
  */
 export function WorldList({
   worlds,
   now,
   onOpen,
   onNew,
+  onRename,
+  onDuplicate,
+  onDelete,
   createThumbnails,
 }: {
   /** Os mundos salvos, do editado por último ao mais antigo; `null` enquanto carrega. */
@@ -33,6 +41,12 @@ export function WorldList({
   now: Date
   onOpen: (world: World) => void
   onNew: () => void
+  /** Grava o nome novo (já sem os espaços das pontas); uma falha mantém o modal aberto. */
+  onRename: (world: World, name: string) => Promise<void>
+  /** Grava a cópia; uma falha mostra o toast "Não foi possível duplicar". */
+  onDuplicate: (world: World) => Promise<void>
+  /** Exclui o mundo de vez; uma falha mantém o modal aberto. */
+  onDelete: (world: World) => Promise<void>
   /** Sem ele (os testes do jsdom), os cartões ficam sem miniatura. */
   createThumbnails?: CreateThumbnails
 }) {
@@ -42,6 +56,35 @@ export function WorldList({
   const helpReturn = useRef<HTMLElement | null>(null)
   const thumbs = useWorldThumbnails(worlds, createThumbnails)
   const empty = worlds !== null && worlds.length === 0
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [dialog, setDialog] = useState<{ kind: 'rename' | 'delete'; world: World } | null>(null)
+  /** O "⋯" de cada cartão, pelo id do mundo. */
+  const menuButtons = useRef(new Map<string, HTMLButtonElement>())
+  const newButton = useRef<HTMLButtonElement>(null)
+  const menuButton = (id: string) => (el: HTMLButtonElement | null) => {
+    if (el) menuButtons.current.set(id, el)
+    else if (menuButtons.current.get(id)?.isConnected === false) menuButtons.current.delete(id)
+  }
+  /** O mundo do último modal aberto: quando o modal termina de fechar, `dialog` já é nulo. */
+  const dialogWorld = useRef<string | null>(null)
+  /** O mundo cuja cópia falhou (o toast de erro), ou `null`. */
+  const [duplicateFailed, setDuplicateFailed] = useState<World | null>(null)
+  const duplicate = (world: World) => {
+    setDuplicateFailed(null)
+    onDuplicate(world).catch(() => setDuplicateFailed(world))
+  }
+  const act = (world: World, action: WorldMenuAction) => {
+    if (action === 'duplicate') return duplicate(world)
+    dialogWorld.current = world.id
+    setDialog({ kind: action, world })
+  }
+  // O modal fechado devolve o foco ao "⋯" do cartão, ou ao "Novo mundo" se o cartão saiu.
+  const returnFocus = (e: Event) => {
+    e.preventDefault()
+    const id = dialogWorld.current
+    const target = id ? menuButtons.current.get(id) : null
+    ;(target?.isConnected ? target : newButton.current)?.focus()
+  }
 
   return (
     <div className="flex h-full flex-col bg-bg text-ink" data-testid="world-list" data-state={worlds === null ? 'loading' : empty ? 'empty' : 'ready'}>
@@ -81,7 +124,7 @@ export function WorldList({
               <Upload size={18} aria-hidden="true" />
               Importar
             </button>
-            <button type="button" onClick={onNew} className={PRIMARY}>
+            <button ref={newButton} type="button" onClick={onNew} className={PRIMARY}>
               <Plus size={18} aria-hidden="true" />
               Novo mundo
             </button>
@@ -99,12 +142,63 @@ export function WorldList({
             {worlds === null
               ? SKELETONS.map((i) => <SkeletonCard key={i} />)
               : worlds.map((world) => (
-                  <WorldCard key={world.id} world={world} caption={worldCaption(world, now)} rgba={thumbs[world.id]} onOpen={() => onOpen(world)} />
+                  <WorldCard
+                    key={world.id}
+                    world={world}
+                    caption={worldCaption(world, now)}
+                    rgba={thumbs[terrainKey(world)]}
+                    onOpen={() => onOpen(world)}
+                    menuOpen={menuFor === world.id}
+                    onMenuOpenChange={(open) => setMenuFor((current) => (open ? world.id : current === world.id ? null : current))}
+                    onAction={(action) => act(world, action)}
+                    menuButton={menuButton(world.id)}
+                  />
                 ))}
           </ul>
         )}
       </main>
 
+      {duplicateFailed && (
+        <div
+          role="alert"
+          data-testid="duplicate-error-toast"
+          className="toast-in fixed bottom-4 left-1/2 z-30 flex w-[min(440px,calc(100vw-32px))] -translate-x-1/2 items-center gap-2 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg"
+        >
+          <span className="min-w-0 flex-1 font-semibold">Não foi possível duplicar o mundo</span>
+          <button
+            type="button"
+            onClick={() => duplicate(duplicateFailed)}
+            className="h-11 shrink-0 rounded-control bg-white/18 px-3 font-extrabold hover:bg-white/28 active:bg-white/36"
+          >
+            Tentar de novo
+          </button>
+          <button
+            type="button"
+            aria-label="Fechar aviso"
+            title="Fechar aviso"
+            onClick={() => setDuplicateFailed(null)}
+            className="grid size-11 shrink-0 place-items-center rounded-control hover:bg-white/18 active:bg-white/28"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <RenameWorldDialog
+        world={dialog?.kind === 'rename' ? dialog.world : null}
+        onRename={onRename}
+        onClose={() => setDialog(null)}
+        onCloseAutoFocus={returnFocus}
+      />
+      <DeleteWorldDialog
+        world={dialog?.kind === 'delete' ? dialog.world : null}
+        onDelete={async (world) => {
+          await onDelete(world)
+          // O cartão vai sair: o foco vai ao "Novo mundo".
+          dialogWorld.current = null
+        }}
+        onClose={() => setDialog(null)}
+        onCloseAutoFocus={returnFocus}
+      />
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} returnFocus={helpReturn} />
     </div>
   )
@@ -141,20 +235,32 @@ function HeaderButton({ label, onClick, children }: { label: string; onClick: ()
   )
 }
 
-/** O cartão de um mundo: abre no editor; o "⋯" fica desabilitado até o menu existir. */
+/** O cartão de um mundo: abre no editor; o "⋯" abre o menu, e com ele aberto o contorno é âmbar. */
 function WorldCard({
   world,
   caption,
   rgba,
   onOpen,
+  menuOpen,
+  onMenuOpenChange,
+  onAction,
+  menuButton,
 }: {
   world: World
   caption: string
   rgba: Uint8ClampedArray<ArrayBuffer> | undefined
   onOpen: () => void
+  menuOpen: boolean
+  onMenuOpenChange: (open: boolean) => void
+  onAction: (action: WorldMenuAction) => void
+  menuButton: (button: HTMLButtonElement | null) => void
 }) {
   return (
-    <li className="relative" data-testid="world-card">
+    <li
+      className={`relative rounded-panel ${menuOpen ? 'z-20 outline-2 outline-offset-[3px] outline-amber' : ''}`}
+      data-testid="world-card"
+      data-menu-open={menuOpen}
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -170,15 +276,7 @@ function WorldCard({
           </span>
         </span>
       </button>
-      <button
-        type="button"
-        disabled
-        aria-label={`Mais ações de ${world.name}`}
-        title="Mais ações (em breve)"
-        className="absolute right-2 bottom-3 grid size-11 place-items-center rounded-control text-ink disabled:opacity-40"
-      >
-        <Ellipsis size={20} aria-hidden="true" />
-      </button>
+      <WorldCardMenu worldName={world.name} open={menuOpen} onOpenChange={onMenuOpenChange} onAction={onAction} buttonRef={menuButton} />
     </li>
   )
 }
@@ -261,12 +359,19 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   )
 }
 
+/** O que define a miniatura de um mundo: a mesma chave, a mesma imagem (renomear não a refaz; a cópia usa a do original). */
+function terrainKey(world: World): string {
+  return JSON.stringify([world.generatorVersion, world.seed, worldStoreInitial(world).params])
+}
+
 /**
  * As miniaturas dos mundos da lista: um worker só delas enquanto a lista está à vista, uma miniatura
- * por vez, na ordem da lista. Uma falha só deixa as que faltam sem imagem.
+ * por vez, na ordem da lista, guardadas pelo terreno (`terrainKey`): quando a lista é lida de novo,
+ * só os terrenos novos são gerados. Uma falha só deixa as que faltam sem imagem.
  */
 function useWorldThumbnails(worlds: readonly World[] | null, createThumbnails: CreateThumbnails | undefined) {
   const [thumbs, setThumbs] = useState<Record<string, Uint8ClampedArray<ArrayBuffer>>>({})
+  const done = useRef(new Set<string>())
   const thumbnails = useRef<Thumbnails | null>(null)
 
   useEffect(() => {
@@ -285,6 +390,8 @@ function useWorldThumbnails(worlds: readonly World[] | null, createThumbnails: C
     const job = { cancelled: false }
     void (async () => {
       for (const world of worlds) {
+        const key = terrainKey(world)
+        if (done.current.has(key)) continue
         let rgba: Uint8ClampedArray<ArrayBuffer> | null
         try {
           rgba = await current.render(world.seed, worldStoreInitial(world).params, LIST_THUMBNAIL_SIZE)
@@ -292,7 +399,9 @@ function useWorldThumbnails(worlds: readonly World[] | null, createThumbnails: C
           return
         }
         if (job.cancelled) return
-        if (rgba) setThumbs((prev) => ({ ...prev, [world.id]: rgba }))
+        if (!rgba) continue
+        done.current.add(key)
+        setThumbs((prev) => ({ ...prev, [key]: rgba }))
       }
     })()
     return () => {

@@ -101,8 +101,8 @@ describe('Lista de mundos (AC-F4-04)', () => {
       'Editado há 2 h · 2 pins',
       'Editado há 1 mês · sem pins',
     ])
-    // O "⋯" e Importar ficam desabilitados até o menu e a importação existirem.
-    expect(within(cards[0]).getByRole('button', { name: 'Mais ações de Terras de Valdora' })).toHaveProperty('disabled', true)
+    // O "⋯" abre o menu (AC-F4-07); Importar fica desabilitado até a importação existir.
+    expect(within(cards[0]).getByRole('button', { name: 'Mais ações de Terras de Valdora' })).toHaveProperty('disabled', false)
     expect(screen.getByRole('button', { name: 'Importar' })).toHaveProperty('disabled', true)
   })
 
@@ -162,7 +162,7 @@ describe('Lista vazia (AC-F4-05)', () => {
 
   it('se o banco não abre, a lista fica vazia', async () => {
     const { generator } = recordingGenerator()
-    const repo = { list: () => Promise.reject(new Error('bloqueado')), save: () => Promise.resolve() }
+    const repo = { ...memoryRepo(), list: () => Promise.reject(new Error('bloqueado')) }
     render(<WorldsApp repo={repo} generator={generator} createRenderer={noRenderer} />)
     await settle()
     expect(screen.getByText('Nenhum mundo ainda')).toBeTruthy()
@@ -212,6 +212,225 @@ describe('Abrir e voltar (AC-F4-06)', () => {
     await settle()
     expect(screen.getByTestId('world-count').textContent).toBe('2 mundos')
     expect(screen.getAllByTestId('world-card-name').map((n) => n.textContent)).toEqual(['Brumas', 'Terras de Valdora'])
+  })
+})
+
+describe('Menu "⋯" do cartão (AC-F4-07)', () => {
+  const card = (name: string) => screen.getAllByTestId('world-card').find((c) => within(c).getByTestId('world-card-name').textContent === name)!
+  const names = () => screen.getAllByTestId('world-card-name').map((n) => n.textContent)
+  const openMenu = (name: string) => {
+    fireEvent.click(within(card(name)).getByRole('button', { name: `Mais ações de ${name}` }))
+    return screen.getByRole('menu', { name: `Ações de ${name}` })
+  }
+
+  it('abre com Renomear, Duplicar, Exportar (desabilitado) e Excluir; o cartão ganha o contorno; Esc fecha', async () => {
+    setup([VALDORA, SOMBRIO])
+    await settle()
+    const menu = openMenu('Vale Sombrio')
+    expect(within(menu).getAllByRole('menuitem').map((i) => [i.textContent, (i as HTMLButtonElement).disabled])).toEqual([
+      ['Renomear', false],
+      ['Duplicar', false],
+      ['Exportar', true],
+      ['Excluir', false],
+    ])
+    expect(within(menu).getByRole('separator')).toBeTruthy()
+    expect(card('Vale Sombrio').dataset.menuOpen).toBe('true')
+    expect(card('Terras de Valdora').dataset.menuOpen).toBe('false')
+    expect(document.activeElement?.textContent).toBe('Renomear')
+
+    // Setas pulam o Exportar desabilitado e dão a volta; Home e End vão às pontas.
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    expect(document.activeElement?.textContent).toBe('Excluir')
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    expect(document.activeElement?.textContent).toBe('Renomear')
+    fireEvent.keyDown(document.activeElement!, { key: 'End' })
+    expect(document.activeElement?.textContent).toBe('Excluir')
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(card('Vale Sombrio').dataset.menuOpen).toBe('false')
+    expect(document.activeElement).toBe(within(card('Vale Sombrio')).getByRole('button', { name: 'Mais ações de Vale Sombrio' }))
+  })
+
+  it('só um menu aberto por vez, e um clique fora fecha', async () => {
+    setup([VALDORA, SOMBRIO])
+    await settle()
+    openMenu('Vale Sombrio')
+    openMenu('Terras de Valdora')
+    expect(screen.getAllByRole('menu')).toHaveLength(1)
+    fireEvent.pointerDown(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('Duplicar com falha mostra o toast; "Tentar de novo" duplica e o toast some', async () => {
+    const { repo } = setup([VALDORA], { newId: () => 'copia' })
+    await settle()
+    const duplicate = repo.duplicate
+    repo.duplicate = () => Promise.reject(new Error('cota'))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    await settle()
+    const toast = screen.getByTestId('duplicate-error-toast')
+    expect(toast.getAttribute('role')).toBe('alert')
+    expect(toast.textContent).toContain('Não foi possível duplicar o mundo')
+    expect(names()).toEqual(['Terras de Valdora'])
+
+    repo.duplicate = duplicate
+    fireEvent.click(within(toast).getByRole('button', { name: 'Tentar de novo' }))
+    await settle()
+    await settle()
+    expect(screen.queryByTestId('duplicate-error-toast')).toBeNull()
+    expect(names()).toEqual(['Terras de Valdora (cópia)', 'Terras de Valdora'])
+  })
+
+  it('o toast de falha ao duplicar fecha pelo X', async () => {
+    const { repo } = setup([VALDORA])
+    await settle()
+    repo.duplicate = () => Promise.reject(new Error('cota'))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    await settle()
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar aviso' }))
+    expect(screen.queryByTestId('duplicate-error-toast')).toBeNull()
+  })
+
+  it('enquanto grava ou exclui, Esc não fecha o modal e Cancelar fica desabilitado; a falha aparece nele', async () => {
+    const { repo } = setup([VALDORA])
+    await settle()
+    let fail: (e: Error) => void = () => {}
+    repo.rename = () => new Promise((_, reject) => (fail = reject))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Outro' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear' }))
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', true)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Renomear mundo' })).toBeTruthy()
+    await act(async () => fail(new Error('cota')))
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível renomear o mundo. Tente de novo.')
+    // Com a gravação terminada, Esc volta a fechar.
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    repo.remove = () => new Promise((_, reject) => (fail = reject))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Excluir' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir mundo' }))
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', true)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Excluir “Terras de Valdora”?' })).toBeTruthy()
+    await act(async () => fail(new Error('falha')))
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível excluir o mundo. Tente de novo.')
+  })
+
+  it('as miniaturas são guardadas pelo terreno: renomear não refaz, e a cópia usa a do original', async () => {
+    const asked: string[] = []
+    const thumbnails: Thumbnails = {
+      async render(seed) {
+        asked.push(seed)
+        return new Uint8ClampedArray(4)
+      },
+      dispose() {},
+    }
+    setup([VALDORA, SOMBRIO], { createThumbnails: () => thumbnails, newId: () => 'copia' })
+    for (let i = 0; i < 3; i++) await settle()
+    expect(asked).toEqual(['valdora-7f3a', 'sombrio'])
+
+    fireEvent.click(within(openMenu('Vale Sombrio')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Vale das Brumas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear' }))
+    for (let i = 0; i < 3; i++) await settle()
+    expect(names()).toEqual(['Vale das Brumas', 'Terras de Valdora'])
+
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    for (let i = 0; i < 3; i++) await settle()
+    // O relógio do teste é fixo: a cópia e o renomeado têm o mesmo `updatedAt`.
+    expect(names().sort()).toEqual(['Terras de Valdora', 'Terras de Valdora (cópia)', 'Vale das Brumas'])
+    expect(asked).toEqual(['valdora-7f3a', 'sombrio'])
+    expect(card('Terras de Valdora (cópia)').querySelector('canvas')?.dataset.ready).toBe('true')
+    expect(screen.getByTestId('world-list').querySelectorAll('canvas[data-ready="true"]')).toHaveLength(3)
+  })
+
+  it('Renomear grava o nome novo, sem os espaços das pontas, e o mundo sobe para o topo', async () => {
+    const { repo } = setup([VALDORA, SOMBRIO])
+    await settle()
+    fireEvent.click(within(openMenu('Vale Sombrio')).getByRole('menuitem', { name: 'Renomear' }))
+    const dialog = screen.getByRole('dialog', { name: 'Renomear mundo' })
+    const input = within(dialog).getByLabelText('Nome do mundo') as HTMLInputElement
+    expect(input.value).toBe('Vale Sombrio')
+    fireEvent.change(input, { target: { value: '   ' } })
+    expect(within(dialog).getByRole('button', { name: 'Renomear' })).toHaveProperty('disabled', true)
+    fireEvent.change(input, { target: { value: '  Vale das Brumas ' } })
+    fireEvent.submit(input.form!)
+    await settle()
+    await settle()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(repo.worlds.get('sombrio')).toMatchObject({ name: 'Vale das Brumas', seed: 'sombrio', updatedAt: NOW.toISOString() })
+    expect(names()).toEqual(['Vale das Brumas', 'Terras de Valdora'])
+    // O foco volta ao "⋯" do cartão.
+    expect(document.activeElement).toBe(within(card('Vale das Brumas')).getByRole('button', { name: 'Mais ações de Vale das Brumas' }))
+  })
+
+  it('Renomear: Cancelar não muda nada; se a gravação falha, o modal continua com o aviso', async () => {
+    const { repo } = setup([VALDORA])
+    await settle()
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Outro' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(repo.worlds.get('valdora')?.name).toBe('Terras de Valdora')
+
+    repo.rename = () => Promise.reject(new Error('cota'))
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Renomear' }))
+    fireEvent.change(screen.getByLabelText('Nome do mundo'), { target: { value: 'Outro' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear' }))
+    await settle()
+    expect(screen.getByRole('dialog', { name: 'Renomear mundo' })).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível renomear o mundo. Tente de novo.')
+  })
+
+  it('Duplicar cria "<nome> (cópia)" com os pins, no topo, e a contagem sobe', async () => {
+    const { repo } = setup([VALDORA, SOMBRIO], { newId: () => 'copia' })
+    await settle()
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Duplicar' }))
+    await settle()
+    await settle()
+    expect(screen.getByTestId('world-count').textContent).toBe('3 mundos')
+    expect(names()).toEqual(['Terras de Valdora (cópia)', 'Terras de Valdora', 'Vale Sombrio'])
+    expect(repo.worlds.get('copia')).toMatchObject({ seed: 'valdora-7f3a', params: VALDORA.params, pins: VALDORA.pins })
+    expect(within(card('Terras de Valdora (cópia)')).getByTestId('world-card-caption').textContent).toBe('Editado agora · 2 pins')
+  })
+
+  it('Excluir pede confirmação: Cancelar mantém o mundo; "Excluir mundo" o tira da lista', async () => {
+    const { repo } = setup([VALDORA, SOMBRIO])
+    await settle()
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Excluir' }))
+    let dialog = screen.getByRole('dialog', { name: 'Excluir “Terras de Valdora”?' })
+    expect(dialog.textContent).toContain('O mundo e os 2 pins dele serão excluídos deste navegador. Isso não pode ser desfeito.')
+    expect(document.activeElement?.textContent).toBe('Cancelar')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(repo.worlds.has('valdora')).toBe(true)
+
+    fireEvent.click(within(openMenu('Terras de Valdora')).getByRole('menuitem', { name: 'Excluir' }))
+    dialog = screen.getByRole('dialog', { name: 'Excluir “Terras de Valdora”?' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Excluir mundo' }))
+    await settle()
+    await settle()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(repo.worlds.has('valdora')).toBe(false)
+    expect(names()).toEqual(['Vale Sombrio'])
+    expect(screen.getByTestId('world-count').textContent).toBe('1 mundo')
+    // O cartão saiu: o foco vai ao "Novo mundo".
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Novo mundo' }))
+  })
+
+  it('excluir o último mundo mostra a lista vazia', async () => {
+    setup([SOMBRIO])
+    await settle()
+    fireEvent.click(within(openMenu('Vale Sombrio')).getByRole('menuitem', { name: 'Excluir' }))
+    expect(screen.getByRole('dialog').textContent).toContain('O mundo será excluído deste navegador. Isso não pode ser desfeito.')
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir mundo' }))
+    await settle()
+    await settle()
+    expect(screen.getByText('Nenhum mundo ainda')).toBeTruthy()
   })
 })
 
