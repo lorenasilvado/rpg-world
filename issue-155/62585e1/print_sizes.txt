@@ -1,0 +1,15 @@
+commit: 62585e11ae68c21aaf78f7f7ac43546da82833f5
+ac-f4-04-carregando-esqueletos.png  1280x800  e949f0c574e942fdd507c17817c7536f9444a1f657a303ce3ad92557ed4e0d14
+ac-f4-04-lista-celular-390.png  390x844  af57216a673c475616080f1206ceea11ca62c8835f48c15699a1690f4650aa44
+ac-f4-04-lista-claro.png  1280x800  d0b5718c4edd5858fefd58facb9664e9eb7ae906bf0dc3c63a725d72a793cb3e
+ac-f4-04-lista-escuro.png  1280x800  61a6daf7746e48d92e484944d416fd41ff4e193c92a10d925946ab0e88b7037a
+ac-f4-04-lista-tablet-1024-escuro.png  1024x768  6d8016bc729671a47816a7b3bdeff4b80b0ad6f71721080aeedb427063c5697f
+ac-f4-05-lista-vazia-claro.png  1280x800  f0a14e9ae0ddf612c73cf36360550f4430d645a981bc90ee3296e9cc6ca63485
+ac-f4-05-lista-vazia-escuro.png  1280x800  beddb5749e4970e49dcea942f9624acc28af356cd16d20f59ea24655823b7dec
+ac-f4-06-assistente-sobre-a-lista.png  1280x800  50ad583f0579948da0fe1bee5f2e42a7d8f594a5a738b32f6dada2b7803560b0
+ac-f4-06-cancelar-volta-a-lista.png  1280x800  66937b82e63dbbc412415cc20bffe825aee620a972d8034ff733925fc5735d14
+ac-f4-06-cartao-abre-o-mundo.png  1280x800  ff4b243c04b9facec4bd0b61b2a0aa46f2547268e17a8d44b2773d7541cdfefc
+ac-f4-06-mundo-criado-aberto-no-editor.png  1280x800  52373f49d86877fe87594d877d4c35bd14310853d562b394d07b746c50b0a99b
+ac-f4-06-voltou-a-lista-com-o-mundo-novo.png  1280x800  8fd21aa7b8cc2fef7b3003eea397c8316e1bcba3d40a8808c7c2cf7b4a64f675
+ac-f4-12-sem-webgl2-abrir-mostra-o-aviso.png  1280x800  83e6fec8b3870ea3e88b6055700fdee8eb2a28a73b50d99eb2e1fdbfb43b5a23
+ac-f4-12-sem-webgl2-lista-funciona.png  1280x800  d8eb15db61dcf4f7a28438576d357faec5d27479e6cd39f5cc285dffc7d413d9
