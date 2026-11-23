@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import { uniqueTags } from '../features/pins/tags'
 import type { Pin } from '../persistence/types'
+import { uniqueTags } from './pinTags'
 import { DEFAULT_PIN_TYPE, NEW_PIN_NAME, pinType, type PinType } from './pinTypes'
 
 /**
