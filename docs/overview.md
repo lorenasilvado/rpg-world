@@ -131,8 +131,10 @@ pulsação; a matemática (tela ↔ (u, v), o pin sob o ponteiro, a ordem de des
 animações) fica em `layers/pinMath.ts`, TS puro, testada no Vitest. O `src/features/pins/PinTool.tsx`
 ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra o pin
 selecionado no drawer. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
-também arrasta: o aperto num pin é ouvido na captura e não chega ao canvas, então o pixi-viewport não
-faz pan; a posição do arrasto fica em `dragging` no `pinsStore`, e a lista só muda ao soltar. Delete
+também arrasta: o aperto num pin é ouvido na captura, antes do canvas, e segura o pan da câmera até
+soltar (`holdPan`, que pausa o arrasto do pixi-viewport); o evento segue para a página, e o "clique
+fora" dos popovers continua valendo. A posição do arrasto fica em `dragging` no `pinsStore`, e a lista
+só muda ao soltar; Esc no meio do arrasto devolve o pin e encerra o aperto. Delete
 exclui o selecionado, e a `PinLayer` encolhe o pin que sai (180 ms). O `e2e/pins.spec.ts` cobre criar,
 desenhar, selecionar, recarregar, arrastar, excluir e desfazer.
 
