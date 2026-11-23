@@ -10,7 +10,7 @@ const idleGenerator: WorldGenerator = { request: () => new Promise(() => {}), la
 
 function cameraWith(view = { x: 256, y: 256, width: 512, height: 512 }) {
   const camera = createCameraStore()
-  const controls = { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn() }
+  const controls = { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn(), focusOn: vi.fn() }
   camera.getState().setControls(controls)
   camera.getState().update({ zoom: 2, scale: 1, view, origin: { x: 0, y: 0 } })
   return { camera, controls }
