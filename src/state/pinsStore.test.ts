@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Pin } from '../persistence/types'
-import { clampPos, createPinsStore, nextPinType } from './pinsStore'
+import { clampPos, copyName, createPinsStore, nextPinType } from './pinsStore'
 
 const saved = (id: string, type: string): Pin => ({
   id,
@@ -106,5 +106,51 @@ describe('arrastar e excluir (AC-F3-04, AC-F3-05)', () => {
   it('clampPos prende u e v entre 0 e 1', () => {
     expect(clampPos({ u: -1, v: 2 })).toEqual({ u: 0, v: 1 })
     expect(clampPos({ u: 0.3, v: 0.7 })).toEqual({ u: 0.3, v: 0.7 })
+  })
+})
+
+describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
+  const full: Pin = {
+    id: 'a',
+    type: 'castelo',
+    name: 'Valdora',
+    pos: { u: 0.5, v: 0.5 },
+    icon: { kind: 'builtin', key: 'castelo' },
+    description: '<p>Capital</p>',
+    tags: ['capital', 'porto'],
+    fields: { rei: 'Aldo' },
+    parentId: 'reino',
+  }
+
+  it('updatePin troca a descrição e as tags; sem mudança, a lista fica a mesma', () => {
+    const pins = createPinsStore([full])
+    const before = pins.getState().pins
+    pins.getState().updatePin('a', { description: '<p>Capital</p>', tags: ['capital', 'porto'] })
+    expect(pins.getState().pins).toBe(before)
+    pins.getState().updatePin('a', { description: '<p><strong>Capital</strong></p>' })
+    pins.getState().updatePin('a', { tags: ['capital'] })
+    expect(pins.getState().pins[0]).toMatchObject({ description: '<p><strong>Capital</strong></p>', tags: ['capital'], name: 'Valdora' })
+  })
+
+  it('duplicatePin cria "<nome> (cópia)" deslocada, com a mesma ficha e o mesmo pai, e a seleciona', () => {
+    const child: Pin = { ...full, id: 'filho', name: 'Vila', parentId: 'a' }
+    const pins = createPinsStore([full, child], { newId: () => 'copia' })
+    const copy = pins.getState().duplicatePin('a', { u: 0.02, v: 0.01 })
+    expect(copy).toEqual({ ...full, id: 'copia', name: 'Valdora (cópia)', pos: { u: 0.52, v: 0.51 } })
+    expect(copy!.tags).not.toBe(full.tags)
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['a', 'filho', 'copia'])
+    expect(pins.getState().pins.filter((p) => p.parentId === 'copia')).toEqual([])
+    expect(pins.getState()).toMatchObject({ selectedId: 'copia', newPinId: null })
+  })
+
+  it('a cópia fica presa no mapa, e um pin que não existe não duplica', () => {
+    const pins = createPinsStore([{ ...full, pos: { u: 0.99, v: 0.5 } }], { newId: () => 'c' })
+    expect(pins.getState().duplicatePin('a', { u: 0.05, v: 0 })!.pos).toEqual({ u: 1, v: 0.5 })
+    expect(pins.getState().duplicatePin('nenhum', { u: 0, v: 0 })).toBeNull()
+  })
+
+  it('o nome da cópia cabe nos 80 caracteres', () => {
+    expect(copyName('x'.repeat(80))).toHaveLength(80)
+    expect(copyName('x'.repeat(80)).endsWith(' (cópia)')).toBe(true)
   })
 })

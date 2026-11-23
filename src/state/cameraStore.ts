@@ -14,6 +14,11 @@ export type CameraControls = {
   /** Põe o ponto do mundo (x, y) no centro da área livre na hora, sem mudar o zoom (dentro dos limites). */
   centerOn(x: number, y: number): void
   /**
+   * Leva o ponto do mundo (x, y) ao centro da área livre deslizando, e aproxima até `minZoom` (zoom
+   * relativo) se a câmera está mais longe (Centralizar do drawer do pin).
+   */
+  focusOn?(x: number, y: number, minZoom: number): void
+  /**
    * Segura o pan (o arrasto da câmera) enquanto `held`: um aperto num pin é do pin. O evento segue
    * para o resto da página (o "clique fora" dos popovers continua valendo).
    */

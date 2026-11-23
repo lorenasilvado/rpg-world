@@ -129,14 +129,17 @@ SVG) em `src/render/style/pinShapes.ts`, que serve ao canvas do mapa e ao `<svg>
 grupo borrado, com a escala da câmera desfeita a cada quadro (32 px na tela) e o quique e a
 pulsação; a matemática (tela ↔ (u, v), o pin sob o ponteiro, a ordem de desenho, o rótulo e as
 animações) fica em `layers/pinMath.ts`, TS puro, testada no Vitest. O `src/features/pins/PinTool.tsx`
-ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra o pin
-selecionado no drawer. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
+ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra a ficha do pin
+selecionado no drawer: o cabeçalho (o bioma sob o pin e as coordenadas vêm de `place.ts`), a descrição
+em texto rico (`DescriptionEditor.tsx`, com o TipTap e os links filtrados por `links.ts`), as tags
+(`PinTags.tsx`, com as sugestões "Usadas no mundo" de `tags.ts`) e o rodapé (Centralizar, pelo
+`focusOn` da câmera, Duplicar e Excluir). Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
 também arrasta: o aperto num pin é ouvido na captura, antes do canvas, e segura o pan da câmera até
 soltar (`holdPan`, que pausa o arrasto do pixi-viewport); o evento segue para a página, e o "clique
 fora" dos popovers continua valendo. A posição do arrasto fica em `dragging` no `pinsStore`, e a lista
 só muda ao soltar; Esc no meio do arrasto devolve o pin e encerra o aperto. Delete
 exclui o selecionado, e a `PinLayer` encolhe o pin que sai (180 ms). O `e2e/pins.spec.ts` cobre criar,
-desenhar, selecionar, recarregar, arrastar, excluir e desfazer.
+desenhar, selecionar, recarregar, arrastar, excluir e desfazer, e o `e2e/drawer.spec.ts`, a ficha do drawer.
 
 O histórico de desfazer fica no `src/state/history.ts`, um por mundo aberto: o middleware `temporal`
 do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, params }`, que ouve o

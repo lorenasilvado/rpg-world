@@ -130,6 +130,19 @@ export class MapCamera {
     this.moveTo({ cx, cy, scale: base.scale })
   }
 
+  /**
+   * Foca o ponto do mundo (cx, cy): leva-o ao centro da área livre deslizando, como o `panTo`, e
+   * aproxima até `minZoom` (zoom relativo) se a câmera está mais longe (Centralizar do drawer). Mais
+   * perto, o zoom fica.
+   */
+  focusOn(cx: number, cy: number, minZoom: number) {
+    if (!this.fitted) return
+    const base = this.tween?.to ?? this.currentView()
+    const { min, max } = zoomLimits(this.area)
+    const scale = Math.min(max, Math.max(min, base.scale, minZoom * fitView(this.area).scale))
+    this.moveTo({ cx, cy, scale })
+  }
+
   /** Segura o pan enquanto `held` (o arrasto de um pin); a pinça e a roda continuam. */
   holdPan(held: boolean) {
     if (held) {

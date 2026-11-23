@@ -101,3 +101,29 @@ body {
     animation-duration: 700ms !important;
   }
 }
+
+/* A descrição do pin (TipTap, pins.md → E2): título H2, lista e link no estilo do design system. */
+.pin-description > * + * {
+  margin-top: 8px;
+}
+.pin-description h2 {
+  font-family: var(--font-title);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+}
+.pin-description ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.pin-description li > p + p {
+  margin-top: 4px;
+}
+.pin-description a {
+  color: var(--amber-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pin-description strong {
+  font-weight: 800;
+}

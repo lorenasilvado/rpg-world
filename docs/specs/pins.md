@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-22
+updated: 2026-11-23
 ---
 
 # F3 · Pins e drawer
@@ -9,11 +9,13 @@ updated: 2026-11-22
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Hoje funcionam: Adicionar pin (P), o desenho dos 7 tipos no mapa, o hover e a seleção, com o
-> drawer mostrando o ícone, o nome editável e o tipo; arrastar um pin; excluir o selecionado com a
-> tecla Delete, com o toast "Pin excluído" e Desfazer; e desfazer e refazer as mudanças nos pins
-> (ver [mundos.md](mundos.md)). O resto (o rodapé do drawer com Excluir, a ficha completa,
-> agrupamento, busca) vem do material de design e do PRD e ainda não existe.
+> Hoje funcionam: Adicionar pin (P), o desenho dos 7 tipos no mapa, o hover e a seleção; o drawer
+> com o cabeçalho (ícone, nome editável, tipo, bioma e coordenadas), a aba Descrição (texto rico e
+> tags) e o rodapé (Centralizar, Duplicar, Excluir); arrastar um pin; excluir o selecionado com a
+> tecla Delete ou pelo rodapé, com o toast "Pin excluído" e Desfazer; e desfazer e refazer as
+> mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa, as abas Detalhes e
+> Conexões, agrupamento, busca) vem do material de design e do PRD e ainda não existe: a área da
+> capa aparece com o botão desabilitado, e as duas abas, vazias.
 
 ## Resumo
 
@@ -33,10 +35,19 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
 - Drawer à direita (400 px, altura total), com botão fechar no topo e área "Adicionar imagem de capa
   (16:9)".
 - Cabeçalho: ícone do pin, nome (ex.: "Valdora"), etiqueta do tipo (ex.: "Cidade"), bioma e
-  coordenadas (ex.: "Colina · x 710, y 580"). O bioma é preenchido automaticamente.
-- Abas: Descrição (ativa), Detalhes, Conexões.
-- Descrição: editor de texto com negrito, itálico, título H2, lista e link.
-- Tags: chips removíveis (ex.: capital, porto), campo "+ tag" e sugestões "Usadas no mundo".
+  coordenadas (ex.: "Colina · x 710, y 580"). O bioma é preenchido automaticamente: o da célula sob
+  o pin no mapa exibido (sem mapa ainda, só as coordenadas). As coordenadas vão de 0 a 1024 nos
+  dois eixos.
+- Abas: Descrição (ativa), Detalhes, Conexões. As setas, Home e End mudam de aba.
+- Descrição: editor de texto com negrito, itálico, título H2, lista e link, pela barra do editor ou
+  por Ctrl+B e Ctrl+I. O link abre uma linha com o endereço: Enter aplica (com texto selecionado,
+  ele vira o link; sem, o endereço entra como texto com o link), vazio tira o link, Esc cancela. Só
+  valem http, https e mailto; sem esquema, vira https (um e-mail solto vira mailto); outro endereço
+  mostra "Use um endereço http, https ou mailto.".
+- Tags: chips removíveis (ex.: capital, porto), campo "+ tag" (Enter, vírgula ou sair do campo
+  adiciona) e sugestões "Usadas no mundo": as tags dos outros pins que este não tem, das mais usadas
+  às menos, até 6 (sem nenhuma, a linha não aparece). Uma tag tem até 32 caracteres; repetida (sem
+  diferenciar maiúsculas) não entra.
 - Rodapé fixo: Centralizar, Duplicar, Excluir (botão destrutivo vermelho).
 - Aba Detalhes: tipo, ícone (biblioteca embutida ou imagem enviada), pin pai e campos livres
   chave/valor.
@@ -76,8 +87,10 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
 | Ocultar por tipo | Esconde os pins daquele tipo |
 | Excluir (Delete ou Backspace, a tecla "delete" do Mac) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá a tecla não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
-| Duplicar | Cria uma cópia ao lado do pin, "<nome> (cópia)", com a mesma ficha e sem os filhos |
-| Centralizar | Centraliza a câmera no pin |
+| Editar a descrição ou as tags | Muda o pin na hora e é salvo com o mundo. As teclas seguidas na descrição viram um passo do histórico, até sair do editor; cada tag adicionada ou removida é um passo. Fora do foco, o editor acompanha a descrição do pin (desfazer e refazer) |
+| Duplicar (rodapé) | Cria uma cópia ao lado do pin (36 px à direita e 12 px abaixo na tela, no zoom atual; perto da borda, do outro lado), "<nome> (cópia)", com a mesma ficha (tipo, ícone, descrição, tags, campos e o mesmo pai) e sem os filhos; a cópia fica selecionada, num passo do histórico |
+| Centralizar (rodapé) | A câmera desliza (350 ms) até o pin ficar no centro da área livre, aproximando até o zoom 1,6× se estiver mais longe (mais perto, o zoom fica). Abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer, e o pin continua selecionado |
+| Excluir (rodapé) | Exclui o pin como a tecla Delete, com o toast "Pin excluído" e Desfazer; o botão vale também no painel sobreposto (abaixo de 768 px) |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
 | Clicar num grupo | Zoom no grupo |
 | Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. Esc com Adicionar pin e sem pin selecionado volta para Navegar |

@@ -57,7 +57,7 @@ import { useTheme } from './useTheme'
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
  * um pin abre o drawer sobreposto, e fechá-lo (Esc, o botão ou o scrim) tira a seleção.
  *
- * Delete exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
+ * Delete, ou Excluir no rodapé do drawer, exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
  * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito). Com o toast de erro da
  * geração à vista, ele fica empilhado acima dele.
  *
@@ -414,7 +414,14 @@ export function EditorLayout({
             <X size={20} aria-hidden="true" />
           </IconButton>
         </div>
-        <PinDrawer pins={pins} />
+        <PinDrawer
+          pins={pins}
+          world={world}
+          camera={camera}
+          onDelete={deletePin}
+          // Abaixo de 768 px, o painel sobreposto cobre o mapa: fecha para a câmera aparecer (o pin continua selecionado).
+          onCentered={() => setDrawerOpen(false)}
+        />
       </aside>
     </div>
   )

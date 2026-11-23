@@ -30,7 +30,7 @@ function setup({ onDelete }: { onDelete?: (id: string) => void } = {}) {
         <canvas data-testid="canvas" />
       </main>
       <aside>
-        <PinDrawer pins={pins} />
+        <PinDrawer pins={pins} world={world} camera={camera} onDelete={onDelete ?? (() => {})} />
       </aside>
       <MeasureTool ui={ui} world={world} camera={camera} disabled={false} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={false} onDelete={onDelete} />
