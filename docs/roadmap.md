@@ -134,7 +134,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | done | specs/pins.md | #188 |
 | 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | done | specs/pins.md | #192 |
 | 42 | #199 | [bug] E2E do assistente: o print do mapa leva os controles por cima e às vezes difere entre as abas | done | specs/geracao-terreno.md | #200 |
-| 43 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | doing | specs/pins.md | |
+| 43 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | done | specs/pins.md | |
 | 44 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | todo | specs/navegacao.md | |
 | 45 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | todo | specs/pins.md | |
 | 46 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
