@@ -92,7 +92,7 @@ describe('drawer do pin: tags (AC-F3-08)', () => {
 describe('drawer do pin: rodapé (AC-F3-05, AC-F3-09)', () => {
   it('Centralizar foca a câmera no pin, aproximando até 1,6×', () => {
     const { focusOn, onCentered } = setup()
-    fireEvent.click(screen.getByRole('button', { name: 'Centralizar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Centralizar no pin' }))
     expect(focusOn).toHaveBeenCalledWith(768, 256, CENTER_PIN_ZOOM)
     expect(onCentered).toHaveBeenCalled()
   })

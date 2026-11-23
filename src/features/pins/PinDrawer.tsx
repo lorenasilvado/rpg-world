@@ -209,7 +209,7 @@ function PinCard({
       </div>
 
       <footer className="flex shrink-0 gap-2 border-t border-line px-4 py-3">
-        <FooterButton onClick={center}>
+        <FooterButton label="Centralizar no pin" onClick={center}>
           <LocateFixed size={16} aria-hidden="true" />
           Centralizar
         </FooterButton>
@@ -242,10 +242,26 @@ function moveTab(e: KeyboardEvent<HTMLDivElement>, current: TabId, setTab: (id: 
   requestAnimationFrame(() => tablist.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus())
 }
 
-function FooterButton({ destructive = false, onClick, children }: { destructive?: boolean; onClick: () => void; children: ReactNode }) {
+/**
+ * Botão do rodapé. `label` troca o nome lido pelo leitor de tela quando o texto à vista não basta
+ * (Centralizar, que no controle de zoom é o do mapa inteiro).
+ */
+function FooterButton({
+  label,
+  destructive = false,
+  onClick,
+  children,
+}: {
+  label?: string
+  destructive?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
   return (
     <button
       type="button"
+      aria-label={label}
+      title={label}
       onClick={onClick}
       className={[
         'flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-control px-2 text-[13px] font-bold',

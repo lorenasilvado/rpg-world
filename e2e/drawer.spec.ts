@@ -116,6 +116,8 @@ test('o cabeçalho mostra ícone, nome, tipo, bioma e coordenadas; nome, descri�
   expect(saved.description).toContain('<strong>Fundada</strong> no ano 12.')
   expect(saved.description).toMatch(/<ul><li><p>Mercado<\/p><\/li><li><p><em>Porto<\/em><\/p><\/li><\/ul>/)
   expect(saved.description).toContain('href="https://exemplo.com/valdora"')
+  // O parágrafo vazio que o editor deixa no fim não é salvo.
+  expect(saved.description).not.toMatch(/<p><\/p>$/)
 
   await page.reload()
   await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
@@ -136,7 +138,7 @@ test('Centralizar leva a câmera ao pin, aproximando até 1,6×; Duplicar cria a
   await clickPin(page, 0.45, 0.5)
   await expect(map(page)).toHaveAttribute('data-zoom', '1.000')
 
-  await drawer(page).getByRole('button', { name: 'Centralizar' }).click()
+  await drawer(page).getByRole('button', { name: 'Centralizar no pin' }).click()
   await expect(map(page)).toHaveAttribute('data-zoom', '1.600')
   // A área livre fica entre a sidebar (320) e o drawer (400): o centro é (680, 450).
   await expect
@@ -158,6 +160,13 @@ test('Centralizar leva a câmera ao pin, aproximando até 1,6×; Duplicar cria a
   const copied = await screenOf(page, copy.pos.u, copy.pos.v)
   expect(Math.round(copied.x - original.x)).toBe(36)
   expect(Math.round(copied.y - original.y)).toBe(12)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', copy.id)
+  // A cópia da cópia conta.
+  await drawer(page).getByRole('button', { name: 'Duplicar' }).click()
+  await expect(page.getByRole('textbox', { name: 'Nome do pin' })).toHaveValue('Valdora (cópia 2)')
+  await page.keyboard.press('Control+Z')
+  await expect(map(page)).toHaveAttribute('data-pins', '3')
+  await clickPin(page, copy.pos.u, copy.pos.v)
   await expect(map(page)).toHaveAttribute('data-pin-selected', copy.id)
   await info.attach('duplicado.png', { body: await page.screenshot(), contentType: 'image/png' })
 
@@ -203,7 +212,7 @@ test('o drawer é navegável só com o teclado: nome, abas, formatação, descri
   await expect(page.getByRole('button', { name: 'Adicionar a tag porto' })).toBeFocused()
   await page.keyboard.press('Tab')
   await page.keyboard.press('Tab')
-  await expect(drawer(page).getByRole('button', { name: 'Centralizar' })).toBeFocused()
+  await expect(drawer(page).getByRole('button', { name: 'Centralizar no pin' })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(map(page)).toHaveAttribute('data-zoom', '1.600')
   expect((await savedPins(page))[0].description).toBe('<p>Capital do reino Fim.</p>')
@@ -228,11 +237,17 @@ test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser c
   await expect(page.getByTestId('pin-drawer-place')).toBeVisible()
   await expect(description(page)).toHaveText('Capital do reino')
   await expect(page.getByTestId('pin-tag')).toHaveText(['capital'])
-  for (const label of ['Centralizar', 'Duplicar', 'Excluir']) await expect(drawer(page).getByRole('button', { name: label })).toBeInViewport()
+  // Brumado não tem descrição: o editor mostra o convite.
+  await page.getByRole('button', { name: 'Fechar detalhes' }).click()
+  await clickPin(page, 0.55, 0.5)
+  await expect(description(page).locator('p.is-editor-empty')).toHaveAttribute('data-placeholder', 'Escreva sobre este lugar…')
+  await page.getByRole('button', { name: 'Fechar detalhes' }).click()
+  await clickPin(page, 0.45, 0.5)
+  for (const label of ['Centralizar no pin', 'Duplicar', 'Excluir']) await expect(drawer(page).getByRole('button', { name: label })).toBeInViewport()
   await info.attach('drawer-390.png', { body: await page.screenshot(), contentType: 'image/png' })
 
   // Centralizar fecha o painel para o mapa aparecer; o pin continua selecionado.
-  await drawer(page).getByRole('button', { name: 'Centralizar' }).click()
+  await drawer(page).getByRole('button', { name: 'Centralizar no pin' }).click()
   await expect(panel).toHaveAttribute('data-open', 'false')
   await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-valdora')
   await expect(map(page)).toHaveAttribute('data-zoom', '1.600')

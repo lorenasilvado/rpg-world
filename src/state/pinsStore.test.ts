@@ -149,6 +149,13 @@ describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
     expect(pins.getState().duplicatePin('nenhum', { u: 0, v: 0 })).toBeNull()
   })
 
+  it('a cópia de uma cópia conta: "(cópia 2)", "(cópia 3)"', () => {
+    expect(copyName('Valdora')).toBe('Valdora (cópia)')
+    expect(copyName('Valdora (cópia)')).toBe('Valdora (cópia 2)')
+    expect(copyName('Valdora (cópia 2)')).toBe('Valdora (cópia 3)')
+    expect(copyName('Valdora (cópia) velha')).toBe('Valdora (cópia) velha (cópia)')
+  })
+
   it('o nome da cópia cabe nos 80 caracteres', () => {
     expect(copyName('x'.repeat(80))).toHaveLength(80)
     expect(copyName('x'.repeat(80)).endsWith(' (cópia)')).toBe(true)

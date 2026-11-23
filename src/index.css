@@ -127,3 +127,10 @@ body {
 .pin-description strong {
   font-weight: 800;
 }
+.pin-description p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--ink-3);
+  pointer-events: none;
+}

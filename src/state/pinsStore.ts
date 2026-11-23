@@ -65,12 +65,19 @@ export type PinsStore = StoreApi<PinsState>
 /** O que o drawer edita na ficha do pin, além do nome. */
 export type PinPatch = Partial<Pick<Pin, 'description' | 'tags'>>
 
-/** O sufixo do nome da cópia de um pin. */
-export const COPY_SUFFIX = ' (cópia)'
+/** O fim do nome de uma cópia: " (cópia)" ou " (cópia N)". */
+const COPY_SUFFIX = / \(cópia(?: (\d+))?\)$/
 
-/** O nome da cópia: "<nome> (cópia)", cortado para caber nos 80 caracteres do nome. */
+/**
+ * O nome da cópia (AC-F3-09): "<nome> (cópia)"; a cópia de uma cópia conta: "(cópia 2)",
+ * "(cópia 3)"… Cortado para caber nos 80 caracteres do nome.
+ */
 export function copyName(name: string, max = 80): string {
-  return name.slice(0, max - COPY_SUFFIX.length).trimEnd() + COPY_SUFFIX
+  const match = COPY_SUFFIX.exec(name)
+  const base = match ? name.slice(0, match.index) : name
+  const n = match ? (match[1] ? Number(match[1]) : 1) + 1 : 1
+  const suffix = n === 1 ? ' (cópia)' : ` (cópia ${n})`
+  return base.slice(0, max - suffix.length).trimEnd() + suffix
 }
 
 /** O tipo de um pin novo: o do último pin do mundo, ou Cidade no primeiro. */

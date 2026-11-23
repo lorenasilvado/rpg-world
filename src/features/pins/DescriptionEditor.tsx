@@ -1,17 +1,15 @@
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
+import { Placeholder } from '@tiptap/extensions'
 import StarterKit from '@tiptap/starter-kit'
 import { Bold, Heading2, Italic, Link as LinkIcon, List } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { DESCRIPTION_PLACEHOLDER, descriptionHtml } from './descriptionHtml'
 import { normalizeLink } from './links'
-
-/** O HTML salvo de uma descrição vazia: nada (e não um parágrafo vazio). */
-function descriptionHtml(editor: Editor): string {
-  return editor.isEmpty ? '' : editor.getHTML()
-}
 
 /**
  * A descrição do pin (pins.md → E2, AC-F3-07): texto rico com o TipTap (ADR 0001), com negrito,
  * itálico, título H2, lista e link, pela barra do editor ou pelos atalhos do TipTap (Ctrl+B, Ctrl+I).
+ * Vazia, mostra o `DESCRIPTION_PLACEHOLDER`.
  * O HTML vai para o pin a cada mudança (`onChange`); uma descrição vazia fica `''`. Fora do foco, o
  * editor acompanha a descrição do pin (desfazer e refazer); ao sair dele, `onBlur` encerra o passo
  * do histórico. O link abre uma linha com o endereço: Enter aplica, Esc cancela, e vazio tira o link.
@@ -44,6 +42,7 @@ export function DescriptionEditor({
         underline: false,
         link: { openOnClick: false, autolink: true, defaultProtocol: 'https', protocols: ['http', 'https', 'mailto'] },
       }),
+      Placeholder.configure({ placeholder: DESCRIPTION_PLACEHOLDER }),
     ],
     content: value,
     editorProps: {
