@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { PIN_DROP_MS, PIN_PULSE_MS, drawOrder, dropFrame, pinAt, pinToScreen, pinToWorld, pulseFrame, screenToPin, showLabel, worldToPin } from './pinMath'
+import {
+  PIN_DROP_MS,
+  PIN_PULSE_MS,
+  PIN_SHRINK_MS,
+  drawOrder,
+  dropFrame,
+  pinAt,
+  pinToScreen,
+  pinToWorld,
+  pulseFrame,
+  screenToPin,
+  screenToPinClamped,
+  showLabel,
+  shrinkFrame,
+  worldToPin,
+} from './pinMath'
 
 // A câmera da interface: 2 px por unidade do mundo, a área livre começa em (320, 0) da área do mapa,
 // e à vista está o mundo a partir de (100, 200).
@@ -90,5 +105,35 @@ describe('animações', () => {
     expect(late.alpha).toBeLessThan(0.01)
     expect(pulseFrame(PIN_PULSE_MS)).toEqual(pulseFrame(0))
     expect(pulseFrame(PIN_PULSE_MS * 0.5).scale).toBeGreaterThan(1.25)
+  })
+})
+
+describe('arrastar e excluir (AC-F3-04, AC-F3-05)', () => {
+  const cam = { scale: 2, view: { x: 100, y: 200 }, origin: { x: 320, y: 0 } }
+
+  it('a posição do arrasto fica presa entre 0 e 1 fora do mapa', () => {
+    const inside = screenToPinClamped(320 + 412 * 2, 312 * 2, cam)
+    expect(inside).toEqual({ u: 512 / 1024, v: 512 / 1024 })
+    expect(screenToPinClamped(0, -1000, cam)).toEqual({ u: 0, v: 0 })
+    expect(screenToPinClamped(99_999, 99_999, cam)).toEqual({ u: 1, v: 1 })
+  })
+
+  it('o pin arrastado é desenhado por cima de todos, até do selecionado', () => {
+    const pins = [
+      { id: 'a', pos: { u: 0.1, v: 0.9 } },
+      { id: 'b', pos: { u: 0.2, v: 0.1 } },
+      { id: 'c', pos: { u: 0.3, v: 0.5 } },
+    ]
+    expect(drawOrder(pins, 'a', 'c', 'b').map((p) => p.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('o pin excluído encolhe até sumir em 180 ms (ease-in)', () => {
+    expect(shrinkFrame(0)).toEqual({ scale: 1, alpha: 1 })
+    const mid = shrinkFrame(PIN_SHRINK_MS / 2)
+    // ease-in: na metade do tempo, encolheu menos da metade.
+    expect(mid.scale).toBeGreaterThan(0.5)
+    expect(mid.scale).toBeLessThan(1)
+    expect(shrinkFrame(PIN_SHRINK_MS)).toEqual({ scale: 0, alpha: 0 })
+    expect(shrinkFrame(PIN_SHRINK_MS * 3)).toEqual({ scale: 0, alpha: 0 })
   })
 })

@@ -29,7 +29,8 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, 
  * O renderer publica a câmera no `camera`, e o `MapView` registra nele os comandos do renderer que
  * guardou (o minimapa e o controle de zoom leem e comandam por ele). Com a ferramenta Medir distância
  * (`tool` do `ui`) e com Adicionar pin, o cursor sobre o mapa é a cruz, e a ferramenta fica em
- * `data-tool`. O renderer desenha os pins do `pins`; com o mouse sobre um pin, o cursor é a mãozinha.
+ * `data-tool`. O renderer desenha os pins do `pins`; com o mouse sobre um pin, o cursor é a mãozinha, e
+ * arrastando um pin, a mão fechada.
  */
 export function MapView({
   world,
@@ -50,6 +51,7 @@ export function MapView({
   const blurred = useStore(world, isGenerating)
   const tool = useStore(ui, (s) => s.tool)
   const overPin = useStore(pins, (s) => s.hoveredId !== null)
+  const draggingPin = useStore(pins, (s) => s.dragging !== null)
 
   useEffect(() => {
     const el = host.current
@@ -88,7 +90,7 @@ export function MapView({
       data-tool={tool}
       aria-busy={blurred}
       inert={inert}
-      className={`absolute inset-0 bg-map-canvas ${overPin ? 'cursor-pointer' : tool === 'measure' || tool === 'pin' ? 'cursor-crosshair' : ''}`}
+      className={`absolute inset-0 bg-map-canvas ${draggingPin ? 'cursor-grabbing' : overPin ? 'cursor-pointer' : tool === 'measure' || tool === 'pin' ? 'cursor-crosshair' : ''}`}
     />
   )
 }

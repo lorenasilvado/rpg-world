@@ -14,7 +14,7 @@ import { typeChipColors } from './typeChip'
  *
  * O pin recém-criado (`newPinId`) abre com o nome em edição (o campo com o foco e o texto
  * selecionado). O nome muda a cada tecla; um nome vazio não fica: ao sair do campo, volta o último
- * nome. Enter sai do campo; Esc, nele, fecha o drawer. O botão fechar (a partir de 768 px; abaixo,
+ * nome. Fora do foco, o campo acompanha o nome do pin (desfazer e refazer). Enter sai do campo; Esc, nele, fecha o drawer. O botão fechar (a partir de 768 px; abaixo,
  * o painel sobreposto tem o seu) também fecha.
  */
 export function PinDrawer({ pins }: { pins: PinsStore }) {
@@ -36,6 +36,12 @@ function PinCard({ pin, pins, editName }: { pin: Pin; pins: PinsStore; editName:
     input.current?.focus({ preventScroll: true })
     input.current?.select()
   }, [editName])
+
+  // O nome mudou fora do campo (desfazer ou refazer, pela barra ou por Ctrl+Z): o campo acompanha.
+  // Com o foco no campo, o texto é o que a pessoa digita (o nome salvo vem sem os espaços das pontas).
+  useEffect(() => {
+    if (document.activeElement !== input.current) setDraft(pin.name)
+  }, [pin.name])
 
   const close = () => pins.getState().select(null)
 
@@ -69,7 +75,10 @@ function PinCard({ pin, pins, editName }: { pin: Pin; pins: PinsStore; editName:
               const name = e.target.value.trim()
               if (name) pins.getState().rename(pin.id, name)
             }}
-            onBlur={() => setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)}
+            onBlur={() => {
+              setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)
+              pins.getState().endNameEdit()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()

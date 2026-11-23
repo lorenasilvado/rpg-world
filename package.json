@@ -24,6 +24,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "simplex-noise": "4.0.3",
+    "zundo": "^2.3.0",
     "zustand": "^5.1.0"
   },
   "devDependencies": {

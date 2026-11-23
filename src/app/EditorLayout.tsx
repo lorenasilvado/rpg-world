@@ -1,19 +1,21 @@
 import { CircleHelp, Compass, Download, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
-import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, TOAST_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { MapToolbar } from '../features/map/MapToolbar'
 import { MeasureTool } from '../features/map/MeasureTool'
 import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
 import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
+import { PinDeletedToast } from '../features/pins/PinDeletedToast'
 import { PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
 import { createCameraStore } from '../state/cameraStore'
+import type { WorldHistory } from '../state/history'
 import type { PinsStore } from '../state/pinsStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
@@ -55,8 +57,17 @@ import { useTheme } from './useTheme'
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
  * um pin abre o drawer sobreposto, e fechá-lo (Esc, o botão ou o scrim) tira a seleção.
  *
- * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar, Desfazer,
- * Refazer e Exportar ficam desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
+ * Delete exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
+ * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito). Com o toast de erro da
+ * geração à vista, ele fica empilhado acima dele.
+ *
+ * Desfazer e Refazer (AC-F4-08) usam o histórico do mundo (`history`), pelos botões da barra (cada um
+ * habilitado quando há o que desfazer ou refazer) e por Ctrl+Z e Ctrl+Shift+Z (⌘ no Mac). As teclas
+ * não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel
+ * sobreposto aberto nem durante o arrasto de um pin ou de um slider.
+ *
+ * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar e Exportar ficam
+ * desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
@@ -65,6 +76,7 @@ export function EditorLayout({
   world,
   pins,
   ui,
+  history,
   save,
   createRenderer,
   onBack,
@@ -72,6 +84,8 @@ export function EditorLayout({
   world: WorldStore
   pins: PinsStore
   ui: UiStore
+  /** O histórico de desfazer e refazer do mundo (`createWorldHistory`). */
+  history: WorldHistory
   /** O status do salvamento automático (`createAutosave`); sem ele (testes), não há indicador. */
   save?: SaveStore
   createRenderer?: CreateMapRenderer
@@ -80,6 +94,8 @@ export function EditorLayout({
 }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
+  // O toast de erro da geração à vista: o "Pin excluído" fica acima dele, sem cobri-lo.
+  const errorToast = generationStatus === 'error'
   const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -108,6 +124,39 @@ export function EditorLayout({
   const drawerClose = useRef<HTMLButtonElement>(null)
   usePanelFocus(sidebarOpen, sidebarClose, sidebarOpener)
   usePanelFocus(drawerOpen, drawerClose, drawerOpener)
+  const canUndo = useStore(history.temporal, (s) => s.pastStates.length > 0)
+  const canRedo = useStore(history.temporal, (s) => s.futureStates.length > 0)
+  /** O toast "Pin excluído": a versão do histórico logo depois da exclusão (`null`: fechado). */
+  const [deletedAt, setDeletedAt] = useState<number | null>(null)
+  const closeDeleted = useCallback(() => setDeletedAt(null), [])
+  const deletePin = useCallback(
+    (id: string) => {
+      if (!pins.getState().removePin(id)) return
+      setDeletedAt(history.version.getState().value)
+    },
+    [pins, history],
+  )
+
+  // Outra mudança no histórico (passo novo, desfeito ou refeito) fecha o toast "Pin excluído".
+  useEffect(
+    () => history.version.subscribe(({ value }) => setDeletedAt((at) => (at !== null && at !== value ? null : at))),
+    [history],
+  )
+
+  useEffect(() => {
+    if (anyOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'z') return
+      if (e.defaultPrevented || isTextField(e.target) || inDialog(e.target)) return
+      e.preventDefault()
+      // No meio de um arrasto (de um pin ou de um slider), o histórico espera o soltar.
+      if (pins.getState().dragging || world.getState().paramsDragging) return
+      if (e.shiftKey) history.redo()
+      else history.undo()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyOpen, history, pins, world])
 
   const closeAll = () => {
     setSidebarOpen(false)
@@ -188,7 +237,7 @@ export function EditorLayout({
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
       <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
-      <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} />
+      <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
 
       <div
         ref={bottomBar}
@@ -228,6 +277,14 @@ export function EditorLayout({
           <ZoomControls world={world} camera={camera} areaWidth={barWidth} />
         </div>
         <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} right={layout.toastRight} />
+        <PinDeletedToast
+          open={deletedAt}
+          onUndo={() => history.undo()}
+          onClose={closeDeleted}
+          beside={layout.toastBeside}
+          bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0)}
+          right={layout.toastRight}
+        />
       </div>
 
       {anyOpen && (
@@ -311,10 +368,16 @@ export function EditorLayout({
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
         <SearchButton label={searchLabel} />
-        <IconButton label="Desfazer" title="Desfazer (Ctrl+Z)" disabled>
+        <IconButton label="Desfazer" title="Desfazer (Ctrl+Z)" keyShortcuts="Control+Z" disabled={!canUndo} onClick={() => history.undo()}>
           <Undo2 size={20} aria-hidden="true" />
         </IconButton>
-        <IconButton label="Refazer" title="Refazer (Ctrl+Shift+Z)" disabled>
+        <IconButton
+          label="Refazer"
+          title="Refazer (Ctrl+Shift+Z)"
+          keyShortcuts="Control+Shift+Z"
+          disabled={!canRedo}
+          onClick={() => history.redo()}
+        >
           <Redo2 size={20} aria-hidden="true" />
         </IconButton>
         <IconButton label="Exportar" disabled>

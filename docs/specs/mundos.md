@@ -19,8 +19,9 @@ o comportamento atualiza esta spec.
 > sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
 > parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página); com
 > "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. No menu do
-> erro, "Exportar .json" fica desabilitado até a exportação do mundo existir. Os pins ainda não
-> existem: o mundo é salvo com a lista de pins e de estradas vazia. O resto vem do material de
+> erro, "Exportar .json" fica desabilitado até a exportação do mundo existir. As estradas ainda não
+> existem: o mundo é salvo com a lista de estradas vazia. Desfazer e Refazer (botões da barra,
+> Ctrl+Z e Ctrl+Shift+Z) cobrem os pins e os parâmetros de geração. O resto vem do material de
 > design e do PRD.
 
 ## Resumo
@@ -118,7 +119,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
 | Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
-| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z) | Desfaz ou refaz mudanças em pins, estradas e parâmetros de geração |
+| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, renomear) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, até o campo perder o foco ou a seleção mudar (depois disso, editar o nome de novo é outro passo). Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
 
 ## Regras
 
@@ -127,7 +128,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 - Imagens enviadas ficam no IndexedDB como blobs.
 - O JSON importado é validado por schema; um JSON exportado reimporta idêntico. As imagens enviadas
   vão embutidas no JSON (base64).
-- Desfazer e refazer usam um histórico único por mundo.
+- Desfazer e refazer usam um histórico único por mundo, que vale enquanto o mundo está aberto
+  (voltar à lista o descarta; ele não é salvo) e guarda os últimos 100 passos.
 - O mundo guarda `generatorVersion`, para ser regerado igual.
 
 ## Critérios de aceite vigentes

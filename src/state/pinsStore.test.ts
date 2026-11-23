@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Pin } from '../persistence/types'
-import { createPinsStore, nextPinType } from './pinsStore'
+import { clampPos, createPinsStore, nextPinType } from './pinsStore'
 
 const saved = (id: string, type: string): Pin => ({
   id,
@@ -67,5 +67,44 @@ describe('pinsStore (AC-F3-01, AC-F3-03)', () => {
     pins.getState().setHovered('a')
     expect(pins.getState().hoveredId).toBe('a')
     expect(pins.getState().pins).toBe(after)
+  })
+})
+
+describe('arrastar e excluir (AC-F3-04, AC-F3-05)', () => {
+  it('o arrasto guarda a posição presa entre 0 e 1 e só muda a lista ao soltar', () => {
+    const pins = createPinsStore([saved('a', 'vila')])
+    const before = pins.getState().pins
+    pins.getState().dragTo('a', { u: 1.4, v: -0.2 })
+    expect(pins.getState().dragging).toEqual({ id: 'a', pos: { u: 1, v: 0 } })
+    expect(pins.getState().pins).toBe(before)
+    pins.getState().endDrag(true)
+    expect(pins.getState().pins[0]).toEqual({ ...before[0], pos: { u: 1, v: 0 } })
+    expect(pins.getState().dragging).toBeNull()
+  })
+
+  it('soltar sem confirmar devolve o pin; arrastar um pin que não existe não faz nada', () => {
+    const pins = createPinsStore([saved('a', 'vila')])
+    const before = pins.getState().pins
+    pins.getState().dragTo('a', { u: 0.1, v: 0.1 })
+    pins.getState().endDrag(false)
+    expect(pins.getState().pins).toBe(before)
+    pins.getState().dragTo('x', { u: 0.1, v: 0.1 })
+    expect(pins.getState().dragging).toBeNull()
+  })
+
+  it('excluir tira o pin da lista e da seleção, do hover e do pin novo, e devolve o pin', () => {
+    const pins = createPinsStore([saved('a', 'vila')], { newId: () => 'n' })
+    pins.getState().addPin({ u: 0.2, v: 0.2 })
+    pins.getState().setHovered('n')
+    const n = pins.getState().pins[1]
+    expect(pins.getState().removePin('n')).toBe(n)
+    expect(pins.getState()).toMatchObject({ selectedId: null, hoveredId: null, newPinId: null })
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['a'])
+    expect(pins.getState().removePin('n')).toBeNull()
+  })
+
+  it('clampPos prende u e v entre 0 e 1', () => {
+    expect(clampPos({ u: -1, v: 2 })).toEqual({ u: 0, v: 1 })
+    expect(clampPos({ u: 0.3, v: 0.7 })).toEqual({ u: 0.3, v: 0.7 })
   })
 })

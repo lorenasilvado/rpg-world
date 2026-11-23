@@ -1,6 +1,6 @@
 import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
-import { createPinsStore, type PinsStore } from '../state/pinsStore'
+import { createPinsStore, type PinsState, type PinsStore } from '../state/pinsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
@@ -137,7 +137,7 @@ export async function createMapRenderer(
     if (host.dataset.zoom !== z) host.dataset.zoom = z
     if (pinLayer) {
       pinLayer.frame(t.scale, zoom, performance.now(), reducedMotion())
-      writePinState(host, pinLayer, pins.getState().selectedId, t.scale)
+      writePinState(host, pinLayer, pins.getState(), t.scale)
     }
   })
   app.stage.addChild(camera.viewport)
@@ -222,6 +222,7 @@ export async function createMapRenderer(
       zoomOut: () => camera.zoomBy(1 / KEY_ZOOM_STEP),
       center: () => camera.center(),
       centerOn: (x, y) => camera.centerOn(x, y),
+      holdPan: (held) => camera.holdPan(held),
     },
     destroy() {
       unsubscribe()
@@ -245,19 +246,26 @@ export async function createMapRenderer(
       delete host.dataset.pins
       delete host.dataset.pinLabels
       delete host.dataset.pinSelected
+      delete host.dataset.pinDragging
+      delete host.dataset.pinsLeaving
       delete host.dataset.pinSize
     },
   }
 }
 
-/** Escreve no `host`, para os testes, os pins no mapa, os rótulos à vista, o selecionado e a largura de um pin na tela. */
-function writePinState(host: HTMLElement, layer: PinLayer, selectedId: string | null, scale: number) {
-  const set = (key: 'pins' | 'pinLabels' | 'pinSelected' | 'pinSize', value: string) => {
+/**
+ * Escreve no `host`, para os testes, os pins no mapa, os rótulos à vista, o selecionado, o arrastado,
+ * os excluídos que ainda encolhem e a largura de um pin na tela.
+ */
+function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState, 'selectedId' | 'dragging'>, scale: number) {
+  const set = (key: 'pins' | 'pinLabels' | 'pinSelected' | 'pinDragging' | 'pinsLeaving' | 'pinSize', value: string) => {
     if (host.dataset[key] !== value) host.dataset[key] = value
   }
   set('pins', String(layer.count))
   set('pinLabels', String(layer.labelCount))
-  set('pinSelected', selectedId ?? '')
+  set('pinSelected', state.selectedId ?? '')
+  set('pinDragging', state.dragging?.id ?? '')
+  set('pinsLeaving', String(layer.leavingCount))
   const size = layer.screenWidth(scale)
   set('pinSize', size === null ? '' : size.toFixed(1))
 }

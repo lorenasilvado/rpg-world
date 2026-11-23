@@ -1,6 +1,11 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { DEFAULT_WORLD_PARAMS } from './core'
+import { BAR_GAP, TOAST_HEIGHT, ZOOM_BAR_HEIGHT } from './features/map/bottomBarLayout'
+import { PIN_DELETED_TOAST_MS } from './features/pins/PinDeletedToast'
+import type { Pin } from './persistence/types'
+import { createPinsStore } from './state/pinsStore'
 import type { CreateMapRenderer } from './app/MapView'
 import { createWorldStore, type WorldGenerator } from './state/worldStore'
 
@@ -99,7 +104,7 @@ describe('Layout vazio do editor', () => {
 })
 
 describe('Barras do editor e Ajuda', () => {
-  it('a barra superior tem Buscar, Desfazer, Refazer e Exportar desabilitados, e tema e Ajuda ativos (AC-F2-10)', () => {
+  it('a barra superior tem Buscar e Exportar desabilitados, Desfazer e Refazer sem o que fazer, e tema e Ajuda ativos (AC-F2-10)', () => {
     render(<App world={world()} createRenderer={noRenderer} />)
     const actions = screen.getByTestId('actions')
     for (const name of ['Buscar', 'Desfazer', 'Refazer', 'Exportar']) {
@@ -117,7 +122,7 @@ describe('Barras do editor e Ajuda', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ajuda' }))
     const dialog = screen.getByRole('dialog', { name: 'Atalhos de teclado' })
     const rows = Array.from(dialog.querySelectorAll('dt')).map((dt) => `${dt.textContent} ${dt.nextElementSibling?.textContent}`)
-    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
+    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
   })
@@ -161,5 +166,192 @@ describe('Sem WebGL2 (AC-F1-20)', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
     fireEvent.click(screen.getByRole('button', { name: 'Usar tema claro' }))
     expect(document.documentElement.dataset.theme).toBe('light')
+  })
+})
+
+describe('Excluir, desfazer e refazer (AC-F3-05, AC-F4-08)', () => {
+  const savedPin = (id: string): Pin => ({
+    id,
+    type: 'vila',
+    name: `Pin ${id}`,
+    pos: { u: 0.4, v: 0.6 },
+    icon: { kind: 'builtin', key: 'vila' },
+    description: '<p>A ficha</p>',
+    tags: ['porto'],
+    fields: { população: '300' },
+  })
+
+  // A partir de 768 px: o drawer é fixo, e selecionar um pin não abre o painel sobreposto.
+  beforeEach(() => {
+    const narrow = window.matchMedia
+    window.matchMedia = ((query: string) => ({ ...narrow(query), matches: true })) as typeof window.matchMedia
+  })
+
+  function editor() {
+    const w = world()
+    const pins = createPinsStore([savedPin('a'), savedPin('b')])
+    render(<App world={w} pins={pins} createRenderer={noRenderer} />)
+    const button = (name: string) => screen.getByTestId('actions').querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)!
+    return { w, pins, button }
+  }
+
+  it('Delete exclui o pin selecionado na hora, sem confirmação, com o toast "Pin excluído"; Desfazer o devolve com a ficha inteira', () => {
+    const { pins } = editor()
+    const b = pins.getState().pins[1]
+    act(() => pins.getState().select('b'))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['a'])
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const toast = screen.getByTestId('pin-deleted-toast')
+    expect(toast.textContent).toContain('Pin excluído')
+    fireEvent.click(within(toast).getByRole('button', { name: 'Desfazer' }))
+    expect(pins.getState().pins[1]).toEqual(b)
+    expect(screen.queryByTestId('pin-deleted-toast')).toBeNull()
+  })
+
+  it('Delete sem pin selecionado, ou com o foco num campo, não exclui', () => {
+    const { pins } = editor()
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Nome do pin' }), { key: 'Delete' })
+    expect(pins.getState().pins).toHaveLength(2)
+  })
+
+  it('o toast some sozinho depois de alguns segundos', () => {
+    vi.useFakeTimers()
+    try {
+      const { pins } = editor()
+      act(() => pins.getState().select('a'))
+      fireEvent.keyDown(document.body, { key: 'Delete' })
+      expect(screen.getByTestId('pin-deleted-toast')).toBeTruthy()
+      act(() => vi.advanceTimersByTime(PIN_DELETED_TOAST_MS))
+      expect(screen.queryByTestId('pin-deleted-toast')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('Ctrl+Z desfaz e Ctrl+Shift+Z refaz, e os botões da barra ficam habilitados quando há o que fazer', () => {
+    const { pins, button } = editor()
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(button('Desfazer').disabled).toBe(false)
+    expect(button('Refazer').disabled).toBe(true)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(pins.getState().pins).toHaveLength(2)
+    expect(screen.queryByTestId('pin-deleted-toast')).toBeNull()
+    expect(button('Desfazer').disabled).toBe(true)
+    expect(button('Refazer').disabled).toBe(false)
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    expect(pins.getState().pins).toHaveLength(1)
+    fireEvent.click(button('Desfazer'))
+    expect(pins.getState().pins).toHaveLength(2)
+    fireEvent.click(button('Refazer'))
+    expect(pins.getState().pins).toHaveLength(1)
+  })
+
+  it('desfaz e refaz os parâmetros de geração no mesmo histórico dos pins', () => {
+    const { w, pins } = editor()
+    act(() => {
+      w.getState().releaseParams({ ocean: 20 })
+      pins.getState().removePin('a')
+    })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(pins.getState().pins).toHaveLength(2)
+    expect(w.getState().params.ocean).toBe(20)
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(w.getState().params.ocean).toBe(DEFAULT_WORLD_PARAMS.ocean)
+  })
+
+  it('com o toast de erro da geração à vista, o "Pin excluído" fica empilhado acima dele, sem cobri-lo', async () => {
+    const failing: WorldGenerator = { request: () => Promise.reject(new Error('worker')), latestVersion: () => 1 }
+    const w = createWorldStore(failing)
+    const pins = createPinsStore([savedPin('a')])
+    render(<App world={w} pins={pins} createRenderer={noRenderer} />)
+    await act(async () => {
+      w.getState().generate()
+      await Promise.resolve()
+    })
+    const error = screen.getByTestId('generation-error-toast')
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    const deleted = screen.getByTestId('pin-deleted-toast')
+    const px = (el: HTMLElement) => Number.parseFloat(el.style.bottom)
+    expect(px(deleted)).toBe(px(error) + TOAST_HEIGHT + BAR_GAP)
+
+    // Sem o erro, o toast fica no lugar dos toasts.
+    act(() => w.setState({ status: 'idle' }))
+    expect(px(screen.getByTestId('pin-deleted-toast'))).toBe(ZOOM_BAR_HEIGHT + BAR_GAP)
+  })
+
+  it('desfazer e refazer um nome atualizam o campo do nome no drawer', () => {
+    const { pins, button } = editor()
+    act(() => pins.getState().select('a'))
+    const field = screen.getByRole('textbox', { name: 'Nome do pin' }) as HTMLInputElement
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a Alta' } })
+    act(() => field.blur())
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a Alta do Rio' } })
+    act(() => field.blur())
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(pins.getState().pins[0].name).toBe('Pin a Alta')
+    expect(field.value).toBe('Pin a Alta')
+    fireEvent.click(button('Desfazer'))
+    expect(field.value).toBe('Pin a')
+    fireEvent.click(button('Refazer'))
+    expect(field.value).toBe('Pin a Alta')
+
+    // Uma tecla depois de desfazer parte do nome desfeito, não do que estava no campo antes.
+    fireEvent.click(button('Desfazer'))
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a!' } })
+    expect(pins.getState().pins[0].name).toBe('Pin a!')
+  })
+
+  it('Backspace também exclui o pin selecionado (a tecla "delete" do Mac), menos com o foco num campo', () => {
+    const { pins } = editor()
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Nome do pin' }), { key: 'Backspace' })
+    expect(pins.getState().pins).toHaveLength(2)
+    fireEvent.keyDown(document.body, { key: 'Backspace' })
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['b'])
+    expect(screen.getByTestId('pin-deleted-toast')).toBeTruthy()
+  })
+
+  it('Ctrl+Z e Ctrl+Shift+Z não valem com um slider sendo arrastado: soltar não apaga o que havia para refazer', () => {
+    const { w, pins, button } = editor()
+    act(() => {
+      pins.getState().removePin('a')
+    })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(button('Refazer').disabled).toBe(false)
+
+    act(() => {
+      w.getState().dragParams({ ocean: 20 })
+    })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    expect(pins.getState().pins).toHaveLength(2)
+    act(() => {
+      w.getState().releaseParams()
+    })
+    // O arrasto entrou como um passo novo; desfazê-lo volta ao Oceano de antes, e o pin continua.
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(w.getState().params.ocean).toBe(DEFAULT_WORLD_PARAMS.ocean)
+    expect(pins.getState().pins).toHaveLength(2)
+  })
+
+  it('Ctrl+Z com o foco num campo de texto é do campo, não do mundo', () => {
+    const { pins } = editor()
+    act(() => {
+      pins.getState().removePin('b')
+      pins.getState().select('a')
+    })
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Nome do pin' }), { key: 'z', ctrlKey: true })
+    expect(pins.getState().pins).toHaveLength(1)
   })
 })
