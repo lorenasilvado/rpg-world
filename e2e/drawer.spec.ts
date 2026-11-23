@@ -251,4 +251,19 @@ test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser c
   await expect(panel).toHaveAttribute('data-open', 'false')
   await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-valdora')
   await expect(map(page)).toHaveAttribute('data-zoom', '1.600')
+
+  // Excluir no painel sobreposto (onde a tecla Delete não vale): o pin sai, o painel fecha, e o toast
+  // "Pin excluído" oferece Desfazer, que devolve o pin com a ficha.
+  await page.getByRole('button', { name: 'Abrir detalhes' }).click()
+  await expect(panel).toHaveAttribute('data-open', 'true')
+  await drawer(page).getByRole('button', { name: 'Excluir' }).click()
+  await expect(map(page)).toHaveAttribute('data-pins', '1')
+  await expect(panel).toHaveAttribute('data-open', 'false')
+  await expect(page.getByTestId('scrim')).toHaveCount(0)
+  const toast = page.getByTestId('pin-deleted-toast')
+  await expect(toast).toContainText('Pin excluído')
+  expect((await savedPins(page)).map((p) => p.id)).toEqual(['p-brumado'])
+  await toast.getByRole('button', { name: 'Desfazer' }).click()
+  await expect(map(page)).toHaveAttribute('data-pins', '2')
+  expect((await savedPins(page)).find((p) => p.id === 'p-valdora')).toMatchObject({ description: '<p>Capital do reino</p>', tags: ['capital'] })
 })

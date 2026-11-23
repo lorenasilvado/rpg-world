@@ -16,3 +16,12 @@ export function normalizeLink(text: string): string | null {
   if (!/^[^/]+\.[^/]+/.test(href)) return null
   return `https://${href}`
 }
+
+/**
+ * Se o endereço pode ser link na descrição (o `isAllowedUri` do TipTap): vale para o link digitado na
+ * linha do link, o colado, o criado ao digitar e o que vem no HTML salvo ou importado. Só http, https
+ * e mailto (`normalizeLink`).
+ */
+export function isAllowedLink(url: string): boolean {
+  return normalizeLink(url) !== null
+}

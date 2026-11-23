@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeLink } from './links'
+import { isAllowedLink, normalizeLink } from './links'
 
 describe('link da descrição (AC-F3-07)', () => {
   it('aceita http, https e mailto como vieram', () => {
@@ -17,5 +17,12 @@ describe('link da descrição (AC-F3-07)', () => {
     for (const bad of ['javascript:alert(1)', 'data:text/html,x', '//exemplo.com', 'dois termos', 'palavra', 'https:']) {
       expect(normalizeLink(bad)).toBeNull()
     }
+  })
+})
+
+describe('links aceitos pelo editor (AC-F3-07)', () => {
+  it('aceita http, https, mailto e endereço sem esquema; recusa ftp, tel, sms e javascript', () => {
+    for (const ok of ['https://a.com', 'http://a.com', 'mailto:a@b.com', 'a.com/x']) expect(isAllowedLink(ok)).toBe(true)
+    for (const bad of ['ftp://a.com', 'ftps://a.com', 'tel:+5511999990000', 'sms:123', 'javascript:alert(1)']) expect(isAllowedLink(bad)).toBe(false)
   })
 })

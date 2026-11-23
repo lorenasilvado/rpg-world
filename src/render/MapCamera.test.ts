@@ -167,6 +167,43 @@ describe('MapCamera', () => {
     now.mockRestore()
   })
 
+  it('focusOn (Centralizar do pin) leva o ponto ao centro e aproxima até o zoom pedido; mais perto, o zoom fica', () => {
+    setReduced(true)
+    const { camera, state, last, key } = setup()
+    camera.focusOn(420, 400, 1.6)
+    // Antes do primeiro mapa, nada.
+    expect(last()).toBeUndefined()
+    camera.showWorld()
+
+    camera.focusOn(420, 400, 1.6)
+    expect(last().zoom).toBeCloseTo(1.6)
+    let c = centerOf(last().t, state.area)
+    expect(c.x).toBeCloseTo(420)
+    expect(c.y).toBeCloseTo(400)
+
+    // Os limites de pan valem: perto da borda, o mapa não sai da área livre (o centro para em 320).
+    camera.focusOn(100, 400, 1.6)
+    expect(centerOf(last().t, state.area).x).toBeCloseTo(320)
+
+    // Já mais perto (1,6 × 1,25² = 2,5×): o zoom fica, e só o centro muda.
+    key('+')
+    key('+')
+    expect(last().zoom).toBeCloseTo(2.5)
+    camera.focusOn(500, 520, 1.6)
+    expect(last().zoom).toBeCloseTo(2.5)
+    c = centerOf(last().t, state.area)
+    expect(c.x).toBeCloseTo(500)
+    expect(c.y).toBeCloseTo(520)
+  })
+
+  it('focusOn não passa do zoom máximo (4×)', () => {
+    setReduced(true)
+    const { camera, last } = setup()
+    camera.showWorld()
+    camera.focusOn(512, 512, 10)
+    expect(last().zoom).toBeCloseTo(4)
+  })
+
   it('o teclado não vale com o mapa inerte, com o foco num campo ou dentro de um modal', () => {
     setReduced(true)
     const { camera, host, last, key } = setup()

@@ -63,6 +63,18 @@ describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
   })
 })
 
+describe('drawer do pin: descrição (AC-F3-07)', () => {
+  it('um link salvo ou importado fora de http, https e mailto vira texto', () => {
+    const html =
+      '<p><a href="https://a.com">web</a> <a href="mailto:a@b.com">mail</a> <a href="ftp://a.com">ftp</a> ' +
+      '<a href="tel:+5511999990000">tel</a> <a href="sms:123">sms</a> <a href="javascript:alert(1)">js</a></p>'
+    setup([pin('Valdora', { description: html })])
+    const editor = screen.getByTestId('pin-description')
+    expect([...editor.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://a.com', 'mailto:a@b.com'])
+    expect(editor.textContent).toBe('web mail ftp tel sms js')
+  })
+})
+
 describe('drawer do pin: tags (AC-F3-08)', () => {
   const chips = () => screen.getAllByTestId('pin-tag').map((t) => t.textContent)
 
