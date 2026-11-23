@@ -19,7 +19,9 @@ export const HISTORY_LIMIT = 100
  *
  * - Arrastar um slider só entra ao soltar (`paramsDragging` do `worldStore`), um passo por arrasto;
  *   arrastar um pin, um passo ao soltar (a lista só muda no `endDrag`).
- * - As teclas seguidas no nome do mesmo pin viram um passo só.
+ * - As teclas seguidas no nome do mesmo pin viram um passo só. A edição termina quando o campo
+ *   perde o foco (`nameEditEnds` do `pinsStore`) ou a seleção muda: depois disso, mais teclas no
+ *   mesmo pin são outro passo.
  * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita) e,
  *   se os parâmetros mudaram, os troca no `worldStore` pelo `setParams`, que pede só o mapa final
  *   1024², sem prévia.
@@ -95,6 +97,7 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
   }
 
   const unsubscribePins = pins.subscribe((state, prev) => {
+    if (state.nameEditEnds !== prev.nameEditEnds || state.selectedId !== prev.selectedId) renaming = null
     if (applying || state.pins === prev.pins) return
     record({ pins: state.pins })
   })

@@ -109,6 +109,25 @@ describe('histórico do mundo (AC-F4-08)', () => {
     expect(history.canUndo()).toBe(false)
   })
 
+  it('sair do campo do nome ou trocar a seleção encerra a edição: mais teclas no mesmo pin são outro passo', () => {
+    const { pins, history } = setup()
+    pins.getState().select('a')
+    for (const name of ['V', 'Va']) pins.getState().rename('a', name)
+    pins.getState().endNameEdit()
+    for (const name of ['Val', 'Vald']) pins.getState().rename('a', name)
+    pins.getState().select('b')
+    pins.getState().select('a')
+    pins.getState().rename('a', 'Valdora')
+
+    history.undo()
+    expect(pins.getState().pins[0].name).toBe('Vald')
+    history.undo()
+    expect(pins.getState().pins[0].name).toBe('Va')
+    history.undo()
+    expect(pins.getState().pins[0].name).toBe('a')
+    expect(history.canUndo()).toBe(false)
+  })
+
   it('parâmetros: o arrasto do slider entra ao soltar, e desfazer pede só o mapa final', () => {
     const { world, history, gen } = setup()
     world.getState().dragParams({ ocean: 30 })

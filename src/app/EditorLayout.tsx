@@ -1,7 +1,7 @@
 import { CircleHelp, Compass, Download, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
-import { BAR_BOTTOM, BAR_SIDE, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
+import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, TOAST_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { MapToolbar } from '../features/map/MapToolbar'
 import { MeasureTool } from '../features/map/MeasureTool'
 import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
@@ -58,7 +58,8 @@ import { useTheme } from './useTheme'
  * um pin abre o drawer sobreposto, e fechá-lo (Esc, o botão ou o scrim) tira a seleção.
  *
  * Delete exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
- * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito).
+ * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito). Com o toast de erro da
+ * geração à vista, ele fica empilhado acima dele.
  *
  * Desfazer e Refazer (AC-F4-08) usam o histórico do mundo (`history`), pelos botões da barra (cada um
  * habilitado quando há o que desfazer ou refazer) e por Ctrl+Z e Ctrl+Shift+Z (⌘ no Mac). As teclas
@@ -93,6 +94,8 @@ export function EditorLayout({
 }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
+  // O toast de erro da geração à vista: o "Pin excluído" fica acima dele, sem cobri-lo.
+  const errorToast = generationStatus === 'error'
   const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -278,7 +281,7 @@ export function EditorLayout({
           onUndo={() => history.undo()}
           onClose={closeDeleted}
           beside={layout.toastBeside}
-          bottom={layout.toastBottom}
+          bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0)}
           right={layout.toastRight}
         />
       </div>

@@ -69,7 +69,10 @@ function PinCard({ pin, pins, editName }: { pin: Pin; pins: PinsStore; editName:
               const name = e.target.value.trim()
               if (name) pins.getState().rename(pin.id, name)
             }}
-            onBlur={() => setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)}
+            onBlur={() => {
+              setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)
+              pins.getState().endNameEdit()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()

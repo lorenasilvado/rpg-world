@@ -75,6 +75,12 @@ export const ZOOM_FULL_MAX_WIDTH = 2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + 46 
 /** Largura do toast quando fica no canto direito. */
 export const TOAST_WIDTH = 352
 
+/**
+ * Altura de um toast com ação (o botão de 44 px e 8 px de folga em cima e embaixo): com dois toasts à
+ * vista, o segundo fica `TOAST_HEIGHT + BAR_GAP` acima do primeiro.
+ */
+export const TOAST_HEIGHT = 60
+
 /** Abaixo desta largura da área livre, o minimapa e o zoom compacto não cabem lado a lado. */
 export const STACK_BELOW = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + ZOOM_COMPACT_MAX_WIDTH + ZOOM_SIDE
 /** A partir desta largura, o toast cabe no canto direito sem chegar ao minimapa. */

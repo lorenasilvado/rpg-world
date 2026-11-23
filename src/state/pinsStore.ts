@@ -24,6 +24,11 @@ export type PinsState = {
    */
   dragging: { id: string; pos: { u: number; v: number } } | null
   /**
+   * Sobe a cada vez que a edição do nome de um pin termina (o campo perde o foco): o histórico
+   * começa um passo novo na próxima tecla, mesmo que seja no mesmo pin.
+   */
+  nameEditEnds: number
+  /**
    * Cria um pin na posição (u, v), do último tipo usado no mundo (Cidade no primeiro), com o nome
    * "Novo pin", e o seleciona.
    */
@@ -32,6 +37,8 @@ export type PinsState = {
   select(id: string | null): void
   setHovered(id: string | null): void
   rename(id: string, name: string): void
+  /** A edição do nome terminou (o campo perdeu o foco). */
+  endNameEdit(): void
   /** Arrasta o pin até (u, v), presa entre 0 e 1 (AC-F3-04). */
   dragTo(id: string, pos: { u: number; v: number }): void
   /** Solta o pin arrastado: com `commit`, ele fica na posição do arrasto; sem, volta. */
@@ -66,6 +73,7 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
     hoveredId: null,
     newPinId: null,
     dragging: null,
+    nameEditEnds: 0,
     addPin(pos) {
       const type = nextPinType(get().pins)
       const pin: Pin = {
@@ -98,6 +106,9 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
       const next = [...pins]
       next[i] = { ...pins[i], name }
       set({ pins: next })
+    },
+    endNameEdit() {
+      set({ nameEditEnds: get().nameEditEnds + 1 })
     },
     dragTo(id, pos) {
       if (!get().pins.some((p) => p.id === id)) return

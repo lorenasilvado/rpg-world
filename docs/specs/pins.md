@@ -61,7 +61,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
 | Agrupado | Zoom < 0,8 e pins a < 34 px | Círculo com contador |
-| Excluído | Excluir | O pin encolhe (180 ms, `ease-in`; com movimento reduzido, some na hora); toast "Pin excluído" com a ação "Desfazer", na base da área livre, acima do controle de zoom. O toast some depois de 6 s, ou quando outra coisa muda no histórico (um passo novo, desfeito ou refeito) |
+| Excluído | Excluir | O pin encolhe (180 ms, `ease-in`; com movimento reduzido, some na hora); toast "Pin excluído" com a ação "Desfazer", na base da área livre, acima do controle de zoom (com o toast de erro da geração à vista, empilhado 12 px acima dele). O toast some depois de 6 s, ou quando outra coisa muda no histórico (um passo novo, desfeito ou refeito) |
 | Vazio | Mundo sem pins | TODO: não descrito no material |
 | Imagem grande | Imagem enviada acima de 1 MB | Mensagem explicando o limite e duas opções: recusar o arquivo (o ícone anterior continua) ou aceitar com a redução. TODO: texto da mensagem e dos botões |
 | Formato não aceito | Arquivo que não é PNG, JPG nem SVG | O arquivo é recusado, com uma mensagem dos formatos aceitos; o ícone anterior continua. TODO: texto da mensagem |

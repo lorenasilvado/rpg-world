@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { DEFAULT_WORLD_PARAMS } from './core'
+import { BAR_GAP, TOAST_HEIGHT, ZOOM_BAR_HEIGHT } from './features/map/bottomBarLayout'
 import { PIN_DELETED_TOAST_MS } from './features/pins/PinDeletedToast'
 import type { Pin } from './persistence/types'
 import { createPinsStore } from './state/pinsStore'
@@ -262,6 +263,27 @@ describe('Excluir, desfazer e refazer (AC-F3-05, AC-F4-08)', () => {
     expect(w.getState().params.ocean).toBe(20)
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
     expect(w.getState().params.ocean).toBe(DEFAULT_WORLD_PARAMS.ocean)
+  })
+
+  it('com o toast de erro da geração à vista, o "Pin excluído" fica empilhado acima dele, sem cobri-lo', async () => {
+    const failing: WorldGenerator = { request: () => Promise.reject(new Error('worker')), latestVersion: () => 1 }
+    const w = createWorldStore(failing)
+    const pins = createPinsStore([savedPin('a')])
+    render(<App world={w} pins={pins} createRenderer={noRenderer} />)
+    await act(async () => {
+      w.getState().generate()
+      await Promise.resolve()
+    })
+    const error = screen.getByTestId('generation-error-toast')
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    const deleted = screen.getByTestId('pin-deleted-toast')
+    const px = (el: HTMLElement) => Number.parseFloat(el.style.bottom)
+    expect(px(deleted)).toBe(px(error) + TOAST_HEIGHT + BAR_GAP)
+
+    // Sem o erro, o toast fica no lugar dos toasts.
+    act(() => w.setState({ status: 'idle' }))
+    expect(px(screen.getByTestId('pin-deleted-toast'))).toBe(ZOOM_BAR_HEIGHT + BAR_GAP)
   })
 
   it('Ctrl+Z com o foco num campo de texto é do campo, não do mundo', () => {
