@@ -286,6 +286,32 @@ describe('Excluir, desfazer e refazer (AC-F3-05, AC-F4-08)', () => {
     expect(px(screen.getByTestId('pin-deleted-toast'))).toBe(ZOOM_BAR_HEIGHT + BAR_GAP)
   })
 
+  it('desfazer e refazer um nome atualizam o campo do nome no drawer', () => {
+    const { pins, button } = editor()
+    act(() => pins.getState().select('a'))
+    const field = screen.getByRole('textbox', { name: 'Nome do pin' }) as HTMLInputElement
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a Alta' } })
+    act(() => field.blur())
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a Alta do Rio' } })
+    act(() => field.blur())
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(pins.getState().pins[0].name).toBe('Pin a Alta')
+    expect(field.value).toBe('Pin a Alta')
+    fireEvent.click(button('Desfazer'))
+    expect(field.value).toBe('Pin a')
+    fireEvent.click(button('Refazer'))
+    expect(field.value).toBe('Pin a Alta')
+
+    // Uma tecla depois de desfazer parte do nome desfeito, não do que estava no campo antes.
+    fireEvent.click(button('Desfazer'))
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Pin a!' } })
+    expect(pins.getState().pins[0].name).toBe('Pin a!')
+  })
+
   it('Ctrl+Z com o foco num campo de texto é do campo, não do mundo', () => {
     const { pins } = editor()
     act(() => {

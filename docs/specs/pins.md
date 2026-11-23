@@ -72,7 +72,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 |---|---|
 | Ferramenta "Adicionar pin" (P) + clique no mapa | Cria um pin naquele ponto (quique de 460 ms), do tipo do último pin do mundo (Cidade no primeiro), com o nome "Novo pin"; o drawer abre com o nome em edição, e a ferramenta volta para Navegar. Clicar num pin com a ferramenta o seleciona, sem criar outro; arrastar faz pan, sem criar |
 | Clicar num pin (Navegar ou Adicionar pin) | Seleciona o pin e abre o drawer (E2). Com Medir distância, o clique é da medida |
-| Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo |
+| Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo. Fora do foco, o campo mostra o nome atual do pin (desfazer e refazer o atualizam) |
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
 | Ocultar por tipo | Esconde os pins daquele tipo |
 | Excluir (Delete) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal ou durante o arrasto); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
