@@ -49,7 +49,8 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
 - Tags: chips removíveis (ex.: capital, porto), campo "+ tag" (Enter, vírgula ou sair do campo
   adiciona) e sugestões "Usadas no mundo": as tags dos outros pins que este não tem, das mais usadas
   às menos, até 6 (sem nenhuma, a linha não aparece). Uma tag tem até 32 caracteres; repetida (sem
-  diferenciar maiúsculas) não entra.
+  diferenciar maiúsculas) não entra. Um mundo salvo ou importado com tag repetida a perde ao abrir
+  (fica a grafia da primeira vez).
 - Rodapé fixo: Centralizar, Duplicar, Excluir (botão destrutivo vermelho).
 - Aba Detalhes: tipo, ícone (biblioteca embutida ou imagem enviada), pin pai e campos livres
   chave/valor.

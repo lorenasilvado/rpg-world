@@ -109,6 +109,14 @@ describe('drawer do pin: tags (AC-F3-08)', () => {
     expect(pins.getState().pins[0].tags).toEqual(['porto', 'militar'])
     expect(screen.queryByTestId('pin-tag-suggestions')).toBeNull()
   })
+
+  it('um mundo salvo com tag repetida mostra um chip só, e remover tira só a tag do chip', () => {
+    const { pins } = setup([pin('Valdora', { tags: ['porto', 'Porto', 'capital', 'porto'] })])
+    expect(screen.getAllByTestId('pin-tag').map((t) => t.textContent)).toEqual(['porto', 'capital'])
+    fireEvent.click(screen.getByRole('button', { name: 'Remover a tag porto' }))
+    expect(pins.getState().pins[0].tags).toEqual(['capital'])
+    expect(screen.getAllByTestId('pin-tag').map((t) => t.textContent)).toEqual(['capital'])
+  })
 })
 
 describe('drawer do pin: rodapé (AC-F3-05, AC-F3-09)', () => {

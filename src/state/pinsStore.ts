@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import { uniqueTags } from '../features/pins/tags'
 import type { Pin } from '../persistence/types'
 import { DEFAULT_PIN_TYPE, NEW_PIN_NAME, pinType, type PinType } from './pinTypes'
 
@@ -80,6 +81,12 @@ export function copyName(name: string, max = 80): string {
   return base.slice(0, max - suffix.length).trimEnd() + suffix
 }
 
+/** O pin sem tags repetidas (`uniqueTags`); sem repetidas, o mesmo objeto. */
+function withUniqueTags(pin: Pin): Pin {
+  const tags = uniqueTags(pin.tags)
+  return tags === pin.tags ? pin : { ...pin, tags: [...tags] }
+}
+
 /** O tipo de um pin novo: o do último pin do mundo, ou Cidade no primeiro. */
 export function nextPinType(pins: readonly Pin[]): PinType {
   const last = pins.at(-1)
@@ -94,7 +101,8 @@ export function clampPos(pos: { u: number; v: number }): { u: number; v: number 
 
 export function createPinsStore(initial: readonly Pin[] = [], { newId = () => crypto.randomUUID() }: { newId?: () => string } = {}): PinsStore {
   return createStore<PinsState>()((set, get) => ({
-    pins: [...initial],
+    // Um mundo salvo ou importado pode trazer tags repetidas: elas saem ao carregar.
+    pins: initial.map(withUniqueTags),
     selectedId: null,
     hoveredId: null,
     newPinId: null,
@@ -133,11 +141,13 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
       next[i] = { ...pins[i], name }
       set({ pins: next })
     },
-    updatePin(id, patch) {
+    updatePin(id, edit) {
       const pins = get().pins
       const i = pins.findIndex((p) => p.id === id)
       if (i < 0) return
       const pin = pins[i]
+      // Uma tag repetida (sem diferenciar maiúsculas) não entra.
+      const patch: PinPatch = edit.tags ? { ...edit, tags: [...uniqueTags(edit.tags)] } : edit
       const same =
         (patch.description === undefined || patch.description === pin.description) &&
         (patch.tags === undefined || (patch.tags.length === pin.tags.length && patch.tags.every((t, k) => t === pin.tags[k])))

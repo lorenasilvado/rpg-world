@@ -132,6 +132,17 @@ describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
     expect(pins.getState().pins[0]).toMatchObject({ description: '<p><strong>Capital</strong></p>', tags: ['capital'], name: 'Valdora' })
   })
 
+  it('tags repetidas saem ao carregar o mundo e no updatePin', () => {
+    const pins = createPinsStore([{ ...full, tags: ['porto', 'Porto', 'capital', 'porto'] }, { ...full, id: 'b' }])
+    expect(pins.getState().pins[0].tags).toEqual(['porto', 'capital'])
+    const before = pins.getState().pins
+    pins.getState().updatePin('a', { tags: ['porto', 'capital', 'PORTO'] })
+    expect(pins.getState().pins).toBe(before)
+    pins.getState().updatePin('a', { tags: ['reino', 'Reino'] })
+    expect(pins.getState().pins[0].tags).toEqual(['reino'])
+    expect(pins.getState().pins[1]).toBe(before[1])
+  })
+
   it('duplicatePin cria "<nome> (cópia)" deslocada, com a mesma ficha e o mesmo pai, e a seleciona', () => {
     const child: Pin = { ...full, id: 'filho', name: 'Vila', parentId: 'a' }
     const pins = createPinsStore([full, child], { newId: () => 'copia' })

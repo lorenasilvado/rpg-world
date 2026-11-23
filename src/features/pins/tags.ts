@@ -30,6 +30,23 @@ export function addTag(tags: readonly string[], text: string): readonly string[]
   return [...tags, tag]
 }
 
+/**
+ * As tags sem as repetidas (sem diferenciar maiúsculas), com a grafia da primeira vez. Um mundo
+ * salvo ou importado pode trazer uma tag repetida; o drawer supõe que elas são únicas (o chip é
+ * a chave da lista e o "remover" tira a tag pelo texto). Sem repetidas, a lista volta igual (a
+ * mesma referência).
+ */
+export function uniqueTags(tags: readonly string[]): readonly string[] {
+  const seen = new Set<string>()
+  const out = tags.filter((t) => {
+    const key = tagKey(t)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+  return out.length === tags.length ? tags : out
+}
+
 /** As tags sem a tag do chip. */
 export function removeTag(tags: readonly string[], tag: string): string[] {
   return tags.filter((t) => t !== tag)

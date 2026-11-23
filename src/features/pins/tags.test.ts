@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addTag, normalizeTag, removeTag, suggestedTags, TAG_MAX } from './tags'
+import { addTag, normalizeTag, removeTag, suggestedTags, TAG_MAX, uniqueTags } from './tags'
 
 describe('tags do pin (AC-F3-08)', () => {
   it('a tag fica sem espaços nas pontas, com os do meio juntados, e até TAG_MAX caracteres', () => {
@@ -31,5 +31,12 @@ describe('tags do pin (AC-F3-08)', () => {
 
   it('sem outros pins com tags, não há sugestões', () => {
     expect(suggestedTags([{ id: 'a', tags: ['capital'] }], 'a')).toEqual([])
+  })
+
+  it('uniqueTags tira as repetidas (sem diferenciar maiúsculas), com a grafia da primeira vez', () => {
+    expect(uniqueTags(['Porto', 'capital', 'porto', 'PORTO', 'capital'])).toEqual(['Porto', 'capital'])
+    const tags = ['porto', 'capital']
+    expect(uniqueTags(tags)).toBe(tags)
+    expect(uniqueTags([])).toEqual([])
   })
 })
