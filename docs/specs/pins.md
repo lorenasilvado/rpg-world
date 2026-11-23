@@ -75,7 +75,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo. Fora do foco, o campo mostra o nome atual do pin (desfazer e refazer o atualizam) |
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
 | Ocultar por tipo | Esconde os pins daquele tipo |
-| Excluir (Delete) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal ou durante o arrasto); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
+| Excluir (Delete) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá o Delete não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
 | Duplicar | Cria uma cópia ao lado do pin, "<nome> (cópia)", com a mesma ficha e sem os filhos |
 | Centralizar | Centraliza a câmera no pin |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
