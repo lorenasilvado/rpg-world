@@ -59,7 +59,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Selecionado | Clique num pin | Drawer aberto (abaixo de 768 px, sobreposto); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (no zoom 1×, o mapa não se move) |
 | Hover | Mouse sobre o pin | `scale(1.1)` + nome; cursor de mãozinha |
 | Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
-| Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
+| Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, sombra do desenho 12 px abaixo dele (`drop-shadow(0 12px 8px rgba(43,36,32,.4))`), marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
 | Agrupado | Zoom < 0,8 e pins a < 34 px | Círculo com contador |
 | Excluído | Excluir | O pin encolhe (180 ms, `ease-in`; com movimento reduzido, some na hora); toast "Pin excluído" com a ação "Desfazer", na base da área livre, acima do controle de zoom (com o toast de erro da geração à vista, empilhado 12 px acima dele). O toast some depois de 6 s, ou quando outra coisa muda no histórico (um passo novo, desfeito ou refeito) |
 | Vazio | Mundo sem pins | TODO: não descrito no material |
@@ -75,7 +75,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo. Fora do foco, o campo mostra o nome atual do pin (desfazer e refazer o atualizam) |
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
 | Ocultar por tipo | Esconde os pins daquele tipo |
-| Excluir (Delete) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá o Delete não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
+| Excluir (Delete ou Backspace, a tecla "delete" do Mac) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá a tecla não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
 | Duplicar | Cria uma cópia ao lado do pin, "<nome> (cópia)", com a mesma ficha e sem os filhos |
 | Centralizar | Centraliza a câmera no pin |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |

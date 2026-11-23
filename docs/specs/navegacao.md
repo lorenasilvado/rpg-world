@@ -54,7 +54,7 @@ barra inferior.
   só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
-  pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
+  pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
 - Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica

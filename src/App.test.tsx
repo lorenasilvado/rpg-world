@@ -122,7 +122,7 @@ describe('Barras do editor e Ajuda', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ajuda' }))
     const dialog = screen.getByRole('dialog', { name: 'Atalhos de teclado' })
     const rows = Array.from(dialog.querySelectorAll('dt')).map((dt) => `${dt.textContent} ${dt.nextElementSibling?.textContent}`)
-    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
+    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
   })
@@ -310,6 +310,39 @@ describe('Excluir, desfazer e refazer (AC-F3-05, AC-F4-08)', () => {
     act(() => field.focus())
     fireEvent.change(field, { target: { value: 'Pin a!' } })
     expect(pins.getState().pins[0].name).toBe('Pin a!')
+  })
+
+  it('Backspace também exclui o pin selecionado (a tecla "delete" do Mac), menos com o foco num campo', () => {
+    const { pins } = editor()
+    act(() => pins.getState().select('a'))
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Nome do pin' }), { key: 'Backspace' })
+    expect(pins.getState().pins).toHaveLength(2)
+    fireEvent.keyDown(document.body, { key: 'Backspace' })
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['b'])
+    expect(screen.getByTestId('pin-deleted-toast')).toBeTruthy()
+  })
+
+  it('Ctrl+Z e Ctrl+Shift+Z não valem com um slider sendo arrastado: soltar não apaga o que havia para refazer', () => {
+    const { w, pins, button } = editor()
+    act(() => {
+      pins.getState().removePin('a')
+    })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(button('Refazer').disabled).toBe(false)
+
+    act(() => {
+      w.getState().dragParams({ ocean: 20 })
+    })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    expect(pins.getState().pins).toHaveLength(2)
+    act(() => {
+      w.getState().releaseParams()
+    })
+    // O arrasto entrou como um passo novo; desfazê-lo volta ao Oceano de antes, e o pin continua.
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(w.getState().params.ocean).toBe(DEFAULT_WORLD_PARAMS.ocean)
+    expect(pins.getState().pins).toHaveLength(2)
   })
 
   it('Ctrl+Z com o foco num campo de texto é do campo, não do mundo', () => {

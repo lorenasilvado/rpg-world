@@ -26,7 +26,7 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * Esc, um segundo dedo ou o `pointercancel` devolvem o pin ao lugar. A seleção não muda no arrasto.
  *
  * Esc fecha o drawer (tira a seleção); sem pin selecionado, com Adicionar pin, volta para Navegar.
- * Delete exclui o pin selecionado (`onDelete`), sem confirmação. As teclas seguem as exceções dos
+ * Delete ou Backspace exclui o pin selecionado (`onDelete`), sem confirmação. As teclas seguem as exceções dos
  * atalhos do mapa (foco num campo, dentro de um modal), e nada vale com `disabled` (painel sobreposto
  * aberto no celular).
  */
@@ -48,7 +48,8 @@ export function PinTool({
     if (disabled) return
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || isFieldTarget(e.target) || inDialog(e.target)) return
-      if (e.key === 'Delete') {
+      // Delete, ou Backspace (a tecla "delete" do notebook Mac).
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         const id = pins.getState().selectedId
         if (id === null || !onDelete || e.ctrlKey || e.altKey || e.metaKey || pins.getState().dragging) return
         e.preventDefault()

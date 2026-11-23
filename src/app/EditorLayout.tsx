@@ -64,7 +64,7 @@ import { useTheme } from './useTheme'
  * Desfazer e Refazer (AC-F4-08) usam o histórico do mundo (`history`), pelos botões da barra (cada um
  * habilitado quando há o que desfazer ou refazer) e por Ctrl+Z e Ctrl+Shift+Z (⌘ no Mac). As teclas
  * não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel
- * sobreposto aberto nem durante o arrasto de um pin.
+ * sobreposto aberto nem durante o arrasto de um pin ou de um slider.
  *
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar e Exportar ficam
  * desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
@@ -149,13 +149,14 @@ export function EditorLayout({
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'z') return
       if (e.defaultPrevented || isTextField(e.target) || inDialog(e.target)) return
       e.preventDefault()
-      if (pins.getState().dragging) return
+      // No meio de um arrasto (de um pin ou de um slider), o histórico espera o soltar.
+      if (pins.getState().dragging || world.getState().paramsDragging) return
       if (e.shiftKey) history.redo()
       else history.undo()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [anyOpen, history, pins])
+  }, [anyOpen, history, pins, world])
 
   const closeAll = () => {
     setSidebarOpen(false)

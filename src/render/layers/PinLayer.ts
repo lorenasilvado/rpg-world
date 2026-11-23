@@ -1,4 +1,4 @@
-import { Container, Graphics, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
+import { BlurFilter, Container, Graphics, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
 import type { Pin } from '../../persistence/types'
 import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
 import type { PinsState } from '../../state/pinsStore'
@@ -6,6 +6,7 @@ import { PIN_SIZE_PX, PIN_VIEWBOX, drawPin, type PinInk } from '../style/pinShap
 import {
   PIN_DRAG_ALPHA,
   PIN_DRAG_LIFT_PX,
+  PIN_DRAG_SHADOW,
   PIN_HEIGHT_PX,
   PIN_HOVER_SCALE,
   PIN_SHRINK_MS,
@@ -88,6 +89,8 @@ type PinView = {
   /** A marca tracejada no chão, só no arrasto. */
   mark: Graphics
   body: Container
+  /** A sombra do desenho, só no arrasto. */
+  shadow: Sprite
   sprite: Sprite
   label: Text | null
   name: string
@@ -111,7 +114,8 @@ export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' 
  * reduzido, não há quique nem pulsação. A camada fica fora do desfoque da geração.
  *
  * O pin arrastado (`dragging`, AC-F3-04) fica na posição do arrasto, por cima de todos, com
- * opacidade .6, 14 px acima do chão e a marca tracejada no chão. O pin que sai da lista (excluído,
+ * opacidade .6, 14 px acima do chão, a sombra do desenho 12 px abaixo dele (o `drop-shadow` do design
+ * system, com o desfoque de 8 px) e a marca tracejada no chão. O pin que sai da lista (excluído,
  * AC-F3-05) encolhe em 180 ms antes de sumir (com movimento reduzido, some na hora); se ele volta
  * nesse meio-tempo (Desfazer), o encolher para.
  *
@@ -122,6 +126,11 @@ export class PinLayer {
   readonly view = new Container()
   private textures: PinTextures
   private views = new Map<string, PinView>()
+  /**
+   * O desfoque da sombra do arrasto, um só para a camada (só o pin arrastado mostra a sombra). O
+   * desvio padrão é metade do raio do CSS.
+   */
+  private shadowBlur = new BlurFilter({ strength: PIN_DRAG_SHADOW.blur / 2, quality: 2 })
   private state: PinLayerState = { pins: [], selectedId: null, hoveredId: null, newPinId: null, dragging: null }
   /** Pins que saíram da lista e estão encolhendo, com o instante da saída. */
   private leaving = new Map<string, { view: PinView; at: number }>()
@@ -221,6 +230,7 @@ export class PinLayer {
       v.body.scale.set(drop.sx * big, drop.sy * big)
       v.body.alpha = drop.alpha * (dragged ? PIN_DRAG_ALPHA : 1)
       v.mark.visible = dragged
+      v.shadow.visible = dragged
       v.ring.visible = selected
       v.pulse.visible = selected && !reducedMotion
       if (v.pulse.visible) {
@@ -241,6 +251,7 @@ export class PinLayer {
 
   destroy() {
     this.view.destroy({ children: true })
+    this.shadowBlur.destroy()
     this.views.clear()
     this.leaving.clear()
     destroyPinTextures(this.textures)
@@ -267,9 +278,18 @@ export class PinLayer {
       sprite.anchor.set(0.5, 1)
       sprite.width = PIN_SIZE_PX
       sprite.height = (PIN_SIZE_PX * PIN_VIEWBOX.height) / PIN_VIEWBOX.width
-      body.addChild(sprite)
+      const shadow = new Sprite(this.textures.get(type))
+      shadow.anchor.set(0.5, 1)
+      shadow.width = sprite.width
+      shadow.height = sprite.height
+      shadow.position.set(0, PIN_DRAG_SHADOW.dy)
+      shadow.tint = PIN_DRAG_SHADOW.color
+      shadow.alpha = PIN_DRAG_SHADOW.alpha
+      shadow.filters = [this.shadowBlur]
+      shadow.visible = false
+      body.addChild(shadow, sprite)
       root.addChild(mark, pulse, ring, body)
-      v = { root, pulse, ring, mark, body, sprite, label: null, name: pin.name, type, bornAt }
+      v = { root, pulse, ring, mark, body, shadow, sprite, label: null, name: pin.name, type, bornAt }
       this.views.set(pin.id, v)
     }
     const drag = this.state.dragging
@@ -278,6 +298,7 @@ export class PinLayer {
     if (v.type !== type) {
       v.type = type
       v.sprite.texture = this.textures.get(type) ?? Texture.EMPTY
+      v.shadow.texture = v.sprite.texture
     }
     if (v.name !== pin.name) {
       v.name = pin.name

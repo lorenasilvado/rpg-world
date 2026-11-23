@@ -37,6 +37,12 @@ export const PIN_DRAG_LIFT_PX = 14
 /** Opacidade do pin arrastado. */
 export const PIN_DRAG_ALPHA = 0.6
 
+/**
+ * A sombra do pin arrastado (`drop-shadow(0 12px 8px rgba(43,36,32,.4))` do design system): 12 px
+ * abaixo do desenho, com 8 px de desfoque, na cor `--ink` com opacidade .4.
+ */
+export const PIN_DRAG_SHADOW = { dy: 12, blur: 8, color: 0x2b2420, alpha: 0.4 } as const
+
 /** Duração do encolher do pin excluído. */
 export const PIN_SHRINK_MS = 180
 

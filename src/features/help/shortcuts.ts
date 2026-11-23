@@ -10,7 +10,7 @@ export const SHORTCUTS: readonly { action: string; keys: string }[] = [
   { action: 'Mover o mapa', keys: 'Setas / WASD' },
   { action: 'Zoom', keys: '+ / −' },
   { action: 'Centralizar mapa', keys: '0' },
-  { action: 'Excluir pin', keys: 'Delete' },
+  { action: 'Excluir pin', keys: 'Delete / Backspace' },
   { action: 'Desfazer', keys: 'Ctrl Z' },
   { action: 'Refazer', keys: 'Ctrl Shift Z' },
   { action: 'Recolher painel', keys: '[' },
