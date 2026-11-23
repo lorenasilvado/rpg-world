@@ -23,7 +23,7 @@ describe('cameraStore', () => {
 
   it('sem os comandos do renderer, deixa de estar pronto', () => {
     const camera = createCameraStore()
-    const controls = { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn() }
+    const controls = { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn(), focusOn: vi.fn() }
     camera.getState().setControls(controls)
     camera.getState().update(view)
     expect(camera.getState().controls).toBe(controls)

@@ -14,7 +14,7 @@ function fakeRenderer() {
   return {
     refit() {},
     destroy: vi.fn<() => void>(),
-    controls: { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn() },
+    controls: { zoomIn: vi.fn(), zoomOut: vi.fn(), center: vi.fn(), centerOn: vi.fn(), focusOn: vi.fn() },
   }
 }
 

@@ -102,7 +102,7 @@ function PinCard({
   const close = () => pins.getState().select(null)
   const center = () => {
     const p = pinToWorld(pin.pos)
-    camera.getState().controls?.focusOn?.(p.x, p.y, CENTER_PIN_ZOOM)
+    camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
     onCentered?.()
   }
   const duplicate = () => {

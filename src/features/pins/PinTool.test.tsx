@@ -187,7 +187,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('o aperto no pin segura o pan da câmera até soltar e segue para a página (o "clique fora" dos popovers); fora dos pins, não segura', () => {
     const { camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     const onCanvas = vi.fn()
     const onDocument = vi.fn()
     canvas().addEventListener('pointerdown', onCanvas)
@@ -213,7 +213,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('o segundo dedo e o pointercancel soltam o pan', () => {
     const { camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerDown(canvas(), { ...pointer(700, 700), pointerId: 2, pointerType: 'touch' })
     expect(holdPan).toHaveBeenLastCalledWith(false)
@@ -246,7 +246,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('Esc devolve o pin e encerra o arrasto: mexer depois não arrasta, soltar não grava, o pan é solto e a seleção fica', () => {
     const { pins, camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     act(() => pins.getState().select('p1'))
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerMove(canvas(), pointer(700, 700))
