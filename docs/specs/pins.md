@@ -43,7 +43,9 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
   por Ctrl+B e Ctrl+I. Vazia, mostra "Escreva sobre este lugar…". O link abre uma linha com o endereço: Enter aplica (com texto selecionado,
   ele vira o link; sem, o endereço entra como texto com o link), vazio tira o link, Esc cancela. Só
   valem http, https e mailto; sem esquema, vira https (um e-mail solto vira mailto); outro endereço
-  mostra "Use um endereço http, https ou mailto.".
+  mostra "Use um endereço http, https ou mailto.". A regra vale também para o link colado, o criado
+  ao digitar e o que vem na descrição salva ou importada: um link de outro esquema, ou com
+  caracteres de controle ou invisíveis no endereço, vira texto, e um link sem esquema vira https.
 - Tags: chips removíveis (ex.: capital, porto), campo "+ tag" (Enter, vírgula ou sair do campo
   adiciona) e sugestões "Usadas no mundo": as tags dos outros pins que este não tem, das mais usadas
   às menos, até 6 (sem nenhuma, a linha não aparece). Uma tag tem até 32 caracteres; repetida (sem

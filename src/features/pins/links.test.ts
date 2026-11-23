@@ -26,3 +26,21 @@ describe('links aceitos pelo editor (AC-F3-07)', () => {
     for (const bad of ['ftp://a.com', 'ftps://a.com', 'tel:+5511999990000', 'sms:123', 'javascript:alert(1)']) expect(isAllowedLink(bad)).toBe(false)
   })
 })
+
+describe('links com caracteres escondidos (AC-F3-07)', () => {
+  it('recusa caracteres de controle e invisíveis que escondem um esquema', () => {
+    const c = (code: number) => String.fromCharCode(code)
+    const hidden = [
+      c(1) + 'javascript:alert(1).x',
+      c(0) + 'https://a.com',
+      'java' + c(9) + 'script:alert(1)',
+      c(0x200b) + 'javascript:alert(1).x',
+      'https://a' + c(0x202e) + '.com',
+      'a' + c(0xfeff) + '.com',
+    ]
+    for (const bad of hidden) {
+      expect(normalizeLink(bad)).toBeNull()
+      expect(isAllowedLink(bad)).toBe(false)
+    }
+  })
+})

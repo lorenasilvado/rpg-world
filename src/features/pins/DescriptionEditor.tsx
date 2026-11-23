@@ -4,7 +4,8 @@ import StarterKit from '@tiptap/starter-kit'
 import { Bold, Heading2, Italic, Link as LinkIcon, List } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { DESCRIPTION_PLACEHOLDER, descriptionHtml } from './descriptionHtml'
-import { isAllowedLink, normalizeLink } from './links'
+import { DescriptionLink } from './descriptionLink'
+import { normalizeLink } from './links'
 
 /**
  * A descrição do pin (pins.md → E2, AC-F3-07): texto rico com o TipTap (ADR 0001), com negrito,
@@ -40,10 +41,10 @@ export function DescriptionEditor({
         orderedList: false,
         strike: false,
         underline: false,
-        // Só http, https e mailto, em todo caminho (digitado, colado, automático, salvo): o padrão do
-        // TipTap aceitaria também ftp, tel, sms e outros.
-        link: { openOnClick: false, autolink: true, defaultProtocol: 'https', isAllowedUri: (url) => isAllowedLink(url) },
+        // O link é o `DescriptionLink`: só http, https e mailto, com o href normalizado.
+        link: false,
       }),
+      DescriptionLink,
       Placeholder.configure({ placeholder: DESCRIPTION_PLACEHOLDER }),
     ],
     content: value,
