@@ -57,7 +57,7 @@ import { useTheme } from './useTheme'
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
  * um pin abre o drawer sobreposto, e fechá-lo (Esc, o botão ou o scrim) tira a seleção.
  *
- * Delete exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
+ * Delete, ou Excluir no rodapé do drawer, exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
  * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito). Com o toast de erro da
  * geração à vista, ele fica empilhado acima dele.
  *
@@ -122,6 +122,9 @@ export function EditorLayout({
   const sidebarClose = useRef<HTMLButtonElement>(null)
   const drawerOpener = useRef<HTMLButtonElement>(null)
   const drawerClose = useRef<HTMLButtonElement>(null)
+  const undoButton = useRef<HTMLButtonElement>(null)
+  /** Excluir no rodapé do drawer lateral: o foco vai para o Desfazer da barra quando ele habilitar. */
+  const focusUndo = useRef(false)
   usePanelFocus(sidebarOpen, sidebarClose, sidebarOpener)
   usePanelFocus(drawerOpen, drawerClose, drawerOpener)
   const canUndo = useStore(history.temporal, (s) => s.pastStates.length > 0)
@@ -136,6 +139,22 @@ export function EditorLayout({
     },
     [pins, history],
   )
+
+  // Excluir pelo rodapé tira o botão com o foco (o drawer fecha, sem pin): a partir de 768 px, o foco
+  // vai para o Desfazer da barra, que acabou de habilitar. Abaixo, o painel sobreposto devolve o
+  // foco a quem o abriu.
+  const deleteFromDrawer = useCallback(
+    (id: string) => {
+      focusUndo.current = !drawerOpen && pins.getState().pins.some((p) => p.id === id)
+      deletePin(id)
+    },
+    [deletePin, drawerOpen, pins],
+  )
+  useEffect(() => {
+    if (!focusUndo.current || !canUndo || deletedAt === null) return
+    focusUndo.current = false
+    undoButton.current?.focus()
+  }, [canUndo, deletedAt])
 
   // Outra mudança no histórico (passo novo, desfeito ou refeito) fecha o toast "Pin excluído".
   useEffect(
@@ -368,7 +387,7 @@ export function EditorLayout({
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
         <SearchButton label={searchLabel} />
-        <IconButton label="Desfazer" title="Desfazer (Ctrl+Z)" keyShortcuts="Control+Z" disabled={!canUndo} onClick={() => history.undo()}>
+        <IconButton ref={undoButton} label="Desfazer" title="Desfazer (Ctrl+Z)" keyShortcuts="Control+Z" disabled={!canUndo} onClick={() => history.undo()}>
           <Undo2 size={20} aria-hidden="true" />
         </IconButton>
         <IconButton
@@ -414,7 +433,14 @@ export function EditorLayout({
             <X size={20} aria-hidden="true" />
           </IconButton>
         </div>
-        <PinDrawer pins={pins} />
+        <PinDrawer
+          pins={pins}
+          world={world}
+          camera={camera}
+          onDelete={deleteFromDrawer}
+          // Abaixo de 768 px, o painel sobreposto cobre o mapa: fecha para a câmera aparecer (o pin continua selecionado).
+          onCentered={() => setDrawerOpen(false)}
+        />
       </aside>
     </div>
   )

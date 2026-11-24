@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Pin } from '../persistence/types'
+import { uniqueTags } from './pinTags'
 import { DEFAULT_PIN_TYPE, NEW_PIN_NAME, pinType, type PinType } from './pinTypes'
 
 /**
@@ -24,10 +25,10 @@ export type PinsState = {
    */
   dragging: { id: string; pos: { u: number; v: number } } | null
   /**
-   * Sobe a cada vez que a edição do nome de um pin termina (o campo perde o foco): o histórico
-   * começa um passo novo na próxima tecla, mesmo que seja no mesmo pin.
+   * Sobe a cada vez que a edição de um texto do pin (o nome ou a descrição) termina (o campo perde
+   * o foco): o histórico começa um passo novo na próxima tecla, mesmo que seja no mesmo pin.
    */
-  nameEditEnds: number
+  textEditEnds: number
   /**
    * Cria um pin na posição (u, v), do último tipo usado no mundo (Cidade no primeiro), com o nome
    * "Novo pin", e o seleciona.
@@ -37,8 +38,16 @@ export type PinsState = {
   select(id: string | null): void
   setHovered(id: string | null): void
   rename(id: string, name: string): void
-  /** A edição do nome terminou (o campo perdeu o foco). */
-  endNameEdit(): void
+  /** Troca a descrição ou as tags do pin (a ficha do drawer, AC-F3-07 e AC-F3-08). */
+  updatePin(id: string, patch: PinPatch): void
+  /** A edição de um texto do pin (nome ou descrição) terminou (o campo perdeu o foco). */
+  endTextEdit(): void
+  /**
+   * Duplica o pin (AC-F3-09): a cópia, "<nome> (cópia)", fica deslocada por `offset` (em u e v,
+   * presa no mapa), com a mesma ficha (tipo, ícone, descrição, tags, campos e o mesmo pai) e sem os
+   * filhos, e fica selecionada. Devolve a cópia, ou `null` se o pin não existe.
+   */
+  duplicatePin(id: string, offset: { u: number; v: number }): Pin | null
   /** Arrasta o pin até (u, v), presa entre 0 e 1 (AC-F3-04). */
   dragTo(id: string, pos: { u: number; v: number }): void
   /** Solta o pin arrastado: com `commit`, ele fica na posição do arrasto; sem, volta. */
@@ -54,6 +63,30 @@ export type PinsState = {
 
 export type PinsStore = StoreApi<PinsState>
 
+/** O que o drawer edita na ficha do pin, além do nome. */
+export type PinPatch = Partial<Pick<Pin, 'description' | 'tags'>>
+
+/** O fim do nome de uma cópia: " (cópia)" ou " (cópia N)". */
+const COPY_SUFFIX = / \(cópia(?: (\d+))?\)$/
+
+/**
+ * O nome da cópia (AC-F3-09): "<nome> (cópia)"; a cópia de uma cópia conta: "(cópia 2)",
+ * "(cópia 3)"… Cortado para caber nos 80 caracteres do nome.
+ */
+export function copyName(name: string, max = 80): string {
+  const match = COPY_SUFFIX.exec(name)
+  const base = match ? name.slice(0, match.index) : name
+  const n = match ? (match[1] ? Number(match[1]) : 1) + 1 : 1
+  const suffix = n === 1 ? ' (cópia)' : ` (cópia ${n})`
+  return base.slice(0, max - suffix.length).trimEnd() + suffix
+}
+
+/** O pin sem tags repetidas (`uniqueTags`); sem repetidas, o mesmo objeto. */
+function withUniqueTags(pin: Pin): Pin {
+  const tags = uniqueTags(pin.tags)
+  return tags === pin.tags ? pin : { ...pin, tags: [...tags] }
+}
+
 /** O tipo de um pin novo: o do último pin do mundo, ou Cidade no primeiro. */
 export function nextPinType(pins: readonly Pin[]): PinType {
   const last = pins.at(-1)
@@ -68,12 +101,13 @@ export function clampPos(pos: { u: number; v: number }): { u: number; v: number 
 
 export function createPinsStore(initial: readonly Pin[] = [], { newId = () => crypto.randomUUID() }: { newId?: () => string } = {}): PinsStore {
   return createStore<PinsState>()((set, get) => ({
-    pins: [...initial],
+    // Um mundo salvo ou importado pode trazer tags repetidas: elas saem ao carregar.
+    pins: initial.map(withUniqueTags),
     selectedId: null,
     hoveredId: null,
     newPinId: null,
     dragging: null,
-    nameEditEnds: 0,
+    textEditEnds: 0,
     addPin(pos) {
       const type = nextPinType(get().pins)
       const pin: Pin = {
@@ -107,8 +141,38 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
       next[i] = { ...pins[i], name }
       set({ pins: next })
     },
-    endNameEdit() {
-      set({ nameEditEnds: get().nameEditEnds + 1 })
+    updatePin(id, edit) {
+      const pins = get().pins
+      const i = pins.findIndex((p) => p.id === id)
+      if (i < 0) return
+      const pin = pins[i]
+      // Uma tag repetida (sem diferenciar maiúsculas) não entra.
+      const patch: PinPatch = edit.tags ? { ...edit, tags: [...uniqueTags(edit.tags)] } : edit
+      const same =
+        (patch.description === undefined || patch.description === pin.description) &&
+        (patch.tags === undefined || (patch.tags.length === pin.tags.length && patch.tags.every((t, k) => t === pin.tags[k])))
+      if (same) return
+      const next = [...pins]
+      next[i] = { ...pin, ...patch, ...(patch.tags ? { tags: [...patch.tags] } : {}) }
+      set({ pins: next })
+    },
+    endTextEdit() {
+      set({ textEditEnds: get().textEditEnds + 1 })
+    },
+    duplicatePin(id, offset) {
+      const pin = get().pins.find((p) => p.id === id)
+      if (!pin) return null
+      const copy: Pin = {
+        ...pin,
+        id: newId(),
+        name: copyName(pin.name),
+        pos: clampPos({ u: pin.pos.u + offset.u, v: pin.pos.v + offset.v }),
+        icon: { ...pin.icon },
+        tags: [...pin.tags],
+        fields: { ...pin.fields },
+      }
+      set({ pins: [...get().pins, copy], selectedId: copy.id, newPinId: null })
+      return copy
     },
     dragTo(id, pos) {
       if (!get().pins.some((p) => p.id === id)) return

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import App from '../App'
+import { pinsWithCleanLinks } from '../features/pins/links'
 import { NewWorldWizard } from '../features/wizard/NewWorldWizard'
 import type { CreateThumbnails } from '../features/wizard/thumbnails'
 import { UnsavedLeaveDialog } from '../features/worlds/UnsavedLeaveDialog'
@@ -102,7 +103,8 @@ export function WorldsApp({
     (record: World): Session => {
       const world = createWorldStore(generator, worldStoreInitial(record), { newId, now })
       if (webgl2) world.getState().generate()
-      const pins = createPinsStore(record.pins)
+      // Um link fora da regra numa descrição salva vira texto ao abrir (AC-F3-07).
+      const pins = createPinsStore(pinsWithCleanLinks(record.pins))
       const history = createWorldHistory({ world, pins })
       const autosave = createAutosave({ world, pins, repo, loaded: record, now })
       setSession({ world, pins, history, autosave })

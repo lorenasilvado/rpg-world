@@ -1,41 +1,325 @@
-import { X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Copy, ImagePlus, LocateFixed, MapPin, Trash2, X } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { Pin } from '../../persistence/types'
+import { pinToWorld } from '../../render/layers/pinMath'
 import { PIN_SHAPES } from '../../render/style/pinShapes'
+import type { CameraStore } from '../../state/cameraStore'
 import { pinType, pinTypeLabel } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
+import type { WorldStore } from '../../state/worldStore'
+import { DescriptionEditor } from './DescriptionEditor'
 import { PinIcon } from './PinIcon'
+import { PinTags } from './PinTags'
+import { duplicateOffset, pinPlace } from './place'
+import { suggestedTags } from './tags'
 import { typeChipColors } from './typeChip'
 
+/** O zoom mínimo (relativo) do Centralizar: no mapa inteiro, a câmera aproxima até ele. */
+export const CENTER_PIN_ZOOM = 1.6
+
+const TABS = [
+  { id: 'descricao', label: 'Descrição' },
+  { id: 'detalhes', label: 'Detalhes' },
+  { id: 'conexoes', label: 'Conexões' },
+] as const
+
+type TabId = (typeof TABS)[number]['id']
+
 /**
- * O conteúdo do drawer com um pin selecionado (pins.md → E2, AC-F3-01 e AC-F3-03): o ícone do
- * tipo, o nome, editável, e a etiqueta do tipo, na cor dele. Sem pin selecionado, nada.
+ * A ficha do pin selecionado no drawer (pins.md → E2, AC-F3-06 a AC-F3-09). Sem pin selecionado,
+ * nada.
  *
- * O pin recém-criado (`newPinId`) abre com o nome em edição (o campo com o foco e o texto
+ * - A área "Adicionar imagem de capa (16:9)" no topo (o envio ainda não existe: o botão fica
+ *   desabilitado) e o botão fechar (a partir de 768 px; abaixo, o painel sobreposto tem o seu).
+ * - O cabeçalho: o ícone do tipo, o nome, editável, a etiqueta do tipo, na cor dele, e a linha do
+ *   lugar, com o bioma sob o pin (do campo exibido) e as coordenadas (`place.ts`).
+ * - As abas Descrição (a descrição em texto rico e as tags), Detalhes e Conexões (vazias por ora).
+ * - O rodapé fixo: Centralizar (a câmera desliza até o pin, aproximando até `CENTER_PIN_ZOOM`),
+ *   Duplicar (a cópia ao lado, selecionada) e Excluir (`onDelete`, com o toast "Pin excluído").
+ *
+ * O nome: o pin recém-criado (`newPinId`) abre com ele em edição (o campo com o foco e o texto
  * selecionado). O nome muda a cada tecla; um nome vazio não fica: ao sair do campo, volta o último
- * nome. Fora do foco, o campo acompanha o nome do pin (desfazer e refazer). Enter sai do campo; Esc, nele, fecha o drawer. O botão fechar (a partir de 768 px; abaixo,
- * o painel sobreposto tem o seu) também fecha.
+ * nome. Fora do foco, o campo acompanha o nome do pin (desfazer e refazer). Enter sai do campo; Esc,
+ * nele, fecha o drawer.
  */
-export function PinDrawer({ pins }: { pins: PinsStore }) {
+export function PinDrawer({
+  pins,
+  world,
+  camera,
+  onDelete,
+  onCentered,
+}: {
+  pins: PinsStore
+  world: WorldStore
+  camera: CameraStore
+  /** Exclui o pin (o mesmo da tecla Delete: o toast "Pin excluído" com Desfazer). */
+  onDelete: (id: string) => void
+  /** Depois do Centralizar (abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer). */
+  onCentered?: () => void
+}) {
   const selected = useStore(pins, (s) => s.pins.find((p) => p.id === s.selectedId) ?? null)
   const isNew = useStore(pins, (s) => s.selectedId !== null && s.selectedId === s.newPinId)
+  // A cópia do Duplicar: a ficha dela é outra (outra `key`), e o foco volta ao Duplicar dela.
+  const [duplicated, setDuplicated] = useState<string | null>(null)
   if (!selected) return null
-  return <PinCard key={selected.id} pin={selected} pins={pins} editName={isNew} />
+  return (
+    <PinCard
+      key={selected.id}
+      pin={selected}
+      pins={pins}
+      world={world}
+      camera={camera}
+      editName={isNew}
+      focusDuplicate={duplicated === selected.id}
+      onDuplicated={setDuplicated}
+      onDelete={onDelete}
+      onCentered={onCentered}
+    />
+  )
 }
 
-function PinCard({ pin, pins, editName }: { pin: Pin; pins: PinsStore; editName: boolean }) {
-  const [draft, setDraft] = useState(pin.name)
-  const input = useRef<HTMLInputElement>(null)
+function PinCard({
+  pin,
+  pins,
+  world,
+  camera,
+  editName,
+  focusDuplicate,
+  onDuplicated,
+  onDelete,
+  onCentered,
+}: {
+  pin: Pin
+  pins: PinsStore
+  world: WorldStore
+  camera: CameraStore
+  editName: boolean
+  /** A ficha é a da cópia que o Duplicar acabou de criar: o foco vai para o Duplicar dela. */
+  focusDuplicate: boolean
+  /** Depois do Duplicar, com o id da cópia (`null`: o foco já foi entregue). */
+  onDuplicated: (id: string | null) => void
+  onDelete: (id: string) => void
+  onCentered?: () => void
+}) {
   const type = pinType(pin.type)
   const chip = typeChipColors(PIN_SHAPES[type])
+  const field = useStore(world, (s) => s.field)
+  const allPins = useStore(pins, (s) => s.pins)
+  const [tab, setTab] = useState<TabId>('descricao')
+  const tabsId = useId()
+
+  const close = () => pins.getState().select(null)
+  const center = () => {
+    const p = pinToWorld(pin.pos)
+    camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
+    onCentered?.()
+  }
+  const duplicate = () => {
+    const copy = pins.getState().duplicatePin(pin.id, duplicateOffset(pin.pos, camera.getState().scale))
+    if (copy) onDuplicated(copy.id)
+  }
+  const duplicateButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!focusDuplicate) return
+    duplicateButton.current?.focus()
+    onDuplicated(null)
+  }, [focusDuplicate, onDuplicated])
+
+  return (
+    <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-drawer="" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
+      <div className="relative shrink-0">
+        <div
+          className="flex h-[74px] flex-col items-center justify-center gap-0.5 border-b border-line"
+          style={{ background: 'repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--paper-solid) 10px 20px)' }}
+        >
+          {/* Desabilitado até o envio de imagem: o motivo fica à vista ("Em breve"), porque um botão
+              desabilitado não mostra o `title`. */}
+          <button
+            type="button"
+            disabled
+            aria-describedby={`${pin.id}-capa-em-breve`}
+            data-testid="pin-cover-button"
+            className="flex h-8 items-center gap-2 rounded-control px-3 text-[13px] font-semibold text-ink-2 disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <ImagePlus size={16} aria-hidden="true" />
+            Adicionar imagem de capa (16:9)
+          </button>
+          <span
+            id={`${pin.id}-capa-em-breve`}
+            className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2"
+          >
+            Em breve
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-label="Fechar"
+          title="Fechar (Esc)"
+          onClick={close}
+          className="absolute top-3.5 right-3 hidden size-11 place-items-center rounded-control border border-line bg-paper-solid text-ink hover:bg-hover active:bg-press focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none md:grid"
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <header className="flex flex-col gap-2.5 px-5 pt-5 pb-4">
+          <div className="flex items-start gap-4">
+            <span className="grid size-14 shrink-0 place-items-center rounded-panel border border-line bg-field shadow-sm" data-testid="pin-drawer-icon">
+              <PinIcon type={type} size={36} />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+              <NameField pin={pin} pins={pins} edit={editName} onEscape={close} />
+              <span
+                data-testid="pin-drawer-type"
+                style={{ background: chip.background, color: chip.color }}
+                className="rounded-pill px-2 text-[11px]/5 font-extrabold tracking-[.08em] uppercase"
+              >
+                {pinTypeLabel(type)}
+              </span>
+            </div>
+          </div>
+          <p className="flex items-center gap-1.5 text-[13px] text-ink-2" data-testid="pin-drawer-place">
+            <MapPin size={14} aria-hidden="true" className="shrink-0" />
+            {pinPlace(field, pin.pos)}
+          </p>
+        </header>
+
+        <div role="tablist" aria-label="Ficha do pin" className="mx-5 flex gap-5 border-b border-line" onKeyDown={(e) => moveTab(e, tab, setTab)}>
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`${tabsId}-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`${tabsId}-${t.id}-painel`}
+              tabIndex={tab === t.id ? 0 : -1}
+              onClick={() => setTab(t.id)}
+              className={[
+                '-mb-px border-b-2 pt-1 pb-2 text-[14px] font-bold focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none',
+                tab === t.id ? 'border-amber text-amber-ink' : 'border-transparent text-ink-2 hover:border-line-2 hover:text-ink',
+              ].join(' ')}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {TABS.map((t) => (
+          <div
+            key={t.id}
+            role="tabpanel"
+            id={`${tabsId}-${t.id}-painel`}
+            aria-labelledby={`${tabsId}-${t.id}`}
+            hidden={tab !== t.id}
+            // Sem nada focável dentro (Detalhes e Conexões, por enquanto), o painel recebe o foco
+            // pelo Tab, como pede o padrão de abas.
+            tabIndex={t.id === 'descricao' ? undefined : 0}
+            className="px-5 pt-4 pb-6 focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none"
+          >
+            {t.id === 'descricao' && tab === 'descricao' && (
+              <div className="flex flex-col gap-5">
+                <DescriptionEditor
+                  value={pin.description}
+                  onChange={(description) => pins.getState().updatePin(pin.id, { description })}
+                  onBlur={() => pins.getState().endTextEdit()}
+                />
+                <PinTags
+                  tags={pin.tags}
+                  suggestions={suggestedTags(allPins, pin.id)}
+                  onChange={(tags) => pins.getState().updatePin(pin.id, { tags: [...tags] })}
+                />
+              </div>
+            )}
+            {t.id !== 'descricao' && <ComingSoon>{t.id === 'detalhes' ? DETAILS_SOON : CONNECTIONS_SOON}</ComingSoon>}
+          </div>
+        ))}
+      </div>
+
+      <footer className="flex shrink-0 gap-2 border-t border-line px-4 py-3">
+        <FooterButton label="Centralizar no pin" onClick={center}>
+          <LocateFixed size={16} aria-hidden="true" />
+          Centralizar
+        </FooterButton>
+        <FooterButton ref={duplicateButton} onClick={duplicate}>
+          <Copy size={16} aria-hidden="true" />
+          Duplicar
+        </FooterButton>
+        <FooterButton destructive onClick={() => onDelete(pin.id)}>
+          <Trash2 size={16} aria-hidden="true" />
+          Excluir
+        </FooterButton>
+      </footer>
+    </section>
+  )
+}
+
+/** Setas, Home e End mudam de aba (o padrão das abas do WAI-ARIA, com a ativação junto do foco). */
+function moveTab(e: KeyboardEvent<HTMLDivElement>, current: TabId, setTab: (id: TabId) => void) {
+  const i = TABS.findIndex((t) => t.id === current)
+  const next =
+    e.key === 'ArrowRight' ? (i + 1) % TABS.length
+    : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length
+    : e.key === 'Home' ? 0
+    : e.key === 'End' ? TABS.length - 1
+    : null
+  if (next === null) return
+  e.preventDefault()
+  setTab(TABS[next].id)
+  const tablist = e.currentTarget
+  requestAnimationFrame(() => tablist.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus())
+}
+
+/**
+ * Botão do rodapé. `label` troca o nome lido pelo leitor de tela quando o texto à vista não basta
+ * (Centralizar, que no controle de zoom é o do mapa inteiro).
+ */
+function FooterButton({
+  ref,
+  label,
+  destructive = false,
+  onClick,
+  children,
+}: {
+  ref?: Ref<HTMLButtonElement>
+  label?: string
+  destructive?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={[
+        'flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-control px-2 text-[13px] font-bold',
+        'focus-visible:shadow-[0_0_0_2px_var(--paper-solid),0_0_0_4px_var(--amber)] focus-visible:outline-none',
+        destructive
+          ? 'bg-brick text-white hover:bg-[#9C2F25] active:bg-[#86281F]'
+          : 'border border-line-2 bg-field text-ink hover:border-ink-3 hover:bg-sunken active:bg-press',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** O nome do pin, editável (AC-F3-01, AC-F3-06). */
+function NameField({ pin, pins, edit, onEscape }: { pin: Pin; pins: PinsStore; edit: boolean; onEscape: () => void }) {
+  const [draft, setDraft] = useState(pin.name)
+  const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!editName) return
+    if (!edit) return
     // Depois do deslizamento do drawer e da câmera: o foco não rola nada.
     input.current?.focus({ preventScroll: true })
     input.current?.select()
-  }, [editName])
+  }, [edit])
 
   // O nome mudou fora do campo (desfazer ou refazer, pela barra ou por Ctrl+Z): o campo acompanha.
   // Com o foco no campo, o texto é o que a pessoa digita (o nome salvo vem sem os espaços das pontas).
@@ -43,63 +327,51 @@ function PinCard({ pin, pins, editName }: { pin: Pin; pins: PinsStore; editName:
     if (document.activeElement !== input.current) setDraft(pin.name)
   }, [pin.name])
 
-  const close = () => pins.getState().select(null)
-
   return (
-    <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
-      <div className="hidden h-14 shrink-0 items-center justify-end px-3 md:flex">
-        <button
-          type="button"
-          aria-label="Fechar"
-          title="Fechar (Esc)"
-          onClick={close}
-          className="grid size-11 place-items-center rounded-control text-ink hover:bg-hover active:bg-press"
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
-      </div>
-      <header className="flex items-start gap-4 px-5 pt-2 pb-4">
-        <span className="grid size-16 shrink-0 place-items-center rounded-panel border border-line bg-field shadow-sm" data-testid="pin-drawer-icon">
-          <PinIcon type={type} size={40} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-          <label className="sr-only" htmlFor={`pin-name-${pin.id}`}>
-            Nome do pin
-          </label>
-          <input
-            ref={input}
-            id={`pin-name-${pin.id}`}
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value)
-              const name = e.target.value.trim()
-              if (name) pins.getState().rename(pin.id, name)
-            }}
-            onBlur={() => {
-              setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)
-              pins.getState().endNameEdit()
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                e.currentTarget.blur()
-              } else if (e.key === 'Escape') {
-                e.preventDefault()
-                close()
-              }
-            }}
-            maxLength={80}
-            className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7 font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
-          />
-          <span
-            data-testid="pin-drawer-type"
-            style={{ background: chip.background, color: chip.color }}
-            className="rounded-pill px-2 text-[11px]/5 font-extrabold tracking-[.08em] uppercase"
-          >
-            {pinTypeLabel(type)}
-          </span>
-        </div>
-      </header>
-    </section>
+    <>
+      <label className="sr-only" htmlFor={`pin-name-${pin.id}`}>
+        Nome do pin
+      </label>
+      <input
+        ref={input}
+        id={`pin-name-${pin.id}`}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          const name = e.target.value.trim()
+          if (name) pins.getState().rename(pin.id, name)
+        }}
+        onBlur={() => {
+          setDraft(pins.getState().pins.find((p) => p.id === pin.id)?.name ?? pin.name)
+          pins.getState().endTextEdit()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            e.currentTarget.blur()
+          } else if (e.key === 'Escape') {
+            e.preventDefault()
+            onEscape()
+          }
+        }}
+        maxLength={80}
+        className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7 font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
+      />
+    </>
+  )
+}
+
+/** O que a aba Detalhes vai ter (pins.md → E2). */
+const DETAILS_SOON = 'Tipo, ícone, pin pai e campos livres.'
+/** O que a aba Conexões vai ter (pins.md → E2). */
+const CONNECTIONS_SOON = 'O pin pai e os pins filhos.'
+
+/** Uma aba que ainda não existe: a etiqueta "Em breve", como a da capa, e o que ela vai ter. */
+function ComingSoon({ children }: { children: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-line-2 px-4 py-8 text-center" data-testid="pin-tab-soon">
+      <span className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2">Em breve</span>
+      <p className="text-[13px] text-ink-2">{children}</p>
+    </div>
   )
 }

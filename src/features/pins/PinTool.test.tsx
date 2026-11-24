@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCameraStore } from '../../state/cameraStore'
 import { createPinsStore } from '../../state/pinsStore'
@@ -30,7 +30,7 @@ function setup({ onDelete }: { onDelete?: (id: string) => void } = {}) {
         <canvas data-testid="canvas" />
       </main>
       <aside>
-        <PinDrawer pins={pins} />
+        <PinDrawer pins={pins} world={world} camera={camera} onDelete={onDelete ?? (() => {})} />
       </aside>
       <MeasureTool ui={ui} world={world} camera={camera} disabled={false} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={false} onDelete={onDelete} />
@@ -187,7 +187,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('o aperto no pin segura o pan da câmera até soltar e segue para a página (o "clique fora" dos popovers); fora dos pins, não segura', () => {
     const { camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     const onCanvas = vi.fn()
     const onDocument = vi.fn()
     canvas().addEventListener('pointerdown', onCanvas)
@@ -213,7 +213,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('o segundo dedo e o pointercancel soltam o pan', () => {
     const { camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerDown(canvas(), { ...pointer(700, 700), pointerId: 2, pointerType: 'touch' })
     expect(holdPan).toHaveBeenLastCalledWith(false)
@@ -246,7 +246,7 @@ describe('Arrastar pin (AC-F3-04)', () => {
   it('Esc devolve o pin e encerra o arrasto: mexer depois não arrasta, soltar não grava, o pan é solto e a seleção fica', () => {
     const { pins, camera } = withPin()
     const holdPan = vi.fn()
-    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, holdPan })
+    camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn() {}, holdPan })
     act(() => pins.getState().select('p1'))
     fireEvent.pointerDown(canvas(), pointer(512, 500))
     fireEvent.pointerMove(canvas(), pointer(700, 700))
@@ -285,5 +285,21 @@ describe('Excluir pin (AC-F3-05)', () => {
     act(() => pins.getState().select(null))
     fireEvent.keyDown(document.body, { key: 'Delete' })
     expect(onDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('com o foco num botão do drawer (um chip, uma aba, o rodapé), Delete e Backspace não excluem', () => {
+    const onDelete = vi.fn()
+    const { pins } = setup({ onDelete })
+    act(() => {
+      pins.getState().addPin({ u: 0.5, v: 0.5 })
+    })
+    for (const name of ['Duplicar', 'Detalhes']) {
+      const target = within(screen.getByTestId('pin-drawer')).getByRole(name === 'Detalhes' ? 'tab' : 'button', { name })
+      fireEvent.keyDown(target, { key: 'Backspace' })
+      fireEvent.keyDown(target, { key: 'Delete' })
+    }
+    expect(onDelete).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(onDelete).toHaveBeenCalledWith('p1')
   })
 })

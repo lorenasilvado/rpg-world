@@ -19,9 +19,10 @@ export const HISTORY_LIMIT = 100
  *
  * - Arrastar um slider só entra ao soltar (`paramsDragging` do `worldStore`), um passo por arrasto;
  *   arrastar um pin, um passo ao soltar (a lista só muda no `endDrag`).
- * - As teclas seguidas no nome do mesmo pin viram um passo só. A edição termina quando o campo
- *   perde o foco (`nameEditEnds` do `pinsStore`) ou a seleção muda: depois disso, mais teclas no
- *   mesmo pin são outro passo.
+ * - As teclas seguidas no mesmo texto do mesmo pin (o nome ou a descrição) viram um passo só. A
+ *   edição termina quando o campo perde o foco (`textEditEnds` do `pinsStore`) ou a seleção muda:
+ *   depois disso, mais teclas no mesmo texto são outro passo. Trocar de texto (do nome para a
+ *   descrição) também começa outro passo.
  * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita) e,
  *   se os parâmetros mudaram, os troca no `worldStore` pelo `setParams`, que pede só o mapa final
  *   1024², sem prévia.
@@ -48,21 +49,29 @@ function sameParams(a: WorldParams, b: WorldParams): boolean {
   return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k])
 }
 
-/** O id do pin cujo nome é a única diferença entre as duas listas (`null` se a mudança é outra). */
-function renamedPin(before: readonly Pin[], after: readonly Pin[]): string | null {
+/** Os textos do pin em que as teclas seguidas se juntam num passo só. */
+const TEXT_FIELDS = ['name', 'description'] as const
+
+/**
+ * O texto editado, como `<id do pin>:<campo>`, quando a única diferença entre as duas listas é o
+ * nome ou a descrição de um pin (`null` se a mudança é outra).
+ */
+export function editedText(before: readonly Pin[], after: readonly Pin[]): string | null {
   if (before.length !== after.length) return null
-  let id: string | null = null
+  let edited: string | null = null
   for (let i = 0; i < before.length; i++) {
     const a = before[i]
     const b = after[i]
     if (a === b) continue
-    if (id !== null || a.id !== b.id) return null
-    const { name: _a, ...restA } = a
-    const { name: _b, ...restB } = b
+    if (edited !== null || a.id !== b.id) return null
+    const field = TEXT_FIELDS.find((f) => a[f] !== b[f])
+    if (!field) return null
+    const { [field]: _a, ...restA } = a
+    const { [field]: _b, ...restB } = b
     if (JSON.stringify(restA) !== JSON.stringify(restB)) return null
-    id = a.id
+    edited = `${a.id}:${field}`
   }
-  return id
+  return edited
 }
 
 export function createWorldHistory({ world, pins }: { world: WorldStore; pins: PinsStore }): WorldHistory {
@@ -74,8 +83,8 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
   )
   const version = createStore<{ value: number }>()(() => ({ value: 0 }))
   const bump = () => version.setState({ value: version.getState().value + 1 })
-  /** O passo mais recente veio de teclas no nome deste pin (elas se juntam num passo só). */
-  let renaming: string | null = null
+  /** O passo mais recente veio de teclas neste texto (`<pin>:<campo>`): elas se juntam num passo só. */
+  let editing: string | null = null
   /** Desfazendo ou refazendo: as mudanças nos stores vêm do histórico e não viram passo. */
   let applying = false
 
@@ -83,21 +92,21 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
     const current = doc.getState()
     const merged = { ...current, ...next }
     if (merged.pins === current.pins && sameParams(merged.params, current.params)) return
-    const renamed = next.pins ? renamedPin(current.pins, next.pins) : null
-    if (renamed !== null && renamed === renaming && doc.temporal.getState().pastStates.length > 0) {
-      // Mais uma tecla no mesmo nome: troca o espelho sem guardar outro passo.
+    const edited = next.pins ? editedText(current.pins, next.pins) : null
+    if (edited !== null && edited === editing && doc.temporal.getState().pastStates.length > 0) {
+      // Mais uma tecla no mesmo texto: troca o espelho sem guardar outro passo.
       doc.temporal.getState().pause()
       doc.setState(merged)
       doc.temporal.getState().resume()
       return
     }
-    renaming = renamed
+    editing = edited
     doc.setState(merged)
     bump()
   }
 
   const unsubscribePins = pins.subscribe((state, prev) => {
-    if (state.nameEditEnds !== prev.nameEditEnds || state.selectedId !== prev.selectedId) renaming = null
+    if (state.textEditEnds !== prev.textEditEnds || state.selectedId !== prev.selectedId) editing = null
     if (applying || state.pins === prev.pins) return
     record({ pins: state.pins })
   })
@@ -111,7 +120,7 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
     move()
     const after = doc.getState()
     if (after === before) return
-    renaming = null
+    editing = null
     applying = true
     try {
       if (after.pins !== pins.getState().pins) pins.getState().replacePins(after.pins)

@@ -222,6 +222,7 @@ export async function createMapRenderer(
       zoomOut: () => camera.zoomBy(1 / KEY_ZOOM_STEP),
       center: () => camera.center(),
       centerOn: (x, y) => camera.centerOn(x, y),
+      focusOn: (x, y, minZoom) => camera.focusOn(x, y, minZoom),
       holdPan: (held) => camera.holdPan(held),
     },
     destroy() {
