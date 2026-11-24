@@ -43,8 +43,13 @@ export class MapCamera {
   private onChange: (t: Transform, zoom: number) => void
   /** A faixa à direita que o drawer aberto cobre (px CSS): os limites de pan e o centro do pin contam com ela. */
   private cover = 0
-  /** O drawer fechou: a câmera desliza de volta para os limites sem ele, e só no fim a faixa sai. */
+  /**
+   * O drawer fechou (a faixa nova): enquanto o mapa não está dentro dos limites sem ele, a faixa antiga
+   * continua valendo, e a câmera desliza de volta (`settle`). Só no fim a faixa sai.
+   */
   private pendingCover: number | null = null
+  /** Um arrasto ou uma pinça em curso: a volta aos limites espera o gesto (e a inércia) acabar. */
+  private gesture = false
 
   constructor(app: Application, host: HTMLElement, freeArea: () => Area, onChange: (t: Transform, zoom: number) => void) {
     this.host = host
@@ -72,13 +77,25 @@ export class MapCamera {
     this.applyMotion()
     this.reducedMotion.addEventListener('change', this.applyMotion)
 
+    // Um gesto interrompe o deslizamento. Com o drawer recém-fechado, a volta aos limites recomeça de
+    // onde o mapa ficou ao soltar (ou ao parar de se mover), sem saltar no meio do gesto.
     const cancel = () => {
       this.tween = null
-      this.releaseCover()
     }
-    this.viewport.on('drag-start', cancel)
-    this.viewport.on('pinch-start', cancel)
+    const gestureStart = () => {
+      this.gesture = true
+      cancel()
+    }
+    const gestureEnd = () => {
+      this.gesture = false
+      this.settle()
+    }
+    this.viewport.on('drag-start', gestureStart)
+    this.viewport.on('pinch-start', gestureStart)
+    this.viewport.on('drag-end', gestureEnd)
+    this.viewport.on('pinch-end', gestureEnd)
     this.viewport.on('wheel-start', cancel)
+    this.viewport.on('moved-end', this.settle)
     this.viewport.on('moved', this.clamp)
     this.viewport.on('frame-end', this.frame)
     document.addEventListener('keydown', this.onKeyDown)
@@ -102,17 +119,9 @@ export class MapCamera {
       this.cover = px
       return
     }
-    const from = this.tween?.to ?? this.currentView()
-    const target = toView(clampTransform(toTransform(from, this.area), this.area, WORLD_SIZE, px), this.area)
+    // Um deslizamento em curso (até o pin) termina primeiro; a volta aos limites vem depois dele.
     this.pendingCover = px
-    if (this.reducedMotion.matches || (target.cx === from.cx && target.cy === from.cy)) {
-      this.tween = null
-      this.releaseCover()
-      this.jump(target)
-      return
-    }
-    this.viewport.plugins.get('decelerate')?.reset()
-    this.tween = { from: this.currentView(), to: target, start: performance.now(), duration: CAMERA_TWEEN_MS }
+    this.settle()
   }
 
   /** A tela ou os painéis mudaram: mantém o ponto no centro da área livre e o zoom relativo. */
@@ -125,6 +134,7 @@ export class MapCamera {
     if (!this.fitted) return
     this.tween = null
     this.jump({ cx: before.cx, cy: before.cy, scale: zoom * fitView(this.area).scale })
+    this.settle()
   }
 
   center() {
@@ -147,6 +157,7 @@ export class MapCamera {
     this.tween = null
     this.viewport.plugins.get('decelerate')?.reset()
     this.jump({ cx, cy, scale: this.viewport.scale.x })
+    this.settle()
   }
 
   /**
@@ -188,6 +199,7 @@ export class MapCamera {
     this.reducedMotion.removeEventListener('change', this.applyMotion)
     this.viewport.off('moved', this.clamp)
     this.viewport.off('frame-end', this.frame)
+    this.viewport.off('moved-end', this.settle)
     // Antes do app: o viewport tira a própria função do ticker, que o app.destroy apaga.
     this.viewport.removeFromParent()
     this.viewport.destroy()
@@ -197,11 +209,26 @@ export class MapCamera {
     return toView({ x: this.viewport.x, y: this.viewport.y, scale: this.viewport.scale.x }, this.area)
   }
 
-  /** O drawer fechou e a câmera já voltou (ou o deslizamento foi interrompido): a faixa sai dos limites. */
-  private releaseCover() {
-    if (this.pendingCover === null) return
-    this.cover = this.pendingCover
-    this.pendingCover = null
+  /**
+   * Com o drawer recém-fechado (`pendingCover`) e a câmera parada (sem deslizamento nem gesto): se o
+   * mapa já está dentro dos limites sem o drawer, a faixa sai; senão, ele desliza de volta (350 ms; com
+   * movimento reduzido, salta), e a faixa sai no fim. Interrompido (um gesto, o minimapa, a tela
+   * mudou), recomeça de onde o mapa ficou.
+   */
+  private settle = () => {
+    if (this.pendingCover === null || this.tween || this.gesture) return
+    const px = this.pendingCover
+    const now = this.currentView()
+    const target = toView(clampTransform(toTransform(now, this.area), this.area, WORLD_SIZE, px), this.area)
+    const inside = Math.abs(target.cx - now.cx) * now.scale < 0.5 && Math.abs(target.cy - now.cy) * now.scale < 0.5
+    if (inside || this.reducedMotion.matches) {
+      this.cover = px
+      this.pendingCover = null
+      if (!inside) this.jump(target)
+      return
+    }
+    this.viewport.plugins.get('decelerate')?.reset()
+    this.tween = { from: now, to: target, start: performance.now(), duration: CAMERA_TWEEN_MS }
   }
 
   private applyZoomLimits() {
@@ -244,7 +271,7 @@ export class MapCamera {
       this.set(toTransform(lerpView(from, to, easeCamera(k)), this.area))
       if (k >= 1) {
         this.tween = null
-        this.releaseCover()
+        this.settle()
       }
     }
     const clamped = this.clamp()

@@ -274,6 +274,94 @@ describe('MapCamera', () => {
     now.mockRestore()
   })
 
+  /** 1440 × 900 com a sidebar, o drawer aberto e o mapa na esquerda dele (x 140), parado. */
+  function drawerOpenAtLeft() {
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const s = setup(area)
+    const now = vi.spyOn(performance, 'now')
+    now.mockReturnValue(1000)
+    s.camera.showWorld()
+    s.camera.setRightCover(400)
+    s.camera.panTo(820, 460)
+    now.mockReturnValue(1400)
+    s.viewport.emit('frame-end')
+    expect(s.last().t.x).toBeCloseTo(140)
+    const at = (ms: number) => {
+      now.mockReturnValue(ms)
+      s.viewport.emit('frame-end')
+      return s.last().t.x
+    }
+    return { ...s, now, at }
+  }
+
+  it('fechar o drawer no meio do deslizamento até o pin não salta: ele termina, e depois o mapa volta aos limites', () => {
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const { camera, last, viewport } = setup(area)
+    const now = vi.spyOn(performance, 'now')
+    now.mockReturnValue(1000)
+    camera.showWorld()
+    camera.setRightCover(400)
+    camera.panTo(820, 460)
+    now.mockReturnValue(1100)
+    viewport.emit('frame-end')
+    const mid = last().t.x
+    expect(mid).toBeLessThan(430)
+    expect(mid).toBeGreaterThan(140)
+
+    camera.setRightCover(0)
+    now.mockReturnValue(1200)
+    viewport.emit('frame-end')
+    // Continua do ponto em que estava, sem pular para o destino nem para os limites.
+    expect(last().t.x).toBeLessThan(mid)
+    expect(last().t.x).toBeGreaterThan(140)
+    now.mockReturnValue(1400)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(140)
+    // Depois, a volta: em 350 ms, dentro dos limites sem o drawer.
+    now.mockReturnValue(1800)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(320)
+    now.mockRestore()
+  })
+
+  it('redimensionar ou o minimapa no meio da volta não deixam a faixa do drawer presa: a volta recomeça e termina', () => {
+    const { camera, at, now } = drawerOpenAtLeft()
+    camera.setRightCover(0)
+    at(1400)
+    const mid = at(1575)
+    expect(mid).toBeGreaterThan(140)
+    expect(mid).toBeLessThan(320)
+    camera.resize(1440, 900)
+    expect(at(1600)).toBeLessThan(320)
+    expect(at(2000)).toBeCloseTo(320)
+
+    // De novo, agora com o minimapa (centerOn) no meio da volta.
+    camera.setRightCover(400)
+    camera.panTo(820, 460)
+    expect(at(2400)).toBeCloseTo(140)
+    camera.setRightCover(0)
+    at(2400)
+    at(2575)
+    camera.centerOn(800, 460)
+    expect(at(3000)).toBeCloseTo(320)
+    now.mockRestore()
+  })
+
+  it('arrastar no meio da volta não encaixa nos limites de uma vez: a volta recomeça ao soltar', () => {
+    const { camera, viewport, at, now } = drawerOpenAtLeft()
+    camera.setRightCover(0)
+    at(1400)
+    const mid = at(1575)
+    viewport.emit('drag-start')
+    // Durante o gesto, os limites com o drawer continuam: o mapa fica onde o dedo o deixou.
+    expect(at(1600)).toBeCloseTo(mid)
+    expect(at(2000)).toBeCloseTo(mid)
+    viewport.emit('drag-end')
+    expect(at(2050)).toBeLessThan(320)
+    expect(at(2400)).toBeCloseTo(320)
+    now.mockRestore()
+  })
+
   it('focusOn não passa do zoom máximo (4×)', () => {
     setReduced(true)
     const { camera, last } = setup()

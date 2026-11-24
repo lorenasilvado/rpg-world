@@ -399,3 +399,22 @@ test('1440: ao abrir o drawer, a toolbar vai para a segunda linha logo no começ
   expect(changes.map((c) => c.place)).toEqual(['above'])
   expect(changes[0].barWidth).toBeGreaterThan(829)
 })
+
+test('1440, zoom 1×: um pin perto da borda direita sai de baixo do drawer ao ser selecionado; ao fechar, o mapa volta aos limites sem ele (AC-F3-03, AC-F3-19)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', defaultWorld({ pins: [pin('p-leste', 'Porto Leste', 0.8, 0.45)] }))
+  await waitFinalMap(page)
+  // No 1×, o mapa (900 px) vai de 430 a 1330: o pin (u 0,8) fica em 1150, onde o drawer vai abrir (de 1040 em diante).
+  await expect(map(page)).toHaveAttribute('data-map-rect', '430,0,900,900')
+  await clickPin(page, 0.8, 0.45)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-leste')
+  // A borda direita do mapa para na do drawer (1040): o mapa vai a 140, e o pin, a 860, à vista.
+  await expect(map(page)).toHaveAttribute('data-map-rect', '140,0,900,900')
+  expect((await screenOf(page, 0.8, 0.45)).x).toBeLessThan(1040)
+  expect(await map(page).getAttribute('data-zoom')).toBe('1.000')
+
+  // Fechar: sem o drawer, o mapa menor que a área livre volta para dentro dela (a esquerda em 320).
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('drawer')).toBeHidden()
+  await expect(map(page)).toHaveAttribute('data-map-rect', '320,0,900,900')
+})
