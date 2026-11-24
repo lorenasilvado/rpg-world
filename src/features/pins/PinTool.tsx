@@ -50,6 +50,9 @@ export function PinTool({
       if (e.defaultPrevented || isFieldTarget(e.target) || inDialog(e.target)) return
       // Delete, ou Backspace (a tecla "delete" do notebook Mac).
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Com o foco no drawer (um chip de tag, uma aba, o rodapé), a tecla não exclui o pin: um
+        // Backspace num chip não pode apagar o pin inteiro.
+        if (inPinDrawer(e.target)) return
         const id = pins.getState().selectedId
         if (id === null || !onDelete || e.ctrlKey || e.altKey || e.metaKey || pins.getState().dragging) return
         e.preventDefault()
@@ -186,4 +189,9 @@ export function PinTool({
   }, [ui, pins, camera, disabled])
 
   return null
+}
+
+/** Se o alvo do teclado está dentro do drawer do pin (`data-pin-drawer`). */
+function inPinDrawer(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest('[data-pin-drawer]') !== null
 }

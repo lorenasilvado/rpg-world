@@ -216,6 +216,19 @@ test('o drawer é navegável só com o teclado: nome, abas, formatação, descri
   await page.keyboard.press('Enter')
   await expect(map(page)).toHaveAttribute('data-zoom', '1.600')
   expect((await savedPins(page))[0].description).toBe('<p>Capital do reino Fim.</p>')
+
+  // Backspace num botão do drawer não exclui o pin.
+  await page.keyboard.press('Backspace')
+  await expect(map(page)).toHaveAttribute('data-pins', '2')
+  // Excluir pelo rodapé: o foco vai para o Desfazer da barra, e o Enter devolve o pin.
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await expect(drawer(page).getByRole('button', { name: 'Excluir' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(map(page)).toHaveAttribute('data-pins', '1')
+  await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'Desfazer')
+  await page.keyboard.press('Enter')
+  await expect(map(page)).toHaveAttribute('data-pins', '2')
 })
 
 test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser consultada, com o rodapé à vista (AC-F3-18)', async ({ page }, info) => {

@@ -110,7 +110,7 @@ function PinCard({
   }
 
   return (
-    <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-drawer="" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
       <div className="relative shrink-0">
         <div
           className="flex h-[74px] flex-col items-center justify-center gap-0.5 border-b border-line"

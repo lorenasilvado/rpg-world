@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCameraStore } from '../../state/cameraStore'
 import { createPinsStore } from '../../state/pinsStore'
@@ -285,5 +285,21 @@ describe('Excluir pin (AC-F3-05)', () => {
     act(() => pins.getState().select(null))
     fireEvent.keyDown(document.body, { key: 'Delete' })
     expect(onDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('com o foco num botão do drawer (um chip, uma aba, o rodapé), Delete e Backspace não excluem', () => {
+    const onDelete = vi.fn()
+    const { pins } = setup({ onDelete })
+    act(() => {
+      pins.getState().addPin({ u: 0.5, v: 0.5 })
+    })
+    for (const name of ['Duplicar', 'Detalhes']) {
+      const target = within(screen.getByTestId('pin-drawer')).getByRole(name === 'Detalhes' ? 'tab' : 'button', { name })
+      fireEvent.keyDown(target, { key: 'Backspace' })
+      fireEvent.keyDown(target, { key: 'Delete' })
+    }
+    expect(onDelete).not.toHaveBeenCalled()
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    expect(onDelete).toHaveBeenCalledWith('p1')
   })
 })
