@@ -19,10 +19,10 @@ export const HISTORY_LIMIT = 100
  *
  * - Arrastar um slider só entra ao soltar (`paramsDragging` do `worldStore`), um passo por arrasto;
  *   arrastar um pin, um passo ao soltar (a lista só muda no `endDrag`).
- * - As teclas seguidas no mesmo texto do mesmo pin (o nome ou a descrição) viram um passo só. A
- *   edição termina quando o campo perde o foco (`textEditEnds` do `pinsStore`) ou a seleção muda:
- *   depois disso, mais teclas no mesmo texto são outro passo. Trocar de texto (do nome para a
- *   descrição) também começa outro passo.
+ * - As teclas seguidas no mesmo texto do mesmo pin (o nome, a descrição ou o valor de um campo
+ *   livre) viram um passo só. A edição termina quando o campo perde o foco (`textEditEnds` do
+ *   `pinsStore`) ou a seleção muda: depois disso, mais teclas no mesmo texto são outro passo.
+ *   Trocar de texto (do nome para a descrição) também começa outro passo.
  * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita) e,
  *   se os parâmetros mudaram, os troca no `worldStore` pelo `setParams`, que pede só o mapa final
  *   1024², sem prévia.
@@ -53,8 +53,21 @@ function sameParams(a: WorldParams, b: WorldParams): boolean {
 const TEXT_FIELDS = ['name', 'description'] as const
 
 /**
+ * O valor do campo livre que mudou, como `fields:<chave>`, quando os dois têm as mesmas chaves, na
+ * mesma ordem, e só um valor muda (`null` se a mudança é outra).
+ */
+function editedFieldValue(a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): string | null {
+  const ka = Object.keys(a)
+  const kb = Object.keys(b)
+  if (ka.length !== kb.length || ka.some((k, i) => k !== kb[i])) return null
+  const changed = ka.filter((k) => a[k] !== b[k])
+  return changed.length === 1 ? `fields:${changed[0]}` : null
+}
+
+/**
  * O texto editado, como `<id do pin>:<campo>`, quando a única diferença entre as duas listas é o
- * nome ou a descrição de um pin (`null` se a mudança é outra).
+ * nome, a descrição ou o valor de um campo livre de um pin (`<id>:fields:<chave>`; `null` se a
+ * mudança é outra).
  */
 export function editedText(before: readonly Pin[], after: readonly Pin[]): string | null {
   if (before.length !== after.length) return null
@@ -64,12 +77,14 @@ export function editedText(before: readonly Pin[], after: readonly Pin[]): strin
     const b = after[i]
     if (a === b) continue
     if (edited !== null || a.id !== b.id) return null
-    const field = TEXT_FIELDS.find((f) => a[f] !== b[f])
+    const field = TEXT_FIELDS.find((f) => a[f] !== b[f]) ?? (a.fields !== b.fields ? 'fields' : null)
     if (!field) return null
     const { [field]: _a, ...restA } = a
     const { [field]: _b, ...restB } = b
     if (JSON.stringify(restA) !== JSON.stringify(restB)) return null
-    edited = `${a.id}:${field}`
+    const part = field === 'fields' ? editedFieldValue(a.fields, b.fields) : field
+    if (part === null) return null
+    edited = `${a.id}:${part}`
   }
   return edited
 }

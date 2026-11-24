@@ -58,19 +58,16 @@ describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
     expect(hint?.textContent).toBe('Em breve')
   })
 
-  it('Detalhes e Conexões mostram "Em breve" e o que vão ter, num painel focável', () => {
+  it('Conexões mostra "Em breve" e o que vai ter, num painel focável; Descrição e Detalhes têm o que focar', () => {
     setup()
-    for (const [name, text] of [
-      ['Detalhes', 'Tipo, ícone, pin pai e campos livres.'],
-      ['Conexões', 'O pin pai e os pins filhos.'],
-    ]) {
+    fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
+    const panel = screen.getByRole('tabpanel', { name: 'Conexões' })
+    expect(panel.getAttribute('tabindex')).toBe('0')
+    expect(within(panel).getByTestId('pin-tab-soon').textContent).toBe('Em breveO pin pai e os pins filhos.')
+    for (const name of ['Descrição', 'Detalhes']) {
       fireEvent.click(screen.getByRole('tab', { name }))
-      const panel = screen.getByRole('tabpanel', { name })
-      expect(panel.getAttribute('tabindex')).toBe('0')
-      expect(within(panel).getByTestId('pin-tab-soon').textContent).toBe('Em breve' + text)
+      expect(screen.getByRole('tabpanel', { name }).hasAttribute('tabindex')).toBe(false)
     }
-    fireEvent.click(screen.getByRole('tab', { name: 'Descrição' }))
-    expect(screen.getByRole('tabpanel', { name: 'Descrição' }).hasAttribute('tabindex')).toBe(false)
   })
 
   it('as abas Descrição (ativa), Detalhes e Conexões mudam pelas setas', () => {

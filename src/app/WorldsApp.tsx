@@ -10,6 +10,7 @@ import type { World } from '../persistence/types'
 import { copyName, loadWorlds, newWorldRecord, worldStoreInitial } from '../persistence/worldRecord'
 import type { WorldsRepo } from '../persistence/worldsRepo'
 import { createWorldHistory, type WorldHistory } from '../state/history'
+import { createPinImages, pinImageIds, type PinImages } from '../state/pinImages'
 import { createPinsStore, type PinsStore } from '../state/pinsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { createWorldStore, newWorldId, type WorldGenerator, type WorldStore } from '../state/worldStore'
@@ -18,8 +19,11 @@ import type { CreateMapRenderer } from './MapView'
 /** O relógio padrão (estável: entra nas dependências dos efeitos). */
 const currentTime = () => new Date()
 
-/** O mundo aberto no editor: o estado dele, os pins, o histórico de desfazer e o salvamento automático. */
-type Session = { world: WorldStore; pins: PinsStore; history: WorldHistory; autosave: Autosave }
+/**
+ * O mundo aberto no editor: o estado dele, os pins, as imagens enviadas dos pins, o histórico de
+ * desfazer e o salvamento automático.
+ */
+type Session = { world: WorldStore; pins: PinsStore; images: PinImages; history: WorldHistory; autosave: Autosave }
 
 /**
  * O app (mundos.md → Ações, AC-F4-04 a AC-F4-06, AC-F4-12): a Lista de mundos é a tela inicial;
@@ -49,7 +53,7 @@ export function WorldsApp({
   now = currentTime,
   newId = newWorldId,
 }: {
-  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove'>
+  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage' | 'pruneImages'>
   generator: WorldGenerator
   webgl2?: boolean
   ui?: UiStore
@@ -105,10 +109,17 @@ export function WorldsApp({
       if (webgl2) world.getState().generate()
       // Um link fora da regra numa descrição salva vira texto ao abrir (AC-F3-07).
       const pins = createPinsStore(pinsWithCleanLinks(record.pins))
+      // As imagens dos pins vêm do banco à parte; até chegarem, o pin mostra o círculo hachurado.
+      // As que nenhum pin usa mais (trocadas, removidas, de pins excluídos) saem do banco.
+      const images = createPinImages({ worldId: record.id, repo })
+      const used = pinImageIds(record.pins)
+      void images.load(used)
+      void images.prune(used)
       const history = createWorldHistory({ world, pins })
       const autosave = createAutosave({ world, pins, repo, loaded: record, now })
-      setSession({ world, pins, history, autosave })
-      return { world, pins, history, autosave }
+      const session = { world, pins, images, history, autosave }
+      setSession(session)
+      return session
     },
     [generator, repo, webgl2, newId, now],
   )
@@ -117,6 +128,7 @@ export function WorldsApp({
     if (!session) return
     session.autosave.dispose()
     session.history.dispose()
+    session.images.dispose()
     setUnsaved('closed')
     setWorlds(null)
     setSession(null)
@@ -144,6 +156,7 @@ export function WorldsApp({
           key={session.world.getState().id}
           world={session.world}
           pins={session.pins}
+          images={session.images}
           history={session.history}
           ui={uiStore}
           save={session.autosave.store}

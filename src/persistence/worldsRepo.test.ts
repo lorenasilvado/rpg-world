@@ -143,6 +143,19 @@ describe('renomear, duplicar e excluir (AC-F4-07)', () => {
     expect(await repo.duplicate('nao-existe', { id: 'x', name: 'x', now: NOW, newId: () => 'y' })).toBeUndefined()
   })
 
+  it('pruneImages apaga só as imagens do mundo que ninguém guarda', async () => {
+    const repo = createWorldsRepo(freshDb())
+    for (const [id, worldId] of [
+      ['usada', 'w1'],
+      ['orfa', 'w1'],
+      ['outra', 'w2'],
+    ]) await repo.saveImage({ id, worldId, blob: new Blob(['x']) })
+    expect(await repo.pruneImages('w1', (id) => id === 'usada')).toBe(1)
+    expect(await repo.getImage('usada')).toBeTruthy()
+    expect(await repo.getImage('orfa')).toBeUndefined()
+    expect(await repo.getImage('outra')).toBeTruthy()
+  })
+
   it('remove exclui o mundo e as imagens dele, e só elas', async () => {
     const repo = createWorldsRepo(freshDb())
     await repo.save(world({ id: 'w1' }))

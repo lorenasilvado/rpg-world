@@ -38,7 +38,10 @@ export type PinsState = {
   select(id: string | null): void
   setHovered(id: string | null): void
   rename(id: string, name: string): void
-  /** Troca a descrição ou as tags do pin (a ficha do drawer, AC-F3-07 e AC-F3-08). */
+  /**
+   * Troca a ficha do pin: a descrição e as tags (AC-F3-07, AC-F3-08), o tipo, o ícone e os campos
+   * livres (a aba Detalhes, AC-F3-10).
+   */
   updatePin(id: string, patch: PinPatch): void
   /** A edição de um texto do pin (nome ou descrição) terminou (o campo perdeu o foco). */
   endTextEdit(): void
@@ -64,7 +67,18 @@ export type PinsState = {
 export type PinsStore = StoreApi<PinsState>
 
 /** O que o drawer edita na ficha do pin, além do nome. */
-export type PinPatch = Partial<Pick<Pin, 'description' | 'tags'>>
+export type PinPatch = Partial<Pick<Pin, 'description' | 'tags' | 'type' | 'icon' | 'fields'>>
+
+function sameIcon(a: Pin['icon'], b: Pin['icon']): boolean {
+  return a.kind === 'builtin' ? b.kind === 'builtin' && a.key === b.key : b.kind === 'image' && a.blobId === b.blobId
+}
+
+/** Os mesmos campos, na mesma ordem. */
+function sameFields(a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean {
+  const ka = Object.keys(a)
+  const kb = Object.keys(b)
+  return ka.length === kb.length && ka.every((k, i) => k === kb[i] && a[k] === b[k])
+}
 
 /** O fim do nome de uma cópia: " (cópia)" ou " (cópia N)". */
 const COPY_SUFFIX = / \(cópia(?: (\d+))?\)$/
@@ -150,10 +164,19 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
       const patch: PinPatch = edit.tags ? { ...edit, tags: [...uniqueTags(edit.tags)] } : edit
       const same =
         (patch.description === undefined || patch.description === pin.description) &&
-        (patch.tags === undefined || (patch.tags.length === pin.tags.length && patch.tags.every((t, k) => t === pin.tags[k])))
+        (patch.tags === undefined || (patch.tags.length === pin.tags.length && patch.tags.every((t, k) => t === pin.tags[k]))) &&
+        (patch.type === undefined || patch.type === pin.type) &&
+        (patch.icon === undefined || sameIcon(patch.icon, pin.icon)) &&
+        (patch.fields === undefined || sameFields(patch.fields, pin.fields))
       if (same) return
       const next = [...pins]
-      next[i] = { ...pin, ...patch, ...(patch.tags ? { tags: [...patch.tags] } : {}) }
+      next[i] = {
+        ...pin,
+        ...patch,
+        ...(patch.tags ? { tags: [...patch.tags] } : {}),
+        ...(patch.icon ? { icon: { ...patch.icon } } : {}),
+        ...(patch.fields ? { fields: { ...patch.fields } } : {}),
+      }
       set({ pins: next })
     },
     endTextEdit() {

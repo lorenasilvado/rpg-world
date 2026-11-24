@@ -16,6 +16,7 @@ import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
 import { createCameraStore } from '../state/cameraStore'
 import type { WorldHistory } from '../state/history'
+import type { PinImages } from '../state/pinImages'
 import type { PinsStore } from '../state/pinsStore'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
@@ -75,6 +76,7 @@ import { useTheme } from './useTheme'
 export function EditorLayout({
   world,
   pins,
+  images,
   ui,
   history,
   save,
@@ -83,6 +85,8 @@ export function EditorLayout({
 }: {
   world: WorldStore
   pins: PinsStore
+  /** As imagens enviadas dos pins (o ícone do Personalizado). */
+  images: PinImages
   ui: UiStore
   /** O histórico de desfazer e refazer do mundo (`createWorldHistory`). */
   history: WorldHistory
@@ -254,7 +258,7 @@ export function EditorLayout({
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} createRenderer={createRenderer} />
+      <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
 
@@ -435,6 +439,7 @@ export function EditorLayout({
         </div>
         <PinDrawer
           pins={pins}
+          images={images}
           world={world}
           camera={camera}
           onDelete={deleteFromDrawer}

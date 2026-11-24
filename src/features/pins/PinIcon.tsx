@@ -4,9 +4,10 @@ import type { PinType } from '../../state/pinTypes'
 
 /**
  * O pin do `type` como `<svg>` (design-system.md → Pins), com `size` px de largura e 1,2× de altura:
- * o mesmo desenho do mapa (`drawPin`), para o drawer e as listas.
+ * o mesmo desenho do mapa (`drawPin`), para o drawer e as listas. O Personalizado com `image` (o
+ * endereço da imagem enviada) a mostra no círculo, cobrindo-o; sem ela, o círculo hachurado.
  */
-export function PinIcon({ type, size = 32, className }: { type: PinType; size?: number; className?: string }) {
+export function PinIcon({ type, size = 32, image, className }: { type: PinType; size?: number; image?: string; className?: string }) {
   // O id do React tem caracteres (`:`, `«`) que quebram o `url(#…)`.
   const id = `pin${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   const s = PIN_SHAPES[type]
@@ -26,6 +27,11 @@ export function PinIcon({ type, size = 32, className }: { type: PinType; size?: 
           <path d={s.body} />
         </clipPath>
         {type === 'custom' && (
+          <clipPath id={`${id}c`}>
+            <circle cx={cx} cy={cy} r={r} />
+          </clipPath>
+        )}
+        {type === 'custom' && (
           <pattern id={`${id}s`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <rect width="4" height="4" fill="#EFE6D2" />
             <rect width="1.6" height="4" fill="#D8C9A8" />
@@ -44,7 +50,23 @@ export function PinIcon({ type, size = 32, className }: { type: PinType; size?: 
       ))}
       {type === 'custom' && (
         <>
-          <circle cx={cx} cy={cy} r={r} fill={`url(#${id}s)`} />
+          {image ? (
+            <>
+              <circle cx={cx} cy={cy} r={r} fill="#EFE6D2" />
+              <image
+                href={image}
+                x={cx - r}
+                y={cy - r}
+                width={2 * r}
+                height={2 * r}
+                preserveAspectRatio="xMidYMid slice"
+                clipPath={`url(#${id}c)`}
+                data-testid="pin-icon-image"
+              />
+            </>
+          ) : (
+            <circle cx={cx} cy={cy} r={r} fill={`url(#${id}s)`} />
+          )}
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={PIN_INK} strokeWidth={1.2} />
         </>
       )}

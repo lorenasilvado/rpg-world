@@ -1,12 +1,31 @@
-import type { World } from '../persistence/types'
+import type { StoredImage, World } from '../persistence/types'
 import { copyWorldRecord } from '../persistence/worldRecord'
 import type { WorldsRepo } from '../persistence/worldsRepo'
 
 /** Um repositório de mundos em memória, para os testes do jsdom (o mesmo contrato do Dexie). */
-export function memoryRepo(initial: World[] = []): Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove'> & { worlds: Map<string, World> } {
+export function memoryRepo(
+  initial: World[] = [],
+): Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage' | 'pruneImages'> & { worlds: Map<string, World>; images: Map<string, StoredImage> } {
   const worlds = new Map(initial.map((w) => [w.id, structuredClone(w)]))
+  const images = new Map<string, StoredImage>()
   return {
     worlds,
+    images,
+    async saveImage(image) {
+      images.set(image.id, image)
+    },
+    async getImage(id) {
+      return images.get(id)
+    },
+    async pruneImages(worldId, keep) {
+      let n = 0
+      for (const [id, image] of images) {
+        if (image.worldId !== worldId || keep(id)) continue
+        images.delete(id)
+        n++
+      }
+      return n
+    },
     async save(world) {
       worlds.set(world.id, structuredClone(world))
     },

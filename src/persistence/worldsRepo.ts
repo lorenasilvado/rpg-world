@@ -22,6 +22,11 @@ export type WorldsRepo = {
   remove(id: string): Promise<void>
   saveImage(image: StoredImage): Promise<void>
   getImage(id: string): Promise<StoredImage | undefined>
+  /**
+   * Apaga as imagens do mundo que `keep` não guarda (as que nenhum pin usa mais: trocadas,
+   * removidas ou de um pin excluído); devolve quantas apagou.
+   */
+  pruneImages(worldId: string, keep: (id: string) => boolean): Promise<number>
 }
 
 export function createWorldsRepo(db: RpgWorldDb): WorldsRepo {
@@ -63,6 +68,13 @@ export function createWorldsRepo(db: RpgWorldDb): WorldsRepo {
     },
     getImage(id) {
       return db.images.get(id)
+    },
+    pruneImages(worldId, keep) {
+      return db.images
+        .where('worldId')
+        .equals(worldId)
+        .filter((image) => !keep(image.id))
+        .delete()
     },
   }
 }

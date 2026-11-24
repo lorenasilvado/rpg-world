@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { PIN_TYPES } from '../../state/pinTypes'
-import { PIN_SHAPES, drawPin, type PinInk } from './pinShapes'
+import { CUSTOM_CIRCLE, PIN_SHAPES, coverSquare, drawPin, type PinInk } from './pinShapes'
 
 describe('formas dos pins (AC-F3-02, design-system.md → Pins)', () => {
   it('os 7 tipos têm forma, base e sombra do design system', () => {
@@ -47,5 +47,29 @@ describe('formas dos pins (AC-F3-02, design-system.md → Pins)', () => {
     expect(fills).toEqual(['#2B2420', '#2F8276', '#4FB0A3', '#FFF8E8', '#FFF8E8', '#2B2420'])
     expect(ctx.lineWidth).toBe(1.5)
     expect(ctx.strokeStyle).toBe('#2B2420')
+  })
+
+  it('o Personalizado com imagem a desenha cobrindo o círculo, no lugar da hachura (AC-F3-11)', () => {
+    const ink = () => {
+      const ctx = { fillStyle: '', strokeStyle: '', lineWidth: 0, lineJoin: 'miter', globalAlpha: 1 } as Record<string, unknown>
+      for (const m of ['save', 'restore', 'translate', 'scale', 'rotate', 'clip', 'beginPath', 'ellipse', 'fillRect', 'stroke', 'fill', 'drawImage']) ctx[m] = vi.fn()
+      return ctx as unknown as PinInk
+    }
+    const path = (d: string) => ({ d }) as unknown as Path2D
+    const source = {} as CanvasImageSource
+    const withImage = ink()
+    drawPin(withImage, 'custom', 128, path, { source, width: 300, height: 200 })
+    const { cx, cy, r } = CUSTOM_CIRCLE
+    expect(withImage.drawImage).toHaveBeenCalledWith(source, 50, 0, 200, 200, cx - r, cy - r, 2 * r, 2 * r)
+    expect(withImage.fillRect).not.toHaveBeenCalled()
+    const hatched = ink()
+    drawPin(hatched, 'custom', 128, path)
+    expect(hatched.drawImage).not.toHaveBeenCalled()
+    expect(hatched.fillRect).toHaveBeenCalled()
+  })
+
+  it('o recorte da imagem é o quadrado do meio', () => {
+    expect(coverSquare(300, 200)).toEqual({ sx: 50, sy: 0, side: 200 })
+    expect(coverSquare(100, 400)).toEqual({ sx: 0, sy: 150, side: 100 })
   })
 })
