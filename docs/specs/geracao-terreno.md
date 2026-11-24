@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-21
+updated: 2026-11-24
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -54,6 +54,8 @@ de dados em [overview.md](../overview.md).
   dígitos hexadecimais) e regenera o mapa. Copiar põe a seed na área de transferência e troca o
   ícone por um check por 1,5 s, contados de novo a cada cópia (o leitor de tela ouve "Seed copiada"); sem acesso à área de
   transferência, a seed fica selecionada no campo.
+- Abaixo de 768 px, o campo da seed tem fonte de 16 px (no desktop, 13 px), para o iOS não
+  aproximar a página ao focá-lo.
 - Presets: os 4 presets do assistente em cartões de duas colunas, com o nome e a descrição.
   Escolher um aplica os 9 valores dele (a seed fica) e gera o mapa final. O cartão do preset cujos
   valores são os dos sliders agora tem a borda âmbar e o check; mexer num slider tira a marca. No
@@ -142,6 +144,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   "valdora-7f3a") e vale sem os espaços das pontas; vazia, vale a sorteada ao abrir.
 - Botões Cancelar e "Criar mundo →" (primário). Cancelar, o `x` e o Esc fecham sem mudar o mundo; um
   clique fora do modal não fecha.
+- Abaixo de 768 px, o nome do mundo e a seed têm fonte de 16 px (no desktop, 15 e 14 px), para o
+  iOS não aproximar a página ao focar um deles.
 
 ## Estados
 

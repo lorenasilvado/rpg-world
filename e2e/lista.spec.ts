@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { defaultWorld, putWorlds } from './editor.ts'
+import { defaultWorld, putWorlds, textFieldFontSizes } from './editor.ts'
 
 // Lista de mundos (#155, AC-F4-04 a AC-F4-06): a tela inicial. Cada teste tem um contexto novo do
 // navegador, então o banco começa vazio.
@@ -239,3 +239,18 @@ for (const [width, height] of [
     await expect(page.getByRole('dialog')).toBeInViewport({ ratio: 1 })
   })
 }
+
+test('celular 390: o nome no modal Renomear tem fonte de 16 px, para o iOS não aproximar a página ao focar; no desktop continua com 15 px (AC-F4-07)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await putWorlds(page, [defaultWorld({ id: 'a', name: 'Terras de Valdora', seed: 'valdora-7f3a' })])
+  await page.reload()
+  await page.getByRole('button', { name: 'Mais ações de Terras de Valdora' }).click()
+  await page.getByRole('menuitem', { name: 'Renomear' }).click()
+  const rename = page.getByRole('dialog', { name: 'Renomear mundo' })
+  await expect(rename.getByLabel('Nome do mundo')).toBeFocused()
+  expect(await textFieldFontSizes(rename)).toEqual({ 'Nome do mundo': 16 })
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  expect(await textFieldFontSizes(rename)).toEqual({ 'Nome do mundo': 15 })
+})
