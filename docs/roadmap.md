@@ -138,7 +138,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 44 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | done | specs/navegacao.md | #205 |
 | 45 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | done | specs/pins.md | #206 |
 | 46 | #208 | [bug] No iPhone, focar um campo do drawer do pin aproxima a página, e ela não volta | done | specs/pins.md | #209 |
-| 47 | #210 | [bug] No iPhone, focar a seed ou o nome do mundo aproxima a página, e ela não volta | doing | specs/geracao-terreno.md | |
+| 47 | #210 | [bug] No iPhone, focar a seed ou o nome do mundo aproxima a página, e ela não volta | done | specs/geracao-terreno.md | |
 | 48 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
 | 49 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
 | 50 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
