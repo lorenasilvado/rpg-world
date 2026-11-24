@@ -79,7 +79,7 @@ export function PinTags({
               }
             }}
             onBlur={commit}
-            className="h-7 w-24 rounded-pill border border-dashed border-line-2 bg-transparent px-3 text-[13px] text-ink placeholder:text-ink-3 focus:w-36 focus:border-solid focus:border-amber focus:bg-field focus:outline-none"
+            className="h-7 w-24 rounded-pill border border-dashed border-line-2 bg-transparent px-3 text-[13px] text-ink placeholder:text-ink-3 max-md:text-[16px] focus:w-36 focus:border-solid focus:border-amber focus:bg-field focus:outline-none"
           />
         </li>
       </ul>

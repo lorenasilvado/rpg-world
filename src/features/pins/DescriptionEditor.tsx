@@ -54,7 +54,7 @@ export function DescriptionEditor({
         'aria-multiline': 'true',
         role: 'textbox',
         'data-testid': 'pin-description',
-        class: 'pin-description min-h-[180px] px-3.5 py-3 text-[14px]/[22px] text-ink focus:outline-none',
+        class: 'pin-description min-h-[180px] px-3.5 py-3 text-[14px]/[22px] text-ink focus:outline-none max-md:text-[16px]/[24px]',
       },
     },
     onUpdate: ({ editor }) => change.current(descriptionHtml(editor)),
@@ -195,7 +195,7 @@ function LinkRow({ editor, onClose }: { editor: Editor; onClose: () => void }) {
               editor.commands.focus()
             }
           }}
-          className="h-8 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2 text-[13px] text-ink placeholder:text-ink-3 focus:border-amber focus:outline-none"
+          className="h-8 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2 text-[13px] text-ink placeholder:text-ink-3 max-md:text-[16px] focus:border-amber focus:outline-none"
         />
         <button
           type="button"

@@ -137,12 +137,14 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 43 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | done | specs/pins.md | #198 |
 | 44 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | done | specs/navegacao.md | #205 |
 | 45 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | done | specs/pins.md | #206 |
-| 46 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
-| 47 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
-| 48 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
-| 49 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
-| 50 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
-| 51 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
-| 52 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
-| 53 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
-| 54 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
+| 46 | #208 | [bug] No iPhone, focar um campo do drawer do pin aproxima a página, e ela não volta | done | specs/pins.md | #209 |
+| 47 | #210 | [bug] No iPhone, focar a seed ou o nome do mundo aproxima a página, e ela não volta | todo | specs/geracao-terreno.md | |
+| 48 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
+| 49 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
+| 50 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
+| 51 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
+| 52 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
+| 53 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
+| 54 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
+| 55 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
+| 56 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
