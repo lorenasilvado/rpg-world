@@ -142,7 +142,8 @@ export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' 
  *
  * O Personalizado com a imagem enviada (`images`, AC-F3-11) ganha uma textura própria, com a imagem
  * no círculo; enquanto ela não chega (o blob ainda vem do banco), o pin mostra o círculo hachurado.
- * Quem guarda a camada chama `imagesChanged` quando chega uma imagem nova. A textura de uma imagem
+ * Quem guarda a camada chama `imagesChanged` quando chega uma imagem nova. Uma imagem que não deu
+ * para desenhar fica com o círculo hachurado, e a camada não tenta de novo. A textura de uma imagem
  * que nenhum pin usa mais (trocada, removida) é destruída; se o desfazer a traz de volta, ela é
  * desenhada de novo a partir do blob.
  *
@@ -170,6 +171,11 @@ export class PinLayer {
   private imageTextures = new Map<string, Texture>()
   /** As imagens cuja textura está sendo desenhada. */
   private drawing = new Set<string>()
+  /**
+   * As imagens que não deu para desenhar: o pin fica com o círculo hachurado, sem tentar de novo a
+   * cada mudança (hover, seleção, arrasto), nem repetir o aviso.
+   */
+  private failed = new Set<string>()
   private destroyed = false
 
   constructor(textures: PinTextures, images: PinImages | null = null) {
@@ -327,7 +333,7 @@ export class PinLayer {
 
   /** Desenha a textura da imagem `id`, se o blob já chegou, e a põe nos pins que a usam. */
   private requestImage(id: string) {
-    if (this.imageTextures.has(id) || this.drawing.has(id)) return
+    if (this.imageTextures.has(id) || this.drawing.has(id) || this.failed.has(id)) return
     const blob = this.images?.blob(id)
     if (!blob || typeof createImageBitmap !== 'function') return
     this.drawing.add(id)
@@ -343,6 +349,7 @@ export class PinLayer {
       },
       (error: unknown) => {
         this.drawing.delete(id)
+        this.failed.add(id)
         console.warn('Não foi possível desenhar a imagem do pin; ele fica com o círculo hachurado', error)
       },
     )

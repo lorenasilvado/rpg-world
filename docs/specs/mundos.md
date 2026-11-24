@@ -1,7 +1,7 @@
 ---
 feature: F4
 area: area:mundos
-updated: 2026-11-23
+updated: 2026-11-24
 ---
 
 # F4 · Mundos e persistência
@@ -119,7 +119,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
 | Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
-| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição e as tags) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
+| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição, as tags e, na aba Detalhes, o tipo, o ícone e os campos livres) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Na aba Detalhes, cada escolha de tipo, imagem enviada ou removida é um passo; as teclas seguidas no valor de um campo livre são um passo só, até sair dele, e trocar a chave, adicionar ou remover um campo são um passo cada. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
 
 ## Regras
 
