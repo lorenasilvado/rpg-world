@@ -65,8 +65,9 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
   - **Campos:** pares chave/valor, na ordem em que foram criados (sem campos, "Anote o que quiser:
     governante, população, facção…"). "Adicionar campo" cria "Campo" ("Campo 2", "Campo 3"… se já
     existe) no fim, com a chave em edição (o foco e o texto selecionado); o × remove o campo. A
-    chave tem até 40 caracteres e muda ao sair dela (Enter também sai): vazia ou repetida (sem
-    diferenciar maiúsculas), volta a anterior. O valor tem até 200 caracteres e muda a cada tecla.
+    chave tem até 40 caracteres e muda ao sair dela (Enter também sai): vazia, repetida (sem
+    diferenciar maiúsculas) ou só de dígitos (ex.: "1200", que mudaria o campo de lugar), volta a
+    anterior. Para o leitor de tela, as chaves são "Nome do campo 1", "Nome do campo 2"… O valor tem até 200 caracteres e muda a cada tecla.
 - Aba Conexões: o pin pai e os pins filhos, clicáveis (clicar seleciona o pin). As estradas
   ligadas ao pin entram com F5.
 
@@ -81,7 +82,9 @@ guardada como PNG, num blob do mundo, fora do JSON dele (o pin guarda o id da im
 pixels). Um SVG sem `width` e `height` é desenhado com o lado maior em 256 px, na proporção do
 `viewBox` (sem ele, 256 × 256). Acima de 1 MB, o usuário escolhe entre recusar o arquivo ou aceitá-lo com a redução. Um
 pin de outro tipo com imagem (de um mundo importado) mostra o ícone do tipo. Até a imagem chegar
-do banco, o pin mostra o círculo hachurado.
+do banco, o pin mostra o círculo hachurado. Acima de 20 MB, o arquivo é recusado sem a pergunta. Ao
+abrir o mundo, as imagens dele que nenhum pin usa (trocadas, removidas ou de pins excluídos) saem
+do banco.
 
 ## Estados
 
@@ -98,6 +101,7 @@ do banco, o pin mostra o círculo hachurado.
 | Vazio | Mundo sem pins | TODO: não descrito no material |
 | Imagem grande | Imagem enviada acima de 1 MB | Na aba Detalhes, abaixo do envio, a mensagem "Imagem acima de 1 MB" e "“<arquivo>” tem 2,4 MB, e o limite é 1 MB. Recuse o arquivo ou aceite a imagem reduzida para 256 px.", com "Recusar" (o ícone anterior continua, e o foco volta ao envio) e "Aceitar com redução" (com o foco) |
 | Formato não aceito | Arquivo que não é PNG, JPG nem SVG | O arquivo é recusado, com o aviso "Formato não aceito" e "Envie uma imagem PNG, JPG ou SVG." (o × fecha o aviso); o ícone anterior continua |
+| Imagem grande demais | Imagem enviada acima de 20 MB | Recusada sem a pergunta, com o aviso "Imagem grande demais" e "O arquivo tem 25 MB, e o máximo que dá para reduzir é 20 MB. Envie uma imagem menor."; o ícone anterior continua |
 | Imagem que não abre | PNG, JPG ou SVG que o navegador não consegue ler | "Não deu para ler esta imagem. Envie uma imagem PNG, JPG ou SVG."; o ícone anterior continua |
 | Imagem não guardada | O banco do navegador recusou a imagem | "Não deu para guardar a imagem. Tente de novo."; o ícone anterior continua |
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IMAGE_MAX_BYTES, checkImageFile, fitSize, formatBytes, resizeImage, unsizedSvgSize, type ResizeCanvas } from './uploadImage'
+import { IMAGE_HARD_MAX_BYTES, IMAGE_MAX_BYTES, checkImageFile, fitSize, formatBytes, resizeImage, unsizedSvgSize, type ResizeCanvas } from './uploadImage'
 
 const file = (name: string, type: string, size: number) => ({ name, type, size })
 
@@ -14,6 +14,12 @@ describe('imagem enviada: formato e tamanho (AC-F3-11)', () => {
   it('acima de 1 MB, pergunta', () => {
     expect(checkImageFile(file('a.png', 'image/png', IMAGE_MAX_BYTES + 1))).toBe('large')
     expect(checkImageFile(file('a.jpg', 'image/jpeg', 2 * IMAGE_MAX_BYTES))).toBe('large')
+  })
+
+  it('acima de 20 MB, recusa sem perguntar', () => {
+    expect(checkImageFile(file('a.png', 'image/png', IMAGE_HARD_MAX_BYTES))).toBe('large')
+    expect(checkImageFile(file('a.png', 'image/png', IMAGE_HARD_MAX_BYTES + 1))).toBe('tooLarge')
+    expect(checkImageFile(file('a.svg', 'image/svg+xml', 300 * IMAGE_MAX_BYTES))).toBe('tooLarge')
   })
 
   it('outro formato é recusado, de qualquer tamanho', () => {

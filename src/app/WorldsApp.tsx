@@ -53,7 +53,7 @@ export function WorldsApp({
   now = currentTime,
   newId = newWorldId,
 }: {
-  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage'>
+  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage' | 'pruneImages'>
   generator: WorldGenerator
   webgl2?: boolean
   ui?: UiStore
@@ -110,8 +110,11 @@ export function WorldsApp({
       // Um link fora da regra numa descrição salva vira texto ao abrir (AC-F3-07).
       const pins = createPinsStore(pinsWithCleanLinks(record.pins))
       // As imagens dos pins vêm do banco à parte; até chegarem, o pin mostra o círculo hachurado.
+      // As que nenhum pin usa mais (trocadas, removidas, de pins excluídos) saem do banco.
       const images = createPinImages({ worldId: record.id, repo })
-      void images.load(pinImageIds(record.pins))
+      const used = pinImageIds(record.pins)
+      void images.load(used)
+      void images.prune(used)
       const history = createWorldHistory({ world, pins })
       const autosave = createAutosave({ world, pins, repo, loaded: record, now })
       const session = { world, pins, images, history, autosave }

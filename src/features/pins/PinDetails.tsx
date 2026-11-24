@@ -20,7 +20,8 @@ type Upload = { kind: 'idle' } | { kind: 'busy' } | { kind: 'large'; file: File 
  *   Com a imagem, "Remover imagem" volta ao Personalizado hachurado.
  * - **Envio:** PNG, JPG ou SVG de até 1 MB é reduzido para 256 px e guardado como blob (`images`);
  *   acima de 1 MB, a mensagem pergunta (Recusar ou Aceitar com redução); outro formato é recusado
- *   com a mensagem dos formatos aceitos. Recusado, o ícone continua o anterior.
+ *   com a mensagem dos formatos aceitos; acima de 20 MB, é recusado sem a pergunta. Recusado, o
+ *   ícone continua o anterior.
  * - **Pin pai:** ainda não existe ("Em breve").
  * - **Campos:** pares chave/valor, com "Adicionar campo" (a chave do campo novo fica com o foco e o
  *   texto selecionado) e o × de cada um. A chave muda ao sair do campo (vazia ou repetida, volta a
@@ -77,6 +78,7 @@ export function PinDetails({
     if (!file) return
     const check = checkImageFile(file)
     if (check === 'format') setUpload({ kind: 'error', title: IMAGE_TEXT.formatTitle, text: IMAGE_TEXT.format })
+    else if (check === 'tooLarge') setUpload({ kind: 'error', title: IMAGE_TEXT.tooLargeTitle, text: IMAGE_TEXT.tooLarge(formatBytes(file.size)) })
     else if (check === 'large') setUpload({ kind: 'large', file })
     else void store(file)
   }
@@ -250,6 +252,7 @@ function FieldList({ pin, pins }: { pin: Pin; pins: PinsStore }) {
                 pin={pin}
                 pins={pins}
                 fieldKey={key}
+                index={i}
                 focus={created === key}
                 onFocused={() => setCreated(null)}
               />
@@ -297,12 +300,15 @@ function FieldKey({
   pin,
   pins,
   fieldKey,
+  index,
   focus,
   onFocused,
 }: {
   pin: Pin
   pins: PinsStore
   fieldKey: string
+  /** A posição do campo (o nome para o leitor de tela: "Nome do campo 1"). */
+  index: number
   focus: boolean
   onFocused: () => void
 }) {
@@ -332,7 +338,7 @@ function FieldKey({
   return (
     <input
       ref={input}
-      aria-label="Campo"
+      aria-label={`Nome do campo ${index + 1}`}
       value={draft}
       maxLength={FIELD_KEY_MAX}
       onChange={(e) => setDraft(e.target.value)}

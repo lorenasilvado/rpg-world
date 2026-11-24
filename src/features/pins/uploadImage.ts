@@ -8,6 +8,12 @@
 /** O limite de tamanho do arquivo enviado: 1 MB. */
 export const IMAGE_MAX_BYTES = 1024 * 1024
 
+/**
+ * O maior arquivo que dá para reduzir: 20 MB. Acima, ele é recusado sem a pergunta (decodificar um
+ * arquivo enorme na página pode travar a aba).
+ */
+export const IMAGE_HARD_MAX_BYTES = 20 * 1024 * 1024
+
 /** O lado máximo da imagem guardada, em px. */
 export const IMAGE_SIZE_PX = 256
 
@@ -27,11 +33,16 @@ export const IMAGE_TEXT = {
   accept: 'Aceitar com redução',
   unreadable: 'Não deu para ler esta imagem. Envie uma imagem PNG, JPG ou SVG.',
   saveFailed: 'Não deu para guardar a imagem. Tente de novo.',
+  tooLargeTitle: 'Imagem grande demais',
+  tooLarge: (size: string) => `O arquivo tem ${size}, e o máximo que dá para reduzir é 20 MB. Envie uma imagem menor.`,
   hint: 'PNG, JPG ou SVG, até 1 MB',
 } as const
 
-/** O que fazer com o arquivo: enviar (`ok`), perguntar (`large`, acima de 1 MB) ou recusar (`format`). */
-export type ImageCheck = 'ok' | 'large' | 'format'
+/**
+ * O que fazer com o arquivo: enviar (`ok`), perguntar (`large`, acima de 1 MB) ou recusar (`format`;
+ * `tooLarge`, acima de 20 MB).
+ */
+export type ImageCheck = 'ok' | 'large' | 'tooLarge' | 'format'
 
 /**
  * Confere o arquivo pelo tipo que o navegador informa (sem ele, pela extensão do nome) e pelo
@@ -40,6 +51,7 @@ export type ImageCheck = 'ok' | 'large' | 'format'
 export function checkImageFile(file: Pick<File, 'type' | 'name' | 'size'>): ImageCheck {
   const accepted = file.type ? TYPES.has(file.type) : EXTENSIONS.test(file.name)
   if (!accepted) return 'format'
+  if (file.size > IMAGE_HARD_MAX_BYTES) return 'tooLarge'
   return file.size > IMAGE_MAX_BYTES ? 'large' : 'ok'
 }
 

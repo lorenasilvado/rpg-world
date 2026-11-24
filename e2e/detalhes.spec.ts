@@ -145,12 +145,12 @@ test('Detalhes: troca o tipo, recusa .gif e a imagem acima de 1 MB, envia SVG e 
   await expect(panel.getByRole('radio', { name: 'Personalizado' })).toBeChecked()
 
   // Os campos: renomear a chave, mudar o valor e adicionar outro.
-  const key = panel.getByRole('textbox', { name: 'Campo' }).first()
+  const key = panel.getByRole('textbox', { name: /^Nome do campo \d+$/ }).first()
   await key.fill('Governante')
   await key.press('Enter')
   await panel.getByRole('textbox', { name: 'Valor de Governante' }).fill('Aldo II')
   await panel.getByRole('button', { name: 'Adicionar campo' }).click()
-  await expect(panel.getByRole('textbox', { name: 'Campo' }).nth(1)).toBeFocused()
+  await expect(panel.getByRole('textbox', { name: /^Nome do campo \d+$/ }).nth(1)).toBeFocused()
   await page.keyboard.type('População')
   await page.keyboard.press('Tab')
   await page.keyboard.type('12 mil')
@@ -191,6 +191,22 @@ test('Detalhes: troca o tipo, recusa .gif e a imagem acima de 1 MB, envia SVG e 
   await expect(panel.getByRole('radio', { name: 'Personalizado' })).toBeChecked()
   await expect(panel.getByRole('textbox', { name: 'Valor de Governante' })).toHaveValue('Aldo II')
   await expect(panel.getByRole('textbox', { name: 'Valor de População' })).toHaveValue('12 mil')
+  // Ao abrir o mundo, as duas imagens do SVG, que nenhum pin usa mais, saíram do banco.
+  await expect.poll(async () => (await saved(page)).images.map((i) => i.id)).toEqual([pin.icon.blobId])
+  await expect(page.getByTestId('map')).toHaveAttribute('data-pin-image-textures', '1')
+
+  // Remover a imagem libera a textura dela; desfazer a desenha de novo.
+  await panel.getByRole('button', { name: 'Remover imagem' }).click()
+  await expect(page.getByTestId('map')).toHaveAttribute('data-pin-image-textures', '0')
+  await page.getByRole('button', { name: /^Desfazer/ }).click()
+  await expect(page.getByTestId('map')).toHaveAttribute('data-pin-image-textures', '1')
+  await expect(drawer(page).getByTestId('pin-drawer-type')).toHaveText('Personalizado')
+
+  // Uma chave só de dígitos não entra (o campo mudaria de lugar): volta a anterior.
+  const firstKey = panel.getByRole('textbox', { name: 'Nome do campo 1' })
+  await firstKey.fill('1200')
+  await firstKey.press('Enter')
+  await expect(firstKey).toHaveValue('Governante')
 
   // Tablet e celular (abaixo de 768 px, o drawer é o painel sobreposto).
   for (const [w, h] of [
@@ -205,4 +221,25 @@ test('Detalhes: troca o tipo, recusa .gif e a imagem acima de 1 MB, envia SVG e 
     await expect(panel.getByRole('radio', { name: 'Personalizado' })).toBeChecked()
     await info.attach(`detalhes-${w}.png`, { body: await page.screenshot(), contentType: 'image/png' })
   }
+
+  // No celular, o painel sobreposto: recusar um .gif, aceitar uma imagem acima de 1 MB e criar um campo.
+  await fileInput(page).setInputFiles({ name: 'dragao.gif', mimeType: 'image/gif', buffer: Buffer.from('GIF89a') })
+  await expect(panel.getByRole('alert')).toHaveText('Formato não aceitoEnvie uma imagem PNG, JPG ou SVG.')
+  const bigPng = await solidPng(page, '#20A0E0', 1600, 1600)
+  await fileInput(page).setInputFiles({ name: 'grande.png', mimeType: 'image/png', buffer: Buffer.concat([bigPng, Buffer.alloc(1024 * 1024)]) })
+  const askPhone = panel.getByRole('alertdialog', { name: 'Imagem acima de 1 MB' })
+  await expect(askPhone.getByRole('button', { name: 'Aceitar com redução' })).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Excluir' })).toBeInViewport()
+  await info.attach('detalhes-390-grande.png', { body: await page.screenshot(), contentType: 'image/png' })
+  await askPhone.getByRole('button', { name: 'Aceitar com redução' }).click()
+  await expect(askPhone).toBeHidden()
+  await panel.getByRole('button', { name: 'Adicionar campo' }).click()
+  await page.keyboard.type('Clima')
+  await page.keyboard.press('Tab')
+  await page.keyboard.type('Seco')
+  await page.keyboard.press('Tab')
+  const phone = await saved(page)
+  expect(phone.pins[0].fields).toEqual({ Governante: 'Aldo II', População: '12 mil', Clima: 'Seco' })
+  expect(phone.pins[0].icon.blobId).not.toBe(pin.icon.blobId)
+  expect(phone.images.find((i) => i.id === phone.pins[0].icon.blobId)).toMatchObject({ width: 256, height: 256 })
 })

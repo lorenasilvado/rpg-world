@@ -180,6 +180,20 @@ describe('Abrir e voltar (AC-F4-06)', () => {
     expect(requests.at(-1)).toMatchObject({ seed: 'valdora-7f3a', params: VALDORA.params })
   })
 
+  it('abrir o mundo apaga do banco as imagens que nenhum pin dele usa (AC-F3-11)', async () => {
+    const pin = { id: 'p', type: 'custom', name: 'Selo', pos: { u: 0.5, v: 0.5 }, icon: { kind: 'image' as const, blobId: 'usada' }, description: '', tags: [], fields: {} }
+    const { repo } = setup([{ ...VALDORA, pins: [pin] }, SOMBRIO])
+    for (const [id, worldId] of [
+      ['usada', VALDORA.id],
+      ['trocada', VALDORA.id],
+      ['do-outro', SOMBRIO.id],
+    ]) repo.images.set(id, { id, worldId, blob: new Blob([id]) })
+    await settle()
+    fireEvent.click(screen.getByRole('button', { name: /^Terras de Valdora/ }))
+    await settle()
+    expect([...repo.images.keys()].sort()).toEqual(['do-outro', 'usada'])
+  })
+
   it('o editor volta à lista pelo cabeçalho da sidebar, com a mudança já salva', async () => {
     const { repo } = setup([VALDORA, SOMBRIO])
     await settle()

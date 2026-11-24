@@ -142,7 +142,9 @@ export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' 
  *
  * O Personalizado com a imagem enviada (`images`, AC-F3-11) ganha uma textura própria, com a imagem
  * no círculo; enquanto ela não chega (o blob ainda vem do banco), o pin mostra o círculo hachurado.
- * Quem guarda a camada chama `imagesChanged` quando chega uma imagem nova.
+ * Quem guarda a camada chama `imagesChanged` quando chega uma imagem nova. A textura de uma imagem
+ * que nenhum pin usa mais (trocada, removida) é destruída; se o desfazer a traz de volta, ela é
+ * desenhada de novo a partir do blob.
  *
  * A camada passa a ser dona das texturas que recebe (as de `loadPinTextures`) e das que cria para as
  * imagens: o `destroy` as destrói.
@@ -221,6 +223,7 @@ export class PinLayer {
         this.leaving.set(id, { view: v, at: now })
       }
       for (const pin of state.pins) this.place(pin, state.newPinId === pin.id && !this.seen.has(pin.id) ? now : null)
+      this.releaseUnusedImages()
       // No primeiro `sync`, os pins do mundo reaberto já estavam lá: nenhum quica.
       for (const pin of state.pins) this.seen.add(pin.id)
     }
@@ -298,6 +301,28 @@ export class PinLayer {
     for (const t of this.imageTextures.values()) t.destroy(true)
     this.imageTextures.clear()
     this.destroyed = true
+  }
+
+  /** Quantas texturas de imagens enviadas estão na GPU. */
+  get imageTextureCount() {
+    return this.imageTextures.size
+  }
+
+  /**
+   * Destrói as texturas das imagens que nenhum pin usa (um pin que encolhe ao sair ainda pode
+   * usar a sua: ela fica até ele sumir).
+   */
+  private releaseUnusedImages() {
+    if (this.imageTextures.size === 0) return
+    const inUse = new Set<string>()
+    for (const v of [...this.views.values(), ...[...this.leaving.values()].map((l) => l.view)]) {
+      if (v.texture.startsWith('image:')) inUse.add(v.texture.slice('image:'.length))
+    }
+    for (const [id, texture] of this.imageTextures) {
+      if (inUse.has(id)) continue
+      this.imageTextures.delete(id)
+      texture.destroy(true)
+    }
   }
 
   /** Desenha a textura da imagem `id`, se o blob já chegou, e a põe nos pins que a usam. */

@@ -129,6 +129,16 @@ describe('aba Detalhes: imagem enviada (AC-F3-11)', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
+  it('acima de 20 MB, recusa sem perguntar, e o ícone anterior continua', () => {
+    const resizeImage = vi.fn(async () => new Blob(['png']))
+    const { pins } = setup(undefined, resizeImage)
+    upload(fakeFile('enorme.png', 'image/png', 25 * IMAGE_MAX_BYTES))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toBe('Imagem grande demaisO arquivo tem 25 MB, e o máximo que dá para reduzir é 20 MB. Envie uma imagem menor.')
+    expect(resizeImage).not.toHaveBeenCalled()
+    expect(pins.getState().pins[0].type).toBe('cidade')
+  })
+
   it('uma imagem que não abre é recusada, e o ícone anterior continua', async () => {
     const { pins } = setup(undefined, () => Promise.reject(new Error('corrompida')))
     await act(async () => upload(fakeFile('a.png', 'image/png', 10)))
@@ -143,9 +153,11 @@ describe('aba Detalhes: campos livres (AC-F3-10)', () => {
     expect((screen.getByRole('textbox', { name: 'Valor de rei' }) as HTMLInputElement).value).toBe('Aldo')
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar campo' }))
     expect(pins.getState().pins[0].fields).toEqual({ rei: 'Aldo', Campo: '' })
-    const keys = screen.getAllByRole('textbox', { name: 'Campo' }) as HTMLInputElement[]
+    const keys = screen.getAllByRole('textbox', { name: /^Nome do campo \d+$/ }) as HTMLInputElement[]
     expect(keys.map((k) => k.value)).toEqual(['rei', 'Campo'])
     expect(document.activeElement).toBe(keys[1])
+    // Cada chave tem o seu nome para o leitor de tela.
+    expect(keys.map((k) => k.getAttribute('aria-label'))).toEqual(['Nome do campo 1', 'Nome do campo 2'])
     fireEvent.click(screen.getByRole('button', { name: 'Remover campo rei' }))
     expect(pins.getState().pins[0].fields).toEqual({ Campo: '' })
   })
@@ -155,7 +167,7 @@ describe('aba Detalhes: campos livres (AC-F3-10)', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Valor de rei' }), { target: { value: 'Aldo II' } })
     expect(pins.getState().pins[0].fields).toEqual({ rei: 'Aldo II', povo: 'elfos' })
 
-    const [key] = screen.getAllByRole('textbox', { name: 'Campo' }) as HTMLInputElement[]
+    const [key] = screen.getAllByRole('textbox', { name: /^Nome do campo \d+$/ }) as HTMLInputElement[]
     fireEvent.change(key, { target: { value: 'Governante' } })
     expect(pins.getState().pins[0].fields).toEqual({ rei: 'Aldo II', povo: 'elfos' })
     fireEvent.blur(key)

@@ -20,6 +20,11 @@ function fakeRepo() {
     images,
     saveImage: vi.fn(async (image: StoredImage) => void images.set(image.id, image)),
     getImage: vi.fn(async (id: string) => images.get(id)),
+    pruneImages: vi.fn(async (worldId: string, keep: (id: string) => boolean) => {
+      let n = 0
+      for (const [id, image] of images) if (image.worldId === worldId && !keep(id) && images.delete(id)) n++
+      return n
+    }),
   }
 }
 
@@ -52,10 +57,20 @@ describe('imagens enviadas dos pins (AC-F3-11)', () => {
   })
 
   it('se gravar falha, o erro chega a quem enviou e a imagem não entra', async () => {
-    const repo = { saveImage: () => Promise.reject(new Error('cheio')), getImage: async () => undefined }
+    const repo = { saveImage: () => Promise.reject(new Error('cheio')), getImage: async () => undefined, pruneImages: async () => 0 }
     const images = createPinImages({ worldId: 'w1', repo, newId: () => 'x' })
     await expect(images.add(new Blob(['a']))).rejects.toThrow('cheio')
     expect(images.blob('x')).toBeUndefined()
+  })
+
+  it('prune apaga as imagens sem uso do mundo, menos as enviadas nesta sessão', async () => {
+    const repo = fakeRepo()
+    for (const id of ['usada', 'orfa']) repo.images.set(id, { id, worldId: 'w1', blob: new Blob([id]) })
+    repo.images.set('de-outro', { id: 'de-outro', worldId: 'w2', blob: new Blob(['x']) })
+    const images = createPinImages({ worldId: 'w1', repo, newId: () => 'nova' })
+    await images.add(new Blob(['nova']))
+    await images.prune(['usada'])
+    expect([...repo.images.keys()].sort()).toEqual(['de-outro', 'nova', 'usada'])
   })
 
   it('ao fechar o mundo, os endereços são liberados', async () => {

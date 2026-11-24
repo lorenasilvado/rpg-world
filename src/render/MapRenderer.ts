@@ -55,7 +55,8 @@ export type MapRenderer = {
  * Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
  * área livre (deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
  * expõe os pins no mapa em `data-pins`, os rótulos à vista em `data-pin-labels`, o selecionado em
- * `data-pin-selected` e a largura de um pin na tela, em px, em `data-pin-size`. Sem o desenho dos
+ * `data-pin-selected`, a largura de um pin na tela, em px, em `data-pin-size` e as texturas de
+ * imagens enviadas na GPU em `data-pin-image-textures`. Sem o desenho dos
  * pins (sem o contexto 2D), o mapa segue sem eles, e o console avisa.
  *
  * A câmera aparece para a interface no `cameraState` (`cameraStore.ts`): a cada quadro em que muda,
@@ -256,6 +257,7 @@ export async function createMapRenderer(
       delete host.dataset.pinDragging
       delete host.dataset.pinsLeaving
       delete host.dataset.pinSize
+      delete host.dataset.pinImageTextures
     },
   }
 }
@@ -265,7 +267,7 @@ export async function createMapRenderer(
  * os excluídos que ainda encolhem e a largura de um pin na tela.
  */
 function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState, 'selectedId' | 'dragging'>, scale: number) {
-  const set = (key: 'pins' | 'pinLabels' | 'pinSelected' | 'pinDragging' | 'pinsLeaving' | 'pinSize', value: string) => {
+  const set = (key: 'pins' | 'pinLabels' | 'pinSelected' | 'pinDragging' | 'pinsLeaving' | 'pinSize' | 'pinImageTextures', value: string) => {
     if (host.dataset[key] !== value) host.dataset[key] = value
   }
   set('pins', String(layer.count))
@@ -273,6 +275,7 @@ function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState
   set('pinSelected', state.selectedId ?? '')
   set('pinDragging', state.dragging?.id ?? '')
   set('pinsLeaving', String(layer.leavingCount))
+  set('pinImageTextures', String(layer.imageTextureCount))
   const size = layer.screenWidth(scale)
   set('pinSize', size === null ? '' : size.toFixed(1))
 }

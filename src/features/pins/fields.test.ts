@@ -21,6 +21,14 @@ describe('campos livres do pin (AC-F3-10)', () => {
     expect(renameField({ a: '1' }, 'x', 'y')).toBeNull()
   })
 
+  it('a chave só de dígitos não entra: o campo não muda de lugar', () => {
+    expect(renameField({ a: '1', b: '2' }, 'b', '1200')).toBeNull()
+    expect(renameField({ a: '1', b: '2' }, 'b', ' 42 ')).toBeNull()
+    // Com outro caractere, vale e fica no lugar.
+    expect(Object.keys(renameField({ a: '1', b: '2' }, 'b', 'Ano 1200')!)).toEqual(['a', 'Ano 1200'])
+    expect(Object.keys(renameField({ a: '1', b: '2' }, 'b', '1200a')!)).toEqual(['a', '1200a'])
+  })
+
   it('a mesma chave com outra grafia vale', () => {
     expect(renameField({ rei: 'Aldo' }, 'rei', 'Rei')).toEqual({ Rei: 'Aldo' })
   })

@@ -12,6 +12,9 @@ import type { WorldsRepo } from '../persistence/worldsRepo'
  *   reaberto). Uma imagem que não está no banco fica de fora: o pin mostra o círculo hachurado.
  * - O `store` guarda, por id, o endereço (`URL.createObjectURL`) para a interface (`PinIcon`); o
  *   renderer do mapa lê o blob (`blob`) e o desenha no círculo do pin.
+ * - `prune` apaga do banco as imagens do mundo que nenhum pin usa (`used`) e que não foram enviadas
+ *   nesta sessão (o desfazer pode trazê-las de volta). Roda ao abrir o mundo: o histórico de
+ *   desfazer é da sessão, então uma imagem que só ele usava já não volta.
  *
  * Sem `repo` (os testes do jsdom), as imagens ficam só na memória. `dispose` libera os endereços.
  */
@@ -20,6 +23,7 @@ export type PinImages = {
   add(blob: Blob): Promise<string>
   load(ids: Iterable<string>): Promise<void>
   blob(id: string): Blob | undefined
+  prune(used: Iterable<string>): Promise<void>
   dispose(): void
 }
 
@@ -51,12 +55,14 @@ export function createPinImages({
   newId = () => crypto.randomUUID(),
 }: {
   worldId: string
-  repo?: Pick<WorldsRepo, 'saveImage' | 'getImage'>
+  repo?: Pick<WorldsRepo, 'saveImage' | 'getImage' | 'pruneImages'>
   newId?: () => string
 }): PinImages {
   const store = createStore<PinImagesState>()(() => ({ urls: {} }))
   const blobs = new Map<string, Blob>()
   const loading = new Set<string>()
+  /** As imagens enviadas nesta sessão, desde antes de gravar (o `prune` não as apaga). */
+  const sent = new Set<string>()
   let disposed = false
 
   const put = (id: string, blob: Blob) => {
@@ -69,6 +75,7 @@ export function createPinImages({
     store,
     async add(blob) {
       const id = newId()
+      sent.add(id)
       await repo?.saveImage({ id, worldId, blob })
       put(id, blob)
       return id
@@ -92,6 +99,15 @@ export function createPinImages({
     },
     blob(id) {
       return blobs.get(id)
+    },
+    async prune(used) {
+      if (!repo) return
+      const keep = new Set(used)
+      try {
+        await repo.pruneImages(worldId, (id) => keep.has(id) || sent.has(id))
+      } catch {
+        // Sem o banco, as imagens sem uso ficam para a próxima vez.
+      }
     },
     dispose() {
       disposed = true
