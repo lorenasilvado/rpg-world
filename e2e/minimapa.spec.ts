@@ -167,7 +167,7 @@ test('AC-F2-08: o minimapa recolhe e abre', async ({ page }) => {
   await expect(page.getByTestId('minimap-surface')).toBeVisible()
 })
 
-test('AC-F2-09: com área livre de 860 px ou mais, mostra a escala e a porcentagem; os botões fazem zoom e centralizam', async ({ page }) => {
+test('AC-F2-09: com área livre de 450 px ou mais, mostra a escala e a porcentagem; os botões fazem zoom e centralizam', async ({ page }) => {
   await open(page)
   // Sidebar recolhida: 1440 − 48 − 400 = 992 px de área livre.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
@@ -194,14 +194,31 @@ test('AC-F2-09: com área livre de 860 px ou mais, mostra a escala e a porcentag
   expect(fit).toEqual({ x: 48 + (992 - 900) / 2, y: 0, width: 900, height: 900 })
 })
 
-test('AC-F2-09: com menos de 860 px de área livre, esconde a escala e a porcentagem', async ({ page }) => {
-  // Sidebar aberta: 1440 − 320 − 400 = 720 px.
-  await open(page)
+// #137: sem pin selecionado (o drawer de 400 px aberto), a escala e a porcentagem aparecem nos
+// tamanhos comuns de desktop, com a sidebar aberta ou recolhida.
+for (const { width, height } of [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+]) {
+  test(`AC-F2-09: em ${width} × ${height}, sem pin selecionado, mostra a escala e a porcentagem, com a sidebar aberta ou recolhida`, async ({ page }) => {
+    await open(page, width, height)
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
+    await expect(page.getByTestId('map-scale')).toBeVisible()
+    await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+    await page.getByRole('button', { name: 'Recolher painel' }).click()
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
+    await expect(page.getByTestId('zoom-percent')).toBeVisible()
+  })
+}
+
+test('AC-F2-09: com menos de 450 px de área livre, esconde a escala e a porcentagem', async ({ page }) => {
+  // Tablet 1024 com a sidebar recolhida: 1024 − 48 − 400 = 576 px, completo; aberta: 304 px, compacto.
+  await open(page, 1024, 768)
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
   await expect(page.getByTestId('map-scale')).toHaveCount(0)
   await expect(page.getByTestId('zoom-percent')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Centralizar' })).toBeVisible()
-  // Recolhendo a sidebar, a área passa de 860 px e elas voltam; abrindo de novo, somem.
+  // Recolhendo a sidebar, a área passa de 450 px e elas voltam; abrindo de novo, somem.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
   await expect(page.getByTestId('zoom-percent')).toBeVisible()
   await page.getByRole('button', { name: 'Expandir painel' }).click()

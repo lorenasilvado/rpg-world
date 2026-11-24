@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-22
+updated: 2026-11-24
 ---
 
 # F2 · Câmera e navegação
@@ -43,9 +43,10 @@ barra inferior.
   ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
-- Com a área livre de pelo menos 713 px, a toolbar fica deitada no centro da linha inferior (entre o
-  minimapa e o zoom, sem chegar a eles). De 341 a 712 px (ex.: 1280 com a sidebar e o drawer: 560
-  px; celular 390), ela fica deitada e centrada numa segunda linha, 12 px acima do mais alto entre o
+- Com a área livre de pelo menos 829 px (ex.: 1280 com a sidebar recolhida e o drawer: 832 px), a
+  toolbar fica deitada no centro da linha inferior (entre o minimapa e o zoom completo, sem chegar a
+  eles). De 341 a 828 px (ex.: 1440 com a sidebar e o drawer: 720 px; 1280 com a sidebar e o
+  drawer: 560 px; celular 390), ela fica deitada e centrada numa segunda linha, 12 px acima do mais alto entre o
   minimapa (aberto ou recolhido) e o zoom, e sobe e desce junto quando o minimapa abre e recolhe. Em
   ambos, o tooltip e o popover de Camadas abrem acima dela. Abaixo de 341 px (tablet com a sidebar
   aberta: 304 px), ela fica em pé, 12 px acima do controle de zoom e alinhada à direita dele; o
@@ -155,8 +156,10 @@ barra inferior.
   barra tem 32 px, e o texto é quantos km cabem nela no zoom atual (inteiro a partir de 10 km;
   abaixo, uma casa decimal, com vírgula). A porcentagem é o zoom relativo (100% = mapa inteiro na
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.
-- Com a área livre abaixo de 860 px (ex.: 1440 px com a sidebar aberta e o drawer: 720 px), o
-  controle de zoom fica só com −, + e centralizar.
+- Com a área livre abaixo de 450 px, onde o controle de zoom completo não cabe ao lado do minimapa
+  (ex.: tablet 1024 com a sidebar aberta: 304 px; celular 390), ele fica só com −, + e centralizar.
+  Nos tamanhos comuns de desktop (1280 e 1440 px, com a sidebar aberta ou recolhida e o drawer), a
+  escala e a porcentagem aparecem.
 - Os botões −, + e centralizar têm 44 × 44 px em telas de toque (celular e tablet) e 40 × 44 px
   com mouse.
 - Minimapa: o mapa (quadrado) aparece inteiro e centrado nos 160 × 100, com o fundo do oceano dos
@@ -198,7 +201,7 @@ lista e o número não volta a ser usado.
 - AC-F2-06: com `prefers-reduced-motion: reduce`, a câmera salta direto, sem deslizar
 - AC-F2-07: com 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
 - AC-F2-08: o minimapa acompanha o mapa, o retângulo da área visível é arrastável e o minimapa recolhe
-- AC-F2-09: o canto inferior direito mostra a escala em km, a porcentagem de zoom, − e +, e centralizar; com menos de 860 px de área livre, esconde a escala e a porcentagem
+- AC-F2-09: o canto inferior direito mostra a escala em km, a porcentagem de zoom, − e +, e centralizar; com menos de 450 px de área livre, esconde a escala e a porcentagem
 - AC-F2-10: a barra superior e a toolbar seguem o design system, e as ações de funções que ainda não existem aparecem desabilitadas
 - AC-F2-11: Camadas abre o popover, e o interruptor "Decoração" mostra e esconde os ícones decorativos
 - AC-F2-12: Ajuda abre o modal "Atalhos de teclado"

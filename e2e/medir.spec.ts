@@ -55,14 +55,14 @@ test('a tecla M liga a ferramenta, e 32 px medem o mesmo que a barra de escala (
   await expect(toolbar(page).getByRole('button', { name: 'Medir distância' })).toHaveAttribute('aria-pressed', 'true')
   await page.mouse.click(600, 400)
   await page.mouse.click(632, 400)
-  // A barra de escala (32 px) diria 32 × 800 / 720 = 35,6 → "36 km" (com 720 px de área livre, ela
-  // fica escondida: o controle de zoom é o compacto).
+  // A barra de escala (32 px) diz 32 × 800 / 720 = 35,6 → "36 km".
+  const scale = page.getByTestId('map-scale')
   await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
-  // Com a sidebar recolhida, a área livre passa de 860 px e a escala aparece: a mesma medida dela.
+  await expect(scale).toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
+  // Com a sidebar recolhida (992 px de área livre), a mesma medida da barra.
   await page.keyboard.press('Escape')
   await page.keyboard.press('[')
-  const scale = page.getByTestId('map-scale')
-  await expect(scale).toBeVisible()
+  await expect(scale).not.toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
   await page.mouse.click(600, 400)
   await page.mouse.click(632, 400)
   await expect(page.getByTestId('measure-distance')).toHaveText((await scale.textContent())!)

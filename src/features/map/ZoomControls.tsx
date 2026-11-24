@@ -11,7 +11,7 @@ import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapCo
  * (a partir do `sizeKm` do mundo), Afastar, a porcentagem do zoom, Aproximar e Centralizar. Os
  * botões fazem o mesmo que as teclas −, + e 0. Com a área livre (`areaWidth`, a largura da linha
  * inferior medida pelo editor, a mesma que decide o empilhamento; `null` antes de medir) abaixo de
- * 860 px, a escala e a porcentagem somem e ficam só os botões (`data-compact`, também antes de a
+ * 450 px (onde o zoom completo não cabe ao lado do minimapa), a escala e a porcentagem somem e ficam só os botões (`data-compact`, também antes de a
  * câmera estar pronta).
  * Os botões têm 44 × 44 px em telas de toque (`ZOOM_BUTTON_TOUCH`, a área de toque mínima do design
  * system) e 40 px de largura com mouse (a exceção do zoom no desktop).

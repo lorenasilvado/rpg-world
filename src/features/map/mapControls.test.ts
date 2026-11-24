@@ -29,11 +29,12 @@ describe('escala e porcentagem (AC-F2-09)', () => {
     expect(zoomPercent(4)).toBe('400%')
   })
 
-  it('esconde a escala e a porcentagem com menos de 860 px de área livre', () => {
-    expect(showsZoomDetails(860)).toBe(true)
-    expect(showsZoomDetails(992)).toBe(true)
-    expect(showsZoomDetails(859)).toBe(false)
-    expect(showsZoomDetails(720)).toBe(false)
+  it('esconde a escala e a porcentagem com menos de 450 px de área livre', () => {
+    expect(showsZoomDetails(450)).toBe(true)
+    expect(showsZoomDetails(560)).toBe(true)
+    expect(showsZoomDetails(720)).toBe(true)
+    expect(showsZoomDetails(449)).toBe(false)
+    expect(showsZoomDetails(390)).toBe(false)
   })
 })
 

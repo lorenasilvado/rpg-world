@@ -70,19 +70,44 @@ test('o foco do teclado numa ferramenta habilitada mostra o tooltip; o Tab pula 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
-test('1440 com a sidebar e o drawer: a toolbar fica deitada, centrada entre eles, 16 px da base', async ({ page }) => {
+for (const { name, width, height, left } of [
+  { name: '1440 com a sidebar recolhida e o drawer (992 px)', width: 1440, height: 900, left: 48 },
+  { name: '1280 com a sidebar recolhida e o drawer (832 px)', width: 1280, height: 800, left: 48 },
+]) {
+  test(`${name}: a toolbar fica deitada, centrada entre eles, 16 px da base, sem chegar ao zoom completo`, async ({ page }) => {
+    await open(page, width, height)
+    await page.getByRole('button', { name: 'Recolher painel' }).click()
+    await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
+    // Espera a transição da sidebar.
+    const center = (left + width - 400) / 2
+    await expect.poll(async () => {
+      const t = await box(page, 'map-toolbar')
+      return Math.abs((t.left + t.right) / 2 - center) <= 1
+    }).toBe(true)
+    const toolbar = await box(page, 'map-toolbar')
+    expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
+    expect(toolbar.bottom - toolbar.top).toBe(TOOLBAR_THICKNESS)
+    expect(height - toolbar.bottom).toBe(BAR_BOTTOM)
+    const minimap = await box(page, 'minimap-slot')
+    const zoom = await box(page, 'zoom-controls')
+    expect(toolbar.left - minimap.right).toBeGreaterThanOrEqual(BAR_GAP)
+    expect(zoom.left - toolbar.right).toBeGreaterThanOrEqual(BAR_GAP)
+  })
+}
+
+test('1440 com a sidebar e o drawer (720 px): a toolbar fica deitada numa segunda linha, e o zoom mostra a escala e a porcentagem', async ({ page }) => {
   await open(page)
-  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
+  await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
   const toolbar = await box(page, 'map-toolbar')
-  expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
-  expect(toolbar.bottom - toolbar.top).toBe(TOOLBAR_THICKNESS)
-  expect(900 - toolbar.bottom).toBe(BAR_BOTTOM)
-  // Área livre de 320 a 1040: centro em 680.
+  // Centrada na área livre (320 a 1040), 12 px acima do minimapa aberto.
   expect(Math.abs((toolbar.left + toolbar.right) / 2 - 680)).toBeLessThanOrEqual(1)
-  const minimap = await box(page, 'minimap-slot')
+  expect((await box(page, 'minimap-slot')).top - toolbar.bottom).toBe(BAR_GAP)
+  // O zoom completo, ao lado do minimapa, sem chegar a ele.
   const zoom = await box(page, 'zoom-controls')
-  expect(toolbar.left - minimap.right).toBeGreaterThanOrEqual(BAR_GAP)
-  expect(zoom.left - toolbar.right).toBeGreaterThanOrEqual(BAR_GAP)
+  expect(zoom.left - (await box(page, 'minimap-slot')).right).toBeGreaterThanOrEqual(BAR_GAP)
+  expect(1440 - 400 - zoom.right).toBe(ZOOM_SIDE)
 })
 
 test('Camadas abre o popover, e o interruptor "Decoração" esconde e mostra os ícones (AC-F2-11)', async ({ page }) => {
@@ -178,6 +203,8 @@ test('tablet 1024 com a sidebar aberta (304 px): a toolbar fica em pé acima do 
 test('1280 com a sidebar e o drawer (560 px): a toolbar fica deitada numa segunda linha, acima do minimapa', async ({ page }) => {
   await open(page, 1280, 800)
   await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
+  // O zoom completo cabe ao lado do minimapa (#137).
+  await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
   const toolbar = await box(page, 'map-toolbar')
   expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
   // Centrada na área livre (320 a 880).

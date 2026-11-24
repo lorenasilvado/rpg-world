@@ -493,14 +493,15 @@ test('1440×900: o toast "Pin excluído" fica ao lado do zoom, à esquerda do dr
   const toast = page.getByTestId('pin-deleted-toast')
   await expect(toast).toContainText('Pin excluído')
   // Área livre de 720 px: o toast cabe no canto, alinhado com o zoom (12 px à esquerda do drawer de
-  // 400 px) e 12 px acima dele (16 px da base, 56 px de altura: 84 px), como o toast de erro.
+  // 400 px), 12 px acima da toolbar na segunda linha (16 px da base + 152 da toolbar sobre o minimapa
+  // aberto + 56 de altura + 12: 236 px), como o toast de erro.
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.width), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([352, 1440 - 400 - 12, 900 - 84])
+    .toEqual([352, 1440 - 400 - 12, 900 - 236])
   // Não cobre o minimapa.
   const minimap = (await page.getByTestId('minimap').boundingBox())!
   const box = (await toast.boundingBox())!
