@@ -47,6 +47,7 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
   mostra "Use um endereço http, https ou mailto.". A regra vale também para o link colado, o criado
   ao digitar e o que vem na descrição salva ou importada: um link de outro esquema, ou com
   caracteres de controle ou invisíveis no endereço, vira texto, e um link sem esquema vira https.
+  Na descrição salva, isso acontece ao abrir o mundo, e ela é gravada assim na próxima mudança.
 - Tags: chips removíveis (ex.: capital, porto), campo "+ tag" (Enter, vírgula ou sair do campo
   adiciona) e sugestões "Usadas no mundo": as tags dos outros pins que este não tem, das mais usadas
   às menos, até 6 (sem nenhuma, a linha não aparece). Uma tag tem até 32 caracteres; repetida (sem
@@ -93,7 +94,7 @@ entre recusar o arquivo ou aceitá-lo com a redução.
 | Excluir (Delete ou Backspace, a tecla "delete" do Mac) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá a tecla não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
 | Editar a descrição ou as tags | Muda o pin na hora e é salvo com o mundo. As teclas seguidas na descrição viram um passo do histórico, até sair do editor; cada tag adicionada ou removida é um passo. Fora do foco, o editor acompanha a descrição do pin (desfazer e refazer) |
 | Duplicar (rodapé) | Cria uma cópia ao lado do pin (36 px à direita e 12 px abaixo na tela, no zoom atual; perto da borda, do outro lado), "<nome> (cópia)" (a cópia de uma cópia conta: "(cópia 2)", "(cópia 3)"…), com a mesma ficha (tipo, ícone, descrição, tags, campos e o mesmo pai) e sem os filhos; a cópia fica selecionada, num passo do histórico |
-| Centralizar (rodapé; para o leitor de tela, "Centralizar no pin") | A câmera desliza (350 ms) até o pin ficar no centro da área livre, aproximando até o zoom 1,6× se estiver mais longe (mais perto, o zoom fica). Abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer, e o pin continua selecionado |
+| Centralizar (rodapé; para o leitor de tela, "Centralizar no pin") | A câmera desliza (350 ms) até o pin ficar no centro da área livre, aproximando até o zoom 1,6× se estiver mais longe (mais perto, o zoom fica). Perto da borda do mapa, a câmera para no limite do pan, e o pin fica fora do centro, do lado da borda. Abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer, e o pin continua selecionado |
 | Excluir (rodapé) | Exclui o pin como a tecla Delete, com o toast "Pin excluído" e Desfazer; o botão vale também no painel sobreposto (abaixo de 768 px) |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
 | Clicar num grupo | Zoom no grupo |

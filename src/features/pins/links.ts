@@ -1,3 +1,5 @@
+import type { Pin } from '../../persistence/types'
+
 const ALLOWED = /^(https?:|mailto:)/i
 /** Um esquema qualquer (`javascript:`, `data:`…), ou `//` no começo. */
 const HAS_SCHEME = /^([a-z][a-z0-9+.-]*:|\/\/)/i
@@ -65,4 +67,39 @@ function checked(href: string | null): string | null {
  */
 export function isAllowedLink(url: string): boolean {
   return normalizeLink(url) !== null
+}
+
+/**
+ * A descrição salva ou importada com os links na regra (AC-F3-07): um link fora dela (outro
+ * esquema, ou com caracteres de controle ou invisíveis) vira texto, e um sem esquema ganha o https,
+ * como o editor faria. Sem nada a mudar, o HTML volta igual (a mesma string).
+ */
+export function cleanDescriptionLinks(html: string): string {
+  if (!/<a[\s>]/i.test(html)) return html
+  const template = document.createElement('template')
+  template.innerHTML = html
+  let changed = false
+  for (const a of [...template.content.querySelectorAll('a')]) {
+    const href = normalizeLink(a.getAttribute('href') ?? '')
+    if (href === null) {
+      a.replaceWith(...a.childNodes)
+      changed = true
+    } else if (href !== a.getAttribute('href')) {
+      a.setAttribute('href', href)
+      changed = true
+    }
+  }
+  return changed ? template.innerHTML : html
+}
+
+/**
+ * Os pins do mundo que abre, com os links da descrição na regra (`cleanDescriptionLinks`), para
+ * a descrição guardada (e a exportada) não manter um link que o editor não mostra. Um pin sem
+ * nada a mudar é o mesmo objeto.
+ */
+export function pinsWithCleanLinks(pins: readonly Pin[]): Pin[] {
+  return pins.map((pin) => {
+    const description = cleanDescriptionLinks(pin.description)
+    return description === pin.description ? pin : { ...pin, description }
+  })
 }

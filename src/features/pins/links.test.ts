@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { isAllowedLink, normalizeLink } from './links'
+import type { Pin } from '../../persistence/types'
+import { cleanDescriptionLinks, isAllowedLink, normalizeLink, pinsWithCleanLinks } from './links'
 
 describe('link da descrição (AC-F3-07)', () => {
   it('aceita http, https e mailto como vieram', () => {
@@ -42,5 +43,41 @@ describe('links com caracteres escondidos (AC-F3-07)', () => {
       expect(normalizeLink(bad)).toBeNull()
       expect(isAllowedLink(bad)).toBe(false)
     }
+  })
+})
+
+describe('links da descrição salva (AC-F3-07)', () => {
+  it('um link fora da regra vira texto, e um sem esquema ganha o https', () => {
+    const ctrl = String.fromCharCode(1)
+    const html =
+      '<p>Ver <a href="javascript:alert(1)">mapa</a>, <a href="' + ctrl + 'javascript:x">antigo</a>, ' +
+      '<a href="ftp://a.com">ftp</a>, <a href="a.com/x">site</a> e <a href="https://b.com">b</a></p>'
+    expect(cleanDescriptionLinks(html)).toBe(
+      '<p>Ver mapa, antigo, ftp, <a href="https://a.com/x">site</a> e <a href="https://b.com">b</a></p>',
+    )
+  })
+
+  it('sem nada a mudar, devolve a mesma string', () => {
+    const html = '<p><a href="mailto:a@b.com">e-mail</a> e <strong>texto</strong></p>'
+    expect(cleanDescriptionLinks(html)).toBe(html)
+    expect(cleanDescriptionLinks('')).toBe('')
+  })
+
+  it('pinsWithCleanLinks só troca os pins com link fora da regra', () => {
+    const pin = (id: string, description: string): Pin => ({
+      id,
+      type: 'cidade',
+      name: 'X',
+      pos: { u: 0, v: 0 },
+      icon: { kind: 'builtin', key: 'cidade' },
+      description,
+      tags: [],
+      fields: {},
+    })
+    const ok = pin('a', '<p><a href="https://a.com">a</a></p>')
+    const bad = pin('b', '<p><a href="javascript:x">b</a></p>')
+    const [a, b] = pinsWithCleanLinks([ok, bad])
+    expect(a).toBe(ok)
+    expect(b).toEqual({ ...bad, description: '<p>b</p>' })
   })
 })
