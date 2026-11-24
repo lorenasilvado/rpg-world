@@ -43,14 +43,14 @@ describe('Controle de zoom (AC-F2-09)', () => {
     expect(screen.getByRole('button', { name: 'Centralizar' }).getAttribute('aria-keyshortcuts')).toBe('0')
   })
 
-  it('com menos de 860 px de área livre, esconde a escala e a porcentagem', () => {
+  it('com menos de 450 px de área livre, esconde a escala e a porcentagem', () => {
     const { camera } = cameraWith()
     const world = createWorldStore(idleGenerator)
-    const view = render(<ZoomControls world={world} camera={camera} areaWidth={720} />)
+    const view = render(<ZoomControls world={world} camera={camera} areaWidth={390} />)
     expect(screen.queryByTestId('map-scale')).toBeNull()
     expect(screen.queryByTestId('zoom-percent')).toBeNull()
     expect(screen.getByRole('button', { name: 'Aproximar' })).toBeTruthy()
-    view.rerender(<ZoomControls world={world} camera={camera} areaWidth={900} />)
+    view.rerender(<ZoomControls world={world} camera={camera} areaWidth={560} />)
     expect(screen.getByTestId('zoom-percent').textContent).toBe('200%')
     // Antes de medir a linha (null), compacto.
     view.rerender(<ZoomControls world={world} camera={camera} areaWidth={null} />)

@@ -69,8 +69,17 @@ export const TOOLBAR_THICKNESS = 56
 export const TOOLBAR_LENGTH =
   2 * PANEL_BORDER + 2 * TOOLBAR_PADDING + TOOLBAR_TOOLS * TOOLBAR_BUTTON + TOOLBAR_TOOLS * TOOLBAR_GAP + TOOLBAR_SEPARATOR
 
+/**
+ * Larguras fixas da escala (a barra de 32 px com 8 e 6 px de folga) e da porcentagem no controle de
+ * zoom: o rótulo não muda a largura do controle, e `ZOOM_FULL_FROM` e `TOOLBAR_ROW_FROM` valem
+ * para qualquer zoom.
+ */
+export const ZOOM_SCALE_WIDTH = 46
+export const ZOOM_PERCENT_WIDTH = 44
+
 /** Controle de zoom completo (escala e porcentagem), no maior caso, o de toque. */
-export const ZOOM_FULL_MAX_WIDTH = 2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + 46 + 44 + 3 * ZOOM_BUTTON_TOUCH
+export const ZOOM_FULL_MAX_WIDTH =
+  2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + ZOOM_SCALE_WIDTH + ZOOM_PERCENT_WIDTH + 3 * ZOOM_BUTTON_TOUCH
 
 /** Largura do toast quando fica no canto direito. */
 export const TOAST_WIDTH = 352
@@ -83,14 +92,21 @@ export const TOAST_HEIGHT = 60
 
 /** Abaixo desta largura da área livre, o minimapa e o zoom compacto não cabem lado a lado. */
 export const STACK_BELOW = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + ZOOM_COMPACT_MAX_WIDTH + ZOOM_SIDE
+/**
+ * A partir desta largura da área livre, o zoom completo (escala e porcentagem) cabe ao lado do
+ * minimapa: 450 px. Abaixo, o controle de zoom fica compacto (só −, + e centralizar).
+ */
+export const ZOOM_FULL_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + ZOOM_FULL_MAX_WIDTH + ZOOM_SIDE
 /** A partir desta largura, o toast cabe no canto direito sem chegar ao minimapa. */
 export const TOAST_BESIDE_FROM = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOAST_WIDTH + ZOOM_SIDE
 
 /**
- * A partir desta largura da área livre, a toolbar cabe deitada no centro da linha (a grade
- * `1fr auto 1fr`), sem chegar ao minimapa nem ao zoom: 713 px.
+ * A partir desta largura da área livre, a toolbar cabe deitada no centro da linha, sem chegar ao
+ * minimapa nem ao zoom completo: 829 px. Centrada, ela precisa de cada lado do maior entre o
+ * minimapa e o zoom completo (com as margens e o `BAR_GAP`), e o zoom completo é o maior.
  */
-export const TOOLBAR_ROW_FROM = 2 * (BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP) + TOOLBAR_LENGTH
+export const TOOLBAR_ROW_FROM =
+  2 * Math.max(BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP, BAR_GAP + ZOOM_FULL_MAX_WIDTH + ZOOM_SIDE) + TOOLBAR_LENGTH
 
 /**
  * A partir desta largura da área livre, a toolbar cabe deitada e centrada com `BAR_SIDE` de cada

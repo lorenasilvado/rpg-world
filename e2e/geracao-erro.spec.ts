@@ -15,15 +15,16 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
   await expect(toast).toHaveCSS('background-color', 'rgb(179, 58, 46)')
-  // À esquerda do drawer (400 px) com 12 px de folga (alinhado com o zoom), acima do controle de zoom (16 px da base,
-  // 56 px de altura e 12 px de folga: 84 px).
+  // À esquerda do drawer (400 px) com 12 px de folga (alinhado com o zoom). Com 720 px de área livre, a toolbar fica
+  // na segunda linha, e o toast, 12 px acima dela (16 px da base + 152 da toolbar sobre o minimapa aberto + 56 de
+  // altura + 12: 236 px).
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([1440 - 400 - 12, 900 - 84])
+    .toEqual([1440 - 400 - 12, 900 - 236])
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)
@@ -92,6 +93,7 @@ test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima 
 // O toast nunca cobre o minimapa, o controle de zoom nem a toolbar (deitada ou em pé) e fica dentro da área livre (entre a
 // sidebar e o drawer), em larguras de área livre dos dois lados dos limites de 568 e 360 px.
 for (const { name, width, height, collapse, left } of [
+  { name: '1440 com a sidebar recolhida (992 px, toolbar na linha)', width: 1440, height: 900, collapse: true, left: 48 },
   { name: '1440 com a sidebar aberta (720 px)', width: 1440, height: 900, collapse: false, left: 320 },
   { name: '1024 com a sidebar recolhida (576 px)', width: 1024, height: 768, collapse: true, left: 48 },
   { name: '820 com a sidebar recolhida (372 px)', width: 820, height: 1180, collapse: true, left: 48 },

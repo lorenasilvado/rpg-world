@@ -10,6 +10,10 @@ import {
   TOAST_WIDTH,
   ZOOM_BAR_HEIGHT,
   ZOOM_COMPACT_MAX_WIDTH,
+  ZOOM_FULL_FROM,
+  ZOOM_FULL_MAX_WIDTH,
+  ZOOM_SCALE_WIDTH,
+  TOOLBAR_ROW_FROM,
 } from '../src/features/map/bottomBarLayout.ts'
 import { gotoEditor } from './editor.ts'
 
@@ -167,7 +171,7 @@ test('AC-F2-08: o minimapa recolhe e abre', async ({ page }) => {
   await expect(page.getByTestId('minimap-surface')).toBeVisible()
 })
 
-test('AC-F2-09: com área livre de 860 px ou mais, mostra a escala e a porcentagem; os botões fazem zoom e centralizam', async ({ page }) => {
+test('AC-F2-09: com área livre de 450 px ou mais, mostra a escala e a porcentagem; os botões fazem zoom e centralizam', async ({ page }) => {
   await open(page)
   // Sidebar recolhida: 1440 − 48 − 400 = 992 px de área livre.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
@@ -194,14 +198,66 @@ test('AC-F2-09: com área livre de 860 px ou mais, mostra a escala e a porcentag
   expect(fit).toEqual({ x: 48 + (992 - 900) / 2, y: 0, width: 900, height: 900 })
 })
 
-test('AC-F2-09: com menos de 860 px de área livre, esconde a escala e a porcentagem', async ({ page }) => {
-  // Sidebar aberta: 1440 − 320 − 400 = 720 px.
-  await open(page)
+// #137: sem pin selecionado (o drawer de 400 px aberto), a escala e a porcentagem aparecem nos
+// tamanhos comuns de desktop, com a sidebar aberta ou recolhida.
+for (const { width, height } of [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+]) {
+  test(`AC-F2-09: em ${width} × ${height}, sem pin selecionado, mostra a escala e a porcentagem, com a sidebar aberta ou recolhida`, async ({ page }) => {
+    await open(page, width, height)
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
+    await expect(page.getByTestId('map-scale')).toBeVisible()
+    await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
+    await page.getByRole('button', { name: 'Recolher painel' }).click()
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
+    await expect(page.getByTestId('zoom-percent')).toBeVisible()
+  })
+}
+
+// Nos limites (450 e 829 px de área livre, com a sidebar recolhida: 48 + área + 400), com o mapa
+// afastado ao máximo (0,4×, o rótulo da escala mais longo), o zoom completo tem a largura de
+// `bottomBarLayout` e não chega ao minimapa nem à toolbar (#137).
+for (const { area, place } of [
+  { area: ZOOM_FULL_FROM, place: 'above' },
+  { area: TOOLBAR_ROW_FROM, place: 'row' },
+]) {
+  test(`AC-F2-09: com ${area} px de área livre e o zoom em 0,4×, o zoom completo não chega ao minimapa nem à toolbar`, async ({ page }) => {
+    await open(page, 48 + area + 400, 900)
+    await page.getByRole('button', { name: 'Recolher painel' }).click()
+    await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', place)
+    await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
+    await page.mouse.move(48 + area / 2, 300)
+    for (let i = 0; i < 6; i++) await page.keyboard.press('-')
+    await expect(page.getByTestId('zoom-percent')).toHaveText('40%')
+    // Afastado: em 450 px, a barra de 32 px mede 3 dígitos de km (142 km); em 829, 77 km.
+    await expect(page.getByTestId('map-scale')).toHaveText(area === ZOOM_FULL_FROM ? /^\d{3} km$/ : /^\d+ km$/)
+    expect((await box(page.getByTestId('map-scale'))).width).toBe(ZOOM_SCALE_WIDTH)
+    const zoom = await box(page.getByTestId('zoom-controls'))
+    // Com mouse, os botões têm 40 px (não 44): 12 px a menos que o caso de toque.
+    expect(zoom.width).toBe(ZOOM_FULL_MAX_WIDTH - 12)
+    const minimap = await box(page.getByTestId('minimap'))
+    const toolbar = await box(page.getByTestId('map-toolbar'))
+    expect(zoom.x - (minimap.x + minimap.width)).toBeGreaterThanOrEqual(12)
+    const apart = zoom.x >= toolbar.x + toolbar.width + 12 || toolbar.y + toolbar.height <= zoom.y
+    expect(apart).toBe(true)
+  })
+}
+
+test('AC-F2-09: com 449 px de área livre, o zoom fica compacto', async ({ page }) => {
+  await open(page, 48 + ZOOM_FULL_FROM - 1 + 400, 900)
+  await page.getByRole('button', { name: 'Recolher painel' }).click()
+  await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
+})
+
+test('AC-F2-09: com menos de 450 px de área livre, esconde a escala e a porcentagem', async ({ page }) => {
+  // Tablet 1024 com a sidebar recolhida: 1024 − 48 − 400 = 576 px, completo; aberta: 304 px, compacto.
+  await open(page, 1024, 768)
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
   await expect(page.getByTestId('map-scale')).toHaveCount(0)
   await expect(page.getByTestId('zoom-percent')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Centralizar' })).toBeVisible()
-  // Recolhendo a sidebar, a área passa de 860 px e elas voltam; abrindo de novo, somem.
+  // Recolhendo a sidebar, a área passa de 450 px e elas voltam; abrindo de novo, somem.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
   await expect(page.getByTestId('zoom-percent')).toBeVisible()
   await page.getByRole('button', { name: 'Expandir painel' }).click()

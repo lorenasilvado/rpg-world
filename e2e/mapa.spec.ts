@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { BIOME_TONES, CANVAS_BACKGROUND, COAST_STROKE } from '../src/render/style/palette.ts'
-import { gotoEditor, stableMapShot } from './editor.ts'
+import { gotoEditor, mapShot, stableMapShot } from './editor.ts'
 
 // Terreno em textura (#46, AC-F1-22): o editor desenha o mapa gerado. A comparação com o mockup
 // aprovado é por print no PR; aqui fica que o mapa aparece, no lugar certo, com as cores da paleta.
@@ -23,9 +23,12 @@ async function openMap(page: Page, width: number, height: number) {
   return { rect: { x, y, width: w, height: h }, errors }
 }
 
-/** Cores (#RRGGBB) de uma grade de `n × n` pontos dentro do retângulo, lidas de um print da página. */
-async function sampleColors(page: Page, rect: { x: number; y: number; width: number; height: number }, n = 24) {
-  const png = (await page.screenshot({ clip: rect })).toString('base64')
+/**
+ * Cores (#RRGGBB) de uma grade de `n × n` pontos no retângulo do mapa, lidas do print só do mapa
+ * (`mapShot`, sem os controles por cima: com a toolbar na segunda linha, ela fica sobre o mapa).
+ */
+async function sampleColors(page: Page, n = 24) {
+  const png = (await mapShot(page)).toString('base64')
   return page.evaluate(
     async ([data, n]) => {
       const img = new Image()
@@ -57,7 +60,7 @@ test('desktop 1440×900: o mapa gerado aparece entre a sidebar e o drawer, com a
   expect(rect).toEqual({ x: 320, y: 90, width: 720, height: 720 })
   await expect(page.getByTestId('map-canvas')).toBeVisible()
 
-  const colors = await sampleColors(page, rect)
+  const colors = await sampleColors(page)
   const land = new Set<string>(LAND.flatMap((b) => BIOME_TONES[b]))
   const water = new Set<string>(WATER.flatMap((b) => BIOME_TONES[b]))
   const onLand = colors.filter((c) => land.has(c)).length
@@ -71,9 +74,9 @@ test('desktop 1440×900: o mapa gerado aparece entre a sidebar e o drawer, com a
 })
 
 test('a costa tem o traço #163A5C entre a terra e a água (AC-F1-22)', async ({ page }) => {
-  const { rect } = await openMap(page, 1440, 900)
+  await openMap(page, 1440, 900)
   // Com o mapa reduzido para caber na tela, a textura é filtrada: o traço chega perto da cor, não igual.
-  const colors = await sampleColors(page, rect, 160)
+  const colors = await sampleColors(page, 160)
   const near = (a: string, b: string) => {
     const [x, y] = [a, b].map((c) => [1, 3, 5].map((k) => Number.parseInt(c.slice(k, k + 2), 16)))
     return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) < 20
@@ -98,7 +101,7 @@ for (const [label, width, height, expected] of [
   test(`${label}: o mapa ocupa o retângulo exato da área livre (AC-F1-22)`, async ({ page }) => {
     const { rect, errors } = await openMap(page, width, height)
     expect(rect).toEqual(expected)
-    const colors = await sampleColors(page, rect, 12)
+    const colors = await sampleColors(page, 12)
     expect(colors.some((c) => c !== CANVAS_BACKGROUND)).toBe(true)
     expect(errors).toEqual([])
   })

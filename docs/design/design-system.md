@@ -262,7 +262,9 @@ Direção escolhida: **B — Margem encadernada**.
 | Minimapa | recolhível | 160 × 100 |
 | Toasts | acima do controle de zoom | |
 
-Quando a área livre fica abaixo de 860 px, o controle de zoom esconde escala e porcentagem.
+Quando a área livre fica abaixo de 450 px (o zoom completo não cabe ao lado do minimapa), o controle
+de zoom esconde escala e porcentagem. A toolbar só fica no centro da linha com 829 px ou mais (sem
+chegar ao zoom completo); abaixo, vai para uma segunda linha, acima do minimapa e do zoom.
 
 ## Estilo do mapa
 

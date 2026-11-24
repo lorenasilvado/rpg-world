@@ -1,6 +1,6 @@
 import { WORLD_SIZE } from '../../render/camera'
 import type { WorldRect } from '../../state/cameraStore'
-import { MINIMAP_HEIGHT, MINIMAP_WIDTH } from './bottomBarLayout'
+import { MINIMAP_HEIGHT, MINIMAP_WIDTH, ZOOM_FULL_FROM } from './bottomBarLayout'
 import { formatKm } from './measure'
 
 /**
@@ -10,8 +10,11 @@ import { formatKm } from './measure'
 
 /** Largura da barra de escala, em px. */
 export const SCALE_BAR_PX = 32
-/** Abaixo desta largura da área livre, o controle de zoom esconde a escala e a porcentagem. */
-export const COMPACT_ZOOM_BELOW_PX = 860
+/**
+ * Abaixo desta largura da área livre (450 px), o controle de zoom esconde a escala e a
+ * porcentagem: o zoom completo não cabe ao lado do minimapa (`ZOOM_FULL_FROM`).
+ */
+export const COMPACT_ZOOM_BELOW_PX = ZOOM_FULL_FROM
 /** Tamanho do minimapa (160 × 100): mora com as outras medidas da linha inferior. */
 export { MINIMAP_HEIGHT, MINIMAP_WIDTH }
 
@@ -29,7 +32,7 @@ export function zoomPercent(zoom: number): string {
   return `${Math.round(zoom * 100)}%`
 }
 
-/** Se o controle de zoom mostra a escala e a porcentagem (área livre de 860 px ou mais). */
+/** Se o controle de zoom mostra a escala e a porcentagem (área livre de 450 px ou mais). */
 export function showsZoomDetails(areaWidth: number): boolean {
   return areaWidth >= COMPACT_ZOOM_BELOW_PX
 }

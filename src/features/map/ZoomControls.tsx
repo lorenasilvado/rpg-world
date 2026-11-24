@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useStore } from 'zustand'
 import type { CameraStore } from '../../state/cameraStore'
 import type { WorldStore } from '../../state/worldStore'
-import { PANEL_BORDER, ZOOM_BAR_HEIGHT, ZOOM_BAR_PADDING } from './bottomBarLayout'
+import { PANEL_BORDER, ZOOM_BAR_HEIGHT, ZOOM_BAR_PADDING, ZOOM_PERCENT_WIDTH, ZOOM_SCALE_WIDTH } from './bottomBarLayout'
 import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapControls'
 
 /**
@@ -11,7 +11,7 @@ import { SCALE_BAR_PX, scaleLabel, showsZoomDetails, zoomPercent } from './mapCo
  * (a partir do `sizeKm` do mundo), Afastar, a porcentagem do zoom, Aproximar e Centralizar. Os
  * botões fazem o mesmo que as teclas −, + e 0. Com a área livre (`areaWidth`, a largura da linha
  * inferior medida pelo editor, a mesma que decide o empilhamento; `null` antes de medir) abaixo de
- * 860 px, a escala e a porcentagem somem e ficam só os botões (`data-compact`, também antes de a
+ * 450 px (onde o zoom completo não cabe ao lado do minimapa), a escala e a porcentagem somem e ficam só os botões (`data-compact`, também antes de a
  * câmera estar pronta).
  * Os botões têm 44 × 44 px em telas de toque (`ZOOM_BUTTON_TOUCH`, a área de toque mínima do design
  * system) e 40 px de largura com mouse (a exceção do zoom no desktop).
@@ -35,7 +35,12 @@ export function ZoomControls({ world, camera, areaWidth }: { world: WorldStore; 
       className="flex items-center rounded-panel border-line bg-paper shadow-md backdrop-blur-[14px]"
     >
       {showDetails && (
-        <div data-testid="map-scale" title="Escala" className="flex flex-col items-center gap-0.5 pr-1.5 pl-2">
+        <div
+          data-testid="map-scale"
+          title="Escala"
+          style={{ width: ZOOM_SCALE_WIDTH }}
+          className="flex shrink-0 flex-col items-center gap-0.5 pr-1.5 pl-2 whitespace-nowrap"
+        >
           <span className="text-[11px]/3 font-bold text-ink-2 tabular-nums">{scale}</span>
           <span aria-hidden="true" className="h-[5px] border-[1.5px] border-t-0 border-ink" style={{ width: SCALE_BAR_PX }} />
         </div>
@@ -44,7 +49,7 @@ export function ZoomControls({ world, camera, areaWidth }: { world: WorldStore; 
         <Minus size={18} aria-hidden="true" />
       </ZoomButton>
       {showDetails && (
-        <span className="w-11 text-center text-[11px] font-bold text-ink-2 tabular-nums">
+        <span style={{ width: ZOOM_PERCENT_WIDTH }} className="shrink-0 text-center text-[11px] font-bold text-ink-2 tabular-nums">
           {/* O rótulo vai como texto para leitores de tela: aria-label num span sem papel não é lido. */}
           <span className="sr-only">Zoom atual: </span>
           <span data-testid="zoom-percent">{percent}</span>
