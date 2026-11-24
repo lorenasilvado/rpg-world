@@ -45,7 +45,7 @@ export function checkImageFile(file: Pick<File, 'type' | 'name' | 'size'>): Imag
 
 /**
  * O tamanho da imagem guardada: cabe em `max` × `max`, com a mesma proporção, sem aumentar. Sem
- * tamanho (um SVG sem `width` nem `height`), o quadrado `max`.
+ * tamanho, o quadrado `max`.
  */
 export function fitSize(width: number, height: number, max = IMAGE_SIZE_PX): { width: number; height: number } {
   if (!(width > 0) || !(height > 0)) return { width: max, height: max }
@@ -60,11 +60,42 @@ export function formatBytes(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
+/** Um comprimento do SVG em px (`24`, `24px`); em outra unidade ou em %, `null`. */
+function svgLength(value: string | null): number | null {
+  const m = value?.trim().match(/^(\d*\.?\d+)(px)?$/)
+  return m ? Number(m[1]) : null
+}
+
+/**
+ * O tamanho em que um SVG sem `width` e `height` (só com `viewBox`, ou nem isso) é desenhado: o
+ * lado maior com `max` px, na proporção do `viewBox`; sem ele, o quadrado `max`. O navegador daria
+ * a ele um tamanho padrão (150 × 150 no Chrome), pequeno demais para um desenho vetorial. Com
+ * `width` e `height`, `null`: vale o tamanho do próprio SVG.
+ */
+export function unsizedSvgSize(text: string, max = IMAGE_SIZE_PX): { width: number; height: number } | null {
+  const svg = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement
+  if (svg.localName !== 'svg') return null
+  if (svgLength(svg.getAttribute('width')) !== null && svgLength(svg.getAttribute('height')) !== null) return null
+  const box = (svg.getAttribute('viewBox') ?? '').trim().split(/[\s,]+/).map(Number)
+  const [w, h] = [box[2], box[3]]
+  if (box.length !== 4 || !(w > 0) || !(h > 0)) return { width: max, height: max }
+  const k = max / Math.max(w, h)
+  return { width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)) }
+}
+
+function isSvg(file: Blob): boolean {
+  return file.type === 'image/svg+xml' || (!file.type && /\.svg$/i.test((file as File).name ?? ''))
+}
+
 /** A imagem decodificada, com o tamanho natural dela. */
 export type DecodedImage = { source: CanvasImageSource; width: number; height: number; release(): void }
 
-/** Decodifica a imagem do arquivo por um `<img>` (o único que lê SVG em todos os navegadores). */
+/**
+ * Decodifica a imagem do arquivo por um `<img>` (o único que lê SVG em todos os navegadores). O SVG
+ * sem `width` e `height` fica com o tamanho de `unsizedSvgSize`.
+ */
 export async function decodeImage(file: Blob): Promise<DecodedImage> {
+  const unsized = isSvg(file) ? unsizedSvgSize(await file.text()) : null
   const url = URL.createObjectURL(file)
   const img = new Image()
   img.src = url
@@ -74,7 +105,8 @@ export async function decodeImage(file: Blob): Promise<DecodedImage> {
     URL.revokeObjectURL(url)
     throw error
   }
-  return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) }
+  const { width, height } = unsized ?? { width: img.naturalWidth, height: img.naturalHeight }
+  return { source: img, width, height, release: () => URL.revokeObjectURL(url) }
 }
 
 /** O canvas onde a imagem é reduzida (o `toBlob` dá o PNG). */

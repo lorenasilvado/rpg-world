@@ -78,7 +78,8 @@ pelo usuário, que aparece no círculo do Personalizado, cobrindo-o (o meio da i
 drawer. A imagem é PNG, JPG ou SVG (pelo tipo do arquivo; sem ele, pela extensão) de até 1 MB; ao
 enviar, ela é reduzida para caber em 256 × 256 px, na mesma proporção (uma menor não aumenta), e
 guardada como PNG, num blob do mundo, fora do JSON dele (o pin guarda o id da imagem; o SVG vira
-pixels). Acima de 1 MB, o usuário escolhe entre recusar o arquivo ou aceitá-lo com a redução. Um
+pixels). Um SVG sem `width` e `height` é desenhado com o lado maior em 256 px, na proporção do
+`viewBox` (sem ele, 256 × 256). Acima de 1 MB, o usuário escolhe entre recusar o arquivo ou aceitá-lo com a redução. Um
 pin de outro tipo com imagem (de um mundo importado) mostra o ícone do tipo. Até a imagem chegar
 do banco, o pin mostra o círculo hachurado.
 

@@ -134,6 +134,11 @@ test('Detalhes: troca o tipo, recusa .gif e a imagem acima de 1 MB, envia SVG e 
   await expect(drawer(page).getByTestId('pin-drawer-type')).toHaveText('Personalizado')
   await expect(drawer(page).getByTestId('pin-drawer-icon').getByTestId('pin-icon-image')).toHaveAttribute('href', /^blob:/)
 
+  // SVG só com viewBox: desenhado com o lado maior em 256 px, na proporção do viewBox.
+  const unsized = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="#20A050"/></svg>'
+  await fileInput(page).setInputFiles({ name: 'faixa.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(unsized) })
+  await expect(panel.getByRole('button', { name: 'Remover imagem' })).toBeVisible()
+
   // PNG de 512 px: reduzido para 256.
   await fileInput(page).setInputFiles({ name: 'brasao.png', mimeType: 'image/png', buffer: await solidPng(page, '#E02020', 512, 512) })
   await expect(panel.getByRole('button', { name: 'Remover imagem' })).toBeVisible()
@@ -158,8 +163,12 @@ test('Detalhes: troca o tipo, recusa .gif e a imagem acima de 1 MB, envia SVG e 
   expect(Object.keys(pin.fields)).toEqual(['Governante', 'População'])
   const stored = before.images.find((i) => i.id === pin.icon.blobId)
   expect(stored).toEqual({ id: pin.icon.blobId, worldId: 'mundo-padrao', type: 'image/png', width: 256, height: 256 })
-  const fromSvg = before.images.find((i) => i.id !== pin.icon.blobId)
-  expect(fromSvg).toMatchObject({ type: 'image/png', width: 256, height: 128 })
+  // As duas do SVG (1000 × 500 e só viewBox 20 × 10) ficam com 256 × 128.
+  const fromSvg = before.images.filter((i) => i.id !== pin.icon.blobId)
+  expect(fromSvg.map((i) => [i.type, i.width, i.height])).toEqual([
+    ['image/png', 256, 128],
+    ['image/png', 256, 128],
+  ])
 
   // Ao recarregar, a imagem volta no mapa e no drawer, com os campos.
   await page.reload()

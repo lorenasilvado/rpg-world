@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IMAGE_MAX_BYTES, checkImageFile, fitSize, formatBytes, resizeImage, type ResizeCanvas } from './uploadImage'
+import { IMAGE_MAX_BYTES, checkImageFile, fitSize, formatBytes, resizeImage, unsizedSvgSize, type ResizeCanvas } from './uploadImage'
 
 const file = (name: string, type: string, size: number) => ({ name, type, size })
 
@@ -75,5 +75,30 @@ describe('imagem enviada: redução para 256 px (AC-F3-11)', () => {
 
   it('uma imagem que não decodifica é recusada', async () => {
     await expect(resizeImage(new Blob(['x']), { decode: () => Promise.reject(new Error('corrompida')) })).rejects.toThrow('corrompida')
+  })
+})
+
+describe('SVG sem width e height: desenhado em 256 px', () => {
+  const svg = (attrs: string) => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}><rect width="10" height="10"/></svg>`
+
+  it('só com viewBox: o lado maior com 256 px, na proporção do viewBox', () => {
+    expect(unsizedSvgSize(svg('viewBox="0 0 10 10"'))).toEqual({ width: 256, height: 256 })
+    expect(unsizedSvgSize(svg('viewBox="0,0,20,10"'))).toEqual({ width: 256, height: 128 })
+    expect(unsizedSvgSize(svg('viewBox="0 0 30 120"'))).toEqual({ width: 64, height: 256 })
+  })
+
+  it('sem viewBox, ou com só um dos dois, ou em %: o tamanho que falta não vale', () => {
+    expect(unsizedSvgSize(svg(''))).toEqual({ width: 256, height: 256 })
+    expect(unsizedSvgSize(svg('width="40" viewBox="0 0 20 10"'))).toEqual({ width: 256, height: 128 })
+    expect(unsizedSvgSize(svg('width="100%" height="100%" viewBox="0 0 10 10"'))).toEqual({ width: 256, height: 256 })
+  })
+
+  it('com width e height, vale o tamanho do próprio SVG', () => {
+    expect(unsizedSvgSize(svg('width="1000" height="500"'))).toBeNull()
+    expect(unsizedSvgSize(svg('width="24px" height="24px" viewBox="0 0 10 10"'))).toBeNull()
+  })
+
+  it('o que não é SVG não tem tamanho a calcular', () => {
+    expect(unsizedSvgSize('<html></html>')).toBeNull()
   })
 })
