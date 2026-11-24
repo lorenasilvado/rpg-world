@@ -164,6 +164,7 @@ lista e o número não volta a ser usado.
 - AC-F3-16: Buscar (Ctrl K) acha pins por nome e por tag, e escolher um resultado foca a câmera nele e o seleciona
 - AC-F3-17: com 500 pins e 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
 - AC-F3-18: abaixo de 768 px, o drawer é um painel sobreposto, e a ficha do pin pode ser consultada no celular (390 px)
+- AC-F3-19: a partir de 768 px, sem pin selecionado, o drawer fica fora da tela, e o mapa, a barra superior, a linha inferior (minimapa, toolbar e zoom) e os toasts usam a largura até a borda direita (12 px dela); selecionar um pin traz o drawer deslizando (200 ms), e fechá-lo o leva de volta
 
 ## Pendências
 
