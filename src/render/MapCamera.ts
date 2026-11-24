@@ -123,24 +123,26 @@ export class MapCamera {
   /**
    * Leva o ponto do mundo (cx, cy) ao centro da área livre, sem mudar o zoom, deslizando em 350 ms
    * (com movimento reduzido, salta). Os limites de pan valem: no zoom 1×, o mapa não sai do lugar.
+   * Com `rightCover` (px CSS: o drawer aberto sobre a direita da área livre), o ponto vai ao centro
+   * do que sobra à esquerda dele.
    */
-  panTo(cx: number, cy: number) {
+  panTo(cx: number, cy: number, rightCover = 0) {
     if (!this.fitted) return
     const base = this.tween?.to ?? this.currentView()
-    this.moveTo({ cx, cy, scale: base.scale })
+    this.moveTo({ cx: cx + rightCover / 2 / base.scale, cy, scale: base.scale })
   }
 
   /**
    * Foca o ponto do mundo (cx, cy): leva-o ao centro da área livre deslizando, como o `panTo`, e
    * aproxima até `minZoom` (zoom relativo) se a câmera está mais longe (Centralizar do drawer). Mais
-   * perto, o zoom fica.
+   * perto, o zoom fica. `rightCover`, como no `panTo`.
    */
-  focusOn(cx: number, cy: number, minZoom: number) {
+  focusOn(cx: number, cy: number, minZoom: number, rightCover = 0) {
     if (!this.fitted) return
     const base = this.tween?.to ?? this.currentView()
     const { min, max } = zoomLimits(this.area)
     const scale = Math.min(max, Math.max(min, base.scale, minZoom * fitView(this.area).scale))
-    this.moveTo({ cx, cy, scale })
+    this.moveTo({ cx: cx + rightCover / 2 / scale, cy, scale })
   }
 
   /** Segura o pan enquanto `held` (o arrasto de um pin); a pinça e a roda continuam. */

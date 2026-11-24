@@ -14,8 +14,12 @@ import { worldView } from './layers/decorCull'
 import { createMapBlur, MAP_BLUR_PX } from './mapBlur'
 import { CANVAS_BACKGROUND } from './style/palette'
 
-/** Faixas da área do mapa cobertas por painéis, em px CSS: o mapa cabe no que sobra. */
-export type MapInsets = { left: number; right: number; top: number; bottom: number }
+/**
+ * Faixas da área do mapa cobertas por painéis, em px CSS: o mapa cabe no que sobra (a área livre).
+ * `drawer` é a faixa à direita que o drawer cobre quando abre (com um pin selecionado): ele não entra
+ * na área livre, mas centrar um pin o põe no centro do que sobra à esquerda dele.
+ */
+export type MapInsets = { left: number; right: number; top: number; bottom: number; drawer?: number }
 
 export type MapRenderer = {
   /** Recalcula a área livre (ex.: os painéis mudaram), mantendo o centro e o zoom. */
@@ -53,7 +57,7 @@ export type MapRenderer = {
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
  * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
  * Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
- * área livre (deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
+ * área livre à esquerda do drawer aberto (`insets().drawer`; deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
  * expõe os pins no mapa em `data-pins`, os rótulos à vista em `data-pin-labels`, o selecionado em
  * `data-pin-selected`, a largura de um pin na tela, em px, em `data-pin-size` e as texturas de
  * imagens enviadas na GPU em `data-pin-image-textures`. Sem o desenho dos
@@ -163,7 +167,7 @@ export async function createMapRenderer(
       const pin = state.pins.find((p) => p.id === state.selectedId)
       if (pin) {
         const p = pinToWorld(pin.pos)
-        camera.panTo(p.x, p.y)
+        camera.panTo(p.x, p.y, insets().drawer ?? 0)
       }
     }
   })
@@ -228,7 +232,7 @@ export async function createMapRenderer(
       zoomOut: () => camera.zoomBy(1 / KEY_ZOOM_STEP),
       center: () => camera.center(),
       centerOn: (x, y) => camera.centerOn(x, y),
-      focusOn: (x, y, minZoom) => camera.focusOn(x, y, minZoom),
+      focusOn: (x, y, minZoom) => camera.focusOn(x, y, minZoom, insets().drawer ?? 0),
       holdPan: (held) => camera.holdPan(held),
     },
     destroy() {

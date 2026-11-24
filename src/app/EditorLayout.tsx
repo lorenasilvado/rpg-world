@@ -46,7 +46,11 @@ import { useTheme } from './useTheme'
  * a sidebar recolhida (`uiStore.ts`). `createRenderer` troca o
  * renderer do mapa (os testes do jsdom, sem WebGL, passam um falso).
  *
- * A linha inferior, entre a sidebar e o drawer, 16 px da base: o minimapa à esquerda e o controle
+ * O drawer, a partir de 768 px, fica fora da tela sem pin selecionado, e entra deslizando (200 ms)
+ * quando um pin é selecionado (AC-F3-19); a linha inferior e a barra do topo vão até a borda direita
+ * sem ele, e até a borda esquerda dele com ele. A área livre do mapa (`panelInsets`) não conta o drawer.
+ *
+ * A linha inferior, entre a sidebar e o drawer (ou a borda direita), 16 px da base: o minimapa à esquerda e o controle
  * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
  * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
@@ -103,6 +107,8 @@ export function EditorLayout({
   const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  /** A partir de 768 px, o drawer só fica à vista com um pin selecionado (AC-F3-19). */
+  const pinSelected = useStore(pins, (s) => s.selectedId !== null)
   const [helpOpen, setHelpOpen] = useState(false)
   /** Quem tinha o foco ao abrir a Ajuda: recebe o foco de volta ao fechar. */
   const helpReturn = useRef<HTMLElement | null>(null)
@@ -112,6 +118,8 @@ export function EditorLayout({
   }
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
+  /** O drawer à vista: a partir de 768 px, com um pin selecionado; abaixo, o painel sobreposto aberto. */
+  const drawerShown = desktop ? pinSelected : drawerOpen
   const [camera] = useState(createCameraStore)
   const minimapOpen = useStore(ui, (s) => s.minimapOpen)
   const bottomBar = useRef<HTMLDivElement>(null)
@@ -270,8 +278,8 @@ export function EditorLayout({
         style={{ bottom: BAR_BOTTOM }}
         className={[
           'pointer-events-none absolute right-0 left-0 z-10',
-          'transition-[left] duration-200 ease-[var(--ease-panel)]',
-          'md:right-[var(--drawer-width)]',
+          'transition-[left,right] duration-200 ease-[var(--ease-panel)]',
+          pinSelected ? 'md:right-[var(--drawer-width)]' : 'md:right-0',
           sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
         ].join(' ')}
       >
@@ -381,7 +389,8 @@ export function EditorLayout({
         inert={anyOpen}
         className={[
           'absolute top-3 right-3 z-10 flex h-14 items-center rounded-panel bg-paper px-1 shadow-md backdrop-blur-[14px] md:gap-0.5 md:px-1.5',
-          'md:right-[calc(var(--drawer-width)+12px)]',
+          'transition-[right] duration-200 ease-[var(--ease-panel)]',
+          pinSelected ? 'md:right-[calc(var(--drawer-width)+12px)]' : '',
         ].join(' ')}
       >
         <IconButton ref={sidebarOpener} label="Abrir painel" className="md:hidden" onClick={() => setSidebarOpen(true)}>
@@ -427,9 +436,14 @@ export function EditorLayout({
         className={[
           'absolute inset-y-0 right-0 z-20 flex w-[min(var(--drawer-width),100vw)] flex-col',
           'bg-paper-solid shadow-lg',
-          'transition-transform duration-200 ease-[var(--ease-panel)]',
+          // Ao fechar, a visibilidade entra na transição: o drawer some só depois de deslizar. Ao abrir,
+          // não: ele fica visível na hora, e o foco pode ir para dentro dele (o nome do pin novo).
+          drawerShown ? 'transition-transform' : 'transition-[transform,visibility]',
+          'duration-200 ease-[var(--ease-panel)]',
           drawerOpen ? 'translate-x-0' : 'invisible translate-x-full',
-          'md:visible md:w-[var(--drawer-width)] md:translate-x-0',
+          // A partir de 768 px: à vista só com um pin; sem ele, fora da tela, sombra incluída.
+          pinSelected ? 'md:visible md:translate-x-0' : 'md:invisible md:translate-x-[calc(100%+32px)]',
+          'md:w-[var(--drawer-width)]',
         ].join(' ')}
       >
         <div className="flex h-14 shrink-0 items-center justify-end px-3 md:hidden">

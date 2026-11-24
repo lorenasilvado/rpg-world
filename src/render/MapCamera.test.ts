@@ -196,6 +196,31 @@ describe('MapCamera', () => {
     expect(c.y).toBeCloseTo(520)
   })
 
+  it('com o drawer aberto (rightCover), panTo e focusOn põem o ponto no centro do que sobra à esquerda dele (AC-F3-03)', () => {
+    setReduced(true)
+    // 1440 × 900 com a sidebar: a área livre vai até a borda direita (1120 px); o drawer cobre 400.
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const { camera, last, key } = setup(area)
+    camera.showWorld()
+    key('+')
+    key('+')
+    key('+')
+    const zoom = last().zoom
+    // O centro do que sobra: x de 320 a 1040, em 680.
+    const visible = { x: 320, y: 0, width: 720, height: 900 }
+    camera.panTo(500, 450, 400)
+    expect(last().zoom).toBeCloseTo(zoom)
+    let c = centerOf(last().t, visible)
+    expect(c.x).toBeCloseTo(500)
+    expect(c.y).toBeCloseTo(450)
+
+    camera.focusOn(520, 480, 2.5, 400)
+    expect(last().zoom).toBeCloseTo(2.5)
+    c = centerOf(last().t, visible)
+    expect(c.x).toBeCloseTo(520)
+    expect(c.y).toBeCloseTo(480)
+  })
+
   it('focusOn não passa do zoom máximo (4×)', () => {
     setReduced(true)
     const { camera, last } = setup()

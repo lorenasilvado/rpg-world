@@ -43,7 +43,9 @@ barra inferior.
   ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
-- Com a área livre de pelo menos 829 px (ex.: 1280 com a sidebar recolhida e o drawer: 832 px), a
+- A toolbar se ajusta à largura da linha inferior (a área livre, menos o drawer quando ele está
+  aberto). Com pelo menos 829 px (ex.: 1280 com a sidebar e sem pin: 960 px; 1440 com a sidebar e
+  sem pin: 1120 px; 1280 com a sidebar recolhida e o drawer: 832 px), a
   toolbar fica deitada no centro da linha inferior (entre o minimapa e o zoom completo, sem chegar a
   eles). De 341 a 828 px (ex.: 1440 com a sidebar e o drawer: 720 px; 1280 com a sidebar e o
   drawer: 560 px; celular 390), ela fica deitada e centrada numa segunda linha, 12 px acima do mais alto entre o
@@ -71,16 +73,18 @@ barra inferior.
   só o cabeçalho. Abre aberto. O cabeçalho tem 32 px de altura com mouse e 44 px em telas de toque
   (a área de toque mínima).
 - Canto inferior direito: escala (ex.: 17 km), zoom (ex.: 92%) com − e +, centralizar.
-- Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e o drawer, 16 px da base
-  (o minimapa a 16 px da sidebar, o zoom a 12 px do drawer). Os toasts ficam logo acima do
+- Minimapa e controle de zoom ficam na linha inferior, entre a sidebar e a borda direita (ou a
+  borda esquerda do drawer, quando ele está aberto), 16 px da base (o minimapa a 16 px da sidebar,
+  o zoom a 12 px da borda direita ou do drawer). Os toasts ficam logo acima do
   controle de zoom, no canto direito. Com a toolbar na segunda linha, o toast fica 12 px acima
   dela; com a toolbar em pé, à esquerda dela (12 px). Se a área livre tem menos de 566 px (à
   esquerda da toolbar em pé, quando ela está ali), onde o toast cobriria o minimapa, o toast ocupa a
   largura da área livre (até a toolbar em pé) e fica acima da toolbar na segunda linha, ou do
   minimapa aberto (ou do zoom, com o minimapa recolhido), inclusive quando o minimapa está
   empilhado.
-- Com o drawer aberto, a barra superior e os controles de zoom se alinham à borda esquerda do
-  drawer.
+- Sem pin selecionado, o drawer fica fora da tela, e a barra superior e os controles de zoom ficam a
+  12 px da borda direita. Com o drawer aberto (um pin selecionado), eles se alinham à borda esquerda
+  dele, deslizando junto com ele (200 ms), e voltam ao fechá-lo (ver [pins.md](pins.md)).
 
 ## Estados
 
@@ -117,8 +121,11 @@ barra inferior.
 
 ## Regras
 
-- O zoom é relativo à área livre (a tela menos a sidebar e o drawer fixos, a partir de 768 px;
-  abaixo disso, a tela toda): 1× é o mapa inteiro, centrado na área livre. O editor abre em 1×, e
+- O zoom é relativo à área livre (a tela menos a sidebar fixa, a partir de 768 px; abaixo disso, a
+  tela toda): 1× é o mapa inteiro, centrado na área livre. O drawer não entra na área livre: abrir
+  ou fechar o drawer não muda a porcentagem nem mexe na câmera por si. Ao abrir, a câmera já desliza
+  até o pin, no centro do que sobra entre a sidebar e o drawer (ver [pins.md](pins.md)); ao fechar,
+  ela fica onde está. O editor abre em 1×, e
   centralizar (0) volta para 1×. Um mapa novo (slider ou seed) não mexe na câmera.
 - Limites de zoom (0,4× a 4×) e de pan: o mapa não some da tela. Em cada eixo, se o mapa é maior
   que a área livre, ele a cobre toda: o pan para quando a borda do mapa chega à borda da área, sem
@@ -158,8 +165,8 @@ barra inferior.
   área livre). Os botões −, + e centralizar fazem o mesmo que as teclas −, + e 0, deslizando.
 - Com a área livre abaixo de 450 px, onde o controle de zoom completo não cabe ao lado do minimapa
   (ex.: tablet 1024 com a sidebar aberta: 304 px; celular 390), ele fica só com −, + e centralizar.
-  Nos tamanhos comuns de desktop (1280 e 1440 px, com a sidebar aberta ou recolhida e o drawer), a
-  escala e a porcentagem aparecem.
+  Nos tamanhos comuns de desktop (1280 e 1440 px, com a sidebar aberta ou recolhida, com ou sem o
+  drawer), a escala e a porcentagem aparecem.
 - Os botões −, + e centralizar têm 44 × 44 px em telas de toque (celular e tablet) e 40 × 44 px
   com mouse.
 - Minimapa: o mapa (quadrado) aparece inteiro e centrado nos 160 × 100, com o fundo do oceano dos
@@ -210,8 +217,3 @@ lista e o número não volta a ser usado.
 ## Pendências
 
 Layout abaixo de 768 px (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
-
-Diferença do mockup: o mockup do editor mostra o drawer fechado, com a toolbar no centro da linha
-inferior. Como o drawer fica aberto (vazio) sem pin selecionado, em 1440 × 900 com a sidebar aberta
-(720 px de área livre) a toolbar fica numa segunda linha, sobre o mapa, e os toasts sobem com ela.
-A rever quando o drawer abrir só com um pin ou uma estrada selecionados.
