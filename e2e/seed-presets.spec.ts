@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { gotoEditor } from './editor.ts'
+import { gotoEditor, mapShot } from './editor.ts'
 
 // Sidebar: seed, presets e restaurar (#50). A fração de deserto do "Deserto árido" é conferida no
 // núcleo (src/state/presets.test.ts); aqui fica o caminho real na tela.
@@ -37,11 +37,6 @@ async function openEditor(page: Page, width = 1440, height = 900) {
 async function waitFinalMap(page: Page) {
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 30_000 })
   await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
-}
-
-async function mapShot(page: Page) {
-  const [x, y, w, h] = ((await page.getByTestId('map').getAttribute('data-map-rect')) ?? '').split(',').map(Number)
-  return page.screenshot({ clip: { x, y, width: w, height: h } })
 }
 
 /** Confere o valor dos 9 sliders (abre Avançado antes, se precisar). */

@@ -76,10 +76,21 @@ export async function gotoEditor(page: Page, url = '/', world = defaultWorld()) 
   await expect(page.getByTestId('editor').or(page.getByTestId('no-webgl2'))).toBeVisible()
 }
 
-/** Print do retângulo do mapa (`data-map-rect`). */
+/**
+ * Os controles por cima do mapa (a barra de baixo, com o minimapa, a toolbar e o zoom, e as ações
+ * do topo) ficam fora do print. O minimapa é translúcido, com `backdrop-blur`, e o Chrome às vezes
+ * rasteriza o texto dele com um antisserrilhado um pouco diferente em outra aba: o mesmo mapa daria
+ * prints diferentes (#199).
+ */
+const ONLY_THE_MAP = [
+  '[data-testid="bottom-bar"], [data-testid="bottom-bar"] *,',
+  '[data-testid="actions"], [data-testid="actions"] * { visibility: hidden !important; }',
+].join(' ')
+
+/** Print do retângulo do mapa (`data-map-rect`), só com o mapa (sem os controles por cima). */
 export async function mapShot(page: Page) {
   const [x, y, width, height] = ((await page.getByTestId('map').getAttribute('data-map-rect')) ?? '').split(',').map(Number)
-  return page.screenshot({ clip: { x, y, width, height } })
+  return page.screenshot({ clip: { x, y, width, height }, style: ONLY_THE_MAP })
 }
 
 /**
