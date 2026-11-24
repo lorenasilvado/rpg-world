@@ -27,7 +27,7 @@ export type PinShape = {
   shade: string
   /** Contorno do corpo. */
   body: string
-  /** Glifo; o Personalizado não tem: no lugar, um círculo hachurado (a imagem, com F3-10). */
+  /** Glifo; o Personalizado não tem: no lugar, o círculo com a imagem enviada (sem ela, hachurado). */
   glyph: readonly GlyphPart[]
 }
 
@@ -114,7 +114,7 @@ export const PIN_SHAPES: Record<PinType, PinShape> = {
 /** O contexto 2D que `drawPin` usa (o do `<canvas>` ou o do `OffscreenCanvas`). */
 export type PinInk = Pick<
   CanvasRenderingContext2D,
-  'save' | 'restore' | 'translate' | 'scale' | 'rotate' | 'fill' | 'stroke' | 'clip' | 'beginPath' | 'ellipse' | 'fillRect'
+  'save' | 'restore' | 'translate' | 'scale' | 'rotate' | 'fill' | 'stroke' | 'clip' | 'beginPath' | 'ellipse' | 'fillRect' | 'drawImage'
 > & {
   fillStyle: CanvasRenderingContext2D['fillStyle']
   strokeStyle: CanvasRenderingContext2D['strokeStyle']
@@ -123,11 +123,24 @@ export type PinInk = Pick<
   globalAlpha: number
 }
 
+/** Uma imagem para o círculo do Personalizado, com o tamanho dela. */
+export type PinImage = { source: CanvasImageSource; width: number; height: number }
+
+/**
+ * O recorte da imagem que cobre um quadrado (o círculo do Personalizado), centrado, como o
+ * `object-fit: cover`: o quadrado do meio, com o lado menor da imagem.
+ */
+export function coverSquare(width: number, height: number): { sx: number; sy: number; side: number } {
+  const side = Math.min(width, height)
+  return { sx: (width - side) / 2, sy: (height - side) / 2, side }
+}
+
 /**
  * Desenha o pin do `type` com `width` px de largura (e 1,2× de altura), a partir de (0, 0): a sombra
- * no chão, o corpo em dois tons, o contorno e o glifo, como o `<svg>` do `PinIcon`.
+ * no chão, o corpo em dois tons, o contorno e o glifo, como o `<svg>` do `PinIcon`. O Personalizado
+ * com `image` a mostra no círculo (no lugar da hachura), cobrindo-o.
  */
-export function drawPin(ctx: PinInk, type: PinType, width: number, path: (d: string) => Path2D = (d) => new Path2D(d)) {
+export function drawPin(ctx: PinInk, type: PinType, width: number, path: (d: string) => Path2D = (d) => new Path2D(d), image?: PinImage) {
   const s = PIN_SHAPES[type]
   const body = path(s.body)
   ctx.save()
@@ -157,22 +170,27 @@ export function drawPin(ctx: PinInk, type: PinType, width: number, path: (d: str
     ctx.fillStyle = part.dark ? PIN_INK : PIN_GLYPH
     ctx.fill(path(part.d))
   }
-  if (type === 'custom') drawCustomCircle(ctx, path)
+  if (type === 'custom') drawCustomCircle(ctx, path, image)
   ctx.restore()
 }
 
-/** O círculo hachurado do Personalizado (o lugar da imagem). */
-function drawCustomCircle(ctx: PinInk, path: (d: string) => Path2D) {
+/** O círculo do Personalizado: a imagem enviada ou, sem ela, a hachura (o lugar da imagem). */
+function drawCustomCircle(ctx: PinInk, path: (d: string) => Path2D, image?: PinImage) {
   const { cx, cy, r } = CUSTOM_CIRCLE
   const disc = path(circle(cx, cy, r))
   ctx.save()
   ctx.clip(disc)
   ctx.fillStyle = '#EFE6D2'
   ctx.fill(disc)
-  ctx.translate(cx, cy)
-  ctx.rotate(Math.PI / 4)
-  ctx.fillStyle = '#D8C9A8'
-  for (let x = -r - 4; x <= r + 4; x += 4) ctx.fillRect(x, -r - 4, 1.6, 2 * r + 8)
+  if (image && image.width > 0 && image.height > 0) {
+    const { sx, sy, side } = coverSquare(image.width, image.height)
+    ctx.drawImage(image.source, sx, sy, side, side, cx - r, cy - r, 2 * r, 2 * r)
+  } else {
+    ctx.translate(cx, cy)
+    ctx.rotate(Math.PI / 4)
+    ctx.fillStyle = '#D8C9A8'
+    for (let x = -r - 4; x <= r + 4; x += 4) ctx.fillRect(x, -r - 4, 1.6, 2 * r + 8)
+  }
   ctx.restore()
   ctx.strokeStyle = PIN_INK
   ctx.lineWidth = 1.2

@@ -4,6 +4,7 @@ import type { CreateMapRenderer } from './app/MapView'
 import { NoWebGL2Notice } from './app/NoWebGL2Notice'
 import type { SaveStore } from './persistence/autosave'
 import { createWorldHistory, type WorldHistory } from './state/history'
+import { createPinImages, type PinImages } from './state/pinImages'
 import { createPinsStore, type PinsStore } from './state/pinsStore'
 import { createUiStore, type UiStore } from './state/uiStore'
 import type { WorldStore } from './state/worldStore'
@@ -17,6 +18,7 @@ import type { WorldStore } from './state/worldStore'
 function App({
   world,
   pins,
+  images,
   ui,
   history,
   save,
@@ -27,6 +29,8 @@ function App({
   world: WorldStore
   /** Os pins do mundo; sem ele (testes), o App cria um store vazio. */
   pins?: PinsStore
+  /** As imagens enviadas dos pins; sem ele (testes), o App cria um, só na memória. */
+  images?: PinImages
   ui?: UiStore
   /** O histórico de desfazer do mundo; sem ele (testes), o App cria um sobre o `world` e os pins. */
   history?: WorldHistory
@@ -39,12 +43,14 @@ function App({
   // Sem `ui` na prop (os testes), o App cria o seu, uma vez.
   const [uiStore] = useState(() => ui ?? createUiStore())
   const [pinsStore] = useState(() => pins ?? createPinsStore())
+  const [imagesStore] = useState(() => images ?? createPinImages({ worldId: world.getState().id }))
   const [historyStore] = useState(() => history ?? createWorldHistory({ world, pins: pinsStore }))
   if (!webgl2) return <NoWebGL2Notice onBack={onBack} />
   return (
     <EditorLayout
       world={world}
       pins={pinsStore}
+      images={imagesStore}
       ui={uiStore}
       history={historyStore}
       save={save}

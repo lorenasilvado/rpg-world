@@ -5,10 +5,12 @@ import type { Pin } from '../../persistence/types'
 import { pinToWorld } from '../../render/layers/pinMath'
 import { PIN_SHAPES } from '../../render/style/pinShapes'
 import type { CameraStore } from '../../state/cameraStore'
+import { createPinImages, pinImageId, type PinImages } from '../../state/pinImages'
 import { pinType, pinTypeLabel } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
 import type { WorldStore } from '../../state/worldStore'
 import { DescriptionEditor } from './DescriptionEditor'
+import { PinDetails } from './PinDetails'
 import { PinIcon } from './PinIcon'
 import { PinTags } from './PinTags'
 import { duplicateOffset, pinPlace } from './place'
@@ -32,9 +34,10 @@ type TabId = (typeof TABS)[number]['id']
  *
  * - A área "Adicionar imagem de capa (16:9)" no topo (o envio ainda não existe: o botão fica
  *   desabilitado) e o botão fechar (a partir de 768 px; abaixo, o painel sobreposto tem o seu).
- * - O cabeçalho: o ícone do tipo, o nome, editável, a etiqueta do tipo, na cor dele, e a linha do
+ * - O cabeçalho: o ícone do tipo (o Personalizado com a imagem enviada no círculo), o nome, editável, a etiqueta do tipo, na cor dele, e a linha do
  *   lugar, com o bioma sob o pin (do campo exibido) e as coordenadas (`place.ts`).
- * - As abas Descrição (a descrição em texto rico e as tags), Detalhes e Conexões (vazias por ora).
+ * - As abas Descrição (a descrição em texto rico e as tags), Detalhes (tipo, ícone e campos livres,
+ *   `PinDetails`) e Conexões (vazia por ora).
  * - O rodapé fixo: Centralizar (a câmera desliza até o pin, aproximando até `CENTER_PIN_ZOOM`),
  *   Duplicar (a cópia ao lado, selecionada) e Excluir (`onDelete`, com o toast "Pin excluído").
  *
@@ -45,19 +48,27 @@ type TabId = (typeof TABS)[number]['id']
  */
 export function PinDrawer({
   pins,
+  images: imagesProp,
   world,
   camera,
   onDelete,
   onCentered,
+  resizeImage,
 }: {
   pins: PinsStore
+  /** As imagens enviadas do mundo; sem ele (testes), um conjunto só na memória. */
+  images?: PinImages
   world: WorldStore
   camera: CameraStore
   /** Exclui o pin (o mesmo da tecla Delete: o toast "Pin excluído" com Desfazer). */
   onDelete: (id: string) => void
   /** Depois do Centralizar (abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer). */
   onCentered?: () => void
+  /** Reduz a imagem enviada (os testes do jsdom, sem canvas, trocam). */
+  resizeImage?: (file: Blob) => Promise<Blob>
 }) {
+  const [ownImages] = useState(() => imagesProp ?? createPinImages({ worldId: 'local' }))
+  const images = imagesProp ?? ownImages
   const selected = useStore(pins, (s) => s.pins.find((p) => p.id === s.selectedId) ?? null)
   const isNew = useStore(pins, (s) => s.selectedId !== null && s.selectedId === s.newPinId)
   // A cópia do Duplicar: a ficha dela é outra (outra `key`), e o foco volta ao Duplicar dela.
@@ -68,6 +79,8 @@ export function PinDrawer({
       key={selected.id}
       pin={selected}
       pins={pins}
+      images={images}
+      resizeImage={resizeImage}
       world={world}
       camera={camera}
       editName={isNew}
@@ -82,6 +95,8 @@ export function PinDrawer({
 function PinCard({
   pin,
   pins,
+  images,
+  resizeImage,
   world,
   camera,
   editName,
@@ -92,6 +107,8 @@ function PinCard({
 }: {
   pin: Pin
   pins: PinsStore
+  images: PinImages
+  resizeImage?: (file: Blob) => Promise<Blob>
   world: WorldStore
   camera: CameraStore
   editName: boolean
@@ -106,6 +123,8 @@ function PinCard({
   const chip = typeChipColors(PIN_SHAPES[type])
   const field = useStore(world, (s) => s.field)
   const allPins = useStore(pins, (s) => s.pins)
+  const imageId = pinImageId(pin)
+  const imageUrl = useStore(images.store, (s) => (imageId ? s.urls[imageId] : undefined))
   const [tab, setTab] = useState<TabId>('descricao')
   const tabsId = useId()
 
@@ -167,7 +186,7 @@ function PinCard({
         <header className="flex flex-col gap-2.5 px-5 pt-5 pb-4">
           <div className="flex items-start gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-panel border border-line bg-field shadow-sm" data-testid="pin-drawer-icon">
-              <PinIcon type={type} size={36} />
+              <PinIcon type={type} size={36} image={imageUrl} />
             </span>
             <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
               <NameField pin={pin} pins={pins} edit={editName} onEscape={close} />
@@ -214,9 +233,9 @@ function PinCard({
             id={`${tabsId}-${t.id}-painel`}
             aria-labelledby={`${tabsId}-${t.id}`}
             hidden={tab !== t.id}
-            // Sem nada focável dentro (Detalhes e Conexões, por enquanto), o painel recebe o foco
-            // pelo Tab, como pede o padrão de abas.
-            tabIndex={t.id === 'descricao' ? undefined : 0}
+            // Sem nada focável dentro (Conexões, por enquanto), o painel recebe o foco pelo Tab, como
+            // pede o padrão de abas.
+            tabIndex={t.id === 'conexoes' ? 0 : undefined}
             className="px-5 pt-4 pb-6 focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none"
           >
             {t.id === 'descricao' && tab === 'descricao' && (
@@ -233,7 +252,8 @@ function PinCard({
                 />
               </div>
             )}
-            {t.id !== 'descricao' && <ComingSoon>{t.id === 'detalhes' ? DETAILS_SOON : CONNECTIONS_SOON}</ComingSoon>}
+            {t.id === 'detalhes' && tab === 'detalhes' && <PinDetails pin={pin} pins={pins} images={images} resize={resizeImage} />}
+            {t.id === 'conexoes' && <ComingSoon>{CONNECTIONS_SOON}</ComingSoon>}
           </div>
         ))}
       </div>
@@ -361,8 +381,6 @@ function NameField({ pin, pins, edit, onEscape }: { pin: Pin; pins: PinsStore; e
   )
 }
 
-/** O que a aba Detalhes vai ter (pins.md → E2). */
-const DETAILS_SOON = 'Tipo, ícone, pin pai e campos livres.'
 /** O que a aba Conexões vai ter (pins.md → E2). */
 const CONNECTIONS_SOON = 'O pin pai e os pins filhos.'
 

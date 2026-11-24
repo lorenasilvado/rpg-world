@@ -132,14 +132,19 @@ animações) fica em `layers/pinMath.ts`, TS puro, testada no Vitest. O `src/fea
 ouve os cliques no mapa (criar com Adicionar pin, selecionar, hover), e o `PinDrawer.tsx` mostra a ficha do pin
 selecionado no drawer: o cabeçalho (o bioma sob o pin e as coordenadas vêm de `place.ts`), a descrição
 em texto rico (`DescriptionEditor.tsx`, com o TipTap e os links filtrados por `links.ts`), as tags
-(`PinTags.tsx`, com as sugestões "Usadas no mundo" de `tags.ts`) e o rodapé (Centralizar, pelo
-`focusOn` da câmera, Duplicar e Excluir). Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
+(`PinTags.tsx`, com as sugestões "Usadas no mundo" de `tags.ts`), a aba Detalhes (`PinDetails.tsx`:
+o tipo pela biblioteca embutida, o envio de imagem, conferido e reduzido em `uploadImage.ts`, e os
+campos livres, em `fields.ts`) e o rodapé (Centralizar, pelo `focusOn` da câmera, Duplicar e
+Excluir). As imagens enviadas ficam no `src/state/pinImages.ts`, um por mundo aberto: grava o blob no
+banco (`images`) e guarda, por id, o blob e o endereço dele para a interface; a `PinLayer` desenha
+uma textura do Personalizado com cada imagem no círculo. Selecionar um pin leva a câmera até ele (`MapCamera.panTo`). O `PinTool`
 também arrasta: o aperto num pin é ouvido na captura, antes do canvas, e segura o pan da câmera até
 soltar (`holdPan`, que pausa o arrasto do pixi-viewport); o evento segue para a página, e o "clique
 fora" dos popovers continua valendo. A posição do arrasto fica em `dragging` no `pinsStore`, e a lista
 só muda ao soltar; Esc no meio do arrasto devolve o pin e encerra o aperto. Delete
 exclui o selecionado, e a `PinLayer` encolhe o pin que sai (180 ms). O `e2e/pins.spec.ts` cobre criar,
-desenhar, selecionar, recarregar, arrastar, excluir e desfazer, e o `e2e/drawer.spec.ts`, a ficha do drawer.
+desenhar, selecionar, recarregar, arrastar, excluir e desfazer, o `e2e/drawer.spec.ts`, a ficha do drawer,
+e o `e2e/detalhes.spec.ts`, a aba Detalhes e a imagem enviada.
 
 O histórico de desfazer fica no `src/state/history.ts`, um por mundo aberto: o middleware `temporal`
 do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, params }`, que ouve o
@@ -299,6 +304,7 @@ src/
     pinsStore.ts        # pins, seleção, hover, pin novo e arrasto
     history.ts          # desfazer e refazer do mundo (zundo), pins e parâmetros
     pinTypes.ts         # os 7 tipos de pin
+    pinImages.ts        # imagens enviadas dos pins (blobs do banco e endereços)
     roadsStore.ts
     params.ts           # limite Desertos + Florestas (applyParamChange)
     uiStore.ts          # camadas do mapa, sidebar recolhida, minimapa, ferramenta ativa

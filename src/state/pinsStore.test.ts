@@ -132,6 +132,23 @@ describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
     expect(pins.getState().pins[0]).toMatchObject({ description: '<p><strong>Capital</strong></p>', tags: ['capital'], name: 'Valdora' })
   })
 
+  it('updatePin troca o tipo, o ícone e os campos livres (AC-F3-10); iguais, a lista fica a mesma', () => {
+    const pins = createPinsStore([full])
+    const before = pins.getState().pins
+    pins.getState().updatePin('a', { type: 'castelo', icon: { kind: 'builtin', key: 'castelo' }, fields: { rei: 'Aldo' } })
+    expect(pins.getState().pins).toBe(before)
+    const icon = { kind: 'image', blobId: 'img' } as const
+    const fields = { rei: 'Aldo', população: '12 mil' }
+    pins.getState().updatePin('a', { type: 'custom', icon, fields })
+    const after = pins.getState().pins[0]
+    expect(after).toMatchObject({ type: 'custom', icon: { kind: 'image', blobId: 'img' }, fields: { rei: 'Aldo', população: '12 mil' }, name: 'Valdora' })
+    expect(after.icon).not.toBe(icon)
+    expect(after.fields).not.toBe(fields)
+    // A ordem dos campos conta: trocar a ordem é uma mudança.
+    pins.getState().updatePin('a', { fields: { população: '12 mil', rei: 'Aldo' } })
+    expect(Object.keys(pins.getState().pins[0].fields)).toEqual(['população', 'rei'])
+  })
+
   it('tags repetidas saem ao carregar o mundo e no updatePin', () => {
     const pins = createPinsStore([{ ...full, tags: ['porto', 'Porto', 'capital', 'porto'] }, { ...full, id: 'b' }])
     expect(pins.getState().pins[0].tags).toEqual(['porto', 'capital'])

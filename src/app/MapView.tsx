@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
 import type { MapInsets, MapRenderer } from '../render/MapRenderer'
 import type { CameraStore } from '../state/cameraStore'
+import type { PinImages } from '../state/pinImages'
 import type { PinsStore } from '../state/pinsStore'
 import type { UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
@@ -14,11 +15,12 @@ export type CreateMapRenderer = (
   ui: UiStore,
   camera: CameraStore,
   pins: PinsStore,
+  images?: PinImages,
 ) => Promise<MapRenderer>
 
 /** O renderer do Pixi, carregado à parte: o React não depende dele para montar o editor. */
-const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, pins) =>
-  import('../render/MapRenderer').then((m) => m.createMapRenderer(host, world, insets, ui, camera, pins))
+const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, pins, images) =>
+  import('../render/MapRenderer').then((m) => m.createMapRenderer(host, world, insets, ui, camera, pins, images))
 
 /**
  * Área do mapa do editor: o renderer desenha nela o campo do `world`, com as camadas ligadas no
@@ -30,7 +32,7 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, 
  * guardou (o minimapa e o controle de zoom leem e comandam por ele). Com a ferramenta Medir distância
  * (`tool` do `ui`) e com Adicionar pin, o cursor sobre o mapa é a cruz, e a ferramenta fica em
  * `data-tool`. O renderer desenha os pins do `pins`; com o mouse sobre um pin, o cursor é a mãozinha, e
- * arrastando um pin, a mão fechada.
+ * arrastando um pin, a mão fechada. As imagens enviadas dos pins (`images`) vão para o renderer.
  */
 export function MapView({
   world,
@@ -38,6 +40,7 @@ export function MapView({
   ui,
   camera,
   inert,
+  images,
   createRenderer = createPixiRenderer,
 }: {
   world: WorldStore
@@ -45,6 +48,7 @@ export function MapView({
   ui: UiStore
   camera: CameraStore
   inert: boolean
+  images?: PinImages
   createRenderer?: CreateMapRenderer
 }) {
   const host = useRef<HTMLElement>(null)
@@ -61,7 +65,7 @@ export function MapView({
     const unsubscribe = ui.subscribe((state, prev) => {
       if (state.sidebarCollapsed !== prev.sidebarCollapsed) mounted.renderer?.refit()
     })
-    createRenderer(el, world, insets, ui, camera, pins).then(
+    createRenderer(el, world, insets, ui, camera, pins, images).then(
       (r) => {
         if (mounted.disposed) {
           r.destroy()
@@ -79,7 +83,7 @@ export function MapView({
       if (controls && camera.getState().controls === controls) camera.getState().setControls(null)
       mounted.renderer?.destroy()
     }
-  }, [world, pins, ui, camera, createRenderer])
+  }, [world, pins, ui, camera, images, createRenderer])
 
   return (
     <main

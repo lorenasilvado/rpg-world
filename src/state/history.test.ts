@@ -123,6 +123,31 @@ describe('histórico do mundo (AC-F4-08)', () => {
     expect(pins.getState().pins[0].name).toBe('a')
   })
 
+  it('as teclas seguidas no valor de um campo livre viram um passo; tipo, ícone e a chave, um passo cada (AC-F3-10)', () => {
+    const { pins, history } = setup()
+    pins.getState().updatePin('a', { type: 'custom', icon: { kind: 'image', blobId: 'img' } })
+    for (const v of ['A', 'Al', 'Ald']) pins.getState().updatePin('a', { fields: { rei: v } })
+    pins.getState().updatePin('a', { fields: { Rei: 'Ald' } })
+    pins.getState().updatePin('a', { fields: { Rei: 'Ald', Campo: '' } })
+    history.undo()
+    expect(pins.getState().pins[0].fields).toEqual({ Rei: 'Ald' })
+    history.undo()
+    expect(pins.getState().pins[0].fields).toEqual({ rei: 'Ald' })
+    history.undo()
+    expect(pins.getState().pins[0].fields).toEqual({ rei: 'Aldo' })
+    expect(pins.getState().pins[0]).toMatchObject({ type: 'custom', icon: { kind: 'image', blobId: 'img' } })
+    history.undo()
+    expect(pins.getState().pins[0]).toMatchObject({ type: 'cidade', icon: { kind: 'builtin', key: 'cidade' } })
+  })
+
+  it('o valor de outro campo começa outro passo', () => {
+    const { pins, history } = setup([{ ...pin('a'), fields: { rei: 'Aldo', povo: '' } }])
+    pins.getState().updatePin('a', { fields: { rei: 'Aldo II', povo: '' } })
+    pins.getState().updatePin('a', { fields: { rei: 'Aldo II', povo: 'elfos' } })
+    history.undo()
+    expect(pins.getState().pins[0].fields).toEqual({ rei: 'Aldo II', povo: '' })
+  })
+
   it('cada mudança nas tags e o Duplicar são um passo cada', () => {
     const { pins, history } = setup()
     pins.getState().updatePin('a', { tags: ['capital', 'porto'] })

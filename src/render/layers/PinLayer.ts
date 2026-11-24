@@ -1,5 +1,6 @@
 import { BlurFilter, Container, Graphics, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
 import type { Pin } from '../../persistence/types'
+import { pinImageId, type PinImages } from '../../state/pinImages'
 import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
 import type { PinsState } from '../../state/pinsStore'
 import { PIN_SIZE_PX, PIN_VIEWBOX, drawPin, type PinInk } from '../style/pinShapes'
@@ -57,10 +58,7 @@ export async function loadPinTextures(): Promise<PinTextures> {
   const h = Math.ceil(PIN_HEIGHT_PX * TEXTURE_SCALE)
   const width = PIN_TYPES.length * (w + GAP)
   const height = h + GAP
-  const canvas: OffscreenCanvas | HTMLCanvasElement =
-    typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : Object.assign(document.createElement('canvas'), { width, height })
-  const ctx = canvas.getContext('2d') as unknown as PinInk | null
-  if (!ctx) throw new Error('sem o contexto 2D para desenhar os pins')
+  const { canvas, ctx } = pinCanvas(width, height)
   PIN_TYPES.forEach((t, i) => {
     ctx.save()
     ctx.translate(i * (w + GAP), 0)
@@ -73,6 +71,28 @@ export async function loadPinTextures(): Promise<PinTextures> {
     textures.set(t.id, new Texture({ source, frame: new Rectangle(i * (w + GAP), 0, w, h) }))
   })
   return textures
+}
+
+function pinCanvas(width: number, height: number): { canvas: OffscreenCanvas | HTMLCanvasElement; ctx: PinInk } {
+  const canvas: OffscreenCanvas | HTMLCanvasElement =
+    typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : Object.assign(document.createElement('canvas'), { width, height })
+  const ctx = canvas.getContext('2d') as unknown as PinInk | null
+  if (!ctx) throw new Error('sem o contexto 2D para desenhar os pins')
+  return { canvas, ctx }
+}
+
+/** A textura do Personalizado com a imagem enviada no círculo (uma por imagem). */
+async function imagePinTexture(blob: Blob): Promise<Texture> {
+  const bitmap = await createImageBitmap(blob)
+  try {
+    const w = PIN_SIZE_PX * TEXTURE_SCALE
+    const h = Math.ceil(PIN_HEIGHT_PX * TEXTURE_SCALE)
+    const { canvas, ctx } = pinCanvas(w, h)
+    drawPin(ctx, 'custom', w, undefined, { source: bitmap, width: bitmap.width, height: bitmap.height })
+    return new Texture({ source: new ImageSource({ resource: canvas, autoGenerateMipmaps: true, scaleMode: 'linear' }) })
+  } finally {
+    bitmap.close()
+  }
 }
 
 /** Destrói as texturas de `loadPinTextures` e o spritesheet delas. */
@@ -94,7 +114,8 @@ type PinView = {
   sprite: Sprite
   label: Text | null
   name: string
-  type: PinType
+  /** A textura à vista: o tipo, ou `image:<id>` para o Personalizado com a imagem enviada. */
+  texture: string
   /** Quando o pin novo apareceu (`null`: sem quique). */
   bornAt: number | null
 }
@@ -119,8 +140,12 @@ export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' 
  * AC-F3-05) encolhe em 180 ms antes de sumir (com movimento reduzido, some na hora); se ele volta
  * nesse meio-tempo (Desfazer), o encolher para.
  *
- * A camada passa a ser dona das texturas que recebe (as de `loadPinTextures`): o `destroy` as
- * destrói.
+ * O Personalizado com a imagem enviada (`images`, AC-F3-11) ganha uma textura própria, com a imagem
+ * no círculo; enquanto ela não chega (o blob ainda vem do banco), o pin mostra o círculo hachurado.
+ * Quem guarda a camada chama `imagesChanged` quando chega uma imagem nova.
+ *
+ * A camada passa a ser dona das texturas que recebe (as de `loadPinTextures`) e das que cria para as
+ * imagens: o `destroy` as destrói.
  */
 export class PinLayer {
   readonly view = new Container()
@@ -138,9 +163,24 @@ export class PinLayer {
   private seen = new Set<string>()
   private selectedAt = 0
   private labels = 0
+  private images: PinImages | null
+  /** As texturas das imagens enviadas, pelo id da imagem. */
+  private imageTextures = new Map<string, Texture>()
+  /** As imagens cuja textura está sendo desenhada. */
+  private drawing = new Set<string>()
+  private destroyed = false
 
-  constructor(textures: PinTextures) {
+  constructor(textures: PinTextures, images: PinImages | null = null) {
     this.textures = textures
+    this.images = images
+  }
+
+  /** Chegou uma imagem enviada (`PinImages`): os pins que a usam ganham a textura dela. */
+  imagesChanged() {
+    for (const pin of this.state.pins) {
+      const id = pinImageId(pin)
+      if (id) this.requestImage(id)
+    }
   }
 
   /** Quantos pins estão no mapa (sem os que encolhem ao sair). */
@@ -255,10 +295,48 @@ export class PinLayer {
     this.views.clear()
     this.leaving.clear()
     destroyPinTextures(this.textures)
+    for (const t of this.imageTextures.values()) t.destroy(true)
+    this.imageTextures.clear()
+    this.destroyed = true
+  }
+
+  /** Desenha a textura da imagem `id`, se o blob já chegou, e a põe nos pins que a usam. */
+  private requestImage(id: string) {
+    if (this.imageTextures.has(id) || this.drawing.has(id)) return
+    const blob = this.images?.blob(id)
+    if (!blob || typeof createImageBitmap !== 'function') return
+    this.drawing.add(id)
+    imagePinTexture(blob).then(
+      (texture) => {
+        this.drawing.delete(id)
+        if (this.destroyed) {
+          texture.destroy(true)
+          return
+        }
+        this.imageTextures.set(id, texture)
+        for (const pin of this.state.pins) if (pinImageId(pin) === id) this.place(pin, null)
+      },
+      (error: unknown) => {
+        this.drawing.delete(id)
+        console.warn('Não foi possível desenhar a imagem do pin; ele fica com o círculo hachurado', error)
+      },
+    )
+  }
+
+  /** A textura do pin: a da imagem enviada, se já existe, ou a do tipo. */
+  private textureOf(pin: Pin): { key: string; texture: Texture } {
+    const type = pinType(pin.type)
+    const id = pinImageId(pin)
+    if (id) {
+      const texture = this.imageTextures.get(id)
+      if (texture) return { key: `image:${id}`, texture }
+      this.requestImage(id)
+    }
+    return { key: type, texture: this.textures.get(type) ?? Texture.EMPTY }
   }
 
   private place(pin: Pin, bornAt: number | null) {
-    const type = pinType(pin.type)
+    const look = this.textureOf(pin)
     let v = this.views.get(pin.id)
     // Voltou enquanto encolhia (Desfazer logo depois de excluir): o mesmo desenho, sem encolher.
     const back = this.leaving.get(pin.id)
@@ -274,11 +352,11 @@ export class PinLayer {
       const mark = dashedEllipse()
       mark.visible = false
       const body = new Container()
-      const sprite = new Sprite(this.textures.get(type))
+      const sprite = new Sprite(look.texture)
       sprite.anchor.set(0.5, 1)
       sprite.width = PIN_SIZE_PX
       sprite.height = (PIN_SIZE_PX * PIN_VIEWBOX.height) / PIN_VIEWBOX.width
-      const shadow = new Sprite(this.textures.get(type))
+      const shadow = new Sprite(look.texture)
       shadow.anchor.set(0.5, 1)
       shadow.width = sprite.width
       shadow.height = sprite.height
@@ -289,16 +367,16 @@ export class PinLayer {
       shadow.visible = false
       body.addChild(shadow, sprite)
       root.addChild(mark, pulse, ring, body)
-      v = { root, pulse, ring, mark, body, shadow, sprite, label: null, name: pin.name, type, bornAt }
+      v = { root, pulse, ring, mark, body, shadow, sprite, label: null, name: pin.name, texture: look.key, bornAt }
       this.views.set(pin.id, v)
     }
     const drag = this.state.dragging
     const p = pinToWorld(drag?.id === pin.id ? drag.pos : pin.pos)
     v.root.position.set(p.x, p.y)
-    if (v.type !== type) {
-      v.type = type
-      v.sprite.texture = this.textures.get(type) ?? Texture.EMPTY
-      v.shadow.texture = v.sprite.texture
+    if (v.texture !== look.key) {
+      v.texture = look.key
+      v.sprite.texture = look.texture
+      v.shadow.texture = look.texture
     }
     if (v.name !== pin.name) {
       v.name = pin.name

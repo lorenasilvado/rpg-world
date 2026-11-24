@@ -1,5 +1,6 @@
 import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
+import type { PinImages } from '../state/pinImages'
 import { createPinsStore, type PinsState, type PinsStore } from '../state/pinsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
@@ -50,7 +51,8 @@ export type MapRenderer = {
  * ligada no `ui`, e o console avisa.
  *
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
- * na tela em qualquer zoom. Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
+ * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
+ * Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
  * área livre (deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
  * expõe os pins no mapa em `data-pins`, os rótulos à vista em `data-pin-labels`, o selecionado em
  * `data-pin-selected` e a largura de um pin na tela, em px, em `data-pin-size`. Sem o desenho dos
@@ -68,6 +70,7 @@ export async function createMapRenderer(
   ui: UiStore = createUiStore(),
   cameraState: CameraStore = createCameraStore(),
   pins: PinsStore = createPinsStore(),
+  images: PinImages | null = null,
 ): Promise<MapRenderer> {
   const app = new Application()
   // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
@@ -116,7 +119,7 @@ export async function createMapRenderer(
   // Antes da câmera: a função de mudança dela lê o terreno.
   const terrain = new TerrainLayer()
   const decor = textures ? new DecorLayer(textures) : null
-  const pinLayer = pinTextures ? new PinLayer(pinTextures) : null
+  const pinLayer = pinTextures ? new PinLayer(pinTextures, images) : null
   const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
@@ -151,6 +154,8 @@ export async function createMapRenderer(
     camera.viewport.addChild(pinLayer.view)
     pinLayer.sync(pins.getState(), performance.now())
   }
+  // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
+  const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
   const unsubscribePins = pins.subscribe((state, prev) => {
     pinLayer?.sync(state, performance.now())
     if (state.selectedId !== prev.selectedId && state.selectedId !== null) {
@@ -229,6 +234,7 @@ export async function createMapRenderer(
       unsubscribe()
       unsubscribeUi()
       unsubscribePins()
+      unsubscribeImages()
       app.ticker.remove(onBlurTick)
       app.renderer.off('resize', onResize)
       camera.destroy()
