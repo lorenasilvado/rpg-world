@@ -323,3 +323,54 @@ test('celular 390: todo campo de texto do drawer tem fonte de 16 px ou mais, par
   await page.getByRole('tab', { name: 'Descrição' }).click()
   expect(await fieldFontSizes(page)).toMatchObject({ Descrição: 14, 'Nova tag': 13 })
 })
+
+// AC-F3-19 (#212): a partir de 768 px, sem pin selecionado, o drawer fica fora da tela, e a área livre
+// vai até a borda direita; com um pin, ele entra deslizando, e os controles se alinham à borda dele.
+for (const size of [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+]) {
+  test(`${size.width}: sem pin, o drawer fica fora da tela e o zoom a 12 px da borda; com um pin, o drawer entra e os controles se alinham a ele (AC-F3-19)`, async ({ page }, info) => {
+    test.setTimeout(90_000)
+    await page.setViewportSize(size)
+    await gotoEditor(page, '/', twoPins())
+    await waitFinalMap(page)
+    const aside = page.getByTestId('drawer')
+    const zoomRight = async () => (await page.getByTestId('zoom-controls').boundingBox())!
+    const actionsBox = async () => (await page.getByTestId('actions').boundingBox())!
+
+    // Sem pin: o drawer está fora da tela (e invisível), o mapa usa a largura até a borda direita.
+    await expect(aside).toBeHidden()
+    const free = size.width - 320
+    const side = Math.min(free, size.height)
+    await expect(map(page)).toHaveAttribute('data-map-rect', `${320 + (free - side) / 2},${(size.height - side) / 2},${side},${side}`)
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - (z.x + z.width) }).toBe(12)
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - (a.x + a.width) }).toBe(12)
+    await info.attach(`sem-pin-${size.width}.png`, { body: await page.screenshot(), contentType: 'image/png' })
+
+    // Com um pin: o drawer entra (400 px à direita), e o zoom e a barra superior ficam a 12 px dele.
+    const zoomBefore = await map(page).getAttribute('data-zoom')
+    await clickPin(page, 0.45, 0.5)
+    await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-valdora')
+    await expect(aside).toBeVisible()
+    await expect.poll(async () => (await aside.boundingBox())?.x).toBe(size.width - 400)
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - 400 - (z.x + z.width) }).toBe(12)
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - 400 - (a.x + a.width) }).toBe(12)
+    // Abrir o drawer não muda a porcentagem do zoom.
+    expect(await map(page).getAttribute('data-zoom')).toBe(zoomBefore)
+    await info.attach(`com-pin-${size.width}.png`, { body: await page.screenshot(), contentType: 'image/png' })
+
+    // Esc fecha: o drawer sai, e os controles voltam à borda direita.
+    await page.keyboard.press('Escape')
+    await expect(map(page)).toHaveAttribute('data-pin-selected', '')
+    await expect(aside).toBeHidden()
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - (z.x + z.width) }).toBe(12)
+
+    // O botão fechar do drawer faz o mesmo.
+    await clickPin(page, 0.45, 0.5)
+    await expect(aside).toBeVisible()
+    await drawer(page).getByRole('button', { name: 'Fechar', exact: true }).click()
+    await expect(aside).toBeHidden()
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - (a.x + a.width) }).toBe(12)
+  })
+}

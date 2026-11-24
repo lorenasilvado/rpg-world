@@ -15,16 +15,17 @@ test('o worker não carrega: aparece o toast de erro, e "Tentar de novo" gera o 
   const toast = page.getByRole('alert')
   await expect(toast).toHaveText(/Não foi possível gerar o mapa/)
   await expect(toast).toHaveCSS('background-color', 'rgb(179, 58, 46)')
-  // À esquerda do drawer (400 px) com 12 px de folga (alinhado com o zoom). Com 720 px de área livre, a toolbar fica
-  // na segunda linha, e o toast, 12 px acima dela (16 px da base + 152 da toolbar sobre o minimapa aberto + 56 de
-  // altura + 12: 236 px).
+  // Sem pin, o drawer fica fora da tela (AC-F3-19): o toast fica a 12 px da borda direita (alinhado
+  // com o zoom). Com 1120 px de área livre, a toolbar fica na linha de baixo, e o toast, 12 px acima
+  // do controle de zoom.
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
+  const zoom = (await page.getByTestId('zoom-controls').boundingBox())!
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([1440 - 400 - 12, 900 - 236])
+    .toEqual([1440 - 12, Math.round(zoom.y) - 12])
 
   await page.unroute(WORKER)
   const loaded = page.waitForRequest(/generator\.worker/)
@@ -91,13 +92,16 @@ test('celular estreito 320×640: o minimapa fica acima do zoom, e o toast acima 
 })
 
 // O toast nunca cobre o minimapa, o controle de zoom nem a toolbar (deitada ou em pé) e fica dentro da área livre (entre a
-// sidebar e o drawer), em larguras de área livre dos dois lados dos limites de 568 e 360 px.
+// sidebar e a borda direita: sem mapa, não há pin selecionado nem drawer), em larguras de área livre dos dois lados do
+// limite de 566 px. (Sem o drawer, a área livre no desktop tem pelo menos 448 px; o limite de 360 px fica no celular.)
 for (const { name, width, height, collapse, left } of [
-  { name: '1440 com a sidebar recolhida (992 px, toolbar na linha)', width: 1440, height: 900, collapse: true, left: 48 },
-  { name: '1440 com a sidebar aberta (720 px)', width: 1440, height: 900, collapse: false, left: 320 },
-  { name: '1024 com a sidebar recolhida (576 px)', width: 1024, height: 768, collapse: true, left: 48 },
-  { name: '820 com a sidebar recolhida (372 px)', width: 820, height: 1180, collapse: true, left: 48 },
-  { name: '1024 com a sidebar aberta (304 px, minimapa empilhado)', width: 1024, height: 768, collapse: false, left: 320 },
+  { name: '1440 com a sidebar recolhida (1392 px, toolbar na linha)', width: 1440, height: 900, collapse: true, left: 48 },
+  { name: '1440 com a sidebar aberta (1120 px)', width: 1440, height: 900, collapse: false, left: 320 },
+  { name: '1024 com a sidebar aberta (704 px)', width: 1024, height: 768, collapse: false, left: 320 },
+  { name: '886 com a sidebar aberta (566 px)', width: 886, height: 1000, collapse: false, left: 320 },
+  { name: '885 com a sidebar aberta (565 px)', width: 885, height: 1000, collapse: false, left: 320 },
+  { name: '768 com a sidebar aberta (448 px)', width: 768, height: 1000, collapse: false, left: 320 },
+  { name: 'celular 340 (340 px, minimapa empilhado)', width: 340, height: 740, collapse: false, left: 0 },
 ]) {
   test(`${name}: o toast não cobre o minimapa, o zoom nem a toolbar (AC-F1-12)`, async ({ page }) => {
     await page.setViewportSize({ width, height })
@@ -120,7 +124,7 @@ for (const { name, width, height, collapse, left } of [
           apart(toast, await rect('zoom-controls')) &&
           apart(toast, await rect('map-toolbar')) &&
           toast.left >= left &&
-          toast.right <= width - 400
+          toast.right <= width
         )
       })
       .toBe(true)

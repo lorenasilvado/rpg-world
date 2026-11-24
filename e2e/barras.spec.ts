@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { BAR_BOTTOM, BAR_GAP, TOOLBAR_LENGTH, TOOLBAR_THICKNESS, ZOOM_BAR_HEIGHT, ZOOM_SIDE } from '../src/features/map/bottomBarLayout.ts'
-import { gotoEditor } from './editor.ts'
+import { gotoEditor, gotoEditorWithDrawer } from './editor.ts'
 
 // Barras do editor, Camadas e Ajuda (#54, AC-F2-10 a AC-F2-12). A barra de ações do topo e a
 // toolbar de ferramentas, com as funções que ainda não existem desabilitadas; Camadas liga e desliga
@@ -10,9 +10,11 @@ import { gotoEditor } from './editor.ts'
 
 test.describe.configure({ timeout: 60_000 })
 
-async function open(page: Page, width = 1440, height = 900) {
+/** Abre o editor; com `drawer`, com um pin selecionado (o drawer de 400 px aberto, AC-F3-19). */
+async function open(page: Page, width = 1440, height = 900, drawer = false) {
   await page.setViewportSize({ width, height })
-  await gotoEditor(page)
+  if (drawer) await gotoEditorWithDrawer(page)
+  else await gotoEditor(page)
 }
 
 const box = async (page: Page, testId: string) => {
@@ -75,7 +77,7 @@ for (const { name, width, height, left } of [
   { name: '1280 com a sidebar recolhida e o drawer (832 px)', width: 1280, height: 800, left: 48 },
 ]) {
   test(`${name}: a toolbar fica deitada, centrada entre eles, 16 px da base, sem chegar ao zoom completo`, async ({ page }) => {
-    await open(page, width, height)
+    await open(page, width, height, true)
     await page.getByRole('button', { name: 'Recolher painel' }).click()
     await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
     await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
@@ -97,7 +99,7 @@ for (const { name, width, height, left } of [
 }
 
 test('1440 com a sidebar e o drawer (720 px): a toolbar fica deitada numa segunda linha, e o zoom mostra a escala e a porcentagem', async ({ page }) => {
-  await open(page)
+  await open(page, 1440, 900, true)
   await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
   const toolbar = await box(page, 'map-toolbar')
@@ -108,6 +110,20 @@ test('1440 com a sidebar e o drawer (720 px): a toolbar fica deitada numa segund
   const zoom = await box(page, 'zoom-controls')
   expect(zoom.left - (await box(page, 'minimap-slot')).right).toBeGreaterThanOrEqual(BAR_GAP)
   expect(1440 - 400 - zoom.right).toBe(ZOOM_SIDE)
+})
+
+test('1280 com a sidebar e sem pin (960 px): a toolbar fica deitada no centro da linha, e o zoom a 12 px da borda direita (AC-F3-19)', async ({ page }) => {
+  await open(page, 1280, 800)
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
+  await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
+  const toolbar = await box(page, 'map-toolbar')
+  // Centrada na área livre (320 a 1280), 16 px da base.
+  expect(Math.abs((toolbar.left + toolbar.right) / 2 - 800)).toBeLessThanOrEqual(1)
+  expect(800 - toolbar.bottom).toBe(BAR_BOTTOM)
+  const zoom = await box(page, 'zoom-controls')
+  expect(1280 - zoom.right).toBe(ZOOM_SIDE)
+  expect(zoom.left - toolbar.right).toBeGreaterThanOrEqual(BAR_GAP)
+  expect(toolbar.left - (await box(page, 'minimap-slot')).right).toBeGreaterThanOrEqual(BAR_GAP)
 })
 
 test('Camadas abre o popover, e o interruptor "Decoração" esconde e mostra os ícones (AC-F2-11)', async ({ page }) => {
@@ -172,8 +188,8 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   await expect(dialog).toBeHidden()
 })
 
-test('tablet 1024 com a sidebar aberta (304 px): a toolbar fica em pé acima do zoom, e a barra superior não chega à sidebar', async ({ page }) => {
-  await open(page, 1024, 768)
+test('tablet 1024 com a sidebar aberta e o drawer (304 px): a toolbar fica em pé acima do zoom, e a barra superior não chega à sidebar', async ({ page }) => {
+  await open(page, 1024, 768, true)
   await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'vertical')
   const toolbar = await box(page, 'map-toolbar')
   const zoom = await box(page, 'zoom-controls')
@@ -201,7 +217,7 @@ test('tablet 1024 com a sidebar aberta (304 px): a toolbar fica em pé acima do 
 })
 
 test('1280 com a sidebar e o drawer (560 px): a toolbar fica deitada numa segunda linha, acima do minimapa', async ({ page }) => {
-  await open(page, 1280, 800)
+  await open(page, 1280, 800, true)
   await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
   // O zoom completo cabe ao lado do minimapa (#137).
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })

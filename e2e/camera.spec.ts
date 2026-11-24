@@ -8,13 +8,14 @@ import { gotoEditor } from './editor.ts'
 
 type Rect = { x: number; y: number; width: number; height: number }
 
-// Desktop 1440×900: a área livre fica entre a sidebar (320) e o drawer (400).
-const AREA = { x: 320, y: 0, width: 720, height: 900 }
+// Desktop 1440×900, sem pin: a área livre fica entre a sidebar (320) e a borda direita (o drawer fica
+// fora da tela, AC-F3-19).
+const AREA = { x: 320, y: 0, width: 1120, height: 900 }
 
 // Cada teste espera a câmera parar várias vezes, e no CI, sem GPU, os quadros são lentos.
 test.describe.configure({ timeout: 60_000 })
 
-const FIT: Rect = { x: 320, y: 90, width: 720, height: 720 }
+const FIT: Rect = { x: 430, y: 0, width: 900, height: 900 }
 const CENTER = { x: AREA.x + AREA.width / 2, y: AREA.height / 2 }
 
 async function open(page: Page, width = 1440, height = 900) {
@@ -104,6 +105,8 @@ test('AC-F2-01: arrastar com o mouse faz pan, com inércia ao soltar', async ({ 
 
 test('AC-F2-01: arrastar com o dedo faz pan', async ({ page }) => {
   await open(page)
+  // Duas vezes: em 1,25× o mapa (1125 px) mal passa da largura da área livre (1120).
+  await page.keyboard.press('+')
   await page.keyboard.press('+')
   const before = await settled(page)
   const cdp = await page.context().newCDPSession(page)
@@ -118,7 +121,9 @@ test('AC-F2-01: arrastar com o dedo faz pan', async ({ page }) => {
 
 test('AC-F2-02: a roda do mouse faz zoom centrado no cursor', async ({ page }) => {
   await open(page)
-  const cursor = { x: 500, y: 300 }
+  // No meio da largura da área livre: o zoom no cursor não esbarra no limite de pan horizontal
+  // (no 1×, o mapa de 900 px fica com folga na área de 1120).
+  const cursor = { x: CENTER.x, y: 300 }
   const before = await rect(page)
   const target = worldAt(before, cursor)
   await page.mouse.move(cursor.x, cursor.y)
@@ -342,15 +347,16 @@ test('redimensionar a janela mantém o ponto no centro da área livre e o zoom',
   await open(page)
   await page.keyboard.press('+')
   await page.keyboard.press('+')
-  await page.keyboard.press('ArrowRight')
+  // Só para baixo: na largura, o mapa (1406 px) tem pouca folga na área livre (1120), e um passo
+  // para o lado já o leva ao limite, que a área nova recalcula.
   await page.keyboard.press('ArrowDown')
   const before = await settled(page)
   const z = await zoom(page)
   const center = worldAt(before, CENTER)
 
-  // 1600 × 1000: a área livre passa a 880 × 1000, entre a sidebar e o drawer.
+  // 1600 × 1000: a área livre passa a 1280 × 1000, entre a sidebar e a borda direita.
   await page.setViewportSize({ width: 1600, height: 1000 })
-  const newCenter = { x: 320 + 880 / 2, y: 500 }
+  const newCenter = { x: 320 + 1280 / 2, y: 500 }
   await expect.poll(async () => (await rect(page)).width).not.toBe(before.width)
   const after = await settled(page)
   expect(await zoom(page)).toBeCloseTo(z, 2)

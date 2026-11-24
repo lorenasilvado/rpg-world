@@ -121,3 +121,20 @@ export async function textFieldFontSizes(root: Locator) {
     ),
   )
 }
+
+/** Um pin no centro do mapa, para os testes que precisam do drawer aberto (AC-F3-19). */
+export const centerPin = { id: 'p-centro', type: 'cidade', name: 'Centro', pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin', key: 'cidade' }, description: '', tags: [], fields: {} }
+
+/**
+ * Abre o editor com um pin no centro do mapa e o seleciona: a partir de 768 px, o drawer entra e
+ * a linha inferior e a barra do topo ficam à esquerda dele (sem pin, o drawer fica fora da tela).
+ */
+export async function gotoEditorWithDrawer(page: Page, url = '/') {
+  await gotoEditor(page, url, defaultWorld({ pins: [centerPin] }))
+  const map = page.getByTestId('map')
+  await expect(map).toHaveAttribute('data-pins', /\d/, { timeout: 45_000 })
+  const [x, y, width, height] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+  await page.mouse.click(x + width / 2, y + height / 2 - 10)
+  await expect(map).toHaveAttribute('data-pin-selected', centerPin.id)
+  await expect.poll(async () => (await page.getByTestId('drawer').boundingBox())?.x).toBe(page.viewportSize()!.width - 400)
+}

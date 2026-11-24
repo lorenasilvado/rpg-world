@@ -15,7 +15,7 @@ import {
   ZOOM_SCALE_WIDTH,
   TOOLBAR_ROW_FROM,
 } from '../src/features/map/bottomBarLayout.ts'
-import { gotoEditor } from './editor.ts'
+import { gotoEditor, gotoEditorWithDrawer } from './editor.ts'
 
 // Minimapa, escala e controles de zoom (#53, AC-F2-08 e AC-F2-09). O renderer expõe no mapa o
 // retângulo dele na tela (`data-map-rect`) e o zoom relativo (`data-zoom`); o minimapa expõe em
@@ -25,9 +25,11 @@ test.describe.configure({ timeout: 60_000 })
 
 type Rect = { x: number; y: number; width: number; height: number }
 
-async function open(page: Page, width = 1440, height = 900) {
+/** Abre o editor; com `drawer`, com um pin selecionado (o drawer de 400 px aberto, AC-F3-19). */
+async function open(page: Page, width = 1440, height = 900, drawer = false) {
   await page.setViewportSize({ width, height })
-  await gotoEditor(page)
+  if (drawer) await gotoEditorWithDrawer(page)
+  else await gotoEditor(page)
   const map = page.getByTestId('map')
   await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
   await expect(map).toHaveAttribute('data-map-rect', /.+/)
@@ -114,9 +116,10 @@ test('AC-F2-08: o minimapa mostra o mapa, e o retângulo acompanha a câmera', a
   await page.getByRole('button', { name: 'Aproximar' }).click()
   await zoomed(page, 1.5625)
   r = await box(view)
-  // Área livre 720 × 900 no zoom 1,5625: 720 px mostram 1024 / 1,5625 = 655 unidades → 64 px.
-  expect(r.width).toBeCloseTo(64, 0)
-  expect(r.height).toBeCloseTo(80, 0)
+  // Área livre 1120 × 900 no zoom 1,5625: os 900 px de altura mostram 1024 / 1,5625 = 655 unidades
+  // → 64 px; os 1120 de largura, 815 → 80 px.
+  expect(r.width).toBeCloseTo(80, 0)
+  expect(r.height).toBeCloseTo(64, 0)
 })
 
 test('AC-F2-08: arrastar o retângulo move a área visível', async ({ page }) => {
@@ -173,15 +176,15 @@ test('AC-F2-08: o minimapa recolhe e abre', async ({ page }) => {
 
 test('AC-F2-09: com área livre de 450 px ou mais, mostra a escala e a porcentagem; os botões fazem zoom e centralizam', async ({ page }) => {
   await open(page)
-  // Sidebar recolhida: 1440 − 48 − 400 = 992 px de área livre.
+  // Sidebar recolhida, sem pin: 1440 − 48 = 1392 px de área livre.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
   const controls = page.getByTestId('zoom-controls')
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
   // Mapa inteiro em 900 px de altura: 32 px = 800 × 32 / 900 ≈ 28 km.
   await expect(page.getByTestId('map-scale')).toHaveText('28 km')
-  // No canto inferior direito da área livre: 12 px do drawer e 16 px da base.
+  // No canto inferior direito da área livre: 12 px da borda direita e 16 px da base.
   const c = await box(controls)
-  expect(Math.round(1440 - 400 - (c.x + c.width))).toBe(12)
+  expect(Math.round(1440 - (c.x + c.width))).toBe(12)
   expect(Math.round(900 - (c.y + c.height))).toBe(16)
 
   await page.getByRole('button', { name: 'Aproximar' }).click()
@@ -195,17 +198,19 @@ test('AC-F2-09: com área livre de 450 px ou mais, mostra a escala e a porcentag
   await page.getByRole('button', { name: 'Centralizar' }).click()
   const fit = await zoomed(page, 1)
   await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
-  expect(fit).toEqual({ x: 48 + (992 - 900) / 2, y: 0, width: 900, height: 900 })
+  expect(fit).toEqual({ x: 48 + (1392 - 900) / 2, y: 0, width: 900, height: 900 })
 })
 
-// #137: sem pin selecionado (o drawer de 400 px aberto), a escala e a porcentagem aparecem nos
-// tamanhos comuns de desktop, com a sidebar aberta ou recolhida.
-for (const { width, height } of [
-  { width: 1280, height: 800 },
-  { width: 1440, height: 900 },
+// #137: com e sem pin selecionado (o drawer de 400 px aberto ou fora da tela), a escala e a
+// porcentagem aparecem nos tamanhos comuns de desktop, com a sidebar aberta ou recolhida.
+for (const { width, height, drawer } of [
+  { width: 1280, height: 800, drawer: false },
+  { width: 1440, height: 900, drawer: false },
+  { width: 1280, height: 800, drawer: true },
+  { width: 1440, height: 900, drawer: true },
 ]) {
-  test(`AC-F2-09: em ${width} × ${height}, sem pin selecionado, mostra a escala e a porcentagem, com a sidebar aberta ou recolhida`, async ({ page }) => {
-    await open(page, width, height)
+  test(`AC-F2-09: em ${width} × ${height}, ${drawer ? 'com' : 'sem'} pin selecionado, mostra a escala e a porcentagem, com a sidebar aberta ou recolhida`, async ({ page }) => {
+    await open(page, width, height, drawer)
     await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
     await expect(page.getByTestId('map-scale')).toBeVisible()
     await expect(page.getByTestId('zoom-percent')).toHaveText('100%')
@@ -215,7 +220,7 @@ for (const { width, height } of [
   })
 }
 
-// Nos limites (450 e 829 px de área livre, com a sidebar recolhida: 48 + área + 400), com o mapa
+// Nos limites (450 e 829 px de área livre, com a sidebar recolhida e um pin: 48 + área + 400), com o mapa
 // afastado ao máximo (0,4×, o rótulo da escala mais longo), o zoom completo tem a largura de
 // `bottomBarLayout` e não chega ao minimapa nem à toolbar (#137).
 for (const { area, place } of [
@@ -223,15 +228,15 @@ for (const { area, place } of [
   { area: TOOLBAR_ROW_FROM, place: 'row' },
 ]) {
   test(`AC-F2-09: com ${area} px de área livre e o zoom em 0,4×, o zoom completo não chega ao minimapa nem à toolbar`, async ({ page }) => {
-    await open(page, 48 + area + 400, 900)
+    await open(page, 48 + area + 400, 900, true)
     await page.getByRole('button', { name: 'Recolher painel' }).click()
     await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', place)
     await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false')
     await page.mouse.move(48 + area / 2, 300)
     for (let i = 0; i < 6; i++) await page.keyboard.press('-')
     await expect(page.getByTestId('zoom-percent')).toHaveText('40%')
-    // Afastado: em 450 px, a barra de 32 px mede 3 dígitos de km (142 km); em 829, 77 km.
-    await expect(page.getByTestId('map-scale')).toHaveText(area === ZOOM_FULL_FROM ? /^\d{3} km$/ : /^\d+ km$/)
+    // Afastado: o zoom é relativo à área sem o drawer (AC-F3-19), e a barra de 32 px mede 2 dígitos de km.
+    await expect(page.getByTestId('map-scale')).toHaveText(/^\d+ km$/)
     expect((await box(page.getByTestId('map-scale'))).width).toBe(ZOOM_SCALE_WIDTH)
     const zoom = await box(page.getByTestId('zoom-controls'))
     // Com mouse, os botões têm 40 px (não 44): 12 px a menos que o caso de toque.
@@ -245,18 +250,20 @@ for (const { area, place } of [
 }
 
 test('AC-F2-09: com 449 px de área livre, o zoom fica compacto', async ({ page }) => {
-  await open(page, 48 + ZOOM_FULL_FROM - 1 + 400, 900)
+  // Com o drawer aberto (sem ele, 48 + 449 = 497 px de tela já seria celular): 48 + 449 + 400.
+  await open(page, 48 + ZOOM_FULL_FROM - 1 + 400, 900, true)
   await page.getByRole('button', { name: 'Recolher painel' }).click()
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
 })
 
 test('AC-F2-09: com menos de 450 px de área livre, esconde a escala e a porcentagem', async ({ page }) => {
-  // Tablet 1024 com a sidebar recolhida: 1024 − 48 − 400 = 576 px, completo; aberta: 304 px, compacto.
-  await open(page, 1024, 768)
+  // Tablet 1024 com um pin (o drawer aberto) e a sidebar recolhida: 1024 − 48 − 400 = 576 px,
+  // completo; aberta: 304 px, compacto.
+  await open(page, 1024, 768, true)
   await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
   await expect(page.getByTestId('map-scale')).toHaveCount(0)
   await expect(page.getByTestId('zoom-percent')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Centralizar' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Centralizar', exact: true })).toBeVisible()
   // Recolhendo a sidebar, a área passa de 450 px e elas voltam; abrindo de novo, somem.
   await page.getByRole('button', { name: 'Recolher painel' }).click()
   await expect(page.getByTestId('zoom-percent')).toBeVisible()
@@ -264,16 +271,16 @@ test('AC-F2-09: com menos de 450 px de área livre, esconde a escala e a porcent
   await expect(page.getByTestId('zoom-percent')).toHaveCount(0)
 })
 
-for (const { name, width, height } of [
-  { name: 'tablet 1024', width: 1024, height: 768 },
-  { name: 'celular 390', width: 390, height: 844 },
+for (const { name, width, height, drawer } of [
+  { name: 'tablet 1024 com um pin', width: 1024, height: 768, drawer: true },
+  { name: 'celular 390', width: 390, height: 844, drawer: false },
 ]) {
   test(`${name}: o minimapa e os botões de zoom ficam à vista e clicáveis (AC-F2-08, AC-F2-09)`, async ({ page }) => {
-    await open(page, width, height)
+    await open(page, width, height, drawer)
     await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'true')
     await expect(page.getByTestId('zoom-percent')).toHaveCount(0)
     for (const label of ['Afastar', 'Aproximar', 'Centralizar']) {
-      const button = page.getByRole('button', { name: label })
+      const button = page.getByRole('button', { name: label, exact: true })
       await expect(button).toBeVisible()
       expect(await onTop(button)).toBe(true)
     }
@@ -309,9 +316,9 @@ test.describe('tela de toque', () => {
   })
 })
 
-test('tablet 1024 com a sidebar aberta: o minimapa sobe acima do zoom, sem sobreposição; recolhendo a sidebar, volta para o lado', async ({ page }) => {
-  // 1024 − 320 − 400 = 304 px de área livre: não cabem os dois lado a lado.
-  await open(page, 1024, 768)
+test('tablet 1024 com a sidebar aberta e um pin: o minimapa sobe acima do zoom, sem sobreposição; recolhendo a sidebar, volta para o lado', async ({ page }) => {
+  // Com o drawer aberto, 1024 − 320 − 400 = 304 px de área livre: não cabem os dois lado a lado.
+  await open(page, 1024, 768, true)
   const minimapBox = () => box(page.getByTestId('minimap'))
   const zoomBox = () => box(page.getByTestId('zoom-controls'))
   // Empilhado: o minimapa termina 12 px acima do zoom, que segue a 16 px da base.
@@ -390,8 +397,10 @@ test.describe('zoom compacto no toque', () => {
   })
 })
 
-test('tablet 1024 com a sidebar aberta: ao abrir o editor, o minimapa já aparece acima do zoom, sem subir animado', async ({ page }) => {
-  await page.setViewportSize({ width: 1024, height: 768 })
+test('celular 340: ao abrir o editor, o minimapa já aparece acima do zoom, sem subir animado', async ({ page }) => {
+  // Abaixo de 360 px de área livre (a tela toda, no celular), o minimapa fica acima do zoom. No
+  // desktop, sem pin, a área livre tem pelo menos 448 px (768 − 320).
+  await page.setViewportSize({ width: 340, height: 740 })
   // Registra cada mudança da posição do minimapa e se a transição estava ligada naquele momento.
   // (Amostrar a posição por quadro não basta: ao abrir, a thread principal fica ocupada carregando o
   // mapa, e a animação de 200 ms pode acontecer inteira entre dois quadros desenhados.)

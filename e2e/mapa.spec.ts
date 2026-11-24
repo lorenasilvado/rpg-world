@@ -54,10 +54,11 @@ async function sampleColors(page: Page, n = 24) {
   )
 }
 
-test('desktop 1440×900: o mapa gerado aparece entre a sidebar e o drawer, com a paleta (AC-F1-22)', async ({ page }) => {
+test('desktop 1440×900: o mapa gerado aparece entre a sidebar e a borda direita, com a paleta (AC-F1-22)', async ({ page }) => {
   const { rect, errors } = await openMap(page, 1440, 900)
-  // A área livre é 1440 − 320 − 400 = 720 px: o mapa quadrado cabe nela, centrado na altura.
-  expect(rect).toEqual({ x: 320, y: 90, width: 720, height: 720 })
+  // Sem pin, o drawer fica fora da tela (AC-F3-19): a área livre é 1440 − 320 = 1120 × 900, e o mapa
+  // quadrado (900²) cabe nela, centrado na largura.
+  expect(rect).toEqual({ x: 430, y: 0, width: 900, height: 900 })
   await expect(page.getByTestId('map-canvas')).toBeVisible()
 
   const colors = await sampleColors(page)
@@ -85,18 +86,18 @@ test('a costa tem o traço #163A5C entre a terra e a água (AC-F1-22)', async ({
 })
 
 // O retângulo exato em cada largura (#91): a partir de 768 px o mapa cabe entre a sidebar (320) e
-// o drawer (400); abaixo disso os painéis são sobrepostos e o mapa usa a largura toda. Um erro em
+// a borda direita (sem pin, o drawer fica fora da tela, AC-F3-19); abaixo disso os painéis são sobrepostos e o mapa usa a largura toda. Um erro em
 // `panelInsets` que aplicasse os recuos no celular deixaria a área livre negativa e falharia aqui.
 for (const [label, width, height, expected] of [
-  // Área livre 1024 − 320 − 400 = 304 px de largura: o mapa 304², centrado na altura (768 − 304) / 2.
-  ['tablet 1024', 1024, 768, { x: 320, y: 232, width: 304, height: 304 }],
+  // Área livre 1024 − 320 = 704 px de largura: o mapa 704², centrado na altura (768 − 704) / 2.
+  ['tablet 1024', 1024, 768, { x: 320, y: 32, width: 704, height: 704 }],
   // Sem recuos: o mapa 390², centrado na altura (844 − 390) / 2.
   ['celular 390', 390, 844, { x: 0, y: 227, width: 390, height: 390 }],
   // Dos dois lados do limite de 768 px (#105): se o breakpoint de `panelInsets` mudar, um deles falha.
   // 767: ainda sem recuos, o mapa 767², centrado na altura (867 − 767) / 2.
   ['limite 767', 767, 867, { x: 0, y: 50, width: 767, height: 767 }],
-  // 768: já com os recuos, a área livre é 768 − 320 − 400 = 48 px: o mapa 48², centrado em (900 − 48) / 2.
-  ['limite 768', 768, 900, { x: 320, y: 426, width: 48, height: 48 }],
+  // 768: já com o recuo da sidebar, a área livre é 768 − 320 = 448 px: o mapa 448², centrado em (900 − 448) / 2.
+  ['limite 768', 768, 900, { x: 320, y: 226, width: 448, height: 448 }],
 ] as const) {
   test(`${label}: o mapa ocupa o retângulo exato da área livre (AC-F1-22)`, async ({ page }) => {
     const { rect, errors } = await openMap(page, width, height)
