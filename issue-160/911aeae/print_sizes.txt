@@ -1,0 +1,14 @@
+commit: 911aeae6cb9e2ee5cfe89ae93e24e6f6ded7425e
+ac-f3-10-detalhes-tipo-e-campos.png  1280x800  402fed5865fd3596ad4466b2fa4e3dfa83ff53369b98cb0f5e4dfba0c9e0fffb
+ac-f3-10-mapa-tipo-novo.png  320x160  6c1874ac4449bb4aee616188a438bdd49009d61b157ea7623b45dcf9d3efb17c
+ac-f3-11-acima-de-1mb-pergunta.png  1280x800  e29caa987bcd683258e829e43958cf6b4dc4c637a516b0d4ffdd1352954958a8
+ac-f3-11-formato-nao-aceito.png  1280x800  cea342b2e8c03833acab9fa64da2e4653225b01335089ba7f18c19c972bb12e7
+ac-f3-11-imagem-enviada-drawer.png  1280x800  c55c9a281fde563849ab31abf2b302db7849623e2757161224fa59528f8799a8
+ac-f3-11-imagem-no-mapa-recarregado.png  320x160  1e4e3f9903186524052eba96c721fd0f8ceb0087d06f0759758a36dd056ce98c
+ac-f3-11-imagem-no-mapa.png  320x160  309dc67a4e9dbfc5d372174d2f55397a626fe1f79e0a69c86af267f7d8e02378
+ac-f3-11-svg-so-viewbox.png  1280x800  b890fdbc3d046110be09e632f88486ee758e810f7a0310ba4a0e25af6bd51732
+ac-f3-18-celular-390-detalhes.png  390x844  ba66eedf75fb98ad607d18e138644c9291d32ddfcb081a71bc907390329bfda1
+ac-f3-18-tablet-1024-detalhes.png  1024x768  e115af3c4e40d3c2302652d4c0bf4175d07c08f81e061deab19cb9a221676a23
+design-escuro-detalhes.png  1280x800  9e2a4caddd6ee03ea5b37d80f64f01afd681d45b042e87aaca2ee3b554c0e051
+extra-excluir-desfazer.png  320x160  1afa8b1224b85cbc7a8b81d8d4f36d703294ce55f91ab4a322c0c4baf6cf1515
+extra-mundo-duplicado.png  1280x800  e9daf57429c24e271f0a8609b9b3a406c5b2a66bd06bec56f1801fe7062b960a
