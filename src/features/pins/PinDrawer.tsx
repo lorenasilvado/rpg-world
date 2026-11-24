@@ -116,15 +116,24 @@ function PinCard({
           className="flex h-[74px] items-center justify-center border-b border-line"
           style={{ background: 'repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--paper-solid) 10px 20px)' }}
         >
+          {/* Desabilitado até o envio de imagem: o motivo fica à vista ("Em breve"), porque um botão
+              desabilitado não mostra o `title`. */}
           <button
             type="button"
             disabled
-            title="Adicionar imagem de capa (16:9)"
-            className="flex h-9 items-center gap-2 rounded-control px-3 text-[13px] font-semibold text-ink-2 disabled:cursor-default"
+            aria-describedby={`${pin.id}-capa-em-breve`}
+            data-testid="pin-cover-button"
+            className="flex h-9 items-center gap-2 rounded-control px-3 text-[13px] font-semibold text-ink-2 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <ImagePlus size={16} aria-hidden="true" />
             Adicionar imagem de capa (16:9)
           </button>
+          <span
+            id={`${pin.id}-capa-em-breve`}
+            className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2"
+          >
+            Em breve
+          </span>
         </div>
         <button
           type="button"

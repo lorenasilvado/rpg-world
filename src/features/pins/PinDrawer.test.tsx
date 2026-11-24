@@ -50,6 +50,14 @@ describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
     expect(screen.getByTestId('pin-drawer-place').textContent).toBe('Colina · x 768, y 256')
   })
 
+  it('o botão da capa fica desabilitado, com o motivo "Em breve" à vista e ligado a ele', () => {
+    setup()
+    const cover = screen.getByRole('button', { name: 'Adicionar imagem de capa (16:9)' }) as HTMLButtonElement
+    expect(cover.disabled).toBe(true)
+    const hint = document.getElementById(cover.getAttribute('aria-describedby')!)
+    expect(hint?.textContent).toBe('Em breve')
+  })
+
   it('as abas Descrição (ativa), Detalhes e Conexões mudam pelas setas', () => {
     setup()
     const tabs = screen.getAllByRole('tab')
