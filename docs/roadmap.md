@@ -139,12 +139,13 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 45 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | done | specs/pins.md | #206 |
 | 46 | #208 | [bug] No iPhone, focar um campo do drawer do pin aproxima a página, e ela não volta | done | specs/pins.md | #209 |
 | 47 | #210 | [bug] No iPhone, focar a seed ou o nome do mundo aproxima a página, e ela não volta | done | specs/geracao-terreno.md | #211 |
-| 48 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
-| 49 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
-| 50 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
-| 51 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
-| 52 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
-| 53 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
-| 54 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
-| 55 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
-| 56 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
+| 48 | #212 | [bug] No desktop, sem pin selecionado, o drawer fica à vista vazio e corta o mapa | todo | specs/pins.md | |
+| 49 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
+| 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
+| 51 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
+| 52 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
+| 53 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
+| 54 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
+| 55 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
+| 56 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
+| 57 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
