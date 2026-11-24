@@ -155,11 +155,12 @@ test('Centralizar leva a câmera ao pin, aproximando até 1,6×; Duplicar cria a
   await expect(description(page)).toHaveText('Capital do reino')
   const copy = (await savedPins(page))[2]
   expect(copy).toMatchObject({ name: 'Valdora (cópia)', description: '<p>Capital do reino</p>', tags: ['capital'], fields: { rei: 'Aldo' } })
-  // 36 px à direita na tela, no zoom 1,6×.
+  // 36 px à direita e 64 px abaixo na tela, no zoom 1,6×; o foco fica no Duplicar da cópia.
   const original = await screenOf(page, 0.45, 0.5)
   const copied = await screenOf(page, copy.pos.u, copy.pos.v)
   expect(Math.round(copied.x - original.x)).toBe(36)
-  expect(Math.round(copied.y - original.y)).toBe(12)
+  expect(Math.round(copied.y - original.y)).toBe(64)
+  await expect(drawer(page).getByRole('button', { name: 'Duplicar' })).toBeFocused()
   await expect(map(page)).toHaveAttribute('data-pin-selected', copy.id)
   // A cópia da cópia conta.
   await drawer(page).getByRole('button', { name: 'Duplicar' }).click()

@@ -28,8 +28,13 @@ export function pinPlace(field: Pick<CoreField, 'width' | 'height' | 'biome'> | 
   return biome ? `${biome} · ${pinCoords(pos)}` : pinCoords(pos)
 }
 
-/** A distância da cópia do Duplicar, em px na tela: à direita e um pouco abaixo (AC-F3-09). */
-export const DUPLICATE_OFFSET_PX = { x: 36, y: 12 }
+/**
+ * A distância da cópia do Duplicar, em px na tela (AC-F3-09): à direita e abaixo, o bastante para
+ * o pin da cópia (38 px de altura acima da âncora) começar embaixo do rótulo do original (que vai
+ * de 5 a 21 px abaixo da âncora) e os dois rótulos não se cobrirem. Perto da borda de baixo, a
+ * cópia sobe a mesma distância, e o rótulo dela fica acima do pin do original.
+ */
+export const DUPLICATE_OFFSET_PX = { x: 36, y: 64 }
 
 /**
  * O deslocamento da cópia em (u, v), para ela cair a `DUPLICATE_OFFSET_PX` na tela no zoom atual

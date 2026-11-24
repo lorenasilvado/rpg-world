@@ -154,11 +154,14 @@ describe('drawer do pin: rodapé (AC-F3-05, AC-F3-09)', () => {
     const { pins } = setup()
     fireEvent.click(screen.getByRole('button', { name: 'Duplicar' }))
     const copy = pins.getState().pins.at(-1)!
-    // Escala 0,5 px por unidade: 36 px na tela são 72 unidades do mundo.
+    // Escala 0,5 px por unidade: 36 × 64 px na tela são 72 × 128 unidades do mundo.
     expect(copy).toMatchObject({ id: 'c1', name: 'Valdora (cópia)', tags: ['capital', 'porto'], description: '<p>Capital do reino</p>' })
     expect(copy.pos.u).toBeCloseTo(0.75 + 72 / 1024)
+    expect(copy.pos.v).toBeCloseTo(0.25 + 128 / 1024)
     expect(pins.getState().selectedId).toBe('c1')
     expect((screen.getByRole('textbox', { name: 'Nome do pin' }) as HTMLInputElement).value).toBe('Valdora (cópia)')
+    // A ficha é outra (a da cópia), e o foco volta ao Duplicar dela.
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Duplicar' }))
   })
 
   it('Excluir chama a exclusão do pin', () => {

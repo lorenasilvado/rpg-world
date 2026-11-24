@@ -1,5 +1,5 @@
 import { Copy, ImagePlus, LocateFixed, MapPin, Trash2, X } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react'
 import { useStore } from 'zustand'
 import type { Pin } from '../../persistence/types'
 import { pinToWorld } from '../../render/layers/pinMath'
@@ -60,6 +60,8 @@ export function PinDrawer({
 }) {
   const selected = useStore(pins, (s) => s.pins.find((p) => p.id === s.selectedId) ?? null)
   const isNew = useStore(pins, (s) => s.selectedId !== null && s.selectedId === s.newPinId)
+  // A cópia do Duplicar: a ficha dela é outra (outra `key`), e o foco volta ao Duplicar dela.
+  const [duplicated, setDuplicated] = useState<string | null>(null)
   if (!selected) return null
   return (
     <PinCard
@@ -69,6 +71,8 @@ export function PinDrawer({
       world={world}
       camera={camera}
       editName={isNew}
+      focusDuplicate={duplicated === selected.id}
+      onDuplicated={setDuplicated}
       onDelete={onDelete}
       onCentered={onCentered}
     />
@@ -81,6 +85,8 @@ function PinCard({
   world,
   camera,
   editName,
+  focusDuplicate,
+  onDuplicated,
   onDelete,
   onCentered,
 }: {
@@ -89,6 +95,10 @@ function PinCard({
   world: WorldStore
   camera: CameraStore
   editName: boolean
+  /** A ficha é a da cópia que o Duplicar acabou de criar: o foco vai para o Duplicar dela. */
+  focusDuplicate: boolean
+  /** Depois do Duplicar, com o id da cópia (`null`: o foco já foi entregue). */
+  onDuplicated: (id: string | null) => void
   onDelete: (id: string) => void
   onCentered?: () => void
 }) {
@@ -106,8 +116,15 @@ function PinCard({
     onCentered?.()
   }
   const duplicate = () => {
-    pins.getState().duplicatePin(pin.id, duplicateOffset(pin.pos, camera.getState().scale))
+    const copy = pins.getState().duplicatePin(pin.id, duplicateOffset(pin.pos, camera.getState().scale))
+    if (copy) onDuplicated(copy.id)
   }
+  const duplicateButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!focusDuplicate) return
+    duplicateButton.current?.focus()
+    onDuplicated(null)
+  }, [focusDuplicate, onDuplicated])
 
   return (
     <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-drawer="" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
@@ -226,7 +243,7 @@ function PinCard({
           <LocateFixed size={16} aria-hidden="true" />
           Centralizar
         </FooterButton>
-        <FooterButton onClick={duplicate}>
+        <FooterButton ref={duplicateButton} onClick={duplicate}>
           <Copy size={16} aria-hidden="true" />
           Duplicar
         </FooterButton>
@@ -260,11 +277,13 @@ function moveTab(e: KeyboardEvent<HTMLDivElement>, current: TabId, setTab: (id: 
  * (Centralizar, que no controle de zoom é o do mapa inteiro).
  */
 function FooterButton({
+  ref,
   label,
   destructive = false,
   onClick,
   children,
 }: {
+  ref?: Ref<HTMLButtonElement>
   label?: string
   destructive?: boolean
   onClick: () => void
@@ -272,6 +291,7 @@ function FooterButton({
 }) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       title={label}

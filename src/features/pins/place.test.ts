@@ -23,12 +23,12 @@ describe('lugar do pin no drawer (AC-F3-06)', () => {
 })
 
 describe('Duplicar (AC-F3-09)', () => {
-  it('a cópia cai 36 px à direita e 12 px abaixo na tela, no zoom atual', () => {
-    expect(duplicateOffset({ u: 0.5, v: 0.5 }, 1)).toEqual({ u: 36 / 1024, v: 12 / 1024 })
-    expect(duplicateOffset({ u: 0.5, v: 0.5 }, 2)).toEqual({ u: 18 / 1024, v: 6 / 1024 })
+  it('a cópia cai 36 px à direita e 64 px abaixo na tela, no zoom atual', () => {
+    expect(duplicateOffset({ u: 0.5, v: 0.5 }, 1)).toEqual({ u: 36 / 1024, v: 64 / 1024 })
+    expect(duplicateOffset({ u: 0.5, v: 0.5 }, 2)).toEqual({ u: 18 / 1024, v: 32 / 1024 })
   })
 
   it('perto da borda direita ou de baixo, a cópia vai para o outro lado', () => {
-    expect(duplicateOffset({ u: 0.99, v: 0.999 }, 1)).toEqual({ u: -36 / 1024, v: -12 / 1024 })
+    expect(duplicateOffset({ u: 0.99, v: 0.99 }, 1)).toEqual({ u: -36 / 1024, v: -64 / 1024 })
   })
 })
