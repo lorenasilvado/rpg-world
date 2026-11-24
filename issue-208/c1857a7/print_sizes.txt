@@ -1,0 +1,5 @@
+commit: c1857a748370c71d94d4629b02270766cdd895a4
+ac-f3-18-1280-desktop-aba-descricao-sem-mudanca.png  1280x800  310f0b99e52e56f14e3a844631216583a4ff9fb97843a421dfdd3f4a7b51ecb3
+ac-f3-18-1280-desktop-aba-detalhes-sem-mudanca.png  1280x800  77b8c87e518824d753a62e6dc5c386817c78c71e5ca0d4faa6afe193e19dd9d1
+ac-f3-18-390-aba-descricao-com-link-16px.png  390x844  1d2aa09d68c834f17db6c527b3787f8914957819472f19bead75c8d1bcf96c77
+ac-f3-18-390-aba-detalhes-campos-16px.png  390x844  9eb3047769a6cc6da97c4c09963427bfd250eff282189b39624d6d0fcf69e4d4
