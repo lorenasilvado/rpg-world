@@ -81,11 +81,11 @@ for (const { name, width, height, left } of [
     await page.getByRole('button', { name: 'Recolher painel' }).click()
     await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'row')
     await expect(page.getByTestId('zoom-controls')).toHaveAttribute('data-compact', 'false', { timeout: 45_000 })
-    // Espera a transição da sidebar.
+    // Espera a transição da sidebar e a da toolbar, que desce da segunda linha para a linha de baixo.
     const center = (left + width - 400) / 2
     await expect.poll(async () => {
       const t = await box(page, 'map-toolbar')
-      return Math.abs((t.left + t.right) / 2 - center) <= 1
+      return Math.abs((t.left + t.right) / 2 - center) <= 1 && height - t.bottom === BAR_BOTTOM
     }).toBe(true)
     const toolbar = await box(page, 'map-toolbar')
     expect(toolbar.right - toolbar.left).toBe(TOOLBAR_LENGTH)
