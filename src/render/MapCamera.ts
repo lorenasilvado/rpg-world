@@ -41,6 +41,10 @@ export class MapCamera {
   private host: HTMLElement
   private freeArea: () => Area
   private onChange: (t: Transform, zoom: number) => void
+  /** A faixa à direita que o drawer aberto cobre (px CSS): os limites de pan e o centro do pin contam com ela. */
+  private cover = 0
+  /** O drawer fechou: a câmera desliza de volta para os limites sem ele, e só no fim a faixa sai. */
+  private pendingCover: number | null = null
 
   constructor(app: Application, host: HTMLElement, freeArea: () => Area, onChange: (t: Transform, zoom: number) => void) {
     this.host = host
@@ -70,6 +74,7 @@ export class MapCamera {
 
     const cancel = () => {
       this.tween = null
+      this.releaseCover()
     }
     this.viewport.on('drag-start', cancel)
     this.viewport.on('pinch-start', cancel)
@@ -84,6 +89,30 @@ export class MapCamera {
     if (this.fitted) return
     this.fitted = true
     this.jump(fitView(this.area))
+  }
+
+  /**
+   * O drawer abriu (`px`, a largura dele) ou fechou (0). Ao abrir, os limites de pan passam a deixar
+   * o mapa ir para a esquerda até a borda do drawer. Ao fechar, se o mapa estava além dos limites sem
+   * ele, a câmera desliza de volta (350 ms; com movimento reduzido, salta); senão, fica onde está.
+   */
+  setRightCover(px: number) {
+    if (px >= this.cover || !this.fitted) {
+      this.pendingCover = null
+      this.cover = px
+      return
+    }
+    const from = this.tween?.to ?? this.currentView()
+    const target = toView(clampTransform(toTransform(from, this.area), this.area, WORLD_SIZE, px), this.area)
+    this.pendingCover = px
+    if (this.reducedMotion.matches || (target.cx === from.cx && target.cy === from.cy)) {
+      this.tween = null
+      this.releaseCover()
+      this.jump(target)
+      return
+    }
+    this.viewport.plugins.get('decelerate')?.reset()
+    this.tween = { from: this.currentView(), to: target, start: performance.now(), duration: CAMERA_TWEEN_MS }
   }
 
   /** A tela ou os painéis mudaram: mantém o ponto no centro da área livre e o zoom relativo. */
@@ -122,27 +151,26 @@ export class MapCamera {
 
   /**
    * Leva o ponto do mundo (cx, cy) ao centro da área livre, sem mudar o zoom, deslizando em 350 ms
-   * (com movimento reduzido, salta). Os limites de pan valem: no zoom 1×, o mapa não sai do lugar.
-   * Com `rightCover` (px CSS: o drawer aberto sobre a direita da área livre), o ponto vai ao centro
-   * do que sobra à esquerda dele.
+   * (com movimento reduzido, salta), até onde os limites de pan deixam. Com o drawer aberto
+   * (`setRightCover`), o ponto vai ao centro do que sobra à esquerda dele.
    */
-  panTo(cx: number, cy: number, rightCover = 0) {
+  panTo(cx: number, cy: number) {
     if (!this.fitted) return
     const base = this.tween?.to ?? this.currentView()
-    this.moveTo({ cx: cx + rightCover / 2 / base.scale, cy, scale: base.scale })
+    this.moveTo({ cx: cx + this.cover / 2 / base.scale, cy, scale: base.scale })
   }
 
   /**
    * Foca o ponto do mundo (cx, cy): leva-o ao centro da área livre deslizando, como o `panTo`, e
    * aproxima até `minZoom` (zoom relativo) se a câmera está mais longe (Centralizar do drawer). Mais
-   * perto, o zoom fica. `rightCover`, como no `panTo`.
+   * perto, o zoom fica. Com o drawer aberto, como no `panTo`.
    */
-  focusOn(cx: number, cy: number, minZoom: number, rightCover = 0) {
+  focusOn(cx: number, cy: number, minZoom: number) {
     if (!this.fitted) return
     const base = this.tween?.to ?? this.currentView()
     const { min, max } = zoomLimits(this.area)
     const scale = Math.min(max, Math.max(min, base.scale, minZoom * fitView(this.area).scale))
-    this.moveTo({ cx: cx + rightCover / 2 / scale, cy, scale })
+    this.moveTo({ cx: cx + this.cover / 2 / scale, cy, scale })
   }
 
   /** Segura o pan enquanto `held` (o arrasto de um pin); a pinça e a roda continuam. */
@@ -169,6 +197,13 @@ export class MapCamera {
     return toView({ x: this.viewport.x, y: this.viewport.y, scale: this.viewport.scale.x }, this.area)
   }
 
+  /** O drawer fechou e a câmera já voltou (ou o deslizamento foi interrompido): a faixa sai dos limites. */
+  private releaseCover() {
+    if (this.pendingCover === null) return
+    this.cover = this.pendingCover
+    this.pendingCover = null
+  }
+
   private applyZoomLimits() {
     const { min, max } = zoomLimits(this.area)
     this.viewport.clampZoom({ minScale: min, maxScale: max })
@@ -181,7 +216,7 @@ export class MapCamera {
 
   /** Vai para `view`: desliza em 350 ms, ou salta com movimento reduzido. */
   private moveTo(view: View) {
-    const target = toView(clampTransform(toTransform(view, this.area), this.area), this.area)
+    const target = toView(clampTransform(toTransform(view, this.area), this.area, WORLD_SIZE, this.cover), this.area)
     if (this.reducedMotion.matches) {
       this.tween = null
       this.jump(target)
@@ -207,7 +242,10 @@ export class MapCamera {
       const { from, to, start, duration } = this.tween
       const k = Math.min(1, (performance.now() - start) / duration)
       this.set(toTransform(lerpView(from, to, easeCamera(k)), this.area))
-      if (k >= 1) this.tween = null
+      if (k >= 1) {
+        this.tween = null
+        this.releaseCover()
+      }
     }
     const clamped = this.clamp()
     this.onChange(clamped, relativeZoom(clamped.scale, this.area))
@@ -220,7 +258,7 @@ export class MapCamera {
    */
   private clamp = (): Transform => {
     const now = { x: this.viewport.x, y: this.viewport.y, scale: this.viewport.scale.x }
-    const clamped = clampTransform(now, this.area)
+    const clamped = clampTransform(now, this.area, WORLD_SIZE, this.cover)
     if (clamped.x !== now.x || clamped.y !== now.y || clamped.scale !== now.scale) {
       this.set(clamped)
       // Bateu no limite: a inércia para nesse eixo, em vez de empurrar a borda; no outro, continua.

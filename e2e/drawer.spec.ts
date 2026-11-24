@@ -374,3 +374,28 @@ for (const size of [
     await expect.poll(async () => { const a = await actionsBox(); return size.width - (a.x + a.width) }).toBe(12)
   })
 }
+
+test('1440: ao abrir o drawer, a toolbar vai para a segunda linha logo no começo do deslize, pela largura final (AC-F3-19)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', twoPins())
+  await waitFinalMap(page)
+  const slot = page.getByTestId('toolbar-slot')
+  await expect(slot).toHaveAttribute('data-place', 'row')
+  // Registra a largura da linha inferior no momento em que a toolbar troca de lugar.
+  await page.evaluate(() => {
+    const w = window as unknown as { placeChanges: { place: string; barWidth: number }[] }
+    w.placeChanges = []
+    const el = document.querySelector('[data-testid="toolbar-slot"]')!
+    new MutationObserver(() => {
+      const bar = document.querySelector('[data-testid="bottom-bar"]')!.getBoundingClientRect()
+      w.placeChanges.push({ place: el.getAttribute('data-place')!, barWidth: Math.round(bar.width) })
+    }).observe(el, { attributes: true, attributeFilter: ['data-place'] })
+  })
+  await clickPin(page, 0.45, 0.5)
+  await expect(slot).toHaveAttribute('data-place', 'above')
+  await expect.poll(async () => (await page.getByTestId('bottom-bar').boundingBox())?.width).toBe(720)
+  const changes = await page.evaluate(() => (window as unknown as { placeChanges: { place: string; barWidth: number }[] }).placeChanges)
+  // Uma troca só, com a linha ainda larga (1120 px, antes de encolher): não no meio, ao cruzar 829 px.
+  expect(changes.map((c) => c.place)).toEqual(['above'])
+  expect(changes[0].barWidth).toBeGreaterThan(829)
+})

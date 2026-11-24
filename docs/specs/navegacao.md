@@ -44,7 +44,8 @@ barra inferior.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - A toolbar se ajusta à largura da linha inferior (a área livre, menos o drawer quando ele está
-  aberto). Com pelo menos 829 px (ex.: 1280 com a sidebar e sem pin: 960 px; 1440 com a sidebar e
+  aberto). Vale a largura final: ao abrir ou fechar o drawer ou recolher a sidebar, a toolbar, o
+  minimapa e os toasts vão para o lugar novo logo no começo do deslize, não no meio dele. Com pelo menos 829 px (ex.: 1280 com a sidebar e sem pin: 960 px; 1440 com a sidebar e
   sem pin: 1120 px; 1280 com a sidebar recolhida e o drawer: 832 px), a
   toolbar fica deitada no centro da linha inferior (entre o minimapa e o zoom completo, sem chegar a
   eles). De 341 a 828 px (ex.: 1440 com a sidebar e o drawer: 720 px; 1280 com a sidebar e o
@@ -125,12 +126,15 @@ barra inferior.
   tela toda): 1× é o mapa inteiro, centrado na área livre. O drawer não entra na área livre: abrir
   ou fechar o drawer não muda a porcentagem nem mexe na câmera por si. Ao abrir, a câmera já desliza
   até o pin, no centro do que sobra entre a sidebar e o drawer (ver [pins.md](pins.md)); ao fechar,
-  ela fica onde está. O editor abre em 1×, e
+  ela fica onde está, a não ser que o mapa tenha ido para baixo de onde o drawer estava: aí ele
+  volta deslizando (350 ms) para os limites sem o drawer. O editor abre em 1×, e
   centralizar (0) volta para 1×. Um mapa novo (slider ou seed) não mexe na câmera.
 - Limites de zoom (0,4× a 4×) e de pan: o mapa não some da tela. Em cada eixo, se o mapa é maior
   que a área livre, ele a cobre toda: o pan para quando a borda do mapa chega à borda da área, sem
   mostrar o fundo além dela. Se é menor, o mapa fica inteiro dentro da área livre. Ao bater no
-  limite, a inércia para naquele eixo (no outro, continua), sem jogar o mapa de volta.
+  limite, a inércia para naquele eixo (no outro, continua), sem jogar o mapa de volta. Com o drawer
+  aberto, na largura vale também o limite da área à esquerda dele: o mapa pode ir para a esquerda
+  até a borda direita dele chegar à do drawer (o que estava embaixo do drawer vem à vista).
 - Arrastar (mouse ou um dedo) faz pan e, ao soltar, a câmera continua com inércia e desacelera.
   A roda faz zoom mantendo parado o ponto sob o cursor; a pinça (dois dedos, ou a pinça do touchpad,
   que chega como roda com Ctrl) faz zoom.

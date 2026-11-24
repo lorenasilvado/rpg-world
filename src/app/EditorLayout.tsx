@@ -52,7 +52,8 @@ import { useTheme } from './useTheme'
  *
  * A linha inferior, entre a sidebar e o drawer (ou a borda direita), 16 px da base: o minimapa à esquerda e o controle
  * de zoom à direita, com o toast de erro da geração. A largura da linha (a da área livre) é medida
- * e `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
+ * num elemento invisível sem transição: o layout vale pela largura final, e não muda no meio do
+ * deslize da sidebar ou do drawer. `bottomBarLayout` decide onde ficam o minimapa (ao lado do zoom, ou acima dele quando não cabem
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
  * renderer (`cameraStore.ts`). A toolbar de ferramentas (`MapToolbar`) fica no centro da linha, numa
  * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`). A
@@ -120,10 +121,16 @@ export function EditorLayout({
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   /** O drawer à vista: a partir de 768 px, com um pin selecionado; abaixo, o painel sobreposto aberto. */
   const drawerShown = desktop ? pinSelected : drawerOpen
+  /** Os lados da linha inferior a partir de 768 px: da sidebar até a borda direita, ou até o drawer aberto. */
+  const barInset = [
+    pinSelected ? 'md:right-[var(--drawer-width)]' : 'md:right-0',
+    sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
+  ].join(' ')
   const [camera] = useState(createCameraStore)
   const minimapOpen = useStore(ui, (s) => s.minimapOpen)
-  const bottomBar = useRef<HTMLDivElement>(null)
-  const barWidth = useWidth(bottomBar)
+  /** A largura final da linha inferior, num medidor sem transição (ver `barInset`). */
+  const barSizer = useRef<HTMLDivElement>(null)
+  const barWidth = useWidth(barSizer)
   const layout = bottomBarLayout(barWidth, minimapOpen, useCoarsePointer())
   // O minimapa só desliza entre ao lado e acima do zoom depois da primeira medição da linha: ao
   // abrir o editor numa área estreita, ele já aparece no lugar, sem subir animado.
@@ -270,8 +277,8 @@ export function EditorLayout({
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
 
+      <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
       <div
-        ref={bottomBar}
         data-testid="bottom-bar"
         data-stacked={layout.stacked}
         inert={anyOpen}
@@ -279,8 +286,7 @@ export function EditorLayout({
         className={[
           'pointer-events-none absolute right-0 left-0 z-10',
           'transition-[left,right] duration-200 ease-[var(--ease-panel)]',
-          pinSelected ? 'md:right-[var(--drawer-width)]' : 'md:right-0',
-          sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
+          barInset,
         ].join(' ')}
       >
         <div

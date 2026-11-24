@@ -196,7 +196,7 @@ describe('MapCamera', () => {
     expect(c.y).toBeCloseTo(520)
   })
 
-  it('com o drawer aberto (rightCover), panTo e focusOn põem o ponto no centro do que sobra à esquerda dele (AC-F3-03)', () => {
+  it('com o drawer aberto (setRightCover), panTo e focusOn põem o ponto no centro do que sobra à esquerda dele (AC-F3-03)', () => {
     setReduced(true)
     // 1440 × 900 com a sidebar: a área livre vai até a borda direita (1120 px); o drawer cobre 400.
     const area = { x: 320, y: 0, width: 1120, height: 900 }
@@ -206,19 +206,72 @@ describe('MapCamera', () => {
     key('+')
     key('+')
     const zoom = last().zoom
+    camera.setRightCover(400)
     // O centro do que sobra: x de 320 a 1040, em 680.
     const visible = { x: 320, y: 0, width: 720, height: 900 }
-    camera.panTo(500, 450, 400)
+    camera.panTo(500, 450)
     expect(last().zoom).toBeCloseTo(zoom)
     let c = centerOf(last().t, visible)
     expect(c.x).toBeCloseTo(500)
     expect(c.y).toBeCloseTo(450)
 
-    camera.focusOn(520, 480, 2.5, 400)
+    camera.focusOn(520, 480, 2.5)
     expect(last().zoom).toBeCloseTo(2.5)
     c = centerOf(last().t, visible)
     expect(c.x).toBeCloseTo(520)
     expect(c.y).toBeCloseTo(480)
+  })
+
+  it('no zoom 1×, com o drawer aberto, um ponto perto da borda direita vem para fora dele; ao fechar, o mapa volta aos limites sem ele', () => {
+    setReduced(true)
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const { camera, last } = setup(area)
+    camera.showWorld()
+    // O mapa (900 px) de 430 a 1330; o drawer começa em 1040. O ponto x 820 (u 0,8) está em 1150, embaixo dele.
+    expect(last().t.x).toBeCloseTo(430)
+    camera.setRightCover(400)
+    camera.panTo(820, 460)
+    // A borda direita do mapa para na do drawer (1040): o mapa vai a 140, e o ponto fica em 860, à vista.
+    expect(last().t.x).toBeCloseTo(140)
+    expect(last().zoom).toBeCloseTo(1)
+    expect(140 + 820 * last().t.scale).toBeLessThan(1040)
+
+    // Fechar: sem o drawer, o mapa menor que a área fica inteiro dentro dela (a esquerda em 320 ou mais).
+    camera.setRightCover(0)
+    expect(last().t.x).toBeCloseTo(320)
+  })
+
+  it('ao fechar o drawer, a câmera desliza de volta para os limites; dentro deles, fica onde está', () => {
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const { camera, last, viewport } = setup(area)
+    const now = vi.spyOn(performance, 'now')
+    now.mockReturnValue(1000)
+    camera.showWorld()
+    camera.setRightCover(400)
+    camera.panTo(820, 460)
+    now.mockReturnValue(1400)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(140)
+
+    camera.setRightCover(0)
+    // Ainda no começo: o limite com o drawer segura o mapa onde estava.
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(140)
+    now.mockReturnValue(1575)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeGreaterThan(140)
+    expect(last().t.x).toBeLessThan(320)
+    now.mockReturnValue(1800)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(320)
+
+    // Dentro dos limites sem o drawer, abrir e fechar não mexe na câmera.
+    const before = last().t
+    camera.setRightCover(400)
+    camera.setRightCover(0)
+    viewport.emit('frame-end')
+    expect(last().t).toEqual(before)
+    now.mockRestore()
   })
 
   it('focusOn não passa do zoom máximo (4×)', () => {
