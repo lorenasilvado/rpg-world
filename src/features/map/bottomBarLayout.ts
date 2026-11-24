@@ -69,8 +69,17 @@ export const TOOLBAR_THICKNESS = 56
 export const TOOLBAR_LENGTH =
   2 * PANEL_BORDER + 2 * TOOLBAR_PADDING + TOOLBAR_TOOLS * TOOLBAR_BUTTON + TOOLBAR_TOOLS * TOOLBAR_GAP + TOOLBAR_SEPARATOR
 
+/**
+ * Larguras fixas da escala (a barra de 32 px com 8 e 6 px de folga) e da porcentagem no controle de
+ * zoom: o rótulo não muda a largura do controle, e `ZOOM_FULL_FROM` e `TOOLBAR_ROW_FROM` valem
+ * para qualquer zoom.
+ */
+export const ZOOM_SCALE_WIDTH = 46
+export const ZOOM_PERCENT_WIDTH = 44
+
 /** Controle de zoom completo (escala e porcentagem), no maior caso, o de toque. */
-export const ZOOM_FULL_MAX_WIDTH = 2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + 46 + 44 + 3 * ZOOM_BUTTON_TOUCH
+export const ZOOM_FULL_MAX_WIDTH =
+  2 * PANEL_BORDER + 2 * ZOOM_BAR_PADDING + ZOOM_SCALE_WIDTH + ZOOM_PERCENT_WIDTH + 3 * ZOOM_BUTTON_TOUCH
 
 /** Largura do toast quando fica no canto direito. */
 export const TOAST_WIDTH = 352

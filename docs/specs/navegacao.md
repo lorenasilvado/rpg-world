@@ -210,3 +210,8 @@ lista e o número não volta a ser usado.
 ## Pendências
 
 Layout abaixo de 768 px (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
+
+Diferença do mockup: o mockup do editor mostra o drawer fechado, com a toolbar no centro da linha
+inferior. Como o drawer fica aberto (vazio) sem pin selecionado, em 1440 × 900 com a sidebar aberta
+(720 px de área livre) a toolbar fica numa segunda linha, sobre o mapa, e os toasts sobem com ela.
+A rever quando o drawer abrir só com um pin ou uma estrada selecionados.
