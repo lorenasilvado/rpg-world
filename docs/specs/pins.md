@@ -15,8 +15,8 @@ o comportamento atualiza esta spec.
 > tecla Delete ou pelo rodapé, com o toast "Pin excluído" e Desfazer; e desfazer e refazer as
 > mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa, as abas Detalhes e
 > Conexões, agrupamento, busca) vem do material de design e do PRD e ainda não existe: a área da
-> capa aparece com o botão desabilitado (esmaecido, com a etiqueta "Em breve"), e as duas abas,
-> vazias.
+> capa aparece com o botão desabilitado (esmaecido, com a etiqueta "Em breve"), e as duas abas
+> mostram "Em breve" e o que vão ter.
 
 ## Resumo
 

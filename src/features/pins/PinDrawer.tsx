@@ -197,7 +197,10 @@ function PinCard({
             id={`${tabsId}-${t.id}-painel`}
             aria-labelledby={`${tabsId}-${t.id}`}
             hidden={tab !== t.id}
-            className="px-5 pt-4 pb-6"
+            // Sem nada focável dentro (Detalhes e Conexões, por enquanto), o painel recebe o foco
+            // pelo Tab, como pede o padrão de abas.
+            tabIndex={t.id === 'descricao' ? undefined : 0}
+            className="px-5 pt-4 pb-6 focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none"
           >
             {t.id === 'descricao' && tab === 'descricao' && (
               <div className="flex flex-col gap-5">
@@ -213,6 +216,7 @@ function PinCard({
                 />
               </div>
             )}
+            {t.id !== 'descricao' && <ComingSoon>{t.id === 'detalhes' ? DETAILS_SOON : CONNECTIONS_SOON}</ComingSoon>}
           </div>
         ))}
       </div>
@@ -334,5 +338,20 @@ function NameField({ pin, pins, edit, onEscape }: { pin: Pin; pins: PinsStore; e
         className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7 font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
       />
     </>
+  )
+}
+
+/** O que a aba Detalhes vai ter (pins.md → E2). */
+const DETAILS_SOON = 'Tipo, ícone, pin pai e campos livres.'
+/** O que a aba Conexões vai ter (pins.md → E2). */
+const CONNECTIONS_SOON = 'O pin pai e os pins filhos.'
+
+/** Uma aba que ainda não existe: a etiqueta "Em breve", como a da capa, e o que ela vai ter. */
+function ComingSoon({ children }: { children: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-line-2 px-4 py-8 text-center" data-testid="pin-tab-soon">
+      <span className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2">Em breve</span>
+      <p className="text-[13px] text-ink-2">{children}</p>
+    </div>
   )
 }
