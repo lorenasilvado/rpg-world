@@ -59,7 +59,8 @@ PNG e o histórico de desfazer/refazer do mundo.
   "⋯" abrem; setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao "⋯";
   Tab ou um clique fora fecham.
 - Modal "Renomear mundo" (480 px): campo "Nome do mundo" com o nome atual selecionado; Cancelar e
-  "Renomear" (primário, desabilitado com o campo vazio). Enter grava.
+  "Renomear" (primário, desabilitado com o campo vazio). Enter grava. Abaixo de 768 px, o campo tem
+  fonte de 16 px (no desktop, 15 px), para o iOS não aproximar a página ao focá-lo.
 - Modal de Excluir (480 px): título "Excluir “<nome>”?", o texto "O mundo e os N pins dele serão
   excluídos deste navegador. Isso não pode ser desfeito." ("O mundo e o pin dele…" com um pin; "O
   mundo será excluído…" sem pins); Cancelar (com o foco ao abrir) e "Excluir mundo" (destrutivo,

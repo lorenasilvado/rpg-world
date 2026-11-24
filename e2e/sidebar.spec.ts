@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { gotoEditor, mapShot } from './editor.ts'
+import { gotoEditor, mapShot, textFieldFontSizes } from './editor.ts'
 
 // Sidebar: seções e sliders (#49). A direção de cada slider é conferida no núcleo
 // (src/core/world/sliders.test.ts); aqui fica o caminho real: o slider na tela muda o mapa desenhado.
@@ -187,3 +187,14 @@ for (const [label, width, height] of [
     await waitFinalMap(page)
   })
 }
+
+test('celular 390: o campo da seed tem fonte de 16 px, para o iOS não aproximar a página ao focar; no desktop continua com 13 px (AC-F1-15)', async ({ page }) => {
+  await openEditor(page, 390, 844)
+  await page.getByRole('button', { name: 'Abrir painel' }).click()
+  const sections = page.getByTestId('sidebar-sections')
+  await expect(page.getByRole('textbox', { name: 'Seed' })).toBeVisible()
+  expect(await textFieldFontSizes(sections)).toEqual({ Seed: 16 })
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  expect(await textFieldFontSizes(sections)).toEqual({ Seed: 13 })
+})

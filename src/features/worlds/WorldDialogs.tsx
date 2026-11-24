@@ -93,7 +93,7 @@ function RenameForm({
           setName(e.target.value)
           if (state === 'error') setState('idle')
         }}
-        className="h-11 w-full rounded-control border border-line-2 bg-field px-3.5 text-[15px] text-ink outline-none hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
+        className="h-11 w-full rounded-control border border-line-2 bg-field px-3.5 text-[15px] text-ink outline-none max-md:text-[16px] hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
       />
       {state === 'error' && <ErrorNote>Não foi possível renomear o mundo. Tente de novo.</ErrorNote>}
       <Buttons>

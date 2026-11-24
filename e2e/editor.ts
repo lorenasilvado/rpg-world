@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { GENERATOR_VERSION } from '../src/core/types.ts'
 
 /** O mundo como o app o salva (`World`, de `src/persistence/types.ts`), no que os testes usam. */
@@ -105,4 +105,19 @@ export async function stableMapShot(page: Page) {
     if (next.equals(last)) return next
     last = next
   }
+}
+
+/**
+ * O tamanho da fonte (px) de cada campo de texto dentro de `root`, pelo rótulo acessível. O iOS
+ * aproxima a página ao focar um campo com fonte menor que 16 px e não volta sozinho (#208, #210).
+ */
+export async function textFieldFontSizes(root: Locator) {
+  return root.evaluate((el) =>
+    Object.fromEntries(
+      [...el.querySelectorAll<HTMLElement>('input:not([type=radio]):not([type=checkbox]):not([type=file]):not([type=range]), textarea, [contenteditable=true]')].map((field) => [
+        field.getAttribute('aria-label') ?? document.querySelector(`label[for="${field.id}"]`)?.textContent?.trim() ?? field.id,
+        parseFloat(getComputedStyle(field).fontSize),
+      ]),
+    ),
+  )
 }

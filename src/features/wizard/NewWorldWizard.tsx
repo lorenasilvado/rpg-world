@@ -123,7 +123,7 @@ function WizardForm({
           autoComplete="off"
           placeholder="Ex.: Terras de Valdora"
           onChange={(e) => setName(e.target.value)}
-          className="mt-2 h-11 w-full rounded-control border border-line-2 bg-field px-3.5 text-[15px] text-ink outline-none placeholder:text-ink-3 hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
+          className="mt-2 h-11 w-full rounded-control border border-line-2 bg-field px-3.5 text-[15px] text-ink outline-none placeholder:text-ink-3 max-md:text-[16px] hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
         />
 
         <div className="mt-6" role="group" aria-labelledby={presetsId}>
@@ -171,7 +171,7 @@ function WizardForm({
                 autoComplete="off"
                 placeholder={fallbackSeed}
                 onChange={(e) => setSeedText(e.target.value)}
-                className="h-11 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-3.5 font-mono text-sm font-medium text-ink outline-none placeholder:text-ink-3 hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
+                className="h-11 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-3.5 font-mono text-sm font-medium text-ink outline-none placeholder:text-ink-3 max-md:text-[16px] hover:border-ink-3 focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
               />
               <SeedButton label="Seed aleatória" onClick={() => setSeedText(randomSeed())}>
                 <Dices size={18} aria-hidden="true" />

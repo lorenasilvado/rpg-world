@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { gotoEditor, mapShot, stableMapShot } from './editor.ts'
+import { gotoEditor, mapShot, stableMapShot, textFieldFontSizes } from './editor.ts'
 
 // Assistente de novo mundo (#52, AC-F1-19): abre sobre a Lista de mundos por "Novo mundo" (#155,
 // AC-F4-06). Cada teste tem um contexto novo, com o banco vazio: a lista começa vazia.
@@ -116,4 +116,18 @@ test('celular 390: o assistente cabe na tela, rola e cria o mundo (AC-F1-19)', a
   await expect(page.getByTestId('world-name')).toHaveText('Mar de Brumas')
   await expect(page.getByRole('textbox', { name: 'Seed' })).toHaveValue('brumas-0042')
   await expect(page.getByRole('slider', { name: 'Desertos' })).toHaveAttribute('aria-valuenow', '62')
+})
+
+test('celular 390: o nome e a seed têm fonte de 16 px, para o iOS não aproximar a página ao focar; no desktop continuam com 15 e 14 px (AC-F1-19)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Criar meu primeiro mundo' }).click()
+  const dialog = wizard(page)
+  await expect(dialog.getByRole('textbox', { name: /^Seed/ })).toBeVisible()
+  const sizes = await textFieldFontSizes(dialog)
+  expect(Object.keys(sizes).sort()).toEqual(['Nome do mundo', 'Seed (opcional)'])
+  for (const [name, size] of Object.entries(sizes)) expect(size, name).toBeGreaterThanOrEqual(16)
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  expect(await textFieldFontSizes(dialog)).toEqual({ 'Nome do mundo': 15, 'Seed (opcional)': 14 })
 })
