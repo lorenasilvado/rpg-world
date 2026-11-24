@@ -133,15 +133,16 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 39 | #156 | [feat] Lista de mundos: renomear, duplicar e excluir | done | specs/mundos.md | #183 |
 | 40 | #157 | [feat] Pins no mapa: adicionar, desenhar e selecionar | done | specs/pins.md | #188 |
 | 41 | #158 | [feat] Pins: arrastar, excluir e desfazer | done | specs/pins.md | #192 |
-| 42 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | todo | specs/pins.md | |
-| 43 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | todo | specs/navegacao.md | |
-| 44 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | todo | specs/pins.md | |
-| 45 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
-| 46 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
-| 47 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
-| 48 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
-| 49 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
-| 50 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
-| 51 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
-| 52 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
-| 53 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
+| 42 | #199 | [bug] E2E do assistente: o print do mapa leva os controles por cima e às vezes difere entre as abas | doing | specs/geracao-terreno.md | |
+| 43 | #159 | [feat] Drawer do pin: ficha, descrição, tags e rodapé | todo | specs/pins.md | |
+| 44 | #137 | [chore] Escala e porcentagem do zoom à vista com o drawer aberto | todo | specs/navegacao.md | |
+| 45 | #160 | [feat] Drawer do pin: Detalhes, ícone e imagem enviada | todo | specs/pins.md | |
+| 46 | #161 | [feat] Hierarquia de pins e aba Conexões | todo | specs/pins.md | |
+| 47 | #162 | [feat] Pins: agrupamento e ocultar por tipo | todo | specs/pins.md | |
+| 48 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
+| 49 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
+| 50 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
+| 51 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
+| 52 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
+| 53 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
+| 54 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
