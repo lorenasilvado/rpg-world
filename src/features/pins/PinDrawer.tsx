@@ -113,7 +113,7 @@ function PinCard({
     <section aria-label={`Pin ${pin.name}`} data-testid="pin-drawer" data-pin-id={pin.id} className="flex min-h-0 flex-1 flex-col">
       <div className="relative shrink-0">
         <div
-          className="flex h-[74px] items-center justify-center border-b border-line"
+          className="flex h-[74px] flex-col items-center justify-center gap-0.5 border-b border-line"
           style={{ background: 'repeating-linear-gradient(135deg, var(--sunken) 0 10px, var(--paper-solid) 10px 20px)' }}
         >
           {/* Desabilitado até o envio de imagem: o motivo fica à vista ("Em breve"), porque um botão
@@ -123,7 +123,7 @@ function PinCard({
             disabled
             aria-describedby={`${pin.id}-capa-em-breve`}
             data-testid="pin-cover-button"
-            className="flex h-9 items-center gap-2 rounded-control px-3 text-[13px] font-semibold text-ink-2 disabled:cursor-not-allowed disabled:opacity-55"
+            className="flex h-8 items-center gap-2 rounded-control px-3 text-[13px] font-semibold text-ink-2 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <ImagePlus size={16} aria-hidden="true" />
             Adicionar imagem de capa (16:9)
