@@ -268,7 +268,7 @@ function FieldList({ pin, pins }: { pin: Pin; pins: PinsStore }) {
                     e.currentTarget.blur()
                   }
                 }}
-                className="h-[38px] min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2.5 text-[14px] font-semibold text-ink focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
+                className="h-[38px] min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2.5 text-[14px] font-semibold text-ink max-md:text-[16px] focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
               />
               <button
                 type="button"
@@ -349,7 +349,7 @@ function FieldKey({
           e.currentTarget.blur()
         }
       }}
-      className="h-[38px] w-[120px] shrink-0 rounded-control border border-line-2 bg-sunken px-2.5 text-[13px] font-bold text-ink-2 focus:border-amber focus:text-ink focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
+      className="h-[38px] w-[120px] shrink-0 rounded-control border border-line-2 bg-sunken px-2.5 text-[13px] font-bold text-ink-2 max-md:text-[16px] focus:border-amber focus:text-ink focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
     />
   )
 }

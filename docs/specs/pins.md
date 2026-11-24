@@ -92,7 +92,7 @@ do banco.
 |---|---|---|
 | Nenhum selecionado | Padrão do editor | Ferramenta Navegar ativa, sem pin no drawer (a partir de 768 px, o painel do drawer fica vazio; abaixo, fechado) |
 | Pin novo | Clique no mapa com Adicionar pin | O pin cai e quica no lugar (460 ms); fica selecionado, e o drawer abre com o nome "Novo pin" em edição (o campo com o foco e o texto selecionado) |
-| Selecionado | Clique num pin | Drawer aberto (abaixo de 768 px, sobreposto); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (no zoom 1×, o mapa não se move) |
+| Selecionado | Clique num pin | Drawer aberto (abaixo de 768 px, sobreposto, com os campos de texto em 16 px, para o iOS não aproximar a página ao focar um deles); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (no zoom 1×, o mapa não se move) |
 | Hover | Mouse sobre o pin | `scale(1.1)` + nome; cursor de mãozinha |
 | Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, sombra do desenho 12 px abaixo dele (`drop-shadow(0 12px 8px rgba(43,36,32,.4))`), marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
