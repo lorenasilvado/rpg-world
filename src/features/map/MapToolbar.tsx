@@ -23,13 +23,24 @@ import { LAYERS, TOOLS, type Tool } from './tools'
  * `vertical`: a toolbar fica em pé (quando não cabe deitada na linha, `bottomBarLayout`); o tooltip
  * abre à esquerda dela, e o popover, acima, alinhado à direita (deitada, os dois abrem acima,
  * centrados).
+ *
+ * `highlight`: o contorno âmbar da dica de boas-vindas à vista (AC-F1-31), na toolbar inteira
+ * (`toolbar`) ou só em Adicionar pin (`pin`).
  */
 /** A barra superior vai até 68 px do topo (12 de margem e 56 de altura); o popover para 8 px abaixo dela. */
 const POPOVER_TOP_LIMIT = 76
 /** O vão entre a toolbar e o popover, acima dela. */
 const POPOVER_GAP = 10
 
-export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: boolean }) {
+export function MapToolbar({
+  ui,
+  vertical = false,
+  highlight = null,
+}: {
+  ui: UiStore
+  vertical?: boolean
+  highlight?: 'toolbar' | 'pin' | null
+}) {
   const [layersOpen, setLayersOpen] = useState(false)
   const [tip, setTip] = useState<Tool['id'] | null>(null)
   const root = useRef<HTMLDivElement>(null)
@@ -85,6 +96,7 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
         role="toolbar"
         aria-label="Ferramentas"
         aria-orientation={vertical ? 'vertical' : 'horizontal'}
+        data-welcome-highlight={highlight === 'toolbar' || undefined}
         style={{
           [vertical ? 'width' : 'height']: TOOLBAR_THICKNESS,
           padding: vertical ? `${TOOLBAR_PADDING}px 0` : `0 ${TOOLBAR_PADDING}px`,
@@ -118,6 +130,7 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
                     ? { 'aria-expanded': layersOpen, 'aria-controls': layersOpen ? popoverId : undefined, 'aria-haspopup': 'true' as const }
                     : { 'aria-pressed': on })}
                   data-on={on}
+                  data-welcome-highlight={(highlight === 'pin' && tool.id === 'pin') || undefined}
                   onClick={
                     isLayers
                       ? () => setLayersOpen((open) => !open)

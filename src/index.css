@@ -65,6 +65,17 @@ body {
     0 0 0 4px var(--amber);
 }
 
+/* Dica de boas-vindas (AC-F1-31): o que o passo apresenta ganha um contorno âmbar. Na sidebar, por
+   dentro, porque ela encosta na borda da tela. */
+[data-welcome-highlight='true'] {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+}
+
+aside[data-welcome-highlight='true'] {
+  outline-offset: -3px;
+}
+
 /* Toast entrando: 200 ms, ease (design-system.md → Movimento) */
 @keyframes toast-in {
   from {

@@ -23,6 +23,6 @@ const thumbnails = () => createThumbnails(createGenerator())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <WorldsApp repo={repo} generator={generator} webgl2={hasWebGL2()} createThumbnails={thumbnails} />
+    <WorldsApp repo={repo} generator={generator} webgl2={hasWebGL2()} createThumbnails={thumbnails} welcomeTips />
   </StrictMode>,
 )

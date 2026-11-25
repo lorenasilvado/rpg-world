@@ -5,6 +5,8 @@ import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, TOAST_HEIGHT, ZOOM_SIDE, bottomBarLayout
 import { MapToolbar } from '../features/map/MapToolbar'
 import { MeasureTool } from '../features/map/MeasureTool'
 import { ShortcutsDialog } from '../features/help/ShortcutsDialog'
+import { WelcomeTips } from '../features/help/WelcomeTips'
+import { WELCOME_TIPS, markWelcomeTipsDone, welcomeTipsDone } from '../features/help/welcome'
 import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
@@ -91,6 +93,12 @@ import { useTheme } from './useTheme'
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
+ *
+ * Com `welcomeTips`, no primeiro acesso ao editor (a marca ainda não gravada, `welcomeTips.ts`),
+ * aparecem as dicas de boas-vindas (`WelcomeTips`, AC-F1-31), no alto da área livre: os sliders, a
+ * toolbar e o adicionar pin, um por vez (na tela baixa, o cartão é mais largo), com um contorno âmbar no que cada passo apresenta (abaixo de
+ * 768 px, nos sliders, o botão Abrir painel). Pular, o X ou Começar (no último passo) fecham as dicas e
+ * gravam a marca: elas não voltam, em nenhum mundo. Sair do editor antes disso não grava nada.
  */
 export function EditorLayout({
   world,
@@ -102,6 +110,7 @@ export function EditorLayout({
   createRenderer,
   onBack,
   onExport,
+  welcomeTips = false,
 }: {
   world: WorldStore
   pins: PinsStore
@@ -117,8 +126,21 @@ export function EditorLayout({
   onBack?: () => void
   /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
   onExport?: () => Promise<void>
+  /** Mostra as dicas de boas-vindas se ainda não foram vistas nem puladas (o app liga; os testes, não). */
+  welcomeTips?: boolean
 }) {
   const { theme, toggle } = useTheme()
+  /** O passo das dicas de boas-vindas à vista (`null`: fechadas). */
+  const [welcomeStep, setWelcomeStep] = useState<number | null>(() => (welcomeTips && !welcomeTipsDone() ? 0 : null))
+  const closeWelcome = () => {
+    markWelcomeTipsDone()
+    setWelcomeStep(null)
+  }
+  const nextWelcome = () => {
+    if (welcomeStep === null || welcomeStep >= WELCOME_TIPS.length - 1) closeWelcome()
+    else setWelcomeStep(welcomeStep + 1)
+  }
+  const welcomeTarget = welcomeStep === null ? null : WELCOME_TIPS[welcomeStep].target
   const generationStatus = useStore(world, (s) => s.status)
   // O toast de erro da geração à vista: o "Pin excluído" fica acima dele, sem cobri-lo.
   const errorToast = generationStatus === 'error'
@@ -417,7 +439,11 @@ export function EditorLayout({
             barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : '',
           ].join(' ')}
         >
-          <MapToolbar ui={ui} vertical={layout.toolbar === 'vertical'} />
+          <MapToolbar
+            ui={ui}
+            vertical={layout.toolbar === 'vertical'}
+            highlight={welcomeTarget === 'toolbar' || welcomeTarget === 'pin' ? welcomeTarget : null}
+          />
         </div>
         <div style={{ right: ZOOM_SIDE }} className="pointer-events-auto absolute bottom-0">
           <ZoomControls world={world} camera={camera} areaWidth={barWidth} />
@@ -449,6 +475,22 @@ export function EditorLayout({
         </div>
       )}
 
+      {welcomeStep !== null && (
+        <div
+          inert={anyOpen}
+          className={[
+            'pointer-events-none absolute top-20 right-0 left-0 z-[12] flex justify-center px-3',
+            'transition-[left,right] duration-200 ease-[var(--ease-panel)]',
+            barInset,
+          ].join(' ')}
+        >
+          {/* Tela baixa (celular deitado): mais largo, com menos linhas, para não chegar à toolbar. */}
+          <div className={`pointer-events-auto w-full ${short ? 'max-w-[480px]' : 'max-w-[360px]'}`}>
+            <WelcomeTips step={welcomeStep} mobile={!desktop} onNext={nextWelcome} onSkip={closeWelcome} />
+          </div>
+        </div>
+      )}
+
       {anyOpen && (
         <div
           aria-hidden="true"
@@ -473,6 +515,7 @@ export function EditorLayout({
         data-testid="sidebar"
         data-open={sidebarOpen}
         data-collapsed={sidebarCollapsed}
+        data-welcome-highlight={welcomeTarget === 'sliders' && desktop}
         inert={drawerOpen}
         className={[
           'absolute inset-y-0 left-0 z-20 flex w-[min(var(--sidebar-width),100vw)] flex-col overflow-hidden',
@@ -534,7 +577,13 @@ export function EditorLayout({
           pinSelected ? 'desk:right-[calc(var(--drawer-width)+12px)]' : '',
         ].join(' ')}
       >
-        <IconButton ref={sidebarOpener} label="Abrir painel" className="desk:hidden" onClick={() => setSidebarOpen(true)}>
+        <IconButton
+          ref={sidebarOpener}
+          label="Abrir painel"
+          className="desk:hidden"
+          highlight={welcomeTarget === 'sliders' && !desktop}
+          onClick={() => setSidebarOpen(true)}
+        >
           <PanelLeftOpen size={20} aria-hidden="true" />
         </IconButton>
         <IconButton ref={drawerOpener} label="Abrir detalhes" className="desk:hidden" onClick={() => setDrawerOpen(true)}>
@@ -740,6 +789,7 @@ function IconButton({
   keyShortcuts,
   disabled = false,
   className = '',
+  highlight,
   onClick,
   children,
 }: {
@@ -749,6 +799,8 @@ function IconButton({
   keyShortcuts?: string
   disabled?: boolean
   className?: string
+  /** O contorno âmbar da dica de boas-vindas à vista. */
+  highlight?: boolean
   onClick?: () => void
   children: ReactNode
 }) {
@@ -760,6 +812,7 @@ function IconButton({
       aria-keyshortcuts={keyShortcuts}
       title={title}
       disabled={disabled}
+      data-welcome-highlight={highlight || undefined}
       onClick={onClick}
       className={`grid size-11 shrink-0 place-items-center rounded-control text-ink enabled:hover:bg-hover enabled:active:bg-press disabled:opacity-40 ${className}`}
     >
