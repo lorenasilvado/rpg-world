@@ -12,10 +12,11 @@ o comportamento atualiza esta spec.
 > Hoje funcionam: Adicionar pin (P), o desenho dos 7 tipos no mapa, o hover e a seleção; o drawer
 > com o cabeçalho (ícone, nome editável, tipo, bioma e coordenadas), a aba Descrição (texto rico e
 > tags), a aba Detalhes (tipo, ícone da biblioteca ou imagem enviada, e campos livres) e o rodapé
-> (Centralizar, Duplicar, Excluir); o pin pai (na aba Detalhes) e a aba Conexões; arrastar um pin;
+> (Centralizar, Duplicar, Excluir); o pin pai (na aba Detalhes) e a aba Conexões; o agrupamento no
+> zoom baixo e o interruptor de cada tipo em Camadas; arrastar um pin;
 > excluir o selecionado com a tecla Delete ou pelo rodapé, com o toast "Pin excluído" e Desfazer; e
 > desfazer e refazer as mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa,
-> agrupamento, busca) vem do material de design e do PRD e ainda não existe: a área da capa aparece
+> busca) vem do material de design e do PRD e ainda não existe: a área da capa aparece
 > com o botão desabilitado (esmaecido, com a etiqueta "Em breve").
 
 ## Resumo
@@ -100,7 +101,8 @@ do banco.
 | Hover | Mouse sobre o pin | `scale(1.1)` + nome; cursor de mãozinha |
 | Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, sombra do desenho 12 px abaixo dele (`drop-shadow(0 12px 8px rgba(43,36,32,.4))`), marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
-| Agrupado | Zoom < 0,8 e pins a < 34 px | Círculo com contador |
+| Agrupado | Zoom < 0,8× e pins à vista a < 34 px uns dos outros na tela | Os pins somem, e no ponto médio deles (16 px acima, no meio do desenho de um pin) aparece um círculo de 38 px `#F7F1E3`, com borda de 2 px `#2B2420`, halo âmbar de 3 px e sombra, e o número de pins (Nunito 800 15). Na ordem da lista, cada pin ainda solto junta os soltos seguintes a menos de 34 px dele. O pan não muda os grupos; o zoom, sim. O pin selecionado e o arrastado nunca entram num grupo. Os grupos ficam abaixo dos pins soltos; sobre um grupo, o cursor é a lupa |
+| Tipo escondido | Interruptor do tipo desligado em Camadas | Os pins do tipo somem do mapa e não recebem clique nem hover (com Adicionar pin, o clique ali cria um pin); o pin selecionado continua à vista. Todos os tipos começam ligados ao abrir o editor |
 | Excluído | Excluir | O pin encolhe (180 ms, `ease-in`; com movimento reduzido, some na hora); toast "Pin excluído" com a ação "Desfazer", na base da área livre, acima do controle de zoom (com o toast de erro da geração à vista, empilhado 12 px acima dele). O toast some depois de 6 s, ou quando outra coisa muda no histórico (um passo novo, desfeito ou refeito) |
 | Vazio | Mundo sem pins | TODO: não descrito no material |
 | Imagem grande | Imagem enviada acima de 1 MB | Na aba Detalhes, abaixo do envio, a mensagem "Imagem acima de 1 MB" e "“<arquivo>” tem 2,4 MB, e o limite é 1 MB. Recuse o arquivo ou aceite a imagem reduzida para 256 px.", com "Recusar" (o ícone anterior continua, e o foco volta ao envio) e "Aceitar com redução" (com o foco) |
@@ -117,7 +119,7 @@ do banco.
 | Clicar num pin (Navegar ou Adicionar pin) | Seleciona o pin e abre o drawer (E2). Com Medir distância, o clique é da medida |
 | Editar o nome no drawer | O nome muda a cada tecla e é salvo com o mundo; vazio, volta o último nome ao sair do campo; Enter sai do campo. Fora do foco, o campo mostra o nome atual do pin (desfazer e refazer o atualizam) |
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
-| Ocultar por tipo | Esconde os pins daquele tipo |
+| Interruptor de um tipo em Camadas (abaixo de "Decoração") | Esconde ou mostra os pins daquele tipo; os grupos passam a contar só os pins à vista |
 | Excluir (Delete ou Backspace, a tecla "delete" do Mac) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, no drawer do pin (um chip de tag, uma aba, o rodapé), num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá a tecla não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
 | Escolher o pin pai (aba Detalhes) | Liga o pin ao pai escolhido ("Nenhum" o deixa sem pai) e é salvo com o mundo, num passo do histórico. A aba Conexões dos dois acompanha |
 | Clicar num pin da aba Conexões | Seleciona o pin (a câmera vai até ele, como no clique no mapa) e abre a ficha dele na aba Conexões |
@@ -128,7 +130,7 @@ do banco.
 | Centralizar (rodapé; para o leitor de tela, "Centralizar no pin") | A câmera desliza (350 ms) até o pin ficar no centro da área livre, aproximando até o zoom 1,6× se estiver mais longe (mais perto, o zoom fica). Perto da borda do mapa, a câmera para no limite do pan, e o pin fica fora do centro, do lado da borda. Abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer, e o pin continua selecionado |
 | Excluir (rodapé) | Exclui o pin como a tecla Delete, com o toast "Pin excluído" e Desfazer; o botão vale também no painel sobreposto (abaixo de 768 px). A partir de 768 px, o foco vai para o Desfazer da barra; abaixo, o painel fecha e o foco volta a quem o abriu |
 | Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
-| Clicar num grupo | Zoom no grupo |
+| Clicar num grupo (Navegar ou Adicionar pin) | A câmera desliza (350 ms) até o ponto médio do grupo, no centro da área livre, no zoom 1,3× (os pins se soltam); não seleciona nem cria pin |
 | Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. Esc com Adicionar pin e sem pin selecionado volta para Navegar |
 
 ## Regras

@@ -82,6 +82,23 @@ describe('Camadas (AC-F2-11)', () => {
     expect(ui.getState().layers.decor).toBe(true)
   })
 
+  it('abaixo de "Decoração", um interruptor por tipo de pin mostra e esconde os pins dele (AC-F3-15)', () => {
+    const ui = createUiStore()
+    render(<MapToolbar ui={ui} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Camadas' }))
+    const names = screen.getAllByRole('switch').map((el) => el.textContent)
+    expect(names).toEqual(['Decoração', 'Cidade', 'Vila', 'Castelo', 'Masmorra', 'NPC', 'Ponto de interesse', 'Personalizado'])
+    const city = screen.getByRole('switch', { name: 'Cidade' })
+    expect(city.getAttribute('aria-checked')).toBe('true')
+    expect(city.querySelector('svg[data-pin-type="cidade"]')).toBeTruthy()
+    fireEvent.click(city)
+    expect(ui.getState().layers.cidade).toBe(false)
+    expect(ui.getState().layers.vila).toBe(true)
+    expect(city.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(city)
+    expect(ui.getState().layers.cidade).toBe(true)
+  })
+
   it('o interruptor acompanha o estado (desligado por fora)', () => {
     const ui = createUiStore()
     render(<MapToolbar ui={ui} />)

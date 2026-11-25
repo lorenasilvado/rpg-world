@@ -6,6 +6,14 @@ describe('uiStore', () => {
     expect(createUiStore().getState().layers.decor).toBe(true)
   })
 
+  it('abre com os pins de todos os tipos à vista e esconde um tipo (AC-F3-15)', () => {
+    const ui = createUiStore()
+    expect(ui.getState().layers).toMatchObject({ cidade: true, vila: true, castelo: true, masmorra: true, npc: true, poi: true, custom: true })
+    ui.getState().setLayer('cidade', false)
+    expect(ui.getState().layers.cidade).toBe(false)
+    expect(ui.getState().layers.vila).toBe(true)
+  })
+
   it('liga e desliga a decoração, e só avisa quando muda', () => {
     const ui = createUiStore()
     const listener = vi.fn()

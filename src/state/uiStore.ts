@@ -1,12 +1,13 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import { PIN_TYPES, type PinType } from './pinTypes'
 
 /**
  * Estado da interface que o renderer lê, fora do mundo salvo: as camadas do mapa ligadas ou
- * desligadas e a sidebar recolhida (a área livre do mapa muda com ela). Guarda também se o
+ * desligadas (a decoração e os pins de cada tipo, pins.md AC-F3-15) e a sidebar recolhida (a área livre do mapa muda com ela). Guarda também se o
  * minimapa está aberto e a ferramenta do mapa em uso. É um store "vanilla" do
  * Zustand, como o `worldStore`.
  */
-export type MapLayer = 'decor'
+export type MapLayer = 'decor' | PinType
 
 /**
  * Ferramenta do mapa em uso: navegar (pan e zoom), adicionar pin (pins.md, AC-F3-01) ou medir
@@ -33,7 +34,7 @@ export type UiStore = StoreApi<UiState>
 
 export function createUiStore(): UiStore {
   return createStore<UiState>()((set, get) => ({
-    layers: { decor: true },
+    layers: { decor: true, ...(Object.fromEntries(PIN_TYPES.map((t) => [t.id, true])) as Record<PinType, boolean>) },
     sidebarCollapsed: false,
     minimapOpen: true,
     tool: 'nav',
