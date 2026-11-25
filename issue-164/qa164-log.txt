@@ -9,6 +9,8 @@ Erro ao salvar › Exportar .json baixou terras-de-valdora.json
 soltar outro arquivo no modal (não é JSON): O arquivo não está em JSON: pode ser de outro tipo ou estar corrompido. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
 não é um mundo: O arquivo é um JSON, mas não é um mundo do RPG World Builder. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
 gerador mais novo: O mundo foi criado numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo.
+parâmetro fora de 0 a 100 (ocean 150): Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+pin fora do mapa (u 1.4): recusado como "não é um mundo"
 "Escolher outro arquivo" com o arquivo válido: o modal fecha e a lista tem 4 mundos
 1280-escuro sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
 1024 sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
