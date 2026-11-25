@@ -16,7 +16,8 @@ o comportamento atualiza esta spec.
 > arquivo do mundo (.json), pelo "⋯", pela barra do editor (Exportar › Arquivo do mundo (.json)) e
 > pelo menu do "Erro ao salvar"; Importar (o botão, o link "importe um arquivo .json" ou um
 > arquivo solto na lista) cria um mundo novo a partir dele, e um arquivo recusado abre o modal 03.
-> Exportar o mapa como PNG ainda não existe: "Imagem (.png)" fica desabilitado no menu do editor. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
+> Exportar › Imagem (.png), na barra do editor, baixa o mapa em PNG em 1×, 2× ou 4×, com ou sem os
+> pins e os rótulos. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
 > indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
 > sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
 > parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página); com
@@ -139,7 +140,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
 | Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
 | Exportar (menu "⋯" do cartão) | Baixa o arquivo do mundo salvo, `<nome-do-mundo>.json` (sem acento, em minúsculas, com hífens). Se falha, o toast de erro "Não foi possível exportar o mundo" oferece "Tentar de novo" e fechar |
-| Exportar (barra do editor) | Abre o menu com "Arquivo do mundo (.json)" e "Imagem (.png)" (desabilitado: o PNG ainda não existe). "Arquivo do mundo (.json)" baixa o mundo como está na tela, mesmo o que ainda não foi gravado, e fecha o menu; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo." Teclado: setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao botão |
+| Exportar (barra do editor) | Abre o menu com "Arquivo do mundo (.json)" e "Imagem (.png)". "Arquivo do mundo (.json)" baixa o mundo como está na tela, mesmo o que ainda não foi gravado, e fecha o menu; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo." "Imagem (.png)" fecha o menu e abre o modal "Exportar imagem". Teclado: setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao botão |
+| Exportar › Imagem (.png) | Abre o modal "Exportar imagem" (480 px): a Escala, em três opções lado a lado com o tamanho da imagem (1× "1024 × 1024 px", 2× "2048 × 2048 px", 4× "4096 × 4096 px"; começa em 1×; no 4×, o aviso "Em 4×, gerar a imagem pode levar até um minuto."), a caixa "Pins e rótulos" (marcada ao abrir), Cancelar e "Baixar PNG". "Baixar PNG" gera a imagem ("Gerando imagem…", com os controles desabilitados; nem Esc nem o clique fora fecham o modal), baixa `<nome-do-mundo>-<escala>x.png` (o nome como no .json, ex.: `terras-de-valdora-2x.png`) e fecha o modal. Se falha, o modal continua com "Não foi possível exportar a imagem. Tente de novo." Cancelar, Esc ou o clique fora fecham sem exportar. Ao fechar, o foco volta ao Exportar |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
 | Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição, as tags e, na aba Detalhes, o tipo, o ícone e os campos livres) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Na aba Detalhes, cada escolha de tipo, imagem enviada ou removida é um passo; as teclas seguidas no valor de um campo livre são um passo só, até sair dele, e trocar a chave, adicionar ou remover um campo são um passo cada. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
 
@@ -159,6 +161,15 @@ PNG e o histórico de desfazer/refazer do mundo.
 - Desfazer e refazer usam um histórico único por mundo, que vale enquanto o mundo está aberto
   (voltar à lista o descarta; ele não é salvo) e guarda os últimos 100 passos.
 - O mundo guarda `generatorVersion`, para ser regerado igual.
+- O PNG é o mapa inteiro, sem a câmera, quadrado: 1× é o mapa 1024² (uma célula por pixel); no 2× e
+  no 4×, o terreno é gerado de novo em 2048² e 4096², com a seed e os parâmetros do mundo, num worker
+  só da exportação (o editor segue com o mapa dele), e os ícones, os pins e os rótulos crescem na
+  mesma escala. No 1×, a imagem usa o mapa já exibido; enquanto ele gera, ou se a última geração falhou, gera o
+  1024² de novo.
+- O PNG mostra todos os ícones da decoração (sem o nível de detalhe do zoom) e, com "Pins e
+  rótulos", todos os pins soltos (sem os grupos), cada um com o nome embaixo; os nomes ficam por cima dos
+  pins, e nenhum pin cobre um nome. A decoração e os tipos
+  de pin desligados em Camadas ficam de fora, como no mapa.
 
 ## Critérios de aceite vigentes
 
@@ -180,7 +191,7 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-Exportar PNG: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
+O modal "Exportar imagem" não tem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
 > Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
 > mantidas ([overview.md](../overview.md)).

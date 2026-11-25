@@ -198,15 +198,20 @@ export function importedWorldRecord(
   return copyWorldRecord({ ...file.world, pins }, images, { id, name: file.world.name, now, newId })
 }
 
-/** O nome do arquivo exportado: o nome do mundo, sem acento, em minúsculas e com hífens. */
-export function worldFileName(name: string): string {
+/** O nome do mundo num nome de arquivo: sem acento, em minúsculas e com hífens ("mundo" se não sobra nada). */
+export function fileSlug(name: string): string {
   const slug = name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return `${slug || 'mundo'}.json`
+  return slug || 'mundo'
+}
+
+/** O nome do arquivo exportado: o nome do mundo, sem acento, em minúsculas e com hífens. */
+export function worldFileName(name: string): string {
+  return `${fileSlug(name)}.json`
 }
 
 async function toBase64(blob: Blob): Promise<string> {

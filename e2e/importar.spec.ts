@@ -227,7 +227,7 @@ for (const { width, height } of [
     expect(box.x).toBeGreaterThanOrEqual(8)
     expect(box.x + box.width).toBeLessThanOrEqual(width - 8)
     await expect(menu.getByRole('menuitem', { name: 'Arquivo do mundo (.json)' })).toBeFocused()
-    await expect(menu.getByRole('menuitem', { name: 'Imagem (.png)' })).toBeDisabled()
+    await expect(menu.getByRole('menuitem', { name: 'Imagem (.png)' })).toBeEnabled()
     const downloading = page.waitForEvent('download')
     await menu.getByRole('menuitem', { name: 'Arquivo do mundo (.json)' }).click()
     const download = await downloading

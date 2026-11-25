@@ -1,16 +1,27 @@
 import { Download, FileJson, Image } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import type { MapImageOptions } from '../../render/mapImage'
+import { ExportImageDialog } from './ExportImageDialog'
 
 /**
- * O Exportar da barra do editor (mundos.md → Ações, AC-F4-09): o botão abre o menu com "Arquivo
- * do mundo (.json)", que baixa o mundo como está na tela (`onExportJson`), e "Imagem (.png)",
- * desabilitado até a exportação do mapa existir. O menu abre abaixo do botão, alinhado à direita,
+ * O Exportar da barra do editor (mundos.md → Ações, AC-F4-09, AC-F4-11): o botão abre o menu com
+ * "Arquivo do mundo (.json)", que baixa o mundo como está na tela (`onExportJson`), e "Imagem
+ * (.png)", que fecha o menu e abre o modal "Exportar imagem" (`ExportImageDialog`, que chama
+ * `onExportImage`; ao fechar, o foco volta ao botão). O menu abre abaixo do botão, alinhado à direita,
  * com o foco no primeiro item; setas, Home e End andam entre os itens habilitados; Esc fecha e
  * devolve o foco ao botão; Tab ou um clique fora fecham. Se a exportação falha, o menu continua
- * aberto com o aviso. Sem `onExportJson` (testes), o botão fica desabilitado.
+ * aberto com o aviso. Sem `onExportJson` (testes), o botão fica desabilitado; sem `onExportImage`,
+ * o item "Imagem (.png)".
  */
-export function ExportMenu({ onExportJson }: { onExportJson?: () => Promise<void> }) {
+export function ExportMenu({
+  onExportJson,
+  onExportImage,
+}: {
+  onExportJson?: () => Promise<void>
+  onExportImage?: (options: MapImageOptions) => Promise<void>
+}) {
   const [open, setOpen] = useState(false)
+  const [imageOpen, setImageOpen] = useState(false)
   const [state, setState] = useState<'idle' | 'exporting' | 'error'>('idle')
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -114,7 +125,17 @@ export function ExportMenu({ onExportJson }: { onExportJson?: () => Promise<void
             <FileJson size={18} aria-hidden="true" className="shrink-0" />
             {state === 'exporting' ? 'Exportando…' : 'Arquivo do mundo (.json)'}
           </button>
-          <button type="button" role="menuitem" tabIndex={-1} disabled aria-disabled="true" title="Imagem (.png) (em breve)" className={ITEM}>
+          <button
+            type="button"
+            role="menuitem"
+            tabIndex={-1}
+            disabled={!onExportImage || state === 'exporting'}
+            onClick={() => {
+              setOpen(false)
+              setImageOpen(true)
+            }}
+            className={ITEM}
+          >
             <Image size={18} aria-hidden="true" className="shrink-0" />
             Imagem (.png)
           </button>
@@ -124,6 +145,17 @@ export function ExportMenu({ onExportJson }: { onExportJson?: () => Promise<void
             </p>
           )}
         </div>
+      )}
+      {onExportImage && (
+        <ExportImageDialog
+          open={imageOpen}
+          onExport={onExportImage}
+          onClose={() => setImageOpen(false)}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault()
+            button.current?.focus()
+          }}
+        />
       )}
     </div>
   )

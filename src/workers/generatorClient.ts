@@ -1,5 +1,5 @@
 import { releaseProxy, wrap, type Remote } from 'comlink'
-import type { GenerateRequest, GenerateResult, GeneratorApi } from './generatorApi'
+import type { ExportTerrainResult, GenerateRequest, GenerateResult, GeneratorApi } from './generatorApi'
 import { createNewerOnly, type NewerOnly } from './newerOnly'
 
 /**
@@ -23,6 +23,11 @@ export type Generator = NewerOnly<GenerateRequest, GenerateResult> & {
    * `GeneratorWorkerError` se ainda não há worker (nenhum pedido feito, ou o worker falhou).
    */
   lastResultTransferred(): Promise<boolean>
+  /**
+   * O terreno do mapa exportado em PNG (`exportTerrain` do worker), fora da fila do `request`: use
+   * um gerador só para isso, para a geração longa do 4× não segurar a do editor.
+   */
+  exportTerrain(req: GenerateRequest): Promise<ExportTerrainResult>
   terminate(): void
   /** Quantos pedidos ao worker estão em andamento (para os testes). */
   pendingCalls(): number
@@ -108,6 +113,7 @@ export function createGenerator(spawn: () => WorkerLike = createWorker): Generat
       conn
         ? call((api) => api.lastResultTransferred())
         : Promise.reject(new GeneratorWorkerError('o worker de geração não tem resultado: ainda não gerou ou falhou')),
+    exportTerrain: (req) => call((api) => api.exportTerrain(req)),
     terminate() {
       if (!conn) return
       conn.api[releaseProxy]()

@@ -4,6 +4,8 @@ import './index.css'
 import { hasWebGL2 } from './app/webgl2'
 import { WorldsApp } from './app/WorldsApp'
 import { createThumbnails } from './features/wizard/thumbnails'
+import { renderMapImage, type MapImageSource } from './features/worlds/exportImage'
+import type { MapImageOptions } from './render/mapImage'
 import { openDb } from './persistence/db'
 import { createWorldsRepo } from './persistence/worldsRepo'
 import type { WorldGenerator } from './state/worldStore'
@@ -20,9 +22,18 @@ const generator: WorldGenerator = {
   latestVersion: () => editorWorker?.latestVersion() ?? 0,
 }
 const thumbnails = () => createThumbnails(createGenerator())
+// O PNG (Exportar › Imagem) gera o terreno grande num worker só dele, encerrado no fim: a geração
+// longa do 4× não segura a do editor, e a memória dela sai junto com o worker.
+const renderImage = (source: MapImageSource, options: MapImageOptions) =>
+  renderMapImage(source, options, {
+    exportTerrain: (req) => {
+      const worker = createGenerator()
+      return worker.exportTerrain(req).finally(() => worker.terminate())
+    },
+  })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <WorldsApp repo={repo} generator={generator} webgl2={hasWebGL2()} createThumbnails={thumbnails} welcomeTips />
+    <WorldsApp repo={repo} generator={generator} webgl2={hasWebGL2()} createThumbnails={thumbnails} renderImage={renderImage} welcomeTips />
   </StrictMode>,
 )
