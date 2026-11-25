@@ -158,6 +158,12 @@ soltar o slider: `paramsDragging` do `worldStore`). Desfazer devolve os pins pel
 parâmetros pelo `setParams`, que pede só o mapa final. O `EditorLayout` liga os botões Desfazer e
 Refazer da barra, as teclas e o toast "Pin excluído" (`src/features/pins/PinDeletedToast.tsx`).
 
+A busca dos pins fica em `src/features/search/`: `searchPins.ts` (TS puro: acha por nome e tag, sem
+acento nem maiúscula, e ordena) e `SearchDialog.tsx` (o modal, com o `Dialog` do Radix e o campo
+como combobox da lista). O `EditorLayout` abre o modal pelo Buscar da barra e por Ctrl K; escolher um
+resultado seleciona o pin e chama o `focusOn` da câmera, como o Centralizar do drawer. O
+`e2e/busca.spec.ts` cobre a busca com 50 pins em 1440, 1024 e 390.
+
 O estado do mundo fica no `src/state/worldStore.ts` (Zustand, store "vanilla", legível fora do
 React): nome, seed, parâmetros, o campo exibido, o RGBA do terreno desse campo (`terrainRgba`) e o
 status da geração. Arrastar um slider
@@ -314,7 +320,7 @@ src/
     params.ts           # limite Desertos + Florestas (applyParamChange)
     uiStore.ts          # camadas do mapa, sidebar recolhida, minimapa, ferramenta ativa
   features/
-    sidebar/  pins/  roads/  worlds/
+    sidebar/  pins/  search/  roads/  worlds/
   persistence/
     db.ts               # Dexie (mundos e imagens)
     worldsRepo.ts       # ler e gravar mundos e imagens

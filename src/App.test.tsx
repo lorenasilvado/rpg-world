@@ -104,14 +104,14 @@ describe('Layout vazio do editor', () => {
 })
 
 describe('Barras do editor e Ajuda', () => {
-  it('a barra superior tem Buscar e Exportar desabilitados, Desfazer e Refazer sem o que fazer, e tema e Ajuda ativos (AC-F2-10)', () => {
+  it('a barra superior tem Exportar desabilitado, Desfazer e Refazer sem o que fazer, e Buscar, tema e Ajuda ativos (AC-F2-10)', () => {
     render(<App world={world()} createRenderer={noRenderer} />)
     const actions = screen.getByTestId('actions')
-    for (const name of ['Buscar', 'Desfazer', 'Refazer', 'Exportar']) {
+    for (const name of ['Desfazer', 'Refazer', 'Exportar']) {
       const button = actions.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)
       expect(button?.disabled, name).toBe(true)
     }
-    for (const name of ['Usar tema escuro', 'Ajuda']) {
+    for (const name of ['Buscar', 'Usar tema escuro', 'Ajuda']) {
       expect(actions.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)?.disabled, name).toBe(false)
     }
     expect(screen.getByRole('toolbar', { name: 'Ferramentas' })).toBeTruthy()
@@ -122,7 +122,7 @@ describe('Barras do editor e Ajuda', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ajuda' }))
     const dialog = screen.getByRole('dialog', { name: 'Atalhos de teclado' })
     const rows = Array.from(dialog.querySelectorAll('dt')).map((dt) => `${dt.textContent} ${dt.nextElementSibling?.textContent}`)
-    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
+    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Buscar pins Ctrl K', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
   })
@@ -353,5 +353,99 @@ describe('Excluir, desfazer e refazer (AC-F3-05, AC-F4-08)', () => {
     })
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Nome do pin' }), { key: 'z', ctrlKey: true })
     expect(pins.getState().pins).toHaveLength(1)
+  })
+})
+
+describe('Buscar (Ctrl K, AC-F3-16)', () => {
+  const searchPin = (id: string, name: string, tags: string[] = []): Pin => ({
+    id,
+    type: 'cidade',
+    name,
+    pos: { u: 0.5, v: 0.5 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags,
+    fields: {},
+  })
+
+  // A partir de 768 px: o drawer é fixo.
+  beforeEach(() => {
+    const narrow = window.matchMedia
+    window.matchMedia = ((query: string) => ({ ...narrow(query), matches: true })) as typeof window.matchMedia
+  })
+
+  function editor(pinList = [searchPin('v', 'Valdora', ['capital', 'porto']), searchPin('p', 'Porto Velho'), searchPin('t', 'Torre do Mago', ['ruína'])]) {
+    const pins = createPinsStore(pinList)
+    render(<App world={world()} pins={pins} createRenderer={noRenderer} />)
+    return { pins }
+  }
+  const input = () => screen.getByRole('combobox', { name: 'Buscar pins' })
+  const options = () => screen.queryAllByRole('option').map((o) => o.textContent)
+
+  it('o botão Buscar abre o modal com o campo vazio e o foco nele', () => {
+    editor()
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    expect(screen.getByRole('dialog', { name: 'Buscar pins' })).toBeTruthy()
+    expect(document.activeElement).toBe(input())
+    expect(screen.getByTestId('search-status').textContent).toBe('Digite o nome ou uma tag do pin.')
+  })
+
+  it('Ctrl K abre o modal, mesmo com o foco num campo', () => {
+    editor()
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    seed.focus()
+    fireEvent.keyDown(seed, { key: 'k', ctrlKey: true })
+    expect(screen.getByRole('dialog', { name: 'Buscar pins' })).toBeTruthy()
+  })
+
+  it('acha por nome e por tag, e mostra a tag que bateu', () => {
+    editor()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(input(), { target: { value: 'port' } })
+    expect(options()).toEqual(['Porto VelhoCidade', 'ValdoraCidadeporto'])
+    fireEvent.change(input(), { target: { value: 'ruina' } })
+    expect(options()).toEqual(['Torre do MagoCidaderuína'])
+    fireEvent.change(input(), { target: { value: 'xyz' } })
+    expect(options()).toEqual([])
+    expect(screen.getByTestId('search-status').textContent).toBe('Nenhum pin com “xyz”.')
+  })
+
+  it('as setas andam pela lista, e Enter seleciona o pin e fecha o modal', () => {
+    const { pins } = editor()
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    fireEvent.change(input(), { target: { value: 'port' } })
+    const active = () => document.getElementById(input().getAttribute('aria-activedescendant') ?? '')?.textContent
+    expect(active()).toBe('Porto VelhoCidade')
+    fireEvent.keyDown(input(), { key: 'ArrowDown' })
+    expect(active()).toBe('ValdoraCidadeporto')
+    fireEvent.keyDown(input(), { key: 'ArrowDown' })
+    expect(active()).toBe('Porto VelhoCidade')
+    fireEvent.keyDown(input(), { key: 'ArrowUp' })
+    fireEvent.keyDown(input(), { key: 'Enter' })
+    expect(pins.getState().selectedId).toBe('v')
+    expect(screen.queryByRole('dialog', { name: 'Buscar pins' })).toBeNull()
+  })
+
+  it('clicar num resultado seleciona o pin', () => {
+    const { pins } = editor()
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    fireEvent.change(input(), { target: { value: 'torre' } })
+    fireEvent.click(screen.getByRole('option', { name: /Torre do Mago/ }))
+    expect(pins.getState().selectedId).toBe('t')
+  })
+
+  it('Esc fecha o modal sem mudar a seleção', () => {
+    const { pins } = editor()
+    act(() => pins.getState().select('p'))
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.keyDown(input(), { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Buscar pins' })).toBeNull()
+    expect(pins.getState().selectedId).toBe('p')
+  })
+
+  it('num mundo sem pins, diz que não há pins', () => {
+    editor([])
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    expect(screen.getByTestId('search-status').textContent).toBe('Este mundo ainda não tem pins.')
   })
 })

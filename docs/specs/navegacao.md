@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # F2 · Câmera e navegação
@@ -30,8 +30,8 @@ barra inferior.
 ### Elementos do editor
 
 - Barra flutuante no topo direito (pílula, h 56): Buscar (Ctrl K), desfazer, refazer, exportar,
-  alternar tema, ajuda. Buscar e exportar aparecem desabilitados (opacidade .4), até as funções
-  existirem; desfazer e refazer ficam desabilitados enquanto não há o que desfazer ou refazer
+  alternar tema, ajuda. Buscar abre a busca dos pins (ver [pins.md](pins.md)). Exportar aparece
+  desabilitado (opacidade .4), até a função existir; desfazer e refazer ficam desabilitados enquanto não há o que desfazer ou refazer
   (ver [mundos.md](mundos.md)). Buscar aparece como um campo com "Buscar" e a tecla "Ctrl K" a
   partir de 768 px de tela e com a área livre de pelo menos 420 px; senão, só com o ícone. Abaixo de
   768 px, os botões de abrir o painel e os detalhes vêm antes, e os botões ficam sem folga entre si
@@ -61,7 +61,7 @@ barra inferior.
   lugar; sem espaço para todas as linhas (celular, tablet com a toolbar em pé, tela baixa), ele rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
-  pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
+  pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), buscar pins (Ctrl K), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
 - Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica
@@ -116,7 +116,8 @@ barra inferior.
 | Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
 | Interruptor de um tipo de pin (Cidade, Vila…) | Mostra ou esconde os pins daquele tipo (ver [pins.md](pins.md)) |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
-| Buscar, exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
+| Buscar (Ctrl K) | Abre a busca dos pins por nome e tag (ver [pins.md](pins.md)) |
+| Exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
 | Desfazer, refazer (Ctrl+Z, Ctrl+Shift+Z) | Desfazem e refazem as mudanças nos pins e nos parâmetros de geração (ver [mundos.md](mundos.md)) |
 | Adicionar pin (atalho P) | Liga a ferramenta de criar pin (ver [pins.md](pins.md)) |
 | Medir distância (atalho M) | Liga a ferramenta de medir |
