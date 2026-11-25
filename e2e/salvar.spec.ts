@@ -80,7 +80,7 @@ test('se a gravação falha, o indicador mostra "Erro ao salvar" e oferece "Tent
 
   await error.click()
   const menu = page.getByRole('menu', { name: 'Erro ao salvar' })
-  await expect(menu.getByRole('menuitem', { name: 'Exportar .json' })).toBeDisabled()
+  await expect(menu.getByRole('menuitem', { name: 'Exportar .json' })).toBeEnabled()
   await page.evaluate(() => {
     const w = window as unknown as { __put: typeof IDBObjectStore.prototype.put }
     IDBObjectStore.prototype.put = w.__put
@@ -128,7 +128,7 @@ test('celular 390: o indicador aparece no painel sobreposto, e o Esc fecha só o
   const exportJson = menu.getByRole('menuitem', { name: 'Exportar .json' })
   await expect(retry).toBeVisible()
   await expect(exportJson).toBeVisible()
-  await expect(exportJson).toBeDisabled()
+  await expect(exportJson).toBeEnabled()
   // O menu fica por cima do conteúdo do painel e cabe na tela.
   const box = (await menu.boundingBox())!
   expect(box.x).toBeGreaterThanOrEqual(0)
