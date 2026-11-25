@@ -1,0 +1,16 @@
+"⋯" › Exportar baixou terras-de-valdora.json (10913 bytes): format=rpg-world-builder/world, version=1, seed=valdora-7f3a, 3 pins, 1 imagem(ns), sem id=true
+importar o arquivo: Terras de Valdora | Terras de Valdora | Ilhas do Corvo | Vale Sombrio / Editado agora · 3 pins
+importado no editor: seed=valdora-7f3a; Torre do Mago no drawer: false
+editor › Arquivo do mundo (.json): igual ao original fora datas e ids de imagem = true; pins 3
+Erro ao salvar › Exportar .json baixou terras-de-valdora.json
+1024: menu do editor dentro da tela
+390: menu do editor dentro da tela
+1280 sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+soltar outro arquivo no modal (não é JSON): O arquivo não está em JSON: pode ser de outro tipo ou estar corrompido. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+não é um mundo: O arquivo é um JSON, mas não é um mundo do RPG World Builder. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+gerador mais novo: O mundo foi criado numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo.
+"Escolher outro arquivo" com o arquivo válido: o modal fecha e a lista tem 4 mundos
+1280-escuro sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+1024 sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+390 sem seed: Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.
+lista vazia › link: Editado agora · 3 pins
