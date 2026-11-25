@@ -164,7 +164,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 - O PNG é o mapa inteiro, sem a câmera, quadrado: 1× é o mapa 1024² (uma célula por pixel); no 2× e
   no 4×, o terreno é gerado de novo em 2048² e 4096², com a seed e os parâmetros do mundo, num worker
   só da exportação (o editor segue com o mapa dele), e os ícones, os pins e os rótulos crescem na
-  mesma escala. No 1×, a imagem usa o mapa já exibido; enquanto ele gera, gera o 1024² de novo.
+  mesma escala. No 1×, a imagem usa o mapa já exibido; enquanto ele gera, ou se a última geração falhou, gera o
+  1024² de novo.
 - O PNG mostra todos os ícones da decoração (sem o nível de detalhe do zoom) e, com "Pins e
   rótulos", todos os pins soltos (sem os grupos), cada um com o nome embaixo; os nomes ficam por cima dos
   pins, e nenhum pin cobre um nome. A decoração e os tipos

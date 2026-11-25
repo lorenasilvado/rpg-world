@@ -6,13 +6,13 @@ import { pinImageId, type PinImages } from '../../state/pinImages'
 import type { PinsStore } from '../../state/pinsStore'
 import { PIN_TYPES, type PinType } from '../../state/pinTypes'
 import type { UiStore } from '../../state/uiStore'
-import { isGenerating, type WorldStore } from '../../state/worldStore'
+import type { WorldStore } from '../../state/worldStore'
 import type { GenerateRequest } from '../../workers/generatorApi'
 
 /**
  * Exportar › Imagem (.png) (AC-F4-11): monta o PNG do mapa aberto (`drawMapImage`) e o devolve como
- * blob. O terreno vem na resolução da imagem: no 1×, o mapa 1024² que o editor já mostra (se não
- * está gerando); senão, `exportTerrain` o gera de novo, no worker, com a seed e os parâmetros do
+ * blob. O terreno vem na resolução da imagem: no 1×, o mapa 1024² que o editor já mostra (se ele
+ * terminou bem: sem estar gerando nem com a última geração em erro); senão, `exportTerrain` o gera de novo, no worker, com a seed e os parâmetros do
  * mundo. A decoração e os tipos de pin seguem Camadas (`ui`); os pins e os rótulos só vão com
  * `options.pins`, com as imagens enviadas do Personalizado.
  */
@@ -57,7 +57,9 @@ export async function renderMapImage(source: MapImageSource, options: MapImageOp
   const { createCanvas = htmlCanvas, sheet = decorSheet, loadImage = bitmap, loadFont = (font) => document.fonts.load(font) } = deps
   const state = source.world.getState()
   const size = exportImageSize(options.scale)
-  const shown = state.field && state.terrainRgba && state.field.width === size && !isGenerating(state)
+  // Só o mapa final que terminou bem corresponde à seed e aos parâmetros atuais: gerando, com a
+  // prévia ou depois de uma falha (`error`), o que está na tela é de outro pedido.
+  const shown = state.status === 'idle' && state.field && state.terrainRgba && state.field.width === size
   const terrain = shown
     ? { terrainRgba: state.terrainRgba!, decor: state.field!.decor }
     : await deps.exportTerrain({ seed: state.seed, size, params: { ...state.params } })

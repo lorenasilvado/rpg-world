@@ -9,7 +9,7 @@ import { mapImageFileName, renderMapImage, type ImageCanvas, type RenderMapImage
 
 const decor = (n: number): Decor => ({ u: new Float32Array(n).fill(0.5), v: new Float32Array(n).fill(0.5), kind: new Uint8Array(n).fill(DECOR.tree) })
 
-function world(state: { width?: number; status?: 'idle' | 'generating' } = {}) {
+function world(state: { width?: number; status?: 'idle' | 'generating' | 'error' } = {}) {
   const width = state.width ?? 1024
   const field = { width, height: width, decor: decor(3) } as unknown as CoreField
   const s = { name: 'Reino', seed: 'reino', params: { ...DEFAULT_WORLD_PARAMS, ocean: 70 }, field, terrainRgba: new Uint8ClampedArray(width * width * 4), status: state.status ?? 'idle' }
@@ -27,7 +27,7 @@ const pin = (id: string, type: string, icon: Pin['icon'] = { kind: 'builtin', ke
   fields: {},
 })
 
-function setup(opts: { width?: number; status?: 'idle' | 'generating'; pins?: Pin[]; blobs?: Record<string, Blob>; toBlob?: Blob | null } = {}) {
+function setup(opts: { width?: number; status?: 'idle' | 'generating' | 'error'; pins?: Pin[]; blobs?: Record<string, Blob>; toBlob?: Blob | null } = {}) {
   const pins = createPinsStore()
   pins.setState({ pins: opts.pins ?? [] })
   const images = { blob: (id: string) => opts.blobs?.[id] } as unknown as PinImages
@@ -92,8 +92,8 @@ describe('Exportar › Imagem (.png) (AC-F4-11)', () => {
     }
   })
 
-  it('no 1×, enquanto o mapa gera (ou com a prévia à vista), gera o 1024² de novo', async () => {
-    for (const state of [{ status: 'generating' as const }, { width: 256 }]) {
+  it('no 1×, enquanto o mapa gera, com a prévia à vista ou depois de uma geração que falhou, gera o 1024² de novo', async () => {
+    for (const state of [{ status: 'generating' as const }, { width: 256 }, { status: 'error' as const }]) {
       const { source, deps, exportTerrain } = setup(state)
       await renderMapImage(source, { scale: 1, pins: false }, deps)
       expect(exportTerrain).toHaveBeenCalledWith(expect.objectContaining({ size: 1024 }))
