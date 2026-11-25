@@ -121,3 +121,37 @@ test('girar o celular: o minimapa recolhido da tela baixa não muda a preferênc
     await ctx.close()
   }
 })
+
+// O scrim só fecha o clique que começou nele (AC-F2-15): o toque nele, que manda pointerdown,
+// pointerup, pointerleave e click, fecha o painel, em pé e deitado.
+for (const [width, height] of [[390, 844], [844, 390]] as const) {
+  test(`${width}×${height}: tocar no scrim fecha a sidebar e o drawer`, async ({ browser }) => {
+    test.setTimeout(90_000)
+    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: true })
+    try {
+      const page = await ctx.newPage()
+      await openEditor(page)
+      const sidebar = page.getByTestId('sidebar')
+      await page.getByRole('button', { name: 'Abrir painel' }).tap()
+      await expect(sidebar).toHaveAttribute('data-open', 'true')
+      await page.touchscreen.tap(width - 20, height / 2)
+      await expect(sidebar).toHaveAttribute('data-open', 'false')
+
+      // O drawer, aberto pelo toque no pin (o clique gerado depois desse toque não o fecha).
+      const p = await screenOf(page, 0.5, 0.5)
+      await page.touchscreen.tap(p.x, p.y - 16)
+      const drawer = page.getByTestId('drawer')
+      await expect(drawer).toHaveAttribute('data-open', 'true')
+      await page.waitForTimeout(300)
+      await expect(drawer).toHaveAttribute('data-open', 'true')
+      // Deitado, o drawer não cobre a tela toda: o toque à esquerda dele cai no scrim e o fecha.
+      if (width > 400) {
+        await page.touchscreen.tap(20, height / 2)
+        await expect(drawer).toHaveAttribute('data-open', 'false')
+        await expect(map(page)).toHaveAttribute('data-pin-selected', '')
+      }
+    } finally {
+      await ctx.close()
+    }
+  })
+}

@@ -458,8 +458,8 @@ export function EditorLayout({
           // o navegador gera depois dele, e esse clique cairia no scrim (o drawer não cobre a tela
           // toda, como no celular deitado) e fecharia o drawer na hora (AC-F2-15).
           onPointerDown={() => (scrimPress.current = true)}
-          // O aperto que sai do scrim ou é cancelado não vale para o próximo clique.
-          onPointerLeave={() => (scrimPress.current = false)}
+          // O aperto cancelado não vale para o próximo clique. (Sair do scrim não zera: no toque, o
+          // navegador manda o pointerleave antes do click, e o toque no scrim não fecharia o painel.)
           onPointerCancel={() => (scrimPress.current = false)}
           onClick={() => {
             if (scrimPress.current) closeAll()
