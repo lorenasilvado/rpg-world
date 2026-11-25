@@ -1,4 +1,4 @@
-import { BlurFilter, Container, Graphics, GraphicsContext, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
+import { BlurFilter, Container, Graphics, GraphicsContext, ImageSource, Rectangle, RenderTexture, Sprite, Text, Texture, type Renderer } from 'pixi.js'
 import type { Pin } from '../../persistence/types'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
@@ -18,6 +18,7 @@ import {
   shrinkFrame,
   showLabel,
 } from './pinMath'
+import type { Rect } from './decorCull'
 import { GROUP_HALO_PX, GROUP_LIFT_PX, GROUP_SIZE_PX, createPinGrouper, type PinGroup, type PinTypeLayers } from './pinGroups'
 
 /** Texturas dos pins, uma por tipo. */
@@ -27,6 +28,21 @@ export type PinTextures = ReadonlyMap<PinType, Texture>
 const TEXTURE_SCALE = 4
 /** Folga entre os quadros do spritesheet (os mipmaps não misturam um pin com o vizinho). */
 const GAP = 8
+
+/**
+ * Quantos rótulos novos a camada cria por quadro (fora o do hover e o do selecionado, que entram
+ * na hora). Cada rótulo é um texto com textura própria, desenhada e enviada à GPU no primeiro quadro
+ * em que aparece: com 500 pins, criar todos de uma vez, ao passar do zoom 1,5×, travava o quadro
+ * (AC-F3-17). Os que faltam entram nos quadros seguintes.
+ */
+export const LABELS_PER_FRAME = 24
+
+/**
+ * A folga em volta da vista, em px da tela, para um rótulo contar como à vista: o nome vai até uns
+ * 160 px para cada lado da âncora e desce até 21 px abaixo dela.
+ */
+const LABEL_MARGIN_X = 160
+const LABEL_MARGIN_Y = 48
 
 /** Cor do anel de seleção (design-system.md → Pins → Selecionado). */
 const RING = 0xc8892b
@@ -299,10 +315,30 @@ export class PinLayer {
   }
 
   /**
-   * A cada quadro: desfaz a escala da câmera (`scale`, px por unidade do mundo), mostra os rótulos
-   * pelo `zoom` relativo e anima o quique e a pulsação.
+   * Compila de antemão, num desenho fora da tela, o que o primeiro grupo e o primeiro rótulo usam
+   * (o shader do círculo do grupo e o texto): sem isso, o primeiro quadro com grupos, no meio do
+   * zoom, esperava a compilação (AC-F3-17).
    */
-  frame(scale: number, zoom: number, now: number, reducedMotion: boolean) {
+  warmUp(renderer: Renderer) {
+    if (!this.groupLook) this.groupLook = groupContext()
+    const warm = new Container()
+    warm.addChild(new Graphics(this.groupLook), makeLabel('0'))
+    const target = RenderTexture.create({ width: 4, height: 4 })
+    try {
+      renderer.render({ container: warm, target })
+    } finally {
+      warm.destroy({ children: true })
+      target.destroy(true)
+    }
+  }
+
+  /**
+   * A cada quadro: desfaz a escala da câmera (`scale`, px por unidade do mundo), mostra os rótulos
+   * pelo `zoom` relativo e anima o quique e a pulsação. Com a vista (`view`, o retângulo do mundo à
+   * vista), só os pins dentro dela (com a folga do rótulo) mostram o rótulo, e no máximo
+   * `LABELS_PER_FRAME` rótulos novos são criados no quadro.
+   */
+  frame(scale: number, zoom: number, now: number, reducedMotion: boolean, view: Rect | null = null) {
     const { selectedId, hoveredId, dragging } = this.state
     for (const [id, { view, at }] of this.leaving) {
       if (reducedMotion || now - at >= PIN_SHRINK_MS) {
@@ -320,6 +356,12 @@ export class PinLayer {
     this.drawGroups(grouping.groups, scale)
     this.shown = visible.size
     let labels = 0
+    let budget = LABELS_PER_FRAME
+    const mx = LABEL_MARGIN_X / scale
+    const my = LABEL_MARGIN_Y / scale
+    const inView = (v: PinView) =>
+      !view ||
+      (v.root.x >= view.x - mx && v.root.x <= view.x + view.width + mx && v.root.y >= view.y - my && v.root.y <= view.y + view.height + my)
     for (const [id, v] of this.views) {
       v.root.visible = visible.has(id)
       if (!v.root.visible) continue
@@ -349,10 +391,13 @@ export class PinLayer {
         v.pulse.scale.set(p.scale)
         v.pulse.alpha = p.alpha
       }
-      const label = showLabel(zoom, hovered, selected) && !dragged
+      let label = showLabel(zoom, hovered, selected) && !dragged && (hovered || selected || inView(v))
       if (label && !v.label) {
-        v.label = makeLabel(v.name)
-        v.root.addChild(v.label)
+        if (hovered || selected || budget > 0) {
+          if (!hovered && !selected) budget--
+          v.label = makeLabel(v.name)
+          v.root.addChild(v.label)
+        } else label = false
       }
       if (v.label) v.label.visible = label
       if (label) labels++

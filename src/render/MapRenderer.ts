@@ -147,7 +147,7 @@ export async function createMapRenderer(
     const z = zoom.toFixed(3)
     if (host.dataset.zoom !== z) host.dataset.zoom = z
     if (pinLayer) {
-      pinLayer.frame(t.scale, zoom, performance.now(), reducedMotion())
+      pinLayer.frame(t.scale, zoom, performance.now(), reducedMotion(), view)
       writePinState(host, pinLayer, pins.getState(), t.scale, cameraState.getState())
     }
   })
@@ -159,6 +159,7 @@ export async function createMapRenderer(
   camera.viewport.addChild(base)
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
+    pinLayer.warmUp(app.renderer)
     camera.viewport.addChild(pinLayer.view)
     pinLayer.setLayers(ui.getState().layers)
     pinLayer.sync(pins.getState(), performance.now())

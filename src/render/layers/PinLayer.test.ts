@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Pin } from '../../persistence/types'
 import { createPinImages } from '../../state/pinImages'
 import { PIN_TYPES, type PinType } from '../../state/pinTypes'
-import { PinLayer, type PinLayerState } from './PinLayer'
+import { LABELS_PER_FRAME, PinLayer, type PinLayerState } from './PinLayer'
 
 const pin = (id: string, blobId: string): Pin => ({
   id,
@@ -87,6 +87,50 @@ describe('PinLayer: tipos escondidos e grupos (AC-F3-14, AC-F3-15)', () => {
     layer.frame(1, 1.2, 1, true)
     expect(layer.groups).toEqual([])
     expect(layer.shownCount).toBe(4)
+    layer.destroy()
+  })
+})
+
+describe('PinLayer: rótulos com muitos pins (AC-F3-17)', () => {
+  const at = (id: string, u: number, v: number): Pin => ({
+    id,
+    type: 'cidade',
+    name: id,
+    pos: { u, v },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  })
+  // 100 pins numa grade de 10 × 10, de 0,05 a 0,95 (de 51 a 973 no mundo de 1024).
+  const grid = () => Array.from({ length: 100 }, (_, i) => at(`p${i}`, 0.05 + (i % 10) * 0.1, 0.05 + Math.floor(i / 10) * 0.1))
+  const layerWith = () => new PinLayer(new Map<PinType, Texture>(PIN_TYPES.map((t) => [t.id, Texture.EMPTY])))
+  const whole = { x: 0, y: 0, width: 1024, height: 1024 }
+
+  it(`a partir de 1,5×, cria no máximo ${LABELS_PER_FRAME} rótulos novos por quadro, e os outros nos quadros seguintes`, () => {
+    const layer = layerWith()
+    layer.sync(state(grid()), 0)
+    layer.frame(2, 2, 0, true, whole)
+    expect(layer.labelCount).toBe(LABELS_PER_FRAME)
+    layer.frame(2, 2, 16, true, whole)
+    expect(layer.labelCount).toBe(2 * LABELS_PER_FRAME)
+    for (let i = 2; i < 5; i++) layer.frame(2, 2, i * 16, true, whole)
+    expect(layer.labelCount).toBe(100)
+    layer.destroy()
+  })
+
+  it('só os pins na vista (com a folga do nome) mostram o rótulo; o do hover entra na hora, fora do limite', () => {
+    const layer = layerWith()
+    const pins = grid()
+    layer.sync(state(pins), 0)
+    // A vista cobre só a coluna u = 0,05 (x = 51), com a folga de 160 px na escala 2 (80 no mundo).
+    const view = { x: 0, y: 0, width: 10, height: 1024 }
+    for (let i = 0; i < 3; i++) layer.frame(2, 2, i * 16, true, view)
+    expect(layer.labelCount).toBe(10)
+    // Sem vista, todos contam como à vista: o limite vale no quadro, e o pin do hover passa na frente.
+    layer.sync(state(pins, 'p99'), 48)
+    layer.frame(2, 2, 64, true)
+    expect(layer.labelCount).toBe(10 + LABELS_PER_FRAME + 1)
     layer.destroy()
   })
 })
