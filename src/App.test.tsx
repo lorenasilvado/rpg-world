@@ -449,3 +449,25 @@ describe('Buscar (Ctrl K, AC-F3-16)', () => {
     expect(screen.getByTestId('search-status').textContent).toBe('Este mundo ainda não tem pins.')
   })
 })
+
+describe('Buscar no celular (AC-F3-16, AC-F3-18)', () => {
+  it('escolher o pin que já está selecionado, com o painel fechado pelo Centralizar, abre o painel com a ficha e o foco no fechar', () => {
+    const pins = createPinsStore([
+      { id: 'v', type: 'cidade', name: 'Valdora', pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin', key: 'cidade' }, description: '', tags: [], fields: {} },
+    ])
+    render(<App world={world()} pins={pins} createRenderer={noRenderer} />)
+    const drawer = screen.getByTestId('drawer')
+    act(() => pins.getState().select('v'))
+    expect(drawer.dataset.open).toBe('true')
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Centralizar no pin' }))
+    expect(drawer.dataset.open).toBe('false')
+    expect(pins.getState().selectedId).toBe('v')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Buscar pins' }), { target: { value: 'vald' } })
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Buscar pins' }), { key: 'Enter' })
+    expect(pins.getState().selectedId).toBe('v')
+    expect(drawer.dataset.open).toBe('true')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
+  })
+})

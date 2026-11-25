@@ -281,9 +281,13 @@ export function EditorLayout({
     const pin = pins.getState().pins.find((p) => p.id === id)
     setSearchOpen(false)
     if (!pin) return
-    // Abaixo de 768 px, o pin abre o drawer sobreposto: o foco vai para o fechar dele.
-    if (!window.matchMedia(DESKTOP_QUERY).matches) searchReturn.current = drawerClose.current
-    else if (!searchReturn.current?.isConnected) searchReturn.current = searchButton.current
+    // Abaixo de 768 px, o drawer sobreposto abre com a ficha (também com o pin que já estava
+    // selecionado, com o painel fechado pelo Centralizar), e o foco vai para o fechar dele.
+    if (!window.matchMedia(DESKTOP_QUERY).matches) {
+      searchReturn.current = drawerClose.current
+      setSidebarOpen(false)
+      setDrawerOpen(true)
+    } else if (!searchReturn.current?.isConnected) searchReturn.current = searchButton.current
     pins.getState().select(id)
     const p = pinToWorld(pin.pos)
     camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
