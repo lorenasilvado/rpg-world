@@ -141,7 +141,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 47 | #210 | [bug] No iPhone, focar a seed ou o nome do mundo aproxima a página, e ela não volta | done | specs/geracao-terreno.md | #211 |
 | 48 | #212 | [bug] No desktop, sem pin selecionado, o drawer fica à vista vazio e corta o mapa | done | specs/pins.md | #214 |
 | 49 | #161 | [feat] Hierarquia de pins e aba Conexões | done | specs/pins.md | #216 |
-| 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | doing | specs/pins.md | |
+| 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | done | specs/pins.md | |
 | 51 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
 | 52 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
 | 53 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
