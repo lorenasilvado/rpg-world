@@ -42,3 +42,29 @@ test('AC-F1-30: subir o Oceano mostra o aviso dos pins sobre a água, e Mostrar 
   await expect(toast).toHaveCount(0)
   await expect(map).toHaveAttribute('data-zoom', '1.600')
 })
+
+test('885×800 com a sidebar: o aviso ocupa a largura da área livre (16 px à esquerda, 12 à direita), acima da toolbar na segunda linha (AC-F1-30)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 885, height: 800 })
+  await gotoEditor(page, '/', defaultWorld({ pins: gridPins() }))
+  await expect(page.getByTestId('map')).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
+  const ocean = page.getByRole('slider', { name: 'Oceano' })
+  await ocean.focus()
+  await ocean.press('End')
+
+  const toast = page.getByTestId('pins-on-water-toast')
+  await expect(toast).toBeVisible({ timeout: 30_000 })
+  // A área livre vai da sidebar (320) até a borda, 565 px, e o toast não cabe ao lado do zoom: fica de
+  // 320 + 16 até 885 − 12, 12 px acima da toolbar, que está numa segunda linha acima do minimapa aberto,
+  // no mesmo lugar do "Pin excluído" (espera a animação de entrada, que sobe o toast 8 px em 200 ms).
+  await expect
+    .poll(async () => {
+      const box = await toast.boundingBox()
+      return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
+    })
+    .toEqual([320 + 16, 885 - 12, 800 - 16 - 220])
+  const toolbar = (await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox())!
+  const box = (await toast.boundingBox())!
+  expect(Math.round(toolbar.y - (box.y + box.height))).toBe(12)
+})
