@@ -2,8 +2,9 @@ import { ImagePlus, Plus, TriangleAlert, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import type { Pin } from '../../persistence/types'
+import { parentOptions } from '../../state/pinHierarchy'
 import { pinImageId, type PinImages } from '../../state/pinImages'
-import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
+import { PIN_TYPES, pinType, pinTypeLabel, type PinType } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
 import { FIELD_KEY_MAX, FIELD_VALUE_MAX, addField, removeField, renameField, setFieldValue } from './fields'
 import { PinIcon } from './PinIcon'
@@ -22,7 +23,8 @@ type Upload = { kind: 'idle' } | { kind: 'busy' } | { kind: 'large'; file: File 
  *   acima de 1 MB, a mensagem pergunta (Recusar ou Aceitar com redução); outro formato é recusado
  *   com a mensagem dos formatos aceitos; acima de 20 MB, é recusado sem a pergunta. Recusado, o
  *   ícone continua o anterior.
- * - **Pin pai:** ainda não existe ("Em breve").
+ * - **Pin pai:** o seletor do pai (AC-F3-12), com "Nenhum" e os outros pins por nome, sem o próprio
+ *   pin nem os descendentes dele.
  * - **Campos:** pares chave/valor, com "Adicionar campo" (a chave do campo novo fica com o foco e o
  *   texto selecionado) e o × de cada um. A chave muda ao sair do campo (vazia ou repetida, volta a
  *   anterior); o valor, a cada tecla.
@@ -211,16 +213,45 @@ export function PinDetails({
         )}
       </section>
 
-      <section aria-labelledby={`${ids}-pai`} className="flex flex-col gap-2">
-        <h3 id={`${ids}-pai`} className="flex items-center gap-2 text-[13px] font-bold text-ink-2">
-          Pin pai
-          <span className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2">Em breve</span>
-        </h3>
-        <p className="text-[13px] text-ink-2">O pin a que este pertence (ex.: a vila de um reino).</p>
-      </section>
+      <ParentPicker pin={pin} pins={pins} />
 
       <FieldList pin={pin} pins={pins} />
     </div>
+  )
+}
+
+/** O que o seletor do pai mostra sem pai. */
+const NO_PARENT = ''
+
+/** O pin pai (AC-F3-12): "Nenhum" ou um dos pins que podem ser o pai, por nome. */
+function ParentPicker({ pin, pins }: { pin: Pin; pins: PinsStore }) {
+  const ids = useId()
+  const all = useStore(pins, (s) => s.pins)
+  const options = parentOptions(all, pin.id).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  return (
+    <section aria-labelledby={`${ids}-pai`} className="flex flex-col gap-2">
+      <h3 id={`${ids}-pai`} className="text-[13px] font-bold text-ink-2">
+        Pin pai
+      </h3>
+      <select
+        aria-labelledby={`${ids}-pai`}
+        aria-describedby={`${ids}-pai-dica`}
+        data-testid="pin-parent"
+        value={pin.parentId ?? NO_PARENT}
+        onChange={(e) => pins.getState().setParent(pin.id, e.target.value === NO_PARENT ? null : e.target.value)}
+        className="h-[38px] w-full rounded-control border border-line-2 bg-field px-2.5 text-[14px] font-semibold text-ink max-md:text-[16px] focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
+      >
+        <option value={NO_PARENT}>Nenhum</option>
+        {options.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name} ({pinTypeLabel(pinType(p.type))})
+          </option>
+        ))}
+      </select>
+      <p id={`${ids}-pai-dica`} className="text-[13px] text-ink-2">
+        O pin a que este pertence (ex.: a vila de um reino).
+      </p>
+    </section>
   )
 }
 

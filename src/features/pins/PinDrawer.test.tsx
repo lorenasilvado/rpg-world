@@ -58,12 +58,12 @@ describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
     expect(hint?.textContent).toBe('Em breve')
   })
 
-  it('Conexões mostra "Em breve" e o que vai ter, num painel focável; Descrição e Detalhes têm o que focar', () => {
+  it('Conexões sem pai nem filhos diz isso, num painel focável; Descrição e Detalhes têm o que focar', () => {
     setup()
     fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
     const panel = screen.getByRole('tabpanel', { name: 'Conexões' })
     expect(panel.getAttribute('tabindex')).toBe('0')
-    expect(within(panel).getByTestId('pin-tab-soon').textContent).toBe('Em breveO pin pai e os pins filhos.')
+    expect(panel.textContent).toBe('Pin paiSem pin pai. Escolha um na aba Detalhes.Pins filhosNenhum pin pertence a este.')
     for (const name of ['Descrição', 'Detalhes']) {
       fireEvent.click(screen.getByRole('tab', { name }))
       expect(screen.getByRole('tabpanel', { name }).hasAttribute('tabindex')).toBe(false)
@@ -165,5 +165,52 @@ describe('drawer do pin: rodapé (AC-F3-05, AC-F3-09)', () => {
     const { onDelete } = setup()
     fireEvent.click(screen.getByRole('button', { name: 'Excluir' }))
     expect(onDelete).toHaveBeenCalledWith('Valdora')
+  })
+})
+
+describe('drawer do pin: aba Conexões (AC-F3-13)', () => {
+  // reino › cidade › (vila, aldeia); a ficha aberta é a da cidade.
+  const tree = () => [
+    pin('Cidade', { parentId: 'Reino' }),
+    pin('Reino', { type: 'castelo', icon: { kind: 'builtin', key: 'castelo' } }),
+    pin('Vila', { type: 'vila', icon: { kind: 'builtin', key: 'vila' }, parentId: 'Cidade' }),
+    pin('Aldeia', { type: 'vila', icon: { kind: 'builtin', key: 'vila' }, parentId: 'Cidade' }),
+  ]
+
+  it('lista o pin pai e os filhos, com o tipo, e o painel não precisa do foco', () => {
+    setup(tree())
+    fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
+    const panel = screen.getByRole('tabpanel', { name: 'Conexões' })
+    expect(panel.hasAttribute('tabindex')).toBe(false)
+    const parent = within(panel).getByRole('region', { name: 'Pin pai' })
+    expect(within(parent).getAllByRole('button').map((b) => b.textContent)).toEqual(['ReinoCastelo'])
+    const children = within(panel).getByRole('region', { name: 'Pins filhos (2)' })
+    expect(within(children).getAllByRole('button').map((b) => b.textContent)).toEqual(['VilaVila', 'AldeiaVila'])
+  })
+
+  it('clicar num deles o seleciona e abre a ficha dele em Conexões, com o foco na aba', () => {
+    const { pins } = setup(tree())
+    fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Vila/ }))
+    expect(pins.getState().selectedId).toBe('Vila')
+    expect(screen.getByTestId('pin-drawer').getAttribute('data-pin-id')).toBe('Vila')
+    const tab = screen.getByRole('tab', { name: 'Conexões' })
+    expect(tab.getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(tab)
+    // A vila volta para a cidade, e a cidade para o reino.
+    fireEvent.click(screen.getByRole('button', { name: /^Cidade/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Reino/ }))
+    expect(pins.getState().selectedId).toBe('Reino')
+    expect(screen.getByRole('region', { name: 'Pins filhos (1)' }).textContent).toContain('Cidade')
+  })
+
+  it('selecionado de outro jeito (no mapa), o pin abre na Descrição', () => {
+    const { pins } = setup(tree())
+    fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Reino/ }))
+    act(() => pins.getState().select('Vila'))
+    expect(screen.getByRole('tab', { name: 'Descrição' }).getAttribute('aria-selected')).toBe('true')
+    act(() => pins.getState().select('Reino'))
+    expect(screen.getByRole('tab', { name: 'Descrição' }).getAttribute('aria-selected')).toBe('true')
   })
 })

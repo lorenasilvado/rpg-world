@@ -12,12 +12,11 @@ o comportamento atualiza esta spec.
 > Hoje funcionam: Adicionar pin (P), o desenho dos 7 tipos no mapa, o hover e a seleção; o drawer
 > com o cabeçalho (ícone, nome editável, tipo, bioma e coordenadas), a aba Descrição (texto rico e
 > tags), a aba Detalhes (tipo, ícone da biblioteca ou imagem enviada, e campos livres) e o rodapé
-> (Centralizar, Duplicar, Excluir); arrastar um pin; excluir o selecionado com a tecla Delete ou
-> pelo rodapé, com o toast "Pin excluído" e Desfazer; e desfazer e refazer as mudanças nos pins (ver
-> [mundos.md](mundos.md)). O resto (a imagem de capa, o pin pai, a aba Conexões, agrupamento,
-> busca) vem do material de design e do PRD e ainda não existe: a área da capa aparece com o botão
-> desabilitado (esmaecido, com a etiqueta "Em breve"), o Pin pai da aba Detalhes mostra "Em breve",
-> e a aba Conexões mostra "Em breve" e o que vai ter.
+> (Centralizar, Duplicar, Excluir); o pin pai (na aba Detalhes) e a aba Conexões; arrastar um pin;
+> excluir o selecionado com a tecla Delete ou pelo rodapé, com o toast "Pin excluído" e Desfazer; e
+> desfazer e refazer as mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa,
+> agrupamento, busca) vem do material de design e do PRD e ainda não existe: a área da capa aparece
+> com o botão desabilitado (esmaecido, com a etiqueta "Em breve").
 
 ## Resumo
 
@@ -61,15 +60,20 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
     (com a imagem, "Trocar imagem" e "Remover imagem") e a dica "PNG, JPG ou SVG, até 1 MB". A
     imagem enviada vira o ícone do pin, no círculo do Personalizado (o tipo passa a ser
     Personalizado); "Remover imagem" volta ao Personalizado com o círculo hachurado.
-  - **Pin pai:** com a etiqueta "Em breve" e "O pin a que este pertence (ex.: a vila de um reino).".
+  - **Pin pai:** um seletor com "Nenhum" e os pins que podem ser o pai, por nome (cada um com o
+    tipo entre parênteses, ex.: "Valdora (Cidade)"), sem o próprio pin nem os descendentes dele, e
+    a dica "O pin a que este pertence (ex.: a vila de um reino).".
   - **Campos:** pares chave/valor, na ordem em que foram criados (sem campos, "Anote o que quiser:
     governante, população, facção…"). "Adicionar campo" cria "Campo" ("Campo 2", "Campo 3"… se já
     existe) no fim, com a chave em edição (o foco e o texto selecionado); o × remove o campo. A
     chave tem até 40 caracteres e muda ao sair dela (Enter também sai): vazia, repetida (sem
     diferenciar maiúsculas) ou só de dígitos (ex.: "1200", que mudaria o campo de lugar), volta a
     anterior. Para o leitor de tela, as chaves são "Nome do campo 1", "Nome do campo 2"… O valor tem até 200 caracteres e muda a cada tecla.
-- Aba Conexões: o pin pai e os pins filhos, clicáveis (clicar seleciona o pin). As estradas
-  ligadas ao pin entram com F5.
+- Aba Conexões: "Pin pai", com o pai, e "Pins filhos (N)", com os filhos na ordem em que foram
+  criados; cada um é um botão com o ícone, o nome e o tipo. Sem pai, "Sem pin pai. Escolha um na aba
+  Detalhes."; sem filhos, "Nenhum pin pertence a este." (sem nenhum dos dois, o painel recebe o
+  foco pelo Tab). Clicar num deles o seleciona, e a ficha dele abre na aba Conexões, com o foco na
+  aba (selecionado de outro jeito, o pin abre na Descrição). As estradas ligadas ao pin entram com F5.
 
 ### Tipos de pin
 
@@ -115,6 +119,8 @@ do banco.
 | Arrastar um pin | Apertar no pin e andar mais que a folga do clique o arrasta, preso ao ponteiro pelo ponto onde foi pego; soltar o deixa ali, num passo do histórico. A posição fica presa no mapa: arrastado para fora, o pin para na borda (u e v de 0 a 1). A câmera não faz pan, e a seleção não muda. Esc, um segundo dedo ou o cancelamento do ponteiro devolvem o pin ao lugar. Com Medir distância, o aperto é da medida |
 | Ocultar por tipo | Esconde os pins daquele tipo |
 | Excluir (Delete ou Backspace, a tecla "delete" do Mac) | Exclui o pin selecionado na hora, sem confirmação (não vale com o foco num campo, no drawer do pin (um chip de tag, uma aba, o rodapé), num modal, durante o arrasto nem com um painel sobreposto aberto: abaixo de 768 px, o pin selecionado abre o drawer sobreposto, então lá a tecla não exclui); o toast "Pin excluído" oferece "Desfazer", que devolve o pin com a ficha inteira, e Ctrl+Z também desfaz |
+| Escolher o pin pai (aba Detalhes) | Liga o pin ao pai escolhido ("Nenhum" o deixa sem pai) e é salvo com o mundo, num passo do histórico. A aba Conexões dos dois acompanha |
+| Clicar num pin da aba Conexões | Seleciona o pin (a câmera vai até ele, como no clique no mapa) e abre a ficha dele na aba Conexões |
 | Escolher o tipo, enviar ou remover a imagem (aba Detalhes) | Muda o pin na hora (o tipo, o ícone, a etiqueta do cabeçalho e o desenho no mapa) e é salvo com o mundo; cada escolha é um passo do histórico |
 | Editar os campos livres (aba Detalhes) | Muda o pin e é salvo com o mundo. As teclas seguidas no valor de um campo viram um passo do histórico, até sair dele; trocar a chave, adicionar e remover um campo são um passo cada |
 | Editar a descrição ou as tags | Muda o pin na hora e é salvo com o mundo. As teclas seguidas na descrição viram um passo do histórico, até sair do editor; cada tag adicionada ou removida é um passo. Fora do foco, o editor acompanha a descrição do pin (desfazer e refazer) |
@@ -130,7 +136,10 @@ do banco.
 - Pins têm hierarquia: um pin pode pertencer a outro (ex.: uma vila pertence a um reino), pelo
   campo opcional `parentId`. Qualquer tipo pode ser pai, sem limite de níveis; o pai não pode ser
   o próprio pin nem um descendente dele (sem ciclo). O pai é escolhido na aba Detalhes. Excluir o
-  pai deixa os filhos sem pai, e Desfazer restaura o pai e os vínculos.
+  pai deixa os filhos diretos sem pai, no mesmo passo do histórico (os netos continuam com o pai
+  deles), e Desfazer restaura o pai e os vínculos. Ao abrir o mundo, um pai que não existe e um
+  ciclo saem (o pin que fecha o ciclo, na ordem da lista, fica sem pai); o mundo é gravado assim na
+  próxima mudança.
 - Pins mantêm tamanho constante na tela (32 px de largura, 38,4 de altura) em qualquer zoom, com a
   âncora na base central; o rótulo com o nome (Cinzel 700 13/16 com contorno claro) aparece abaixo
   da âncora a partir do zoom 1,5×, no hover e na seleção.
@@ -168,4 +177,4 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-Busca (Ctrl K) e aba Conexões: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR. A aba Detalhes (a biblioteca, o envio de imagem e as mensagens dele) segue o protótipo e o design system, sem mockup.
+Busca (Ctrl K), aba Conexões e o seletor do pin pai: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR. A aba Detalhes (a biblioteca, o envio de imagem e as mensagens dele) segue o protótipo e o design system, sem mockup.
