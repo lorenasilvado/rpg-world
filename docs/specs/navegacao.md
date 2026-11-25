@@ -224,6 +224,8 @@ lista e o número não volta a ser usado.
 - AC-F2-11: Camadas abre o popover, e o interruptor "Decoração" mostra e esconde os ícones decorativos
 - AC-F2-12: Ajuda abre o modal "Atalhos de teclado"
 - AC-F2-13: Medir distância (M) mostra a distância em km entre dois pontos clicados
+- AC-F2-14: em tela baixa (altura menor que 500 px, como o celular deitado), a sidebar e o drawer são painéis sobrepostos, como abaixo de 768 px, mesmo com 768 px ou mais de largura, e todas as seções da sidebar (com os sliders) são alcançáveis
+- AC-F2-15: em tela baixa, a toolbar fica deitada na própria linha inferior, nunca numa segunda linha nem em pé, e não cobre o meio do mapa; o minimapa começa recolhido (sem mudar a preferência de aberto ou recolhido das telas altas) e, se a linha não comporta o minimapa, a toolbar e o zoom (ex.: 667×375), fica no canto superior esquerdo; um toque num pin no centro do mapa o seleciona
 
 ## Pendências
 
