@@ -6,6 +6,8 @@ import type { CreateThumbnails } from '../features/wizard/thumbnails'
 import { UnsavedLeaveDialog } from '../features/worlds/UnsavedLeaveDialog'
 import { WorldList } from '../features/worlds/WorldList'
 import { downloadFile } from '../features/worlds/download'
+import { mapImageFileName, type MapImageSource } from '../features/worlds/exportImage'
+import type { MapImageOptions } from '../render/mapImage'
 import type { ImportFailureReason } from '../features/worlds/importMessages'
 import { createAutosave, type Autosave } from '../persistence/autosave'
 import { exportWorldJson, importedWorldRecord, parseWorldFile, worldFileName } from '../persistence/exportImport'
@@ -50,6 +52,8 @@ type Session = { world: WorldStore; pins: PinsStore; images: PinImages; history:
  * mundo salvo; no editor (a barra e o "Exportar .json" do Erro ao salvar), o mundo como está na
  * tela, mesmo sem ter sido gravado. Importar valida o arquivo e grava um mundo novo, com as imagens,
  * que vai para o topo da lista; um arquivo recusado volta com o motivo (o modal 03, AC-F4-10).
+ * No editor, Exportar › Imagem (.png) baixa o mapa em PNG (`renderImage`, AC-F4-11), como
+ * `<nome-do-mundo>-<escala>x.png`.
  */
 export function WorldsApp({
   repo,
@@ -62,6 +66,7 @@ export function WorldsApp({
   now = currentTime,
   newId = newWorldId,
   welcomeTips = false,
+  renderImage,
 }: {
   repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'importWorld' | 'saveImage' | 'getImage' | 'pruneImages'>
   generator: WorldGenerator
@@ -76,6 +81,8 @@ export function WorldsApp({
   newId?: () => string
   /** Mostra as dicas de boas-vindas no primeiro acesso ao editor (AC-F1-31); o app liga, os testes não. */
   welcomeTips?: boolean
+  /** Monta o PNG do mapa aberto (Exportar › Imagem (.png), `renderMapImage`); sem ele (testes), o item fica desabilitado. */
+  renderImage?: (source: MapImageSource, options: MapImageOptions) => Promise<Blob>
 }) {
   const [uiStore] = useState(() => ui ?? createUiStore())
   const [session, setSession] = useState<Session | null>(null)
@@ -209,6 +216,13 @@ export function WorldsApp({
           createRenderer={createRenderer}
           onBack={() => void back()}
           onExport={() => exportWorld(session.autosave.record(), session.images)}
+          onExportImage={
+            renderImage &&
+            (async (options) => {
+              const blob = await renderImage({ world: session.world, pins: session.pins, images: session.images, ui: uiStore }, options)
+              download(blob, mapImageFileName(session.world.getState().name, options.scale))
+            })
+          }
           welcomeTips={welcomeTips}
         />
         <UnsavedLeaveDialog

@@ -3,6 +3,7 @@ import { EditorLayout } from './app/EditorLayout'
 import type { CreateMapRenderer } from './app/MapView'
 import { NoWebGL2Notice } from './app/NoWebGL2Notice'
 import type { SaveStore } from './persistence/autosave'
+import type { MapImageOptions } from './render/mapImage'
 import { createWorldHistory, type WorldHistory } from './state/history'
 import { createPinImages, type PinImages } from './state/pinImages'
 import { createPinsStore, type PinsStore } from './state/pinsStore'
@@ -26,6 +27,7 @@ function App({
   webgl2 = true,
   onBack,
   onExport,
+  onExportImage,
   welcomeTips = false,
 }: {
   world: WorldStore
@@ -43,6 +45,8 @@ function App({
   onBack?: () => void
   /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
   onExport?: () => Promise<void>
+  /** Baixa o mapa em PNG (AC-F4-11); sem ele (testes), "Imagem (.png)" fica desabilitado. */
+  onExportImage?: (options: MapImageOptions) => Promise<void>
   /** Mostra as dicas de boas-vindas no primeiro acesso (AC-F1-31); os testes não ligam. */
   welcomeTips?: boolean
 }) {
@@ -63,6 +67,7 @@ function App({
       createRenderer={createRenderer}
       onBack={onBack}
       onExport={onExport}
+      onExportImage={onExportImage}
       welcomeTips={welcomeTips}
     />
   )

@@ -208,7 +208,11 @@ editado por último ao mais antigo), `worldRecord.ts` converte entre o mundo sal
 dos pins em base64) e valida o importado com o zod, dando o motivo da recusa; o `WorldsApp` baixa o
 arquivo (`features/worlds/download.ts`) e grava o importado como um mundo novo
 (`worldsRepo.importWorld`, o mundo e as imagens numa transação), e o modal 03 fica em
-`features/worlds/ImportWorldDialog.tsx`. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
+`features/worlds/ImportWorldDialog.tsx`. Exportar › Imagem (.png) abre o modal
+`features/worlds/ExportImageDialog.tsx`; o `exportImage.ts` (`renderMapImage`) pega o terreno na
+resolução da imagem (no 2× e no 4×, pelo `exportTerrain` de um worker de geração só dele, que não usa
+o cache e devolve só o RGBA e a decoração) e o `src/render/mapImage.ts` desenha o terreno, os ícones e
+os pins num canvas 2D, sem o Pixi; o `e2e/png.spec.ts` baixa o PNG em 1× e 2×. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
 última mudança no nome, na seed, nos parâmetros, no `sizeKm` ou nos pins, uma gravação de cada vez; o status
 (`saved`, `saving`, `error`) vai para o indicador da sidebar (`src/features/worlds/`). O `WorldsApp`
 grava já o que espera a pausa ao voltar à lista e ao esconder ou sair da página. Os testes do Vitest

@@ -2,7 +2,9 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION } from '../core'
 import type { Thumbnails } from '../features/wizard/thumbnails'
+import type { MapImageSource } from '../features/worlds/exportImage'
 import type { World } from '../persistence/types'
+import type { MapImageOptions } from '../render/mapImage'
 import type { WorldGenerator } from '../state/worldStore'
 import { memoryRepo } from '../test/memoryRepo'
 import type { GenerateRequest } from '../workers/generatorApi'
@@ -688,6 +690,7 @@ describe('Exportar e importar o mundo em JSON (AC-F4-09, AC-F4-10)', () => {
       ['Arquivo do mundo (.json)', false],
       ['Imagem (.png)', true],
     ])
+    // Sem `renderImage` (os testes), o PNG fica desabilitado.
     expect(document.activeElement?.textContent).toBe('Arquivo do mundo (.json)')
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Arquivo do mundo (.json)' }))
     await flush()
@@ -697,6 +700,26 @@ describe('Exportar e importar o mundo em JSON (AC-F4-09, AC-F4-10)', () => {
     expect(file.world.seed).toBe('valdora-2')
     expect(file.world.pins).toEqual([pin('a'), TORRE])
     expect(file.images.map((i: { id: string }) => i.id)).toEqual(['img-1'])
+  })
+
+  it('no editor, Exportar › Imagem (.png) baixa o PNG do mapa aberto na escala escolhida (AC-F4-11)', async () => {
+    const renderImage = vi.fn(async (_source: MapImageSource, _options: MapImageOptions) => new Blob(['png'], { type: 'image/png' }))
+    const { downloads } = await withExport({ renderImage })
+    fireEvent.click(screen.getByRole('button', { name: /^Terras de Valdora/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Imagem (.png)' }))
+    const dialog = screen.getByRole('dialog', { name: 'Exportar imagem' })
+    fireEvent.click(within(dialog).getByRole('radio', { name: /^2×/ }))
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Pins e rótulos' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Baixar PNG' }))
+    await flush()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(renderImage).toHaveBeenCalledTimes(1)
+    const [source, options] = renderImage.mock.calls[0]
+    expect(options).toEqual({ scale: 2, pins: false })
+    expect(source.world.getState().name).toBe('Terras de Valdora')
+    expect(source.pins.getState().pins).toEqual([pin('a'), TORRE])
+    expect(downloads.map((d) => d.name)).toEqual(['terras-de-valdora-2x.png'])
   })
 })
 

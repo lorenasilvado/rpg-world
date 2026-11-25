@@ -18,6 +18,7 @@ import { PinTool } from '../features/pins/PinTool'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { ExportMenu } from '../features/worlds/ExportMenu'
+import type { MapImageOptions } from '../render/mapImage'
 import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
 import { pinToWorld } from '../render/layers/pinMath'
@@ -89,7 +90,8 @@ import { useTheme } from './useTheme'
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar (ou Ctrl K) abre o
  * modal de busca dos pins (`SearchDialog`, AC-F3-16): escolher um resultado seleciona o pin e leva a
  * câmera até ele, como o Centralizar do drawer. Exportar abre o menu com "Arquivo do mundo (.json)"
- * (`ExportMenu`, `onExport`, AC-F4-09), também no menu do Erro ao salvar; o tema alterna, e Ajuda
+ * (`ExportMenu`, `onExport`, AC-F4-09), também no menu do Erro ao salvar, e "Imagem (.png)" (o modal
+ * "Exportar imagem", `onExportImage`, AC-F4-11); o tema alterna, e Ajuda
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
@@ -112,6 +114,7 @@ export function EditorLayout({
   createRenderer,
   onBack,
   onExport,
+  onExportImage,
   welcomeTips = false,
 }: {
   world: WorldStore
@@ -128,6 +131,8 @@ export function EditorLayout({
   onBack?: () => void
   /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
   onExport?: () => Promise<void>
+  /** Baixa o mapa em PNG (AC-F4-11); sem ele (testes), "Imagem (.png)" fica desabilitado. */
+  onExportImage?: (options: MapImageOptions) => Promise<void>
   /** Mostra as dicas de boas-vindas se ainda não foram vistas nem puladas (o app liga; os testes, não). */
   welcomeTips?: boolean
 }) {
@@ -610,7 +615,7 @@ export function EditorLayout({
         >
           <Redo2 size={20} aria-hidden="true" />
         </IconButton>
-        <ExportMenu onExportJson={onExport} />
+        <ExportMenu onExportJson={onExport} onExportImage={onExportImage} />
         <IconButton
           label={theme === 'light' ? 'Usar tema escuro' : 'Usar tema claro'}
           onClick={toggle}

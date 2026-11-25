@@ -36,4 +36,19 @@ describe('API do worker de geração', () => {
     generatorApi.generate({ seed: 'x', size: 16 })
     expect(generatorApi.lastResultTransferred()).toBe(false)
   })
+
+  it('exporta o terreno no tamanho pedido sem passar pelo cache: só o RGBA e a decoração (#167)', () => {
+    generatorApi.generate({ seed: 'png', size: 32 })
+    const params = { ...DEFAULT_WORLD_PARAMS, ocean: 40 }
+    const r = generatorApi.exportTerrain({ seed: 'png', size: 64, params })
+    const field = generateField('png', 64, params)
+    expect(r.size).toBe(64)
+    expect(r.terrainRgba).toEqual(terrainPixels(field, 'png'))
+    expect(r.decor.kind).toEqual(field.decor.kind)
+    expect(r.decor.u).toEqual(field.decor.u)
+    expect(r.fieldBytes).toBeGreaterThanOrEqual(64 * 64 * 4)
+    expect(r).not.toHaveProperty('field')
+    // O cache continua com o mapa do editor: o pedido seguinte só reclassifica.
+    expect(generatorApi.generate({ seed: 'png', size: 32, params }).recomputed).toBe('classification')
+  })
 })

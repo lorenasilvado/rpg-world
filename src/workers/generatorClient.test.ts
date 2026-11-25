@@ -15,6 +15,7 @@ function fakeWorker({ hang = false } = {}) {
   const api = {
     generate: (req: GenerateRequest) => ({ seed: req.seed, size: req.size }),
     lastResultTransferred: () => true,
+    exportTerrain: (req: GenerateRequest) => ({ size: req.size }),
   }
   if (!hang) expose(api, port2)
   port1.start()
@@ -71,6 +72,12 @@ describe('falha do worker de geração (AC-F1-12)', () => {
     await expect(gen.request(req('a'))).resolves.toMatchObject({ version: 1, result: { seed: 'a' } })
     await expect(gen.lastResultTransferred()).resolves.toBe(true)
     expect(spawned).toHaveLength(1)
+  })
+
+  it('o terreno do PNG vem fora da fila do request (#167)', async () => {
+    const { gen } = generatorWith()
+    toClose.push(gen)
+    await expect(gen.exportTerrain({ seed: 'a', size: 2048 })).resolves.toEqual({ size: 2048 })
   })
 
   it('um worker que não carrega rejeita o pedido em andamento, em vez de deixá-lo esperando', async () => {
