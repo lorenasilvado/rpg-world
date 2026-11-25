@@ -166,7 +166,8 @@ PNG e o histórico de desfazer/refazer do mundo.
   só da exportação (o editor segue com o mapa dele), e os ícones, os pins e os rótulos crescem na
   mesma escala. No 1×, a imagem usa o mapa já exibido; enquanto ele gera, gera o 1024² de novo.
 - O PNG mostra todos os ícones da decoração (sem o nível de detalhe do zoom) e, com "Pins e
-  rótulos", todos os pins soltos (sem os grupos), cada um com o nome embaixo. A decoração e os tipos
+  rótulos", todos os pins soltos (sem os grupos), cada um com o nome embaixo; os nomes ficam por cima dos
+  pins, e nenhum pin cobre um nome. A decoração e os tipos
   de pin desligados em Camadas ficam de fora, como no mapa.
 
 ## Critérios de aceite vigentes

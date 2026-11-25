@@ -109,4 +109,14 @@ describe('PNG do mapa (AC-F4-11)', () => {
     drawMapImage(ctx, { scale: 1, terrainRgba: rgba(1024), decor: null, pins: { list: [custom], hidden: new Set(), images: new Map([['img', { source, width: 10, height: 20 }]]) } }, imageData)
     expect(of('drawImage').map((c) => c.args[0])).toEqual([source])
   })
+
+  it('os rótulos vão depois de todos os pins: nenhum pin cobre um rótulo', () => {
+    const { ctx, calls } = fakeCtx()
+    const list = [pin('cima', 'cidade', 0.5, 0.5, 'De Cima'), pin('baixo', 'vila', 0.51, 0.52, 'De Baixo')]
+    drawMapImage(ctx, { scale: 2, terrainRgba: rgba(2048), decor: null, pins: { list, hidden: new Set(), images: new Map() } }, imageData)
+    const lastPin = calls.map((c) => c.name).lastIndexOf('fill')
+    const firstLabel = calls.findIndex((c) => c.name === 'strokeText')
+    expect(firstLabel).toBeGreaterThan(lastPin)
+    expect(calls.filter((c) => c.name === 'fillText').map((c) => c.args[0])).toEqual(['De Cima', 'De Baixo'])
+  })
 })

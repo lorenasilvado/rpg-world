@@ -14,7 +14,8 @@ import { PIN_SIZE_PX, PIN_VIEWBOX, drawPin, type PinImage, type PinInk } from '.
  * são a mesma imagem com mais detalhe (os pins, os rótulos e os ícones crescem junto).
  *
  * Diferente do editor, a imagem mostra todos os ícones (sem o nível de detalhe do zoom), os pins
- * soltos (sem os grupos) e o rótulo de todos os pins. Os tipos de pin e a decoração desligados em
+ * soltos (sem os grupos) e o rótulo de todos os pins, desenhados depois de todos os pins (nenhum pin
+ * cobre um rótulo). Os tipos de pin e a decoração desligados em
  * Camadas ficam de fora, como no mapa.
  */
 
@@ -87,30 +88,37 @@ function drawPins(ctx: MapImageInk, pins: NonNullable<MapImageInput['pins']>, sc
   const size = WORLD_SIZE * scale
   const width = PIN_SIZE_PX * scale
   const height = (width * PIN_VIEWBOX.height) / PIN_VIEWBOX.width
-  const shown = pins.list.filter((p) => !pins.hidden.has(pinType(p.type)))
-  for (const pin of drawOrder(shown, null, null)) {
+  const shown = drawOrder(
+    pins.list.filter((p) => !pins.hidden.has(pinType(p.type))),
+    null,
+    null,
+  )
+  for (const pin of shown) {
     const type = pinType(pin.type)
-    const x = pin.pos.u * size
-    const y = pin.pos.v * size
     const image = type === 'custom' && pin.icon.kind === 'image' ? pins.images.get(pin.icon.blobId) : undefined
     ctx.save()
-    ctx.translate(x - width / 2, y - height)
+    ctx.translate(pin.pos.u * size - width / 2, pin.pos.v * size - height)
     drawPin(ctx, type, width, undefined, image)
     ctx.restore()
-    if (pin.name) {
-      ctx.save()
-      ctx.font = labelFont(scale)
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
-      ctx.lineJoin = 'round'
-      ctx.lineWidth = LABEL_STYLE.strokeWidth * scale
-      ctx.strokeStyle = LABEL_STYLE.stroke
-      ctx.strokeText(pin.name, x, y + LABEL_STYLE.gap * scale)
-      ctx.fillStyle = LABEL_STYLE.fill
-      ctx.fillText(pin.name, x, y + LABEL_STYLE.gap * scale)
-      ctx.restore()
-    }
   }
+  // Os rótulos vão depois de todos os pins: na imagem, todos estão à vista, e um pin mais abaixo
+  // cobriria o rótulo do pin de cima.
+  ctx.save()
+  ctx.font = labelFont(scale)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = LABEL_STYLE.strokeWidth * scale
+  ctx.strokeStyle = LABEL_STYLE.stroke
+  ctx.fillStyle = LABEL_STYLE.fill
+  for (const pin of shown) {
+    if (!pin.name) continue
+    const x = pin.pos.u * size
+    const y = pin.pos.v * size + LABEL_STYLE.gap * scale
+    ctx.strokeText(pin.name, x, y)
+    ctx.fillText(pin.name, x, y)
+  }
+  ctx.restore()
 }
 
 /** O spritesheet dos ícones num canvas (o mesmo desenho do editor), ou `null` sem o contexto 2D. */
