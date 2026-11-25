@@ -178,7 +178,10 @@ A sidebar de geração fica em `src/features/sidebar/`: `GenerateSidebar.tsx` (s
 e o trilho de 48 px), `ParamSlider.tsx` (o slider do Radix, `@radix-ui/react-slider`, com o
 estilo do design system) e `sliders.ts` (os 9 sliders por seção, com ícone e amostra de cor). A
 sidebar recolhida fica no `uiStore` (`sidebarCollapsed`): o `MapView` a lê para calcular a área
-livre do mapa e chama o `refit` do renderer quando ela muda.
+livre do mapa e chama o `refit` do renderer quando ela muda. A sidebar e o drawer ficam fixos a partir de
+768 px de largura e 500 de altura (`DESKTOP_QUERY`, em `src/app/panelInsets.ts`, e a variante `desk:`
+do CSS, em `src/index.css`); em tela baixa (`short:`, o celular deitado), são sobrepostos, e a linha
+inferior segue `shortBottomBarLayout` (`src/features/map/bottomBarLayout.ts`).
 
 O app abre na Lista de mundos (`src/app/WorldsApp.tsx`, a raiz montada pelo `main.tsx`): ela lê os
 mundos do banco a cada vez que aparece (`src/features/worlds/WorldList.tsx`, com a legenda "Editado

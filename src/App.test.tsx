@@ -64,8 +64,32 @@ describe('Layout vazio do editor', () => {
     expect(sidebar.dataset.open).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
     expect(drawer.dataset.open).toBe('true')
+    // O clique que não começou no scrim (o que o navegador gera depois do toque que abriu o drawer,
+    // AC-F2-15) não fecha; o que começou nele, fecha.
+    fireEvent.click(screen.getByTestId('scrim'))
+    expect(drawer.dataset.open).toBe('true')
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
     fireEvent.click(screen.getByTestId('scrim'))
     expect(drawer.dataset.open).toBe('false')
+  })
+
+  it('um aperto no scrim que não virou clique não vale para o próximo painel', () => {
+    render(<App world={world()} createRenderer={noRenderer} />)
+    const drawer = screen.getByTestId('drawer')
+    // Aperta no scrim e fecha pelo botão (o aperto fica pela metade).
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    expect(drawer.dataset.open).toBe('false')
+    // O painel abre de novo: o clique que não começou no scrim não o fecha.
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    fireEvent.click(screen.getByTestId('scrim'))
+    expect(drawer.dataset.open).toBe('true')
+    // Um aperto cancelado também não vale.
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
+    fireEvent.pointerCancel(screen.getByTestId('scrim'))
+    fireEvent.click(screen.getByTestId('scrim'))
+    expect(drawer.dataset.open).toBe('true')
   })
 
   it('Esc fecha o painel aberto e o foco volta ao botão que o abriu', () => {
@@ -81,6 +105,7 @@ describe('Layout vazio do editor', () => {
     const drawerOpener = screen.getByRole('button', { name: 'Abrir detalhes' })
     fireEvent.click(drawerOpener)
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
     fireEvent.click(screen.getByTestId('scrim'))
     expect(document.activeElement).toBe(drawerOpener)
   })

@@ -13,7 +13,8 @@ o comportamento atualiza esta spec.
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
 > (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
 > que ainda não existem desabilitadas), Camadas (interruptores "Decoração" e um por tipo de pin), Ajuda (modal "Atalhos
-> de teclado") e Medir distância.
+> de teclado") e Medir distância. Em tela baixa (celular deitado), os painéis são sobrepostos e a
+> toolbar fica na linha inferior.
 
 ## Resumo
 
@@ -55,6 +56,13 @@ barra inferior.
   ambos, o tooltip e o popover de Camadas abrem acima dela. Abaixo de 341 px (tablet com a sidebar
   aberta: 304 px), ela fica em pé, 12 px acima do controle de zoom e alinhada à direita dele; o
   tooltip abre à esquerda, e o popover, acima, alinhado à direita.
+- Em tela baixa (menos de 500 px de altura, como o celular deitado), a toolbar fica sempre deitada
+  na própria linha inferior, 16 px da base, nunca numa segunda linha nem em pé (que a levariam ao
+  meio do mapa): no centro da linha, se ali não chega ao minimapa nem ao zoom; senão, no centro do
+  espaço entre eles. Se a linha não comporta o minimapa, a toolbar e o zoom (ex.: 667×375), o
+  minimapa fica no canto superior esquerdo (16 px da esquerda, 12 px do topo), e a linha fica com a
+  toolbar e o zoom. O minimapa começa recolhido em tela baixa, com um aberto ou recolhido só dela:
+  abrir ou recolher ali não muda a preferência das telas altas, e girar o celular de volta a devolve.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa:
   "Decoração" (ícone `trees`) e, abaixo dela, depois de um traço, um por tipo de pin (Cidade, Vila,
   Castelo, Masmorra, NPC, Ponto de interesse e Personalizado, com o ícone do tipo; ver
@@ -129,8 +137,14 @@ barra inferior.
 
 ## Regras
 
-- O zoom é relativo à área livre (a tela menos a sidebar fixa, a partir de 768 px; abaixo disso, a
-  tela toda): 1× é o mapa inteiro, centrado na área livre. O drawer não entra na área livre: abrir
+- A sidebar e o drawer ficam fixos a partir de 768 px de largura **e** 500 px de altura; abaixo de
+  qualquer um dos dois (celular em pé, celular deitado), são painéis sobrepostos, com o scrim. Onde
+  as specs dizem "a partir de 768 px" ou "abaixo de 768 px" para os painéis, vale esse corte. Em tela
+  baixa, as seções da sidebar e o rodapé ("Distribuição do mapa" e "Restaurar padrão") rolam juntos,
+  para as seções com os sliders terem a altura do painel. O scrim fecha o painel só com um clique que
+  começou nele: o clique que o navegador gera depois do toque num pin (que abre o drawer) não o fecha.
+- O zoom é relativo à área livre (a tela menos a sidebar fixa, a partir de 768 px e 500 px de altura;
+  abaixo disso, a tela toda): 1× é o mapa inteiro, centrado na área livre. O drawer não entra na área livre: abrir
   ou fechar o drawer não muda a porcentagem nem mexe na câmera por si. Ao abrir, a câmera já desliza
   até o pin, no centro do que sobra entre a sidebar e o drawer (ver [pins.md](pins.md)); ao fechar,
   ela fica onde está, a não ser que o mapa tenha ido para baixo de onde o drawer estava: aí ele
@@ -229,4 +243,4 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-Layout abaixo de 768 px (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
+Layout abaixo de 768 px e em tela baixa (RNF-7: sidebar e drawer viram painéis sobrepostos): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.

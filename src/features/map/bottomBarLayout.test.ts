@@ -110,3 +110,44 @@ describe('bottomBarLayout: toast', () => {
     expect(bottomBarLayout(360, true).stacked).toBe(false)
   })
 })
+
+describe('bottomBarLayout: tela baixa (AC-F2-15)', () => {
+  it('a toolbar fica sempre deitada na própria linha (nunca numa segunda linha nem em pé)', () => {
+    for (const width of [340, 560, 667, 828, 844, 932]) {
+      expect(bottomBarLayout(width, true, true, true)).toMatchObject({ toolbar: 'row', toolbarBottom: 0, stacked: false })
+    }
+  })
+
+  it('844 px (celular deitado): minimapa, toolbar e zoom numa linha, com a toolbar no centro', () => {
+    const layout = bottomBarLayout(844, false, true, true)
+    expect(layout.minimapPlace).toBe('row')
+    expect(layout.toolbarLeft).toBe((844 - TOOLBAR_LENGTH) / 2)
+  })
+
+  it('667 px: os três não cabem, e o minimapa vai para o canto superior esquerdo; a toolbar fica entre a borda e o zoom', () => {
+    const layout = bottomBarLayout(667, false, true, true)
+    expect(layout.minimapPlace).toBe('top')
+    const left = layout.toolbarLeft!
+    expect(left).toBeGreaterThanOrEqual(16)
+    // Não chega ao zoom completo (12 px da borda) nem aos 12 px entre os dois.
+    expect(left + TOOLBAR_LENGTH).toBeLessThanOrEqual(667 - ZOOM_SIDE - ZOOM_FULL_MAX_WIDTH - 12)
+  })
+
+  it('a toolbar não chega ao minimapa na linha (ex.: 790 px, fora do centro)', () => {
+    const layout = bottomBarLayout(790, true, true, true)
+    expect(layout.minimapPlace).toBe('row')
+    expect(layout.toolbarLeft!).toBeGreaterThanOrEqual(16 + MINIMAP_CARD_WIDTH + 12)
+    expect(layout.toolbarLeft! + TOOLBAR_LENGTH).toBeLessThanOrEqual(790 - ZOOM_SIDE - ZOOM_FULL_MAX_WIDTH - 12)
+  })
+
+  it('o toast fica acima da linha: no canto, acima do zoom; na largura, acima do minimapa aberto na linha', () => {
+    expect(bottomBarLayout(844, true, true, true)).toMatchObject({ toastBeside: true, toastBottom: 68 })
+    expect(bottomBarLayout(667, true, true, true)).toMatchObject({ toastBeside: true, toastBottom: 68 })
+  })
+
+  it('sem a largura medida, ou sem tela baixa, o layout de sempre', () => {
+    expect(bottomBarLayout(null, true, true, true)).toEqual(bottomBarLayout(null, true, true))
+    expect(bottomBarLayout(560, true).minimapPlace).toBe('row')
+    expect(bottomBarLayout(560, true).toolbarLeft).toBeNull()
+  })
+})
