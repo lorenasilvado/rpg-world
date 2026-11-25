@@ -632,6 +632,31 @@ describe('Exportar e importar o mundo em JSON (AC-F4-09, AC-F4-10)', () => {
     expect(within(dialog()).getByTestId('import-reason').textContent).toContain('Escolha o arquivo de novo.')
   })
 
+  it('um arquivo solto enquanto outro é importado não se perde: entra logo depois', async () => {
+    const { repo, downloads } = await withExport({ newId: (() => { let n = 0; return () => `id-${++n}` })() })
+    await exportFromMenu('Vale Sombrio')
+    const text = await downloads[0].text
+    const importWorld = repo.importWorld
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    repo.importWorld = async (world, images) => {
+      await gate
+      return importWorld(world, images)
+    }
+    await drop(screen.getByTestId('world-list'), jsonFile(text, 'primeiro.json'))
+    expect((screen.getByRole('button', { name: 'Importar' }) as HTMLButtonElement).disabled).toBe(true)
+    // O segundo chega no meio do primeiro: é inválido, e o modal aparece depois.
+    await drop(screen.getByTestId('world-list'), jsonFile('não é json', 'segundo.json'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await act(async () => release())
+    await flush()
+    expect(names()).toEqual(['Vale Sombrio', 'Terras de Valdora', 'Vale Sombrio'])
+    expect(dialog().dataset.reason).toBe('not-json')
+    expect(within(dialog()).getByTestId('import-file-name').textContent).toBe('segundo.json')
+    // Com o modal aberto, a lista fica escondida da árvore de acessibilidade.
+    expect((screen.getByRole('button', { name: 'Importar', hidden: true }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
   it('Exportar com falha mostra o toast "Não foi possível exportar o mundo"', async () => {
     await withExport({
       download: () => {

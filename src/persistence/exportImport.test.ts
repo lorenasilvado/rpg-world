@@ -159,6 +159,7 @@ describe('exportar e importar o mundo (AC-F4-09)', () => {
 })
 
 describe('arquivos recusados (AC-F4-10)', () => {
+  const BASE_PIN = pin({ id: 'p1' })
   const cases: [string, string, ImportRefusal][] = [
     ['não é JSON', 'isto não é json', 'not-json'],
     ['JSON vazio', '', 'not-json'],
@@ -170,15 +171,26 @@ describe('arquivos recusados (AC-F4-10)', () => {
     ['sem os parâmetros', raw({}, { params: undefined }), 'no-terrain'],
     ['parâmetro faltando', raw({}, { params: { ...DEFAULT_WORLD_PARAMS, ocean: undefined } }), 'no-terrain'],
     ['parâmetro que não é número', raw({}, { params: { ...DEFAULT_WORLD_PARAMS, ocean: '60' } }), 'no-terrain'],
+    ['parâmetro acima de 100', raw({}, { params: { ...DEFAULT_WORLD_PARAMS, ocean: 150 } }), 'no-terrain'],
+    ['parâmetro negativo', raw({}, { params: { ...DEFAULT_WORLD_PARAMS, snow: -1 } }), 'no-terrain'],
     ['sem a versão do gerador', raw({}, { generatorVersion: undefined }), 'no-terrain'],
     ['gerador mais novo', raw({}, { generatorVersion: GENERATOR_VERSION + 1 }), 'newer-version'],
     ['arquivo de formato mais novo', raw({ version: WORLD_FILE_VERSION + 1 }), 'newer-version'],
     ['pin fora do formato', raw({}, { pins: [{ id: 'p', name: 'x' }] }), 'not-world'],
+    ['pin fora do mapa', raw({}, { pins: [{ ...BASE_PIN, pos: { u: 1.2, v: 0.5 } }] }), 'not-world'],
+    ['pin com posição negativa', raw({}, { pins: [{ ...BASE_PIN, pos: { u: 0.5, v: -0.1 } }] }), 'not-world'],
+    ['ponto de estrada fora do mapa', raw({}, { roads: [{ id: 'r', kind: 'road', points: [{ u: 0, v: 2 }] }] }), 'not-world'],
+    ['ids de pin repetidos', raw({}, { pins: [BASE_PIN, { ...BASE_PIN, name: 'Outro' }] }), 'not-world'],
     ['estrada de tipo desconhecido', raw({}, { roads: [{ id: 'r', kind: 'rio', points: [] }] }), 'not-world'],
     ['imagem fora do base64', raw({ images: [{ id: 'i', type: 'image/png', data: '%%%' }] }), 'not-world'],
   ]
   it.each(cases)('%s', (_name, text, reason) => {
     expect(parseWorldFile(text)).toEqual({ ok: false, reason })
+  })
+
+  it('as pontas das faixas são aceitas (parâmetros 0 e 100, posição 0 e 1)', () => {
+    const edges = raw({}, { params: { ...DEFAULT_WORLD_PARAMS, ocean: 0, snow: 100 }, pins: [{ ...BASE_PIN, pos: { u: 0, v: 1 } }] })
+    expect(parseWorldFile(edges).ok).toBe(true)
   })
 
   it('um mundo de um gerador mais velho é aceito', () => {

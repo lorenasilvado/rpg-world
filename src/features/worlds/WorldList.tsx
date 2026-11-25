@@ -23,7 +23,8 @@ import { DeleteWorldDialog, RenameWorldDialog } from './WorldDialogs'
  * Importar (AC-F4-09, AC-F4-10): o botão e o link abrem o seletor de arquivos, e um arquivo solto
  * sobre a tela também é importado (`onImport`). O mundo importado entra no topo da lista; um arquivo
  * recusado abre o modal "Importar mundo" (03) com o motivo, onde outro arquivo pode ser solto ou
- * escolhido sem fechá-lo (um que entra fecha o modal).
+ * escolhido sem fechá-lo (um que entra fecha o modal). Um arquivo que chega durante outra importação
+ * é importado logo depois dela (se chegam vários, o último).
  *
  * Cada cartão abre o mundo (`onOpen`) e tem a miniatura 16:10, o nome, "Editado há X · N pins" e o
  * botão "⋯" com o menu do mundo (AC-F4-07): Renomear e Excluir abrem os modais deles, Duplicar
@@ -105,18 +106,29 @@ export function WorldList({
   const [importFailure, setImportFailure] = useState<ImportFailure | null>(null)
   const [importing, setImporting] = useState(false)
   const chooseFile = () => fileInput.current?.click()
+  /** Se uma importação está em curso, e o arquivo que chegou durante ela (o último solto ou escolhido). */
+  const importQueue = useRef<{ running: boolean; next: File | null }>({ running: false, next: null })
+  // Um arquivo que chega durante outra importação não se perde: é importado logo depois dela.
   const importFile = async (file: File) => {
-    if (importing) return
-    setImporting(true)
-    let reason: ImportFailureReason | null
-    try {
-      reason = await onImport(file)
-    } catch {
-      reason = 'save-failed'
-    } finally {
-      setImporting(false)
+    const queue = importQueue.current
+    if (queue.running) {
+      queue.next = file
+      return
     }
-    setImportFailure(reason ? { fileName: file.name, size: file.size, reason } : null)
+    queue.running = true
+    setImporting(true)
+    for (let current: File | null = file; current; current = queue.next) {
+      queue.next = null
+      let reason: ImportFailureReason | null
+      try {
+        reason = await onImport(current)
+      } catch {
+        reason = 'save-failed'
+      }
+      setImportFailure(reason ? { fileName: current.name, size: current.size, reason } : null)
+    }
+    queue.running = false
+    setImporting(false)
   }
   const hasFiles = (e: DragEvent) => e.dataTransfer.types.includes('Files')
   const onDragOver = (e: DragEvent) => {

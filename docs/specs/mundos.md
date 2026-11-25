@@ -97,9 +97,10 @@ PNG e o histórico de desfazer/refazer do mundo.
   - não é JSON: "O arquivo não está em JSON: pode ser de outro tipo ou estar corrompido. Abra o
     mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo."
   - não é um mundo do RPG World Builder (ou está fora do formato: um pin, uma estrada ou uma imagem
-    que não fecha): "O arquivo é um JSON, mas não é um mundo do RPG World Builder. Abra o mundo de
+    que não fecha, um pin ou ponto de estrada fora do mapa, ou dois pins com o mesmo id): "O arquivo é um JSON, mas não é um mundo do RPG World Builder. Abra o mundo de
     origem, …"
-  - falta a parte do terreno (a seed, um dos parâmetros ou a versão do gerador): "Falta a parte do
+  - falta a parte do terreno (a seed, um dos parâmetros ou a versão do gerador, ou um parâmetro fora
+    de 0 a 100): "Falta a parte do
     terreno. Abra o mundo de origem, …"
   - o mundo é de uma versão do gerador (ou do arquivo) mais nova que a do app: "O mundo foi criado
     numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo."
@@ -132,7 +133,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Voltar à lista (o logo no cabeçalho da sidebar do editor, "Voltar à lista de mundos") | Grava o que esperava a pausa e volta à Lista de mundos, lida de novo; o mundo editado vai para o topo. Se a gravação falha ("Erro ao salvar"), o mundo não fecha: o modal "Mudanças não salvas" avisa que as últimas mudanças se perdem e oferece "Tentar de novo" (grava e volta, se der certo), "Voltar sem salvar" e "Ficar no mundo" (ou Esc) |
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre o seletor de arquivos (.json); o arquivo escolhido é importado |
-| Soltar um arquivo sobre a lista (ou sobre o modal 03) | Importa o arquivo, como escolhê-lo |
+| Soltar um arquivo sobre a lista (ou sobre o modal 03) | Importa o arquivo, como escolhê-lo. Um arquivo que chega durante outra importação é importado logo depois dela (se chegam vários, o último) |
 | Importar um arquivo válido | Grava um mundo novo (id novo, "Editado agora", no topo da lista), com o nome, a seed, os parâmetros, `sizeKm`, os pins (fichas, descrições, tags, campos, hierarquia), as estradas e as imagens do arquivo (cada imagem com um id novo; um pin cuja imagem não veio no arquivo fica sem ela, com o círculo hachurado); o modal 03, se aberto, fecha. Importar o mesmo arquivo de novo cria outro mundo |
 | Importar um arquivo inválido | Abre 03 com o motivo; outro arquivo pode ser solto ou escolhido ("Escolher outro arquivo") sem fechar o modal, e é validado na hora |
 | Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
@@ -152,8 +153,9 @@ PNG e o histórico de desfazer/refazer do mundo.
 - O arquivo do mundo tem `format` ("rpg-world-builder/world"), `version` (do formato do arquivo), o
   mundo sem o `id` (com todos os parâmetros: um que falte no mundo salvo vai com o padrão) e as
   imagens. Num arquivo editado à mão, o nome, `sizeKm`, os pins e as estradas que faltem ganham o
-  padrão ("Mundo importado", 800 km, nenhum); a seed, os parâmetros e a versão do gerador são
-  obrigatórios. Um mundo de uma versão do gerador mais velha é aceito.
+  padrão ("Mundo importado", 800 km, nenhum); a seed, os parâmetros (cada um de 0 a 100, como os
+  sliders) e a versão do gerador são obrigatórios. As posições dos pins e os pontos das estradas
+  vão de 0 a 1, e cada pin tem um id próprio. Um mundo de uma versão do gerador mais velha é aceito.
 - Desfazer e refazer usam um histórico único por mundo, que vale enquanto o mundo está aberto
   (voltar à lista o descarta; ele não é salvo) e guarda os últimos 100 passos.
 - O mundo guarda `generatorVersion`, para ser regerado igual.

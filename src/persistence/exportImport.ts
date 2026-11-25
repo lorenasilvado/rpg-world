@@ -38,10 +38,14 @@ export type ImportedImage = { id: string; blob: Blob }
 export type ParsedWorldFile = { ok: true; world: World; images: ImportedImage[] } | { ok: false; reason: ImportRefusal }
 
 const finite = z.number().finite()
-const point = z.object({ u: finite, v: finite })
+/** Uma posição no mapa: 0..1 nos dois eixos (fora disso, o ponto cai fora do mapa). */
+const unit = finite.min(0).max(1)
+const point = z.object({ u: unit, v: unit })
+/** Um parâmetro de geração: 0 a 100, como os sliders (o gerador recusa o resto). */
+const param = finite.min(0).max(100)
 
 const paramsSchema = z.object(
-  Object.fromEntries(Object.keys(DEFAULT_WORLD_PARAMS).map((key) => [key, finite])) as Record<keyof WorldParams, typeof finite>,
+  Object.fromEntries(Object.keys(DEFAULT_WORLD_PARAMS).map((key) => [key, param])) as Record<keyof WorldParams, typeof param>,
 )
 
 const pinSchema = z.object({
@@ -83,7 +87,11 @@ const terrainSchema = z.object({
 const restSchema = z.object({
   name: z.string().default('Mundo importado'),
   sizeKm: finite.positive().default(DEFAULT_SIZE_KM),
-  pins: z.array(pinSchema).default([]),
+  // Um id repetido faria dois pins virarem um só na seleção, na hierarquia e nas estradas.
+  pins: z
+    .array(pinSchema)
+    .default([])
+    .refine((pins) => new Set(pins.map((pin) => pin.id)).size === pins.length),
   roads: z.array(roadSchema).default([]),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
