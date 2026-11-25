@@ -69,8 +69,8 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
     chave tem até 40 caracteres e muda ao sair dela (Enter também sai): vazia, repetida (sem
     diferenciar maiúsculas) ou só de dígitos (ex.: "1200", que mudaria o campo de lugar), volta a
     anterior. Para o leitor de tela, as chaves são "Nome do campo 1", "Nome do campo 2"… O valor tem até 200 caracteres e muda a cada tecla.
-- Aba Conexões: "Pin pai", com o pai, e "Pins filhos (N)", com os filhos na ordem em que foram
-  criados; cada um é um botão com o ícone, o nome e o tipo. Sem pai, "Sem pin pai. Escolha um na aba
+- Aba Conexões: "Pin pai", com o pai, e "Pins filhos", com os filhos na ordem em que foram
+  criados e o número deles entre parênteses quando há algum (ex.: "Pins filhos (2)"); cada um é um botão com o ícone, o nome e o tipo. Sem pai, "Sem pin pai. Escolha um na aba
   Detalhes."; sem filhos, "Nenhum pin pertence a este." (sem nenhum dos dois, o painel recebe o
   foco pelo Tab). Clicar num deles o seleciona, e a ficha dele abre na aba Conexões, com o foco na
   aba (selecionado de outro jeito, o pin abre na Descrição). As estradas ligadas ao pin entram com F5.

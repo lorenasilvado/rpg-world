@@ -95,6 +95,28 @@ test('escolher o pai na aba Detalhes, abrir os pins pela aba Conexões, e exclui
   await expect.poll(() => savedParents(page)).toEqual({ 'p-reino': null, 'p-cidade': 'p-reino', 'p-vila': 'p-cidade' })
 })
 
+test('clicar num pin da aba Conexões leva a câmera até ele, no centro da área livre (AC-F3-03, AC-F3-13)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', kingdom())
+  await waitFinalMap(page)
+  // Zoom 2,44×: a câmera tem por onde andar.
+  for (let i = 0; i < 4; i++) await page.keyboard.press('=')
+  await expect(map(page)).toHaveAttribute('data-zoom', '2.441')
+  await clickPin(page, 0.55, 0.5)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-cidade')
+  await drawer(page).getByRole('tab', { name: 'Conexões' }).click()
+  await drawer(page).getByRole('button', { name: /^Brejo Fundo/ }).click()
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-vila')
+  // A área livre fica entre a sidebar (320) e o drawer (400): o centro é (680, 450).
+  await expect
+    .poll(async () => {
+      const [x, y, width, height] = ((await map(page).getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+      return Math.round(Math.hypot(x + 0.5 * width - 680, y + 0.62 * height - 450))
+    })
+    .toBeLessThanOrEqual(1)
+  await expect(map(page)).toHaveAttribute('data-zoom', '2.441')
+})
+
 test('celular 390: o pai é escolhido no painel sobreposto, e abrir um pin pela aba Conexões mostra a ficha dele ali, com o painel aberto (AC-F3-12, AC-F3-13, AC-F3-18)', async ({ page }, info) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
