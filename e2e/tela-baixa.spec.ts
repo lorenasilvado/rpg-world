@@ -22,8 +22,10 @@ async function screenOf(page: Page, u: number, v: number) {
 
 /** A toolbar fica na linha inferior (16 px da base) e não cobre o meio da tela. */
 async function expectToolbarAtBottom(page: Page, height: number) {
-  const toolbar = (await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox())!
-  expect(Math.round(toolbar.y + toolbar.height)).toBe(height - 16)
+  const bar = page.getByRole('toolbar', { name: 'Ferramentas' })
+  // Depois de girar, a toolbar desliza até a linha (200 ms): espera a posição final.
+  await expect.poll(async () => Math.round((await bar.boundingBox())!.y + (await bar.boundingBox())!.height)).toBe(height - 16)
+  const toolbar = (await bar.boundingBox())!
   expect(toolbar.y).toBeGreaterThan(height / 2 + 40)
   return toolbar
 }
