@@ -1,20 +1,45 @@
-import type { CoreField } from '../../core'
+import { BIOME, type CoreField } from '../../core'
 import { WORLD_SIZE } from '../../render/camera'
 import { BIOMES } from '../../render/style/palette'
 import { BIOME_LABELS } from '../sidebar/distribution'
 
 type Pos = { u: number; v: number }
 
+/** O índice do bioma da célula que contém (u, v), no campo; sem campo, `null`. */
+function biomeAt(field: Pick<CoreField, 'width' | 'height' | 'biome'> | null, pos: Pos): number | null {
+  if (!field || field.width <= 0 || field.height <= 0) return null
+  const x = Math.min(field.width - 1, Math.max(0, Math.floor(pos.u * field.width)))
+  const y = Math.min(field.height - 1, Math.max(0, Math.floor(pos.v * field.height)))
+  return field.biome[y * field.width + x]
+}
+
 /**
  * O bioma sob o pin, pelo campo exibido (AC-F3-06): a célula que contém (u, v). Sem campo (o mapa
  * ainda não chegou), `null`.
  */
 export function pinBiome(field: Pick<CoreField, 'width' | 'height' | 'biome'> | null, pos: Pos): string | null {
-  if (!field || field.width <= 0 || field.height <= 0) return null
-  const x = Math.min(field.width - 1, Math.max(0, Math.floor(pos.u * field.width)))
-  const y = Math.min(field.height - 1, Math.max(0, Math.floor(pos.v * field.height)))
-  const biome = BIOMES[field.biome[y * field.width + x]]
+  const id = biomeAt(field, pos)
+  const biome = id === null ? undefined : BIOMES[id]
   return biome ? BIOME_LABELS[biome] : null
+}
+
+/** Os biomas de água para o aviso de pins sobre a água (AC-F1-30): o oceano (fundo e raso) e o lago. */
+const WATER = new Set<number>([BIOME.deepOcean, BIOME.shallowWater, BIOME.lake])
+
+/**
+ * Os pins em célula de água (oceano ou lago) no campo, na ordem da lista (AC-F1-30). Sem campo,
+ * nenhum.
+ */
+export function pinsOnWater<P extends { pos: Pos }>(field: Pick<CoreField, 'width' | 'height' | 'biome'> | null, pins: readonly P[]): P[] {
+  return pins.filter((pin) => {
+    const id = biomeAt(field, pin.pos)
+    return id !== null && WATER.has(id)
+  })
+}
+
+/** O texto do aviso: "1 pin ficou sobre a água", "2 pins ficaram sobre a água". */
+export function pinsOnWaterLabel(count: number): string {
+  return count === 1 ? '1 pin ficou sobre a água' : `${count} pins ficaram sobre a água`
 }
 
 /** As coordenadas do pin no mapa, em unidades do mundo (0 a 1024): "x 710, y 580". */

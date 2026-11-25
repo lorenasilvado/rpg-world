@@ -1,9 +1,11 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { DEFAULT_WORLD_PARAMS } from './core'
+import { BIOME, DEFAULT_WORLD_PARAMS, type CoreField } from './core'
 import { BAR_GAP, TOAST_HEIGHT, ZOOM_BAR_HEIGHT } from './features/map/bottomBarLayout'
 import { PIN_DELETED_TOAST_MS } from './features/pins/PinDeletedToast'
+import { PINS_ON_WATER_TOAST_MS } from './features/pins/PinsOnWaterToast'
+import { MAP_SIZE, PREVIEW_SIZE } from './state/sizes'
 import type { Pin } from './persistence/types'
 import { createPinsStore } from './state/pinsStore'
 import type { CreateMapRenderer } from './app/MapView'
@@ -469,5 +471,100 @@ describe('Buscar no celular (AC-F3-16, AC-F3-18)', () => {
     expect(pins.getState().selectedId).toBe('v')
     expect(drawer.dataset.open).toBe('true')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
+  })
+})
+
+describe('Aviso de pins sobre a água (AC-F1-30)', () => {
+  const waterPin = (id: string, u: number, v: number): Pin => ({
+    id,
+    type: 'cidade',
+    name: `Pin ${id}`,
+    pos: { u, v },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  })
+  /** Um campo de `size`² com água (oceano) na metade de cima e campo na de baixo, até a linha `waterTo`. */
+  const halfWater = (size: number, waterTo = 0.5) => {
+    const biome = new Uint8Array(size * size).fill(BIOME.grassland)
+    biome.fill(BIOME.deepOcean, 0, Math.floor(waterTo * size) * size)
+    return { width: size, height: size, biome } as unknown as CoreField
+  }
+
+  beforeEach(() => {
+    const narrow = window.matchMedia
+    window.matchMedia = ((query: string) => ({ ...narrow(query), matches: true })) as typeof window.matchMedia
+  })
+
+  function editor() {
+    const w = world()
+    // Pins na costa: "a" e "b" ficam debaixo d'água quando a água sobe até 0,7; "c" fica em terra.
+    const pins = createPinsStore([waterPin('a', 0.3, 0.6), waterPin('b', 0.7, 0.65), waterPin('c', 0.5, 0.9)])
+    const focusOn = vi.fn()
+    const withCamera: CreateMapRenderer = async (_host, _world, _insets, _ui, camera) => {
+      camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn })
+      return { refit() {}, destroy() {} }
+    }
+    render(<App world={w} pins={pins} createRenderer={withCamera} />)
+    let version = 0
+    const deliver = (field: CoreField) => act(() => w.setState({ field, fieldVersion: ++version }))
+    return { w, pins, focusOn, deliver }
+  }
+  const toast = () => screen.queryByTestId('pins-on-water-toast')
+
+  it('o mapa regerado que deixa pins sobre a água mostra o toast; Mostrar centraliza no primeiro, e nenhum pin se move', async () => {
+    const { pins, focusOn, deliver } = editor()
+    await act(async () => {})
+    const before = pins.getState().pins.map((p) => ({ ...p.pos }))
+    deliver(halfWater(MAP_SIZE))
+    expect(toast()).toBeNull()
+    deliver(halfWater(MAP_SIZE, 0.7))
+    expect(toast()?.textContent).toContain('2 pins ficaram sobre a água')
+    fireEvent.click(within(toast()!).getByRole('button', { name: 'Mostrar' }))
+    expect(focusOn).toHaveBeenCalledTimes(1)
+    expect(focusOn.mock.calls[0][0]).toBeCloseTo(0.3 * 1024)
+    expect(focusOn.mock.calls[0][1]).toBeCloseTo(0.6 * 1024)
+    expect(toast()).toBeNull()
+    expect(pins.getState().pins.map((p) => p.pos)).toEqual(before)
+    // O botão some: o foco vai para o mapa (não para o body), que deixa de ser focável ao perder o foco.
+    const mapEl = screen.getByTestId('map')
+    expect(document.activeElement).toBe(mapEl)
+    act(() => mapEl.blur())
+    expect(mapEl.hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('o primeiro mapa (ao abrir o mundo) e a prévia do arrasto não avisam; sem pins na água, nenhum toast', () => {
+    const { deliver } = editor()
+    deliver(halfWater(MAP_SIZE, 0.7))
+    expect(toast()).toBeNull()
+    deliver(halfWater(PREVIEW_SIZE, 0.7))
+    expect(toast()).toBeNull()
+    deliver(halfWater(MAP_SIZE, 0.2))
+    expect(toast()).toBeNull()
+  })
+
+  it('o aviso some sozinho depois de alguns segundos', () => {
+    vi.useFakeTimers()
+    try {
+      const { deliver } = editor()
+      deliver(halfWater(MAP_SIZE))
+      deliver(halfWater(MAP_SIZE, 0.7))
+      expect(toast()).toBeTruthy()
+      act(() => vi.advanceTimersByTime(PINS_ON_WATER_TOAST_MS))
+      expect(toast()).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('com o "Pin excluído" à vista, o aviso fica empilhado acima dele', () => {
+    const { pins, deliver } = editor()
+    deliver(halfWater(MAP_SIZE))
+    act(() => pins.getState().select('c'))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    deliver(halfWater(MAP_SIZE, 0.7))
+    const px = (el: HTMLElement) => Number.parseFloat(el.style.bottom)
+    expect(px(toast()!)).toBe(px(screen.getByTestId('pin-deleted-toast')) + TOAST_HEIGHT + BAR_GAP)
   })
 })

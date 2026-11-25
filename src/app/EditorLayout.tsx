@@ -9,6 +9,8 @@ import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
 import { PinDeletedToast } from '../features/pins/PinDeletedToast'
+import { PinsOnWaterToast } from '../features/pins/PinsOnWaterToast'
+import { pinsOnWater } from '../features/pins/place'
 import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
 import { SearchDialog } from '../features/search/SearchDialog'
@@ -21,10 +23,12 @@ import { createCameraStore } from '../state/cameraStore'
 import type { WorldHistory } from '../state/history'
 import type { PinImages } from '../state/pinImages'
 import type { PinsStore } from '../state/pinsStore'
+import { MAP_SIZE } from '../state/sizes'
 import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
 import { inDialog, isFieldTarget } from '../render/camera'
+import { focusMap } from './focusMap'
 import { MapView, type CreateMapRenderer } from './MapView'
 import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
@@ -69,6 +73,11 @@ import { useTheme } from './useTheme'
  * Delete, ou Excluir no rodapé do drawer, exclui o pin selecionado (AC-F3-05): o toast "Pin excluído" oferece "Desfazer", e fecha
  * quando outra coisa muda no histórico (um passo novo, desfeito ou refeito). Com o toast de erro da
  * geração à vista, ele fica empilhado acima dele.
+ *
+ * Quando um mapa final regerado (não o primeiro, ao abrir o mundo) deixa pins sobre a água, o aviso
+ * "N pins ficaram sobre a água" (`PinsOnWaterToast`, AC-F1-30) oferece "Mostrar", que leva a câmera
+ * até o primeiro deles (`focusOn`, como o Centralizar do drawer) e o foco ao mapa. Os pins não se movem. Ele fica
+ * empilhado acima dos outros toasts à vista.
  *
  * Desfazer e Refazer (AC-F4-08) usam o histórico do mundo (`history`), pelos botões da barra (cada um
  * habilitado quando há o que desfazer ou refazer) e por Ctrl+Z e Ctrl+Shift+Z (⌘ no Mac). As teclas
@@ -178,6 +187,33 @@ export function EditorLayout({
     },
     [pins, history],
   )
+
+  /** O aviso de pins sobre a água: a versão do mapa, quantos e o primeiro deles (`null`: fechado). */
+  const [onWater, setOnWater] = useState<{ at: number; count: number; firstId: string } | null>(null)
+  const closeOnWater = useCallback(() => setOnWater(null), [])
+  useEffect(() => {
+    // O primeiro mapa final (o do mundo que abriu) não é uma regeração: não avisa.
+    let hadFinal = (world.getState().field?.width ?? 0) >= MAP_SIZE
+    return world.subscribe((state, prev) => {
+      if (state.field === prev.field || !state.field || state.field.width < MAP_SIZE) return
+      if (!hadFinal) {
+        hadFinal = true
+        return
+      }
+      const wet = pinsOnWater(state.field, pins.getState().pins)
+      setOnWater(wet.length > 0 ? { at: state.fieldVersion, count: wet.length, firstId: wet[0].id } : null)
+    })
+  }, [world, pins])
+  const mapRef = useRef<HTMLElement | null>(null)
+  const showOnWater = () => {
+    const pin = onWater && pins.getState().pins.find((p) => p.id === onWater.firstId)
+    setOnWater(null)
+    // O toast some com o clique: o foco vai para o mapa, não para o começo da página.
+    focusMap(mapRef.current)
+    if (!pin) return
+    const p = pinToWorld(pin.pos)
+    camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
+  }
 
   // Excluir pelo rodapé tira o botão com o foco (o drawer fecha, sem pin): a partir de 768 px, o foco
   // vai para o Desfazer da barra, que acabou de habilitar. Abaixo, o painel sobreposto devolve o
@@ -323,7 +359,7 @@ export function EditorLayout({
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} createRenderer={createRenderer} />
+      <MapView ref={mapRef} world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
 
@@ -370,6 +406,15 @@ export function EditorLayout({
           onClose={closeDeleted}
           beside={layout.toastBeside}
           bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0)}
+          right={layout.toastRight}
+        />
+        <PinsOnWaterToast
+          open={onWater?.at ?? null}
+          count={onWater?.count ?? 0}
+          onShow={showOnWater}
+          onClose={closeOnWater}
+          beside={layout.toastBeside}
+          bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0) + (deletedAt !== null ? TOAST_HEIGHT + BAR_GAP : 0)}
           right={layout.toastRight}
         />
       </div>
