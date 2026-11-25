@@ -28,6 +28,7 @@ import type { UiStore } from '../state/uiStore'
 import type { WorldStore } from '../state/worldStore'
 import { GenerationErrorToast } from './GenerationErrorToast'
 import { inDialog, isFieldTarget } from '../render/camera'
+import { focusMap } from './focusMap'
 import { MapView, type CreateMapRenderer } from './MapView'
 import { DESKTOP_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
@@ -75,7 +76,7 @@ import { useTheme } from './useTheme'
  *
  * Quando um mapa final regerado (não o primeiro, ao abrir o mundo) deixa pins sobre a água, o aviso
  * "N pins ficaram sobre a água" (`PinsOnWaterToast`, AC-F1-30) oferece "Mostrar", que leva a câmera
- * até o primeiro deles (`focusOn`, como o Centralizar do drawer). Os pins não se movem. Ele fica
+ * até o primeiro deles (`focusOn`, como o Centralizar do drawer) e o foco ao mapa. Os pins não se movem. Ele fica
  * empilhado acima dos outros toasts à vista.
  *
  * Desfazer e Refazer (AC-F4-08) usam o histórico do mundo (`history`), pelos botões da barra (cada um
@@ -203,9 +204,12 @@ export function EditorLayout({
       setOnWater(wet.length > 0 ? { at: state.fieldVersion, count: wet.length, firstId: wet[0].id } : null)
     })
   }, [world, pins])
+  const mapRef = useRef<HTMLElement | null>(null)
   const showOnWater = () => {
     const pin = onWater && pins.getState().pins.find((p) => p.id === onWater.firstId)
     setOnWater(null)
+    // O toast some com o clique: o foco vai para o mapa, não para o começo da página.
+    focusMap(mapRef.current)
     if (!pin) return
     const p = pinToWorld(pin.pos)
     camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
@@ -355,7 +359,7 @@ export function EditorLayout({
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
-      <MapView world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} createRenderer={createRenderer} />
+      <MapView ref={mapRef} world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
 

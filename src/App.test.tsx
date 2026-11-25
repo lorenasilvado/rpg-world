@@ -527,6 +527,11 @@ describe('Aviso de pins sobre a água (AC-F1-30)', () => {
     expect(focusOn.mock.calls[0][1]).toBeCloseTo(0.6 * 1024)
     expect(toast()).toBeNull()
     expect(pins.getState().pins.map((p) => p.pos)).toEqual(before)
+    // O botão some: o foco vai para o mapa (não para o body), que deixa de ser focável ao perder o foco.
+    const mapEl = screen.getByTestId('map')
+    expect(document.activeElement).toBe(mapEl)
+    act(() => mapEl.blur())
+    expect(mapEl.hasAttribute('tabindex')).toBe(false)
   })
 
   it('o primeiro mapa (ao abrir o mundo) e a prévia do arrasto não avisam; sem pins na água, nenhum toast', () => {

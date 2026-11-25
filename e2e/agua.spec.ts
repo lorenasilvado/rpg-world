@@ -38,9 +38,12 @@ test('AC-F1-30: subir o Oceano mostra o aviso dos pins sobre a água, e Mostrar 
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 30_000 })
   await expect(toast).toHaveText(/^\d+ pins? fic(ou|aram) sobre a água\s*Mostrar$/, { timeout: 30_000 })
 
-  await toast.getByRole('button', { name: 'Mostrar' }).click()
+  // Pelo teclado: o botão some, e o foco vai para o mapa, não para o começo da página.
+  await toast.getByRole('button', { name: 'Mostrar' }).focus()
+  await page.keyboard.press('Enter')
   await expect(toast).toHaveCount(0)
   await expect(map).toHaveAttribute('data-zoom', '1.600')
+  await expect(map).toBeFocused()
 })
 
 test('885×800 com a sidebar: o aviso ocupa a largura da área livre (16 px à esquerda, 12 à direita), acima da toolbar na segunda linha (AC-F1-30)', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { useStore } from 'zustand'
 import type { MapInsets, MapRenderer } from '../render/MapRenderer'
 import type { CameraStore } from '../state/cameraStore'
@@ -42,6 +42,7 @@ export function MapView({
   inert,
   images,
   createRenderer = createPixiRenderer,
+  ref,
 }: {
   world: WorldStore
   pins: PinsStore
@@ -50,6 +51,8 @@ export function MapView({
   inert: boolean
   images?: PinImages
   createRenderer?: CreateMapRenderer
+  /** O elemento do mapa (o `<main>`), para quem precisa levar o foco até ele (`focusMap`). */
+  ref?: RefObject<HTMLElement | null>
 }) {
   const host = useRef<HTMLElement>(null)
   const blurred = useStore(world, isGenerating)
@@ -88,14 +91,18 @@ export function MapView({
 
   return (
     <main
-      ref={host}
+      ref={(el) => {
+        host.current = el
+        if (ref) ref.current = el
+      }}
       aria-label="Mapa"
       data-testid="map"
       data-blurred={blurred}
       data-tool={tool}
       aria-busy={blurred}
       inert={inert}
-      className={`absolute inset-0 bg-map-canvas ${draggingPin ? 'cursor-grabbing' : overPin ? 'cursor-pointer' : overGroup ? 'cursor-zoom-in' : tool === 'measure' || tool === 'pin' ? 'cursor-crosshair' : ''}`}
+      className={`absolute inset-0 bg-map-canvas outline-none ${draggingPin ? 'cursor-grabbing' : overPin ? 'cursor-pointer' : overGroup ? 'cursor-zoom-in' : tool === 'measure' || tool === 'pin' ? 'cursor-crosshair' : ''}`}
     />
   )
 }
+
