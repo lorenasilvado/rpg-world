@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { defaultWorld, gotoEditor } from './editor.ts'
+import { centerPin, defaultWorld, gotoEditor } from './editor.ts'
 
 // Agrupamento e ocultar por tipo (#162): abaixo de 0,8×, os pins próximos viram um grupo com
 // contador, e o clique dá zoom nele (AC-F3-14); Camadas mostra e esconde os pins de cada tipo
@@ -110,4 +110,69 @@ test('Camadas esconde e mostra os pins de cada tipo, e o grupo acompanha (AC-F3-
   await popover.getByRole('switch', { name: 'Cidade' }).click()
   await popover.getByRole('switch', { name: 'Vila' }).click()
   await expect.poll(async () => (await groups(page)).map((g) => g.n)).toEqual([200])
+})
+
+/**
+ * O popover de Camadas cabe entre a barra superior e a toolbar, em qualquer lugar da toolbar; sem
+ * espaço para as 8 linhas, ele rola, e o último interruptor continua alcançável.
+ */
+async function checkLayersPopover(page: Page) {
+  await page.getByRole('button', { name: 'Camadas' }).click()
+  const popover = page.getByTestId('layers-popover')
+  const pop = (await popover.boundingBox())!
+  const toolbar = (await page.getByTestId('map-toolbar').boundingBox())!
+  const actions = (await page.getByTestId('actions').boundingBox())!
+  expect(pop.y).toBeGreaterThanOrEqual(actions.y + actions.height)
+  expect(pop.y + pop.height).toBeLessThanOrEqual(toolbar.y)
+  expect(pop.x).toBeGreaterThanOrEqual(0)
+  expect(pop.x + pop.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+  // As linhas não encolhem para caber: todas têm a mesma altura.
+  const heights = await popover.getByRole('switch').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height))
+  expect(new Set(heights).size).toBe(1)
+  const custom = popover.getByRole('switch', { name: 'Personalizado' })
+  await custom.scrollIntoViewIfNeeded()
+  await custom.click()
+  await expect(custom).toHaveAttribute('aria-checked', 'false')
+  return { pop, scrolls: await popover.evaluate((el) => el.scrollHeight > el.clientHeight) }
+}
+
+test('celular 390 (toque, toolbar acima do minimapa): o popover de Camadas cabe abaixo da barra superior (AC-F3-15)', async ({ browser }, info) => {
+  test.setTimeout(90_000)
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+  const page = await ctx.newPage()
+  await gotoEditor(page, '/', crowded())
+  await waitFinalMap(page)
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'above')
+  await checkLayersPopover(page)
+  await expect(map(page)).toHaveAttribute('data-pins-shown', '203')
+  await info.attach('camadas-390.png', { body: await page.screenshot(), contentType: 'image/png' })
+  await ctx.close()
+})
+
+test('tablet 1024 (toque) com a sidebar e o drawer: a toolbar em pé, e o popover de Camadas cabe acima dela, rolando (AC-F3-15)', async ({ browser }, info) => {
+  test.setTimeout(90_000)
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: true })
+  const page = await ctx.newPage()
+  await gotoEditor(page, '/', defaultWorld({ pins: [centerPin, pin('p-npc', 'npc', 0.3, 0.3), pin('p-poi', 'custom', 0.35, 0.6)] }))
+  await waitFinalMap(page)
+  const [x, y, width, height] = ((await map(page).getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+  await page.mouse.click(x + width / 2, y + height / 2 - 10)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', centerPin.id)
+  await expect(page.getByTestId('toolbar-slot')).toHaveAttribute('data-place', 'vertical')
+  const { scrolls } = await checkLayersPopover(page)
+  expect(scrolls).toBe(true)
+  await expect(map(page)).toHaveAttribute('data-pins-shown', '2')
+  await info.attach('camadas-1024.png', { body: await page.screenshot(), contentType: 'image/png' })
+  await ctx.close()
+})
+
+test('tela baixa (375 × 600, toque): o popover de Camadas rola, e o último interruptor funciona (AC-F3-15)', async ({ browser }) => {
+  test.setTimeout(90_000)
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 600 }, hasTouch: true, isMobile: true })
+  const page = await ctx.newPage()
+  await gotoEditor(page, '/', crowded())
+  await waitFinalMap(page)
+  const { scrolls } = await checkLayersPopover(page)
+  expect(scrolls).toBe(true)
+  await ctx.close()
 })

@@ -57,7 +57,8 @@ barra inferior.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa:
   "Decoração" (ícone `trees`) e, abaixo dela, depois de um traço, um por tipo de pin (Cidade, Vila,
   Castelo, Masmorra, NPC, Ponto de interesse e Personalizado, com o ícone do tipo; ver
-  [pins.md](pins.md)). Numa tela baixa, o popover rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
+  [pins.md](pins.md)). O popover fica entre a barra superior e a toolbar, com a toolbar em qualquer
+  lugar; sem espaço para todas as linhas (celular, tablet com a toolbar em pé, tela baixa), ele rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
   pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { PinIcon } from '../pins/PinIcon'
 import { PIN_TYPES } from '../../state/pinTypes'
@@ -24,6 +24,11 @@ import { LAYERS, TOOLS, type Tool } from './tools'
  * abre à esquerda dela, e o popover, acima, alinhado à direita (deitada, os dois abrem acima,
  * centrados).
  */
+/** A barra superior vai até 68 px do topo (12 de margem e 56 de altura); o popover para 8 px abaixo dela. */
+const POPOVER_TOP_LIMIT = 76
+/** O vão entre a toolbar e o popover, acima dela. */
+const POPOVER_GAP = 10
+
 export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: boolean }) {
   const [layersOpen, setLayersOpen] = useState(false)
   const [tip, setTip] = useState<Tool['id'] | null>(null)
@@ -31,6 +36,22 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
   const layersButton = useRef<HTMLButtonElement>(null)
   const popoverId = useId()
   const activeTool = useStore(ui, (s) => s.tool)
+  /** A altura máxima do popover: o espaço entre o topo da toolbar e a barra superior. */
+  const [popoverMax, setPopoverMax] = useState<number | null>(null)
+
+  // O popover abre acima da toolbar, que muda de lugar com o layout (deitada na linha, numa segunda
+  // linha acima do minimapa, em pé): a altura que cabe é medida ao abrir e a cada redimensionamento.
+  // Sem espaço para todas as linhas, ele rola.
+  useLayoutEffect(() => {
+    if (!layersOpen) return
+    const measure = () => {
+      const top = root.current?.getBoundingClientRect().top
+      if (top !== undefined) setPopoverMax(Math.max(120, Math.floor(top - POPOVER_GAP - POPOVER_TOP_LIMIT)))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [layersOpen, vertical])
 
   useEffect(() => {
     if (!layersOpen) return
@@ -138,7 +159,8 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
           role="group"
           aria-label="Camadas"
           data-testid="layers-popover"
-          className={`absolute z-[5] flex max-h-[calc(100dvh-160px)] w-62 flex-col overflow-y-auto rounded-panel border border-line bg-paper-solid p-2 text-ink shadow-lg ${popoverSide}`}
+          style={popoverMax === null ? undefined : { maxHeight: popoverMax }}
+          className={`absolute z-[5] flex w-62 flex-col overflow-y-auto rounded-panel [&>*]:shrink-0 border border-line bg-paper-solid p-2 text-ink shadow-lg ${popoverSide}`}
         >
           <span aria-hidden="true" className="px-2 py-1.5 text-[11px]/4 font-extrabold tracking-[.08em] text-ink-2 uppercase">
             Camadas
