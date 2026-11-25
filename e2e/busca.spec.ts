@@ -51,6 +51,9 @@ test('Ctrl K, uma tag e Enter: o pin fica selecionado e a câmera vai até ele (
   await page.keyboard.press('Control+k')
   await expect(dialog(page)).toBeVisible()
   await expect(input(page)).toBeFocused()
+  // No lugar do anel de foco, a borda de baixo da linha do campo fica âmbar.
+  expect(await input(page).evaluate((el) => getComputedStyle(el).boxShadow)).not.toMatch(/rgb\(200, 137, 43\)/)
+  await expect(input(page).locator('..')).toHaveCSS('border-bottom-color', 'rgb(200, 137, 43)')
 
   // Pela tag: os 10 pins com "porto", em ordem alfabética.
   await input(page).fill('porto')

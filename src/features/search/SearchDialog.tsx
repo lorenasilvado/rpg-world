@@ -127,7 +127,7 @@ function SearchBody({ pins, images, onChoose }: { pins: PinsStore; images: PinIm
           onKeyDown={onKeyDown}
           data-testid="search-input"
           // 16 px: no iOS, um campo menor aproxima a página ao receber o foco.
-          className="h-full min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-3 focus-visible:shadow-none"
+          className="h-full min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-3 focus-visible:shadow-none!"
         />
         <kbd aria-hidden="true" className="hidden rounded-[4px] border border-line bg-sunken px-[5px] font-sans text-[11px]/[18px] font-bold text-ink-2 md:block">
           Esc
