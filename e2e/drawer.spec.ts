@@ -282,12 +282,15 @@ test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser c
   expect((await savedPins(page)).find((p) => p.id === 'p-valdora')).toMatchObject({ description: '<p>Capital do reino</p>', tags: ['capital'] })
 })
 
-/** O tamanho da fonte (px) de cada campo de texto à vista no drawer, pelo rótulo acessível. */
+/** O tamanho da fonte (px) de cada campo de texto (e seletor) à vista no drawer, pelo rótulo acessível. */
 async function fieldFontSizes(page: Page) {
   return drawer(page).evaluate((root) =>
     Object.fromEntries(
-      [...root.querySelectorAll<HTMLElement>('input:not([type=radio]):not([type=file]), textarea, [contenteditable=true]')].map((el) => [
-        el.getAttribute('aria-label') ?? root.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ?? el.id,
+      [...root.querySelectorAll<HTMLElement>('input:not([type=radio]):not([type=file]), select, textarea, [contenteditable=true]')].map((el) => [
+        el.getAttribute('aria-label') ??
+          root.querySelector(`[id="${el.getAttribute('aria-labelledby')}"]`)?.textContent?.trim() ??
+          root.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ??
+          el.id,
         parseFloat(getComputedStyle(el).fontSize),
       ]),
     ),
@@ -311,15 +314,15 @@ test('celular 390: todo campo de texto do drawer tem fonte de 16 px ou mais, par
   for (const [name, size] of Object.entries(ficha)) expect(size, name).toBeGreaterThanOrEqual(16)
   await page.keyboard.press('Escape')
 
-  // Detalhes: a chave e o valor do campo livre.
+  // Detalhes: o seletor do pin pai e a chave e o valor do campo livre.
   await page.getByRole('tab', { name: 'Detalhes' }).click()
   const detalhes = await fieldFontSizes(page)
-  expect(Object.keys(detalhes).sort()).toEqual(['Nome do campo 1', 'Nome do pin', 'Valor de rei'])
+  expect(Object.keys(detalhes).sort()).toEqual(['Nome do campo 1', 'Nome do pin', 'Pin pai', 'Valor de rei'])
   for (const [name, size] of Object.entries(detalhes)) expect(size, name).toBeGreaterThanOrEqual(16)
 
   // No desktop, os campos voltam aos tamanhos do design.
   await page.setViewportSize({ width: 1440, height: 900 })
-  expect(await fieldFontSizes(page)).toMatchObject({ 'Nome do campo 1': 13, 'Valor de rei': 14 })
+  expect(await fieldFontSizes(page)).toMatchObject({ 'Nome do campo 1': 13, 'Pin pai': 14, 'Valor de rei': 14 })
   await page.getByRole('tab', { name: 'Descrição' }).click()
   expect(await fieldFontSizes(page)).toMatchObject({ Descrição: 14, 'Nova tag': 13 })
 })

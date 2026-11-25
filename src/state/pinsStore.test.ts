@@ -162,11 +162,12 @@ describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
 
   it('duplicatePin cria "<nome> (cópia)" deslocada, com a mesma ficha e o mesmo pai, e a seleciona', () => {
     const child: Pin = { ...full, id: 'filho', name: 'Vila', parentId: 'a' }
-    const pins = createPinsStore([full, child], { newId: () => 'copia' })
+    const kingdom: Pin = { ...full, id: 'reino', name: 'Reino', parentId: undefined }
+    const pins = createPinsStore([kingdom, full, child], { newId: () => 'copia' })
     const copy = pins.getState().duplicatePin('a', { u: 0.02, v: 0.01 })
     expect(copy).toEqual({ ...full, id: 'copia', name: 'Valdora (cópia)', pos: { u: 0.52, v: 0.51 } })
     expect(copy!.tags).not.toBe(full.tags)
-    expect(pins.getState().pins.map((p) => p.id)).toEqual(['a', 'filho', 'copia'])
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['reino', 'a', 'filho', 'copia'])
     expect(pins.getState().pins.filter((p) => p.parentId === 'copia')).toEqual([])
     expect(pins.getState()).toMatchObject({ selectedId: 'copia', newPinId: null })
   })
@@ -187,5 +188,42 @@ describe('ficha do pin (AC-F3-07 a AC-F3-09)', () => {
   it('o nome da cópia cabe nos 80 caracteres', () => {
     expect(copyName('x'.repeat(80))).toHaveLength(80)
     expect(copyName('x'.repeat(80)).endsWith(' (cópia)')).toBe(true)
+  })
+})
+
+describe('pin pai (AC-F3-12)', () => {
+  const tree = () => [saved('reino', 'castelo'), { ...saved('cidade', 'cidade'), parentId: 'reino' }, { ...saved('vila', 'vila'), parentId: 'cidade' }]
+
+  it('setParent liga o pin a outro, e null o deixa sem pai (sem o campo)', () => {
+    const pins = createPinsStore([saved('a', 'cidade'), saved('b', 'vila')])
+    pins.getState().setParent('b', 'a')
+    expect(pins.getState().pins[1].parentId).toBe('a')
+    pins.getState().setParent('b', null)
+    expect('parentId' in pins.getState().pins[1]).toBe(false)
+  })
+
+  it('setParent recusa o próprio pin, um descendente e um pin que não existe; o mesmo pai não muda a lista', () => {
+    const pins = createPinsStore(tree())
+    const before = pins.getState().pins
+    pins.getState().setParent('reino', 'reino')
+    pins.getState().setParent('reino', 'vila')
+    pins.getState().setParent('reino', 'nenhum')
+    pins.getState().setParent('vila', 'cidade')
+    pins.getState().setParent('castelo', null)
+    expect(pins.getState().pins).toBe(before)
+  })
+
+  it('excluir o pai deixa os filhos diretos sem pai; os netos continuam com o pai deles', () => {
+    const pins = createPinsStore(tree())
+    pins.getState().removePin('reino')
+    expect(pins.getState().pins.map((p) => [p.id, p.parentId])).toEqual([
+      ['cidade', undefined],
+      ['vila', 'cidade'],
+    ])
+  })
+
+  it('ao carregar, um pai que não existe ou um ciclo sai', () => {
+    const pins = createPinsStore([{ ...saved('a', 'vila'), parentId: 'b' }, { ...saved('b', 'vila'), parentId: 'a' }, { ...saved('c', 'vila'), parentId: 'x' }])
+    expect(pins.getState().pins.map((p) => p.parentId)).toEqual([undefined, 'a', undefined])
   })
 })

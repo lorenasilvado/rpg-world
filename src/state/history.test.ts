@@ -250,3 +250,31 @@ describe('histórico do mundo (AC-F4-08)', () => {
     expect(history.canUndo()).toBe(false)
   })
 })
+
+describe('hierarquia no histórico (AC-F3-12)', () => {
+  it('excluir o pai deixa os filhos sem pai num passo só, e Desfazer devolve o pai e os vínculos', () => {
+    const { pins, history } = setup([pin('reino'), { ...pin('cidade'), parentId: 'reino' }, { ...pin('vila'), parentId: 'cidade' }])
+    pins.getState().removePin('reino')
+    expect(pins.getState().pins.map((p) => [p.id, p.parentId])).toEqual([
+      ['cidade', undefined],
+      ['vila', 'cidade'],
+    ])
+    history.undo()
+    expect(pins.getState().pins.map((p) => [p.id, p.parentId])).toEqual([
+      ['reino', undefined],
+      ['cidade', 'reino'],
+      ['vila', 'cidade'],
+    ])
+    history.redo()
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['cidade', 'vila'])
+    expect(pins.getState().pins[0].parentId).toBeUndefined()
+  })
+
+  it('trocar o pai é um passo do histórico', () => {
+    const { pins, history } = setup()
+    pins.getState().setParent('b', 'a')
+    expect(pins.getState().pins[1].parentId).toBe('a')
+    history.undo()
+    expect('parentId' in pins.getState().pins[1]).toBe(false)
+  })
+})

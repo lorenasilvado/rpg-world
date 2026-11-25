@@ -60,9 +60,33 @@ describe('aba Detalhes: tipo e ícone (AC-F3-10)', () => {
     expect(screen.getByTestId('pin-drawer-icon').querySelector('svg')!.getAttribute('data-pin-type')).toBe('masmorra')
   })
 
-  it('o pin pai ainda não existe: "Em breve"', () => {
-    const { panel } = setup()
-    expect(within(panel).getByRole('heading', { name: /Pin pai/ }).textContent).toBe('Pin paiEm breve')
+})
+
+describe('aba Detalhes: pin pai (AC-F3-12)', () => {
+  // reino › cidade › vila, e um castelo solto; a ficha aberta é a da cidade.
+  const tree = () => [
+    pin('Cidade', { parentId: 'Reino' }),
+    pin('Reino', { type: 'castelo', icon: { kind: 'builtin', key: 'castelo' } }),
+    pin('Vila', { type: 'vila', icon: { kind: 'builtin', key: 'vila' }, parentId: 'Cidade' }),
+    pin('Abadia'),
+  ]
+
+  it('o seletor mostra "Nenhum" e os pins por nome, sem o próprio pin nem os descendentes, com o pai marcado', () => {
+    const { panel } = setup(tree())
+    const select = within(panel).getByRole('combobox', { name: 'Pin pai' }) as HTMLSelectElement
+    expect([...select.options].map((o) => o.textContent)).toEqual(['Nenhum', 'Abadia (Cidade)', 'Reino (Castelo)'])
+    expect(select.value).toBe('Reino')
+    expect(select.getAttribute('aria-describedby')).toBeTruthy()
+  })
+
+  it('escolher outro pai ou "Nenhum" muda o pin', () => {
+    const { pins, panel } = setup(tree())
+    const select = within(panel).getByRole('combobox', { name: 'Pin pai' }) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'Abadia' } })
+    expect(pins.getState().pins[0].parentId).toBe('Abadia')
+    fireEvent.change(select, { target: { value: '' } })
+    expect('parentId' in pins.getState().pins[0]).toBe(false)
+    expect(select.value).toBe('')
   })
 })
 

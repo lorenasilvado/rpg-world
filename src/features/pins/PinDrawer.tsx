@@ -10,6 +10,7 @@ import { pinType, pinTypeLabel } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
 import type { WorldStore } from '../../state/worldStore'
 import { DescriptionEditor } from './DescriptionEditor'
+import { PinConnections } from './PinConnections'
 import { PinDetails } from './PinDetails'
 import { PinIcon } from './PinIcon'
 import { PinTags } from './PinTags'
@@ -37,7 +38,8 @@ type TabId = (typeof TABS)[number]['id']
  * - O cabeçalho: o ícone do tipo (o Personalizado com a imagem enviada no círculo), o nome, editável, a etiqueta do tipo, na cor dele, e a linha do
  *   lugar, com o bioma sob o pin (do campo exibido) e as coordenadas (`place.ts`).
  * - As abas Descrição (a descrição em texto rico e as tags), Detalhes (tipo, ícone e campos livres,
- *   `PinDetails`) e Conexões (vazia por ora).
+ *   `PinDetails`) e Conexões (o pin pai e os filhos, `PinConnections`). Abrir um pin pela aba
+ *   Conexões abre a ficha dele na mesma aba, com o foco nela.
  * - O rodapé fixo: Centralizar (a câmera desliza até o pin, aproximando até `CENTER_PIN_ZOOM`),
  *   Duplicar (a cópia ao lado, selecionada) e Excluir (`onDelete`, com o toast "Pin excluído").
  *
@@ -73,6 +75,8 @@ export function PinDrawer({
   const isNew = useStore(pins, (s) => s.selectedId !== null && s.selectedId === s.newPinId)
   // A cópia do Duplicar: a ficha dela é outra (outra `key`), e o foco volta ao Duplicar dela.
   const [duplicated, setDuplicated] = useState<string | null>(null)
+  // O pin aberto pela aba Conexões: a ficha dele abre nessa aba, com o foco nela.
+  const [opened, setOpened] = useState<string | null>(null)
   if (!selected) return null
   return (
     <PinCard
@@ -86,6 +90,12 @@ export function PinDrawer({
       editName={isNew}
       focusDuplicate={duplicated === selected.id}
       onDuplicated={setDuplicated}
+      openedFromConnections={opened === selected.id}
+      onOpenConnection={(id) => {
+        setOpened(id)
+        pins.getState().select(id)
+      }}
+      onOpenedHandled={() => setOpened(null)}
       onDelete={onDelete}
       onCentered={onCentered}
     />
@@ -102,6 +112,9 @@ function PinCard({
   editName,
   focusDuplicate,
   onDuplicated,
+  openedFromConnections,
+  onOpenConnection,
+  onOpenedHandled,
   onDelete,
   onCentered,
 }: {
@@ -116,6 +129,12 @@ function PinCard({
   focusDuplicate: boolean
   /** Depois do Duplicar, com o id da cópia (`null`: o foco já foi entregue). */
   onDuplicated: (id: string | null) => void
+  /** A ficha foi aberta pela aba Conexões de outro pin: ela abre nessa aba, com o foco nela. */
+  openedFromConnections: boolean
+  /** Seleciona um pin da aba Conexões. */
+  onOpenConnection: (id: string) => void
+  /** A ficha aberta pela aba Conexões já abriu nela (a próxima vez, ela abre na Descrição). */
+  onOpenedHandled: () => void
   onDelete: (id: string) => void
   onCentered?: () => void
 }) {
@@ -125,8 +144,15 @@ function PinCard({
   const allPins = useStore(pins, (s) => s.pins)
   const imageId = pinImageId(pin)
   const imageUrl = useStore(images.store, (s) => (imageId ? s.urls[imageId] : undefined))
-  const [tab, setTab] = useState<TabId>('descricao')
+  const [tab, setTab] = useState<TabId>(openedFromConnections ? 'conexoes' : 'descricao')
   const tabsId = useId()
+  const tablist = useRef<HTMLDivElement>(null)
+  const hasConnections = allPins.some((p) => p.id === pin.parentId || p.parentId === pin.id)
+  useEffect(() => {
+    if (!openedFromConnections) return
+    tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()
+    onOpenedHandled()
+  }, [openedFromConnections, onOpenedHandled])
 
   const close = () => pins.getState().select(null)
   const center = () => {
@@ -205,7 +231,7 @@ function PinCard({
           </p>
         </header>
 
-        <div role="tablist" aria-label="Ficha do pin" className="mx-5 flex gap-5 border-b border-line" onKeyDown={(e) => moveTab(e, tab, setTab)}>
+        <div ref={tablist} role="tablist" aria-label="Ficha do pin" className="mx-5 flex gap-5 border-b border-line" onKeyDown={(e) => moveTab(e, tab, setTab)}>
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -233,9 +259,9 @@ function PinCard({
             id={`${tabsId}-${t.id}-painel`}
             aria-labelledby={`${tabsId}-${t.id}`}
             hidden={tab !== t.id}
-            // Sem nada focável dentro (Conexões, por enquanto), o painel recebe o foco pelo Tab, como
-            // pede o padrão de abas.
-            tabIndex={t.id === 'conexoes' ? 0 : undefined}
+            // Sem nada focável dentro (Conexões sem pai nem filhos), o painel recebe o foco pelo Tab,
+            // como pede o padrão de abas.
+            tabIndex={t.id === 'conexoes' && !hasConnections ? 0 : undefined}
             className="px-5 pt-4 pb-6 focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none"
           >
             {t.id === 'descricao' && tab === 'descricao' && (
@@ -253,7 +279,7 @@ function PinCard({
               </div>
             )}
             {t.id === 'detalhes' && tab === 'detalhes' && <PinDetails pin={pin} pins={pins} images={images} resize={resizeImage} />}
-            {t.id === 'conexoes' && <ComingSoon>{CONNECTIONS_SOON}</ComingSoon>}
+            {t.id === 'conexoes' && tab === 'conexoes' && <PinConnections pin={pin} pins={pins} images={images} onOpen={onOpenConnection} />}
           </div>
         ))}
       </div>
@@ -378,18 +404,5 @@ function NameField({ pin, pins, edit, onEscape }: { pin: Pin; pins: PinsStore; e
         className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7 font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
       />
     </>
-  )
-}
-
-/** O que a aba Conexões vai ter (pins.md → E2). */
-const CONNECTIONS_SOON = 'O pin pai e os pins filhos.'
-
-/** Uma aba que ainda não existe: a etiqueta "Em breve", como a da capa, e o que ela vai ter. */
-function ComingSoon({ children }: { children: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-line-2 px-4 py-8 text-center" data-testid="pin-tab-soon">
-      <span className="rounded-pill border border-line bg-paper-solid px-2 py-0.5 text-[11px]/4 font-bold text-ink-2">Em breve</span>
-      <p className="text-[13px] text-ink-2">{children}</p>
-    </div>
   )
 }

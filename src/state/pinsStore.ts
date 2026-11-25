@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Pin } from '../persistence/types'
+import { canBeParent, validParents, withoutParent } from './pinHierarchy'
 import { uniqueTags } from './pinTags'
 import { DEFAULT_PIN_TYPE, NEW_PIN_NAME, pinType, type PinType } from './pinTypes'
 
@@ -43,6 +44,11 @@ export type PinsState = {
    * livres (a aba Detalhes, AC-F3-10).
    */
   updatePin(id: string, patch: PinPatch): void
+  /**
+   * Troca o pai do pin (AC-F3-12; `null`: sem pai). Um pai que não pode (o próprio pin, um
+   * descendente dele ou um pin que não existe) não entra.
+   */
+  setParent(id: string, parentId: string | null): void
   /** A edição de um texto do pin (nome ou descrição) terminou (o campo perdeu o foco). */
   endTextEdit(): void
   /**
@@ -55,7 +61,10 @@ export type PinsState = {
   dragTo(id: string, pos: { u: number; v: number }): void
   /** Solta o pin arrastado: com `commit`, ele fica na posição do arrasto; sem, volta. */
   endDrag(commit: boolean): void
-  /** Exclui o pin (AC-F3-05); devolve o pin excluído, ou `null` se ele não existe. */
+  /**
+   * Exclui o pin (AC-F3-05); os filhos dele ficam sem pai, na mesma mudança (o Desfazer devolve o
+   * pin e os vínculos, AC-F3-12). Devolve o pin excluído, ou `null` se ele não existe.
+   */
   removePin(id: string): Pin | null
   /**
    * Troca a lista inteira (o desfazer e o refazer do histórico): a seleção, o hover, o pin novo e o
@@ -115,8 +124,9 @@ export function clampPos(pos: { u: number; v: number }): { u: number; v: number 
 
 export function createPinsStore(initial: readonly Pin[] = [], { newId = () => crypto.randomUUID() }: { newId?: () => string } = {}): PinsStore {
   return createStore<PinsState>()((set, get) => ({
-    // Um mundo salvo ou importado pode trazer tags repetidas: elas saem ao carregar.
-    pins: initial.map(withUniqueTags),
+    // Um mundo salvo ou importado pode trazer tags repetidas e pais que não valem (um pai que não
+    // existe ou um ciclo): eles saem ao carregar.
+    pins: [...validParents(initial.map(withUniqueTags))],
     selectedId: null,
     hoveredId: null,
     newPinId: null,
@@ -179,6 +189,14 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
       }
       set({ pins: next })
     },
+    setParent(id, parentId) {
+      const pins = get().pins
+      const i = pins.findIndex((p) => p.id === id)
+      if (i < 0 || (pins[i].parentId ?? null) === parentId || !canBeParent(pins, id, parentId)) return
+      const next = [...pins]
+      next[i] = parentId === null ? withoutParent(pins[i]) : { ...pins[i], parentId }
+      set({ pins: next })
+    },
     endTextEdit() {
       set({ textEditEnds: get().textEditEnds + 1 })
     },
@@ -217,7 +235,7 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
     removePin(id) {
       const pin = get().pins.find((p) => p.id === id)
       if (!pin) return null
-      get().replacePins(get().pins.filter((p) => p.id !== id))
+      get().replacePins(get().pins.filter((p) => p.id !== id).map((p) => (p.parentId === id ? withoutParent(p) : p)))
       return pin
     },
     replacePins(list) {
