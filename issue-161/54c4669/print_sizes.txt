@@ -1,0 +1,8 @@
+commit: 54c466931041fd74c88f6082a9f0af22d59182df
+ac-f3-12-390-seletor-pai.png  390x844  d75c41a0dc2cfd8e7cb3b91dd4f4a8ac288e431dad8e73edc500b7db05a28da3
+ac-f3-12-desfazer-restaura-vinculos.png  1280x800  dd54d1e285133b3803953c9fc25aded258cab139871cb1edf134d98f7294d31a
+ac-f3-12-excluir-pai-filho-sem-pai.png  1280x800  5b3fc853fd09eed8ccdd997c9b499c82ba7327bcd471559fcd0e0174c16e59ef
+ac-f3-12-seletor-pai-sem-descendentes.png  1280x800  a8f5133a541d12a24e9b20798e45d6baf4aee7e30f56e46d37aa5b081becf36b
+ac-f3-13-390-cidade-aberta-pelo-conexoes.png  390x844  d1d43b0a9fed69e8a1b79c6180f10cde55a61bf1e2d2288d31d7fd39d498c29c
+ac-f3-13-390-conexoes-do-reino.png  390x844  8ca2fb1ce7d133bbe669e21a11ee81ede717b2ac72d766e61e0c2e8ecb1cdf18
+ac-f3-13-conexoes-pai-e-filhos.png  1280x800  4edca9ffcfeb3af9063cb213e6a9a14ba1291ca40b2b44d5dc989f50a44ec3ce
