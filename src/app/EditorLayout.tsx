@@ -9,11 +9,13 @@ import { Minimap } from '../features/map/Minimap'
 import { useCoarsePointer } from '../features/map/useCoarsePointer'
 import { ZoomControls } from '../features/map/ZoomControls'
 import { PinDeletedToast } from '../features/pins/PinDeletedToast'
-import { PinDrawer } from '../features/pins/PinDrawer'
+import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
+import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
+import { pinToWorld } from '../render/layers/pinMath'
 import { createCameraStore } from '../state/cameraStore'
 import type { WorldHistory } from '../state/history'
 import type { PinImages } from '../state/pinImages'
@@ -72,8 +74,9 @@ import { useTheme } from './useTheme'
  * não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel
  * sobreposto aberto nem durante o arrasto de um pin ou de um slider.
  *
- * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar e Exportar ficam
- * desabilitados (as funções vêm no M2 e no M3); o tema alterna, e Ajuda
+ * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar (ou Ctrl K) abre o
+ * modal de busca dos pins (`SearchDialog`, AC-F3-16): escolher um resultado seleciona o pin e leva a
+ * câmera até ele, como o Centralizar do drawer. Exportar fica desabilitado (vem no M3); o tema alterna, e Ajuda
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
@@ -117,6 +120,18 @@ export function EditorLayout({
     helpReturn.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setHelpOpen(true)
   }
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchButton = useRef<HTMLButtonElement>(null)
+  /**
+   * Quem recebe o foco ao fechar a busca: quem tinha o foco ao abrir (sem ninguém, o `body`, o Buscar
+   * da barra) ou, escolhido um pin abaixo de 768 px, o fechar do drawer sobreposto.
+   */
+  const searchReturn = useRef<HTMLElement | null>(null)
+  const openSearch = useCallback(() => {
+    const active = document.activeElement
+    searchReturn.current = active instanceof HTMLElement && active !== document.body ? active : searchButton.current
+    setSearchOpen(true)
+  }, [])
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   /** O drawer à vista: a partir de 768 px, com um pin selecionado; abaixo, o painel sobreposto aberto. */
@@ -247,6 +262,36 @@ export function EditorLayout({
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [ui])
+
+  // Ctrl K (⌘ K no Mac) abre a busca, mesmo com o foco num campo; num modal ou com um painel
+  // sobreposto aberto, não.
+  useEffect(() => {
+    if (anyOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
+      if (e.defaultPrevented || inDialog(e.target)) return
+      e.preventDefault()
+      openSearch()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyOpen, openSearch])
+
+  const chooseSearchResult = (id: string) => {
+    const pin = pins.getState().pins.find((p) => p.id === id)
+    setSearchOpen(false)
+    if (!pin) return
+    // Abaixo de 768 px, o drawer sobreposto abre com a ficha (também com o pin que já estava
+    // selecionado, com o painel fechado pelo Centralizar), e o foco vai para o fechar dele.
+    if (!window.matchMedia(DESKTOP_QUERY).matches) {
+      searchReturn.current = drawerClose.current
+      setSidebarOpen(false)
+      setDrawerOpen(true)
+    } else if (!searchReturn.current?.isConnected) searchReturn.current = searchButton.current
+    pins.getState().select(id)
+    const p = pinToWorld(pin.pos)
+    camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
+  }
 
   useEffect(() => {
     if (anyOpen) return
@@ -405,7 +450,7 @@ export function EditorLayout({
         <IconButton ref={drawerOpener} label="Abrir detalhes" className="md:hidden" onClick={() => setDrawerOpen(true)}>
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
-        <SearchButton label={searchLabel} />
+        <SearchButton ref={searchButton} label={searchLabel} onClick={openSearch} />
         <IconButton ref={undoButton} label="Desfazer" title="Desfazer (Ctrl+Z)" keyShortcuts="Control+Z" disabled={!canUndo} onClick={() => history.undo()}>
           <Undo2 size={20} aria-hidden="true" />
         </IconButton>
@@ -433,6 +478,14 @@ export function EditorLayout({
       </div>
 
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} returnFocus={helpReturn} />
+      <SearchDialog
+        open={searchOpen}
+        pins={pins}
+        images={images}
+        onChoose={chooseSearchResult}
+        onClose={() => setSearchOpen(false)}
+        returnFocus={searchReturn}
+      />
 
       <aside
         aria-label="Detalhes"
@@ -549,22 +602,25 @@ function usePanelFocus(
 const SEARCH_LABEL_FROM = 420
 
 /**
- * Buscar (Ctrl K), desabilitado até a busca existir (M2). Com `label`, parece um campo com o rótulo
- * e a tecla; sem, só o ícone (área livre estreita e celular).
+ * Buscar (Ctrl K): abre o modal de busca dos pins. Com `label`, parece um campo com o rótulo e a
+ * tecla; sem, só o ícone (área livre estreita e celular).
  */
-function SearchButton({ label }: { label: boolean }) {
+function SearchButton({ ref, label, onClick }: { ref?: Ref<HTMLButtonElement>; label: boolean; onClick: () => void }) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label="Buscar"
+      aria-keyshortcuts="Control+K"
+      aria-haspopup="dialog"
       title="Buscar (Ctrl+K)"
-      disabled
+      onClick={onClick}
       data-testid="search-button"
       data-label={label}
       className={
         label
-          ? 'mr-1.5 flex h-10 shrink-0 items-center gap-2 rounded-control border border-line bg-field pr-2 pl-2.5 text-[13px] font-semibold text-ink-2 disabled:opacity-55'
-          : 'grid size-11 shrink-0 place-items-center rounded-control text-ink disabled:opacity-40'
+          ? 'mr-1.5 flex h-10 shrink-0 items-center gap-2 rounded-control border border-line bg-field pr-2 pl-2.5 text-[13px] font-semibold text-ink-2 hover:border-ink-3 active:bg-press'
+          : 'grid size-11 shrink-0 place-items-center rounded-control text-ink hover:bg-hover active:bg-press'
       }
     >
       <Search size={label ? 18 : 20} aria-hidden="true" />

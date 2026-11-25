@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # F3 · Pins e drawer
@@ -13,10 +13,10 @@ o comportamento atualiza esta spec.
 > com o cabeçalho (ícone, nome editável, tipo, bioma e coordenadas), a aba Descrição (texto rico e
 > tags), a aba Detalhes (tipo, ícone da biblioteca ou imagem enviada, e campos livres) e o rodapé
 > (Centralizar, Duplicar, Excluir); o pin pai (na aba Detalhes) e a aba Conexões; o agrupamento no
-> zoom baixo e o interruptor de cada tipo em Camadas; arrastar um pin;
+> zoom baixo e o interruptor de cada tipo em Camadas; a busca (Ctrl K); arrastar um pin;
 > excluir o selecionado com a tecla Delete ou pelo rodapé, com o toast "Pin excluído" e Desfazer; e
-> desfazer e refazer as mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa,
-> busca) vem do material de design e do PRD e ainda não existe: a área da capa aparece
+> desfazer e refazer as mudanças nos pins (ver [mundos.md](mundos.md)). O resto (a imagem de capa)
+> vem do material de design e do PRD e ainda não existe: a área da capa aparece
 > com o botão desabilitado (esmaecido, com a etiqueta "Em breve").
 
 ## Resumo
@@ -76,6 +76,25 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
   foco pelo Tab). Clicar num deles o seleciona, e a ficha dele abre na aba Conexões, com o foco na
   aba (selecionado de outro jeito, o pin abre na Descrição). As estradas ligadas ao pin entram com F5.
 
+### Buscar
+
+- Modal no topo da tela (560 px; no celular, a largura da tela menos 16 px de cada lado), sobre o
+  scrim, aberto pelo Buscar da barra superior ou por Ctrl K (⌘ K no Mac), mesmo com o foco num campo
+  (num modal ou com um painel sobreposto aberto, a tecla não abre). Abre com o campo vazio e o foco
+  nele; o campo tem 16 px e, no lugar do anel de foco, a borda de baixo âmbar.
+- O campo ("Buscar pins por nome ou tag") acha os pins pelo nome e pelas tags, sem diferenciar
+  maiúsculas nem acentos ("avila" acha "Ávila"). A lista mostra cada pin com o ícone, o nome, o tipo
+  e, à direita, as tags que bateram. Ordem: o nome que começa pelo texto, depois o nome que o tem no
+  meio, depois só pela tag (começando pelo texto antes de no meio dela); no mesmo nível, pelo nome,
+  em ordem alfabética. Mostra até 50.
+- Mensagens abaixo do campo: vazio, "Digite o nome ou uma tag do pin."; nada achado, "Nenhum pin com
+  “<texto>”."; mais de 50, "Mostrando 50 de <total> pins. Digite mais para refinar."; mundo sem pins,
+  "Este mundo ainda não tem pins.".
+- Teclado: as setas andam pela lista (do último volta ao primeiro, e ao contrário), Ctrl+Home e
+  Ctrl+End vão às pontas, Enter escolhe o resultado ativo (o primeiro, ao digitar), Esc fecha. O foco
+  fica no campo; o resultado ativo tem o fundo âmbar claro, e o mouse sobre um resultado o torna
+  ativo.
+
 ### Tipos de pin
 
 Cidade, Vila, Castelo, Masmorra, NPC, Ponto de interesse, Personalizado. Cada tipo tem um ícone
@@ -129,7 +148,9 @@ do banco.
 | Duplicar (rodapé) | Cria uma cópia ao lado do pin (36 px à direita e 64 px abaixo na tela, no zoom atual, para os rótulos não se cobrirem; perto da borda, do outro lado), "<nome> (cópia)" (a cópia de uma cópia conta: "(cópia 2)", "(cópia 3)"…), com a mesma ficha (tipo, ícone, descrição, tags, campos e o mesmo pai) e sem os filhos; a cópia fica selecionada, num passo do histórico, e o foco fica no Duplicar da ficha dela |
 | Centralizar (rodapé; para o leitor de tela, "Centralizar no pin") | A câmera desliza (350 ms) até o pin ficar no centro da área livre, aproximando até o zoom 1,6× se estiver mais longe (mais perto, o zoom fica). Perto da borda do mapa, a câmera para no limite do pan, e o pin fica fora do centro, do lado da borda. Abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer, e o pin continua selecionado |
 | Excluir (rodapé) | Exclui o pin como a tecla Delete, com o toast "Pin excluído" e Desfazer; o botão vale também no painel sobreposto (abaixo de 768 px). A partir de 768 px, o foco vai para o Desfazer da barra; abaixo, o painel fecha e o foco volta a quem o abriu |
-| Buscar (Ctrl K) | Busca pins por nome e tag; a câmera foca no resultado |
+| Buscar (o botão da barra ou Ctrl K) | Abre o modal Buscar (E2 → Buscar) |
+| Escolher um resultado da busca (Enter ou clique) | Fecha a busca, seleciona o pin (o drawer abre) e leva a câmera até ele como o Centralizar: desliza (350 ms) até o centro da área livre, aproximando até o zoom 1,6× se estiver mais longe; perto da borda do mapa, para no limite do pan. Um pin de tipo escondido em Camadas aparece, por estar selecionado. A partir de 768 px, o foco volta a quem o tinha ao abrir a busca (sem ninguém, o Buscar da barra); abaixo, o painel sobreposto abre com a ficha, e o foco vai para o fechar dele |
+| Fechar a busca (Esc ou clique fora) | Fecha sem mudar a seleção; o foco volta a quem o tinha ao abrir |
 | Clicar num grupo (Navegar ou Adicionar pin) | A câmera desliza (350 ms) até o ponto médio do grupo, no centro da área livre, no zoom 1,3× (os pins se soltam); não seleciona nem cria pin |
 | Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. Esc com Adicionar pin e sem pin selecionado volta para Navegar |
 

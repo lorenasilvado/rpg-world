@@ -142,7 +142,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 48 | #212 | [bug] No desktop, sem pin selecionado, o drawer fica à vista vazio e corta o mapa | done | specs/pins.md | #214 |
 | 49 | #161 | [feat] Hierarquia de pins e aba Conexões | done | specs/pins.md | #216 |
 | 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | done | specs/pins.md | #217 |
-| 51 | #163 | [feat] Buscar pins (Ctrl K) | todo | specs/pins.md | |
+| 51 | #163 | [feat] Buscar pins (Ctrl K) | done | specs/pins.md | #221 |
 | 52 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
 | 53 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
 | 54 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |

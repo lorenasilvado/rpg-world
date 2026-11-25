@@ -25,7 +25,8 @@ const box = async (page: Page, testId: string) => {
 test('a barra superior e a toolbar: funções que ainda não existem desabilitadas (AC-F2-10)', async ({ page }) => {
   await open(page)
   const actions = page.getByTestId('actions')
-  for (const name of ['Buscar', 'Desfazer', 'Refazer', 'Exportar']) await expect(actions.getByRole('button', { name })).toBeDisabled()
+  for (const name of ['Desfazer', 'Refazer', 'Exportar']) await expect(actions.getByRole('button', { name })).toBeDisabled()
+  await expect(actions.getByRole('button', { name: 'Buscar' })).toBeEnabled()
   await expect(actions.getByRole('button', { name: 'Usar tema escuro' })).toBeEnabled()
   await expect(actions.getByRole('button', { name: 'Ajuda' })).toBeEnabled()
   // Com espaço, Buscar mostra o rótulo e a tecla.
@@ -166,7 +167,7 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   await help.click()
   const dialog = page.getByRole('dialog', { name: 'Atalhos de teclado' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator('dt')).toHaveText(['Navegar', 'Adicionar pin', 'Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Excluir pin', 'Desfazer', 'Refazer', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
+  await expect(dialog.locator('dt')).toHaveText(['Navegar', 'Adicionar pin', 'Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Excluir pin', 'Buscar pins', 'Desfazer', 'Refazer', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
   // Duas colunas a partir de 640 px: "Adicionar pin" fica ao lado de "Navegar", na mesma linha.
   const first = (await dialog.locator('dt').nth(0).boundingBox())!
   const second = (await dialog.locator('dt').nth(1).boundingBox())!
