@@ -8,7 +8,8 @@ import { MapCamera } from './MapCamera'
 import { KEY_ZOOM_STEP, WORLD_SIZE, mapRect, type Area } from './camera'
 import { DecorLayer, bindDecorLayer, destroyDecorTextures, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { PinLayer, destroyPinTextures, loadPinTextures } from './layers/PinLayer'
-import { pinToWorld } from './layers/pinMath'
+import { pinToWorld, type PinCamera } from './layers/pinMath'
+import { groupToScreen } from './layers/pinGroups'
 import { TerrainLayer } from './layers/TerrainLayer'
 import { worldView } from './layers/decorCull'
 import { createMapBlur, MAP_BLUR_PX } from './mapBlur'
@@ -60,8 +61,9 @@ export type MapRenderer = {
  * área livre à esquerda do drawer aberto (`insets().drawer`, com os limites de pan
  * contando com ele; deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
  * expõe os pins no mapa em `data-pins`, os rótulos à vista em `data-pin-labels`, o selecionado em
- * `data-pin-selected`, a largura de um pin na tela, em px, em `data-pin-size` e as texturas de
- * imagens enviadas na GPU em `data-pin-image-textures`. Sem o desenho dos
+ * `data-pin-selected`, a largura de um pin na tela, em px, em `data-pin-size`, as texturas de
+ * imagens enviadas na GPU em `data-pin-image-textures`, os pins soltos à vista em `data-pins-shown`
+ * e os grupos em `data-pin-groups`. Os tipos de pin desligados em Camadas (`layers` do `ui`) somem. Sem o desenho dos
  * pins (sem o contexto 2D), o mapa segue sem eles, e o console avisa.
  *
  * A câmera aparece para a interface no `cameraState` (`cameraStore.ts`): a cada quadro em que muda,
@@ -146,7 +148,7 @@ export async function createMapRenderer(
     if (host.dataset.zoom !== z) host.dataset.zoom = z
     if (pinLayer) {
       pinLayer.frame(t.scale, zoom, performance.now(), reducedMotion())
-      writePinState(host, pinLayer, pins.getState(), t.scale)
+      writePinState(host, pinLayer, pins.getState(), t.scale, cameraState.getState())
     }
   })
   app.stage.addChild(camera.viewport)
@@ -158,8 +160,13 @@ export async function createMapRenderer(
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
     camera.viewport.addChild(pinLayer.view)
+    pinLayer.setLayers(ui.getState().layers)
     pinLayer.sync(pins.getState(), performance.now())
   }
+  // Camadas liga e desliga os pins de cada tipo; o quadro seguinte os mostra ou esconde.
+  const unsubscribePinLayers = ui.subscribe((state, prev) => {
+    if (state.layers !== prev.layers) pinLayer?.setLayers(state.layers)
+  })
   // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
   const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
   // O drawer (a partir de 768 px) fica aberto com um pin selecionado: os limites de pan e o centro do
@@ -248,6 +255,7 @@ export async function createMapRenderer(
       unsubscribe()
       unsubscribeUi()
       unsubscribePins()
+      unsubscribePinLayers()
       unsubscribeImages()
       app.ticker.remove(onBlurTick)
       app.renderer.off('resize', onResize)
@@ -271,16 +279,22 @@ export async function createMapRenderer(
       delete host.dataset.pinsLeaving
       delete host.dataset.pinSize
       delete host.dataset.pinImageTextures
+      delete host.dataset.pinsShown
+      delete host.dataset.pinGroups
     },
   }
 }
 
 /**
  * Escreve no `host`, para os testes, os pins no mapa, os rótulos à vista, o selecionado, o arrastado,
- * os excluídos que ainda encolhem e a largura de um pin na tela.
+ * os excluídos que ainda encolhem, a largura de um pin na tela, os pins soltos à vista
+ * (`data-pins-shown`, sem os dos grupos e os dos tipos escondidos) e os grupos (`data-pin-groups`:
+ * `x,y,n` de cada um, o centro do círculo na área do mapa, em px arredondados, e o número de pins,
+ * separados por `;`).
  */
-function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState, 'selectedId' | 'dragging'>, scale: number) {
-  const set = (key: 'pins' | 'pinLabels' | 'pinSelected' | 'pinDragging' | 'pinsLeaving' | 'pinSize' | 'pinImageTextures', value: string) => {
+function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState, 'selectedId' | 'dragging'>, scale: number, cam: PinCamera) {
+  type Key = 'pins' | 'pinLabels' | 'pinSelected' | 'pinDragging' | 'pinsLeaving' | 'pinSize' | 'pinImageTextures' | 'pinsShown' | 'pinGroups'
+  const set = (key: Key, value: string) => {
     if (host.dataset[key] !== value) host.dataset[key] = value
   }
   set('pins', String(layer.count))
@@ -289,6 +303,16 @@ function writePinState(host: HTMLElement, layer: PinLayer, state: Pick<PinsState
   set('pinDragging', state.dragging?.id ?? '')
   set('pinsLeaving', String(layer.leavingCount))
   set('pinImageTextures', String(layer.imageTextureCount))
+  set('pinsShown', String(layer.shownCount))
+  set(
+    'pinGroups',
+    layer.groups
+      .map((g) => {
+        const c = groupToScreen(g, cam)
+        return `${Math.round(c.x)},${Math.round(c.y)},${g.ids.length}`
+      })
+      .join(';'),
+  )
   const size = layer.screenWidth(scale)
   set('pinSize', size === null ? '' : size.toFixed(1))
 }

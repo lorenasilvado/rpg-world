@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { inDialog, isFieldTarget } from '../../render/camera'
+import { GROUP_FOCUS_ZOOM, createPinGrouper, groupAt } from '../../render/layers/pinGroups'
 import { pinAt, pinToScreen, screenToPin, screenToPinClamped } from '../../render/layers/pinMath'
+import type { Pin } from '../../persistence/types'
 import type { CameraStore } from '../../state/cameraStore'
 import type { PinsStore } from '../../state/pinsStore'
 import type { UiStore } from '../../state/uiStore'
@@ -24,6 +26,11 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * aperto num pin é ouvido na captura, antes do canvas, e segura o pan da câmera (`holdPan`) até
  * soltar; o evento segue, e o "clique fora" dos popovers e menus continua valendo.
  * Esc, um segundo dedo ou o `pointercancel` devolvem o pin ao lugar. A seleção não muda no arrasto.
+ *
+ * Só os pins à vista contam: os dos tipos desligados em Camadas (AC-F3-15) e os que estão num grupo
+ * (zoom abaixo de 0,8×, AC-F3-14) não recebem clique nem hover. Um clique num grupo (com Navegar ou
+ * Adicionar pin) leva a câmera ao ponto médio dele, no zoom 1,3× (`focusOn`), sem criar pin; com o
+ * mouse sobre um grupo, `groupHovered` fica ligado (o cursor é a lupa).
  *
  * Esc fecha o drawer (tira a seleção); sem pin selecionado, com Adicionar pin, volta para Navegar.
  * Delete ou Backspace exclui o pin selecionado (`onDelete`), sem confirmação. As teclas seguem as exceções dos
@@ -82,10 +89,19 @@ export function PinTool({
       const rect = map.getBoundingClientRect()
       return { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
+    const grouper = createPinGrouper<Pin>()
+    /** Os pins soltos à vista e os grupos, como o renderer os desenha. */
+    const visible = () => {
+      const s = pins.getState()
+      const cam = camera.getState()
+      const g = grouper(s.pins, ui.getState().layers, cam.scale, cam.zoom, s.selectedId, s.dragging?.id ?? null)
+      return { singles: g.grouped.size ? g.shown.filter((p) => !g.grouped.has(p.id)) : g.shown, groups: g.groups }
+    }
     const under = (x: number, y: number) => {
       const s = pins.getState()
-      return pinAt(x, y, s.pins, camera.getState(), s.selectedId, s.hoveredId)
+      return pinAt(x, y, visible().singles, camera.getState(), s.selectedId, s.hoveredId)
     }
+    const groupUnder = (x: number, y: number) => groupAt(x, y, visible().groups, camera.getState())
     /** O pan da câmera está seguro por um aperto num pin. */
     let panHeld = false
     const holdPan = (held: boolean) => {
@@ -136,6 +152,12 @@ export function PinTool({
         pins.getState().select(hit.id)
         return
       }
+      const group = groupUnder(at.x, at.y)
+      if (group) {
+        camera.getState().controls?.focusOn(group.x, group.y, GROUP_FOCUS_ZOOM)
+        pins.getState().setGroupHovered(false)
+        return
+      }
       if (tool !== 'pin') return
       const pos = screenToPin(at.x, at.y, camera.getState())
       if (!pos) return
@@ -167,8 +189,10 @@ export function PinTool({
       }
       if (e.pointerType === 'touch' || pins.getState().dragging) return
       const map = mapUnder(e.target)
-      const hit = map && camera.getState().ready && ui.getState().tool !== 'measure' ? under(local(e, map).x, local(e, map).y) : null
+      const at = map && camera.getState().ready && ui.getState().tool !== 'measure' ? local(e, map) : null
+      const hit = at ? under(at.x, at.y) : null
       pins.getState().setHovered(hit ? hit.id : null)
+      pins.getState().setGroupHovered(at !== null && hit === null && groupUnder(at.x, at.y) !== null)
     }
     // Na captura: o aperto num pin segura o pan antes de o canvas (e a câmera) o receber.
     document.addEventListener('pointerdown', onDown, true)
@@ -185,6 +209,7 @@ export function PinTool({
       if (press?.dragging) pins.getState().endDrag(false)
       holdPan(false)
       pins.getState().setHovered(null)
+      pins.getState().setGroupHovered(false)
     }
   }, [ui, pins, camera, disabled])
 

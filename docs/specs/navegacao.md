@@ -12,7 +12,7 @@ o comportamento atualiza esta spec.
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
 > (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
-> que ainda não existem desabilitadas), Camadas (interruptor "Decoração"), Ajuda (modal "Atalhos
+> que ainda não existem desabilitadas), Camadas (interruptores "Decoração" e um por tipo de pin), Ajuda (modal "Atalhos
 > de teclado") e Medir distância.
 
 ## Resumo
@@ -54,8 +54,10 @@ barra inferior.
   ambos, o tooltip e o popover de Camadas abrem acima dela. Abaixo de 341 px (tablet com a sidebar
   aberta: 304 px), ela fica em pé, 12 px acima do controle de zoom e alinhada à direita dele; o
   tooltip abre à esquerda, e o popover, acima, alinhado à direita.
-- Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa: hoje,
-  só "Decoração" (ícone `trees`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
+- Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa:
+  "Decoração" (ícone `trees`) e, abaixo dela, depois de um traço, um por tipo de pin (Cidade, Vila,
+  Castelo, Masmorra, NPC, Ponto de interesse e Personalizado, com o ícone do tipo; ver
+  [pins.md](pins.md)). Numa tela baixa, o popover rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
   pin (P), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
@@ -109,7 +111,7 @@ barra inferior.
 | Tocar no minimapa fora do retângulo | Centra a área visível no ponto tocado (e o arrasto continua dali) |
 | Setas com o foco no minimapa | Movem a área visível 1/10 do mapa (10 px do minimapa), na hora |
 | Recolher o minimapa | Esconde o minimapa |
-| Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa (hoje, "Decoração") |
+| Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa ("Decoração" e os 7 tipos de pin) |
 | Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
 | Buscar, exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |

@@ -1,4 +1,4 @@
-import { BlurFilter, Container, Graphics, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
+import { BlurFilter, Container, Graphics, GraphicsContext, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
 import type { Pin } from '../../persistence/types'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
@@ -18,6 +18,7 @@ import {
   shrinkFrame,
   showLabel,
 } from './pinMath'
+import { GROUP_HALO_PX, GROUP_LIFT_PX, GROUP_SIZE_PX, createPinGrouper, type PinGroup, type PinTypeLayers } from './pinGroups'
 
 /** Texturas dos pins, uma por tipo. */
 export type PinTextures = ReadonlyMap<PinType, Texture>
@@ -32,6 +33,26 @@ const RING = 0xc8892b
 
 /** Cor da marca tracejada no chão do pin arrastado (`--ink` do tema claro). */
 const MARK = 0x2b2420
+
+/** Cor do fundo do grupo (`#F7F1E3`) e do contorno e do contador (`#2B2420`), no design system. */
+const GROUP_FILL = 0xf7f1e3
+const GROUP_INK = 0x2b2420
+
+/**
+ * O desenho do grupo, igual para todos (um só para a camada): a sombra (`0 3px 8px` com `--ink` a
+ * 35%, em anéis que somem para fora), o halo âmbar de 3 px a 60% e o círculo de 38 px com a borda de
+ * 2 px.
+ */
+function groupContext(): GraphicsContext {
+  const r = GROUP_SIZE_PX / 2
+  const c = new GraphicsContext()
+  for (let k = 4; k >= 1; k--) c.circle(0, 3, r + k * 2).fill({ color: GROUP_INK, alpha: 0.35 / 5 })
+  c.circle(0, 0, r + GROUP_HALO_PX).fill({ color: RING, alpha: 0.6 })
+  c.circle(0, 0, r - 1).fill(GROUP_FILL).stroke({ width: 2, color: GROUP_INK })
+  return c
+}
+
+type GroupView = { root: Container; count: Text; n: number }
 
 /** A elipse 40 × 16 do chão, tracejada (o Pixi não tem traço tracejado): 16 traços e 16 vãos. */
 function dashedEllipse(): Graphics {
@@ -120,6 +141,9 @@ type PinView = {
   bornAt: number | null
 }
 
+/** Todos os tipos à vista. */
+const ALL_TYPES: PinTypeLayers = Object.fromEntries(PIN_TYPES.map((t) => [t.id, true])) as Record<PinType, boolean>
+
 /** O que a camada lê do `pinsStore`. */
 export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' | 'newPinId' | 'dragging'>
 
@@ -147,11 +171,26 @@ export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' 
  * que nenhum pin usa mais (trocada, removida) é destruída; se o desfazer a traz de volta, ela é
  * desenhada de novo a partir do blob.
  *
+ * Os tipos desligados em Camadas (`setLayers`, AC-F3-15) não aparecem, menos o pin selecionado. Com
+ * o zoom abaixo de 0,8×, os pins à vista a menos de 34 px uns dos outros na tela viram grupos
+ * (`pinGroups.ts`, AC-F3-14): somem, e no ponto médio deles aparece o círculo do grupo (38 px,
+ * `#F7F1E3`, borda de 2 px, halo âmbar) com o contador (Nunito 800 15), abaixo dos pins soltos. O
+ * selecionado e o arrastado nunca entram num grupo.
+ *
  * A camada passa a ser dona das texturas que recebe (as de `loadPinTextures`) e das que cria para as
  * imagens: o `destroy` as destrói.
  */
 export class PinLayer {
   readonly view = new Container()
+  /** Os pins soltos, acima dos grupos. */
+  private pinsView = new Container()
+  private groupsView = new Container()
+  private groupLook: GraphicsContext | null = null
+  private groupViews: GroupView[] = []
+  private grouper = createPinGrouper<Pin>()
+  private layers: PinTypeLayers = ALL_TYPES
+  private groupList: readonly PinGroup[] = []
+  private shown = 0
   private textures: PinTextures
   private views = new Map<string, PinView>()
   /**
@@ -181,6 +220,22 @@ export class PinLayer {
   constructor(textures: PinTextures, images: PinImages | null = null) {
     this.textures = textures
     this.images = images
+    this.view.addChild(this.groupsView, this.pinsView)
+  }
+
+  /** Os tipos de pin ligados em Camadas (`layers` do `uiStore`). */
+  setLayers(layers: PinTypeLayers) {
+    this.layers = layers
+  }
+
+  /** Os grupos do último quadro, com os pins e o ponto médio no mundo. */
+  get groups(): readonly PinGroup[] {
+    return this.groupList
+  }
+
+  /** Quantos pins soltos estavam à vista no último quadro (fora dos grupos e dos tipos escondidos). */
+  get shownCount() {
+    return this.shown
   }
 
   /** Chegou uma imagem enviada (`PinImages`): os pins que a usam ganham a textura dela. */
@@ -234,11 +289,11 @@ export class PinLayer {
       for (const pin of state.pins) this.seen.add(pin.id)
     }
     if (state.pins !== prev.pins || dragChanged || state.selectedId !== prev.selectedId || state.hoveredId !== prev.hoveredId) {
-      this.view.removeChildren()
-      for (const { view } of this.leaving.values()) this.view.addChild(view.root)
+      this.pinsView.removeChildren()
+      for (const { view } of this.leaving.values()) this.pinsView.addChild(view.root)
       for (const pin of drawOrder(state.pins, state.selectedId, state.hoveredId, state.dragging?.id ?? null)) {
         const v = this.views.get(pin.id)
-        if (v) this.view.addChild(v.root)
+        if (v) this.pinsView.addChild(v.root)
       }
     }
   }
@@ -259,8 +314,15 @@ export class PinLayer {
       view.root.scale.set(k.scale / scale)
       view.root.alpha = k.alpha
     }
+    const grouping = this.grouper(this.state.pins, this.layers, scale, zoom, selectedId, dragging?.id ?? null)
+    const visible = new Set(grouping.shown.map((p) => p.id))
+    for (const id of grouping.grouped) visible.delete(id)
+    this.drawGroups(grouping.groups, scale)
+    this.shown = visible.size
     let labels = 0
     for (const [id, v] of this.views) {
+      v.root.visible = visible.has(id)
+      if (!v.root.visible) continue
       v.root.scale.set(1 / scale)
       v.root.alpha = 1
       const dragged = dragging?.id === id
@@ -298,8 +360,42 @@ export class PinLayer {
     this.labels = labels
   }
 
+  /** Põe os círculos dos grupos (reaproveitados de um quadro para o outro) no ponto médio de cada um. */
+  private drawGroups(groups: readonly PinGroup[], scale: number) {
+    this.groupList = groups
+    if (groups.length && !this.groupLook) this.groupLook = groupContext()
+    while (this.groupViews.length < groups.length) {
+      const root = new Container()
+      const body = new Container()
+      body.position.set(0, -GROUP_LIFT_PX)
+      const count = new Text({
+        text: '',
+        style: { fontFamily: 'Nunito, system-ui, sans-serif', fontWeight: '800', fontSize: 15, fill: '#2B2420' },
+      })
+      count.anchor.set(0.5)
+      // O texto nítido no zoom do grupo e em telas de alta densidade.
+      count.resolution = Math.max(2, globalThis.devicePixelRatio || 1)
+      body.addChild(new Graphics(this.groupLook ?? undefined), count)
+      root.addChild(body)
+      this.groupsView.addChild(root)
+      this.groupViews.push({ root, count, n: 0 })
+    }
+    this.groupViews.forEach((g, i) => {
+      const group = groups[i]
+      g.root.visible = group !== undefined
+      if (!group) return
+      g.root.position.set(group.x, group.y)
+      g.root.scale.set(1 / scale)
+      if (g.n !== group.ids.length) {
+        g.n = group.ids.length
+        g.count.text = String(g.n)
+      }
+    })
+  }
+
   destroy() {
     this.view.destroy({ children: true })
+    this.groupLook?.destroy()
     this.shadowBlur.destroy()
     this.views.clear()
     this.leaving.clear()

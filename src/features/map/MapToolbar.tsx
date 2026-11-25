@@ -1,6 +1,8 @@
-import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useStore } from 'zustand'
+import { PinIcon } from '../pins/PinIcon'
+import { PIN_TYPES } from '../../state/pinTypes'
 import type { MapLayer, MapTool, UiStore } from '../../state/uiStore'
 import { PANEL_BORDER, TOOLBAR_GAP, TOOLBAR_PADDING, TOOLBAR_THICKNESS } from './bottomBarLayout'
 import { LAYERS, TOOLS, type Tool } from './tools'
@@ -13,8 +15,9 @@ import { LAYERS, TOOLS, type Tool } from './tools'
  * .55). O hover (mesmo nas desabilitadas) ou o foco do teclado (só nas habilitadas: as
  * desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
  *
- * Camadas abre um popover com um interruptor por camada do mapa (hoje, "Decoração", que liga e
- * desliga `layers.decor` do `ui`). O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
+ * Camadas abre um popover com um interruptor por camada do mapa: "Decoração" (`layers.decor` do
+ * `ui`) e, abaixo dela, um por tipo de pin, com o ícone do tipo (`layers.<tipo>`, pins.md AC-F3-15). O
+ * popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
  * ou um clique fora dele.
  *
  * `vertical`: a toolbar fica em pé (quando não cabe deitada na linha, `bottomBarLayout`); o tooltip
@@ -135,13 +138,17 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
           role="group"
           aria-label="Camadas"
           data-testid="layers-popover"
-          className={`absolute z-[5] flex w-62 flex-col rounded-panel border border-line bg-paper-solid p-2 text-ink shadow-lg ${popoverSide}`}
+          className={`absolute z-[5] flex max-h-[calc(100dvh-160px)] w-62 flex-col overflow-y-auto rounded-panel border border-line bg-paper-solid p-2 text-ink shadow-lg ${popoverSide}`}
         >
           <span aria-hidden="true" className="px-2 py-1.5 text-[11px]/4 font-extrabold tracking-[.08em] text-ink-2 uppercase">
             Camadas
           </span>
-          {LAYERS.map((layer) => (
-            <LayerSwitch key={layer.id} ui={ui} layer={layer.id} label={layer.label} icon={layer.icon} />
+          {LAYERS.map(({ id, label, icon: Icon }) => (
+            <LayerSwitch key={id} ui={ui} layer={id} label={label} icon={<Icon size={18} aria-hidden="true" />} />
+          ))}
+          <span aria-hidden="true" className="mx-2 my-1 h-px bg-line" />
+          {PIN_TYPES.map(({ id, label }) => (
+            <LayerSwitch key={id} ui={ui} layer={id} label={label} icon={<PinIcon type={id} size={18} className="-mt-0.5" />} />
           ))}
         </div>
       )}
@@ -150,7 +157,7 @@ export function MapToolbar({ ui, vertical = false }: { ui: UiStore; vertical?: b
 }
 
 /** Uma linha do popover: ícone, nome e o interruptor (trilho âmbar ligado, `--line-2` desligado). */
-function LayerSwitch({ ui, layer, label, icon: Icon }: { ui: UiStore; layer: MapLayer; label: string; icon: LucideIcon }) {
+function LayerSwitch({ ui, layer, label, icon }: { ui: UiStore; layer: MapLayer; label: string; icon: ReactNode }) {
   const on = useStore(ui, (s) => s.layers[layer])
   return (
     <button
@@ -160,7 +167,7 @@ function LayerSwitch({ ui, layer, label, icon: Icon }: { ui: UiStore; layer: Map
       onClick={() => ui.getState().setLayer(layer, !on)}
       className="flex h-11 items-center gap-2.5 rounded-control px-2 text-left text-[13px] font-semibold hover:bg-hover pointer-fine:h-9"
     >
-      <Icon size={18} aria-hidden="true" />
+      <span className="flex w-[18px] shrink-0 justify-center">{icon}</span>
       <span className="flex-1">{label}</span>
       <span aria-hidden="true" className={`relative h-[18px] w-8 rounded-[9px] transition-colors duration-150 ${on ? 'bg-amber' : 'bg-line-2'}`}>
         <span

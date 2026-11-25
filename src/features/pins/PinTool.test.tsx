@@ -156,6 +156,54 @@ describe('Selecionar pin (AC-F3-03)', () => {
   })
 })
 
+describe('Tipos escondidos e grupos (AC-F3-14, AC-F3-15)', () => {
+  const at = (id: string, x: number, y: number) => ({
+    id,
+    type: 'cidade',
+    name: id,
+    pos: { u: x / 1024, v: y / 1024 },
+    icon: { kind: 'builtin' as const, key: 'cidade' as const },
+    description: '',
+    tags: [],
+    fields: {},
+  })
+
+  it('o pin de um tipo escondido não recebe clique nem hover; com Adicionar pin, o clique cria outro', () => {
+    const { ui, pins } = setup()
+    act(() => pins.getState().replacePins([at('a', 256, 512)]))
+    act(() => ui.getState().setLayer('cidade', false))
+    const canvas = screen.getByTestId('canvas')
+    fireEvent.pointerMove(canvas, { clientX: 256, clientY: 500, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBeNull()
+    act(() => click(256, 500))
+    expect(pins.getState().selectedId).toBeNull()
+    act(() => ui.getState().setTool('pin'))
+    act(() => click(256, 500))
+    expect(pins.getState().pins).toHaveLength(2)
+  })
+
+  it('abaixo de 0,8×, clicar no grupo leva a câmera ao ponto médio no zoom 1,3×, sem selecionar nem criar', () => {
+    const { ui, pins, camera } = setup()
+    const focusOn = vi.fn()
+    act(() => camera.getState().setControls({ zoomIn() {}, zoomOut() {}, center() {}, centerOn() {}, focusOn }))
+    act(() => camera.getState().update({ zoom: 0.5, scale: 0.5, view: { x: 0, y: 0, width: 2048, height: 2048 }, origin: { x: 0, y: 0 } }))
+    // Pins em 400 e 420 do mundo: 200 e 210 px na tela; o grupo fica em (205, 300 − 16).
+    act(() => pins.getState().replacePins([at('a', 400, 600), at('b', 420, 600)]))
+    act(() => ui.getState().setTool('pin'))
+    const canvas = screen.getByTestId('canvas')
+    // Sobre o grupo, sem pin no hover: o cursor é a lupa.
+    fireEvent.pointerMove(canvas, { clientX: 205, clientY: 284, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBeNull()
+    expect(pins.getState().groupHovered).toBe(true)
+    act(() => click(205, 284))
+    expect(focusOn).toHaveBeenCalledWith(410, 600, 1.3)
+    expect(pins.getState().selectedId).toBeNull()
+    expect(pins.getState().pins).toHaveLength(2)
+    fireEvent.pointerMove(canvas, { clientX: 600, clientY: 600, pointerType: 'mouse' })
+    expect(pins.getState().groupHovered).toBe(false)
+  })
+})
+
 describe('Arrastar pin (AC-F3-04)', () => {
   /** Um pin em (0,5; 0,5): a âncora fica em 512, 512 na tela. */
   function withPin() {
