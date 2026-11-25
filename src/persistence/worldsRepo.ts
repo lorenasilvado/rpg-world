@@ -20,6 +20,8 @@ export type WorldsRepo = {
   duplicate(sourceId: string, copy: { id: string; name: string; now: Date; newId: () => string }): Promise<World | undefined>
   /** Exclui o mundo e as imagens dele, de vez. */
   remove(id: string): Promise<void>
+  /** Grava um mundo novo com as imagens dele, juntos (a importação): ou entra tudo, ou nada. */
+  importWorld(world: World, images: readonly StoredImage[]): Promise<void>
   saveImage(image: StoredImage): Promise<void>
   getImage(id: string): Promise<StoredImage | undefined>
   /**
@@ -61,6 +63,12 @@ export function createWorldsRepo(db: RpgWorldDb): WorldsRepo {
       await db.transaction('rw', db.worlds, db.images, async () => {
         await db.images.where('worldId').equals(id).delete()
         await db.worlds.delete(id)
+      })
+    },
+    async importWorld(world, images) {
+      await db.transaction('rw', db.worlds, db.images, async () => {
+        await db.images.bulkPut([...images])
+        await db.worlds.put(world)
       })
     },
     async saveImage(image) {

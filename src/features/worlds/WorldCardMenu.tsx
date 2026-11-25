@@ -1,12 +1,12 @@
 import { Copy, Download, Ellipsis, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 
-export type WorldMenuAction = 'rename' | 'duplicate' | 'delete'
+export type WorldMenuAction = 'rename' | 'duplicate' | 'export' | 'delete'
 
 /**
  * O botão "⋯" do cartão e o menu dele (mundos.md → 01 · Lista de mundos, AC-F4-07): Renomear,
- * Duplicar, Exportar (desabilitado até a exportação do mundo existir) e, após um separador, Excluir
- * em vermelho. O menu abre abaixo do botão (ou acima, se não cabe abaixo), alinhado à direita do
+ * Duplicar, Exportar (baixa o arquivo do mundo, .json) e, após um separador, Excluir em vermelho.
+ * O menu abre abaixo do botão (ou acima, se não cabe abaixo), alinhado à direita do
  * cartão, com o foco no primeiro item; setas, Home e End andam entre os itens habilitados, Esc fecha e devolve o foco ao "⋯", e
  * Tab ou um clique fora fecham.
  */
@@ -127,7 +127,7 @@ export function WorldCardMenu({
           <MenuItem icon={<Copy size={18} />} onClick={() => choose('duplicate')}>
             Duplicar
           </MenuItem>
-          <MenuItem icon={<Download size={18} />} disabled title="Exportar (em breve)">
+          <MenuItem icon={<Download size={18} />} title="Exportar o arquivo do mundo (.json)" onClick={() => choose('export')}>
             Exportar
           </MenuItem>
           <div role="separator" className="mx-2 my-1 h-px bg-line" />

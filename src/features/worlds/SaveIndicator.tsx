@@ -7,10 +7,10 @@ import type { SaveStore } from '../../persistence/autosave'
  * Indicador de salvamento, abaixo do nome do mundo na barra da sidebar (design-system.md →
  * Feedback, AC-F4-02): "Salvando…" (`loader-circle` girando, `--ink-2`), "Salvo" (`cloud`, `--ok`)
  * e "Erro ao salvar" (`cloud-off`, `--brick-ink` sobre `--brick-soft`). Com erro, ele vira um botão
- * que abre o menu com "Tentar de novo" (grava já) e "Exportar .json" (o backup, desabilitado até a
- * exportação do mundo existir). Esc ou um clique fora fecha o menu.
+ * que abre o menu com "Tentar de novo" (grava já) e "Exportar .json" (o backup: baixa o arquivo do
+ * mundo como está na tela, `onExport`; sem ele, desabilitado). Esc ou um clique fora fecha o menu.
  */
-export function SaveIndicator({ save }: { save: SaveStore }) {
+export function SaveIndicator({ save, onExport }: { save: SaveStore; onExport?: () => Promise<void> }) {
   const status = useStore(save, (s) => s.status)
   const [menuOpen, setMenuOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -100,10 +100,12 @@ export function SaveIndicator({ save }: { save: SaveStore }) {
           <button
             type="button"
             role="menuitem"
-            disabled
-            aria-disabled="true"
-            title="Exportar .json (em breve)"
-            className="flex h-10 items-center gap-2 rounded-control px-2.5 text-left text-sm font-semibold text-ink opacity-50"
+            disabled={!onExport}
+            onClick={() => {
+              setMenuOpen(false)
+              void onExport?.().catch(() => undefined)
+            }}
+            className="flex h-10 items-center gap-2 rounded-control px-2.5 text-left text-sm font-semibold text-ink enabled:hover:bg-hover enabled:active:bg-press disabled:opacity-50"
           >
             <FileJson size={16} aria-hidden="true" />
             Exportar .json

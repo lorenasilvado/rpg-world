@@ -199,13 +199,17 @@ A persistência fica em `src/persistence/` ([ADR 0001](adr/0001-stack-da-v1.md),
 [ADR 0003](adr/0003-app-so-local-na-v1.md)): `db.ts` abre o banco do Dexie (tabelas `worlds`, por
 `id` e `updatedAt`, e `images`, com os blobs), `worldsRepo.ts` lê e grava (`list` dá os mundos do
 editado por último ao mais antigo), `worldRecord.ts` converte entre o mundo salvo e o `worldStore`, e
-`types.ts` tem o `World` salvo. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
+`types.ts` tem o `World` salvo. O `exportImport.ts` monta o arquivo do mundo (.json, com as imagens
+dos pins em base64) e valida o importado com o zod, dando o motivo da recusa; o `WorldsApp` baixa o
+arquivo (`features/worlds/download.ts`) e grava o importado como um mundo novo
+(`worldsRepo.importWorld`, o mundo e as imagens numa transação), e o modal 03 fica em
+`features/worlds/ImportWorldDialog.tsx`. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
 última mudança no nome, na seed, nos parâmetros, no `sizeKm` ou nos pins, uma gravação de cada vez; o status
 (`saved`, `saving`, `error`) vai para o indicador da sidebar (`src/features/worlds/`). O `WorldsApp`
 grava já o que espera a pausa ao voltar à lista e ao esconder ou sair da página. Os testes do Vitest
 usam o `fake-indexeddb` (o repositório) e um repositório em memória (`src/test/memoryRepo.ts`); o
-`e2e/salvar.spec.ts` recarrega a página e força a falha de gravação, e o `e2e/lista.spec.ts` cobre a
-lista.
+`e2e/salvar.spec.ts` recarrega a página e força a falha de gravação, o `e2e/lista.spec.ts` cobre a
+lista e o `e2e/importar.spec.ts`, exportar e importar.
 
 O rodapé da sidebar tem a barra "Distribuição do mapa" (`MapDistribution.tsx`), com a fração de
 cada bioma contada no campo exibido (`distribution.ts`, TS puro). Enquanto gera (`isGenerating`, do

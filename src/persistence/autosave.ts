@@ -38,6 +38,8 @@ export type Autosave = {
   flush(): Promise<void>
   /** Grava já o mundo atual, mesmo sem mudança (o mundo novo do assistente), com o status no indicador. */
   saveNow(): Promise<void>
+  /** O mundo atual, como ele é salvo (o Exportar do editor), com o `updatedAt` em agora. */
+  record(): World
   /** Para de ouvir o mundo (o que esperava o debounce não é gravado). */
   dispose(): void
 }
@@ -89,14 +91,18 @@ export function createAutosave({
   /** Número da gravação mais nova pedida: só ela decide o status final. */
   let latest = 0
 
+  const current = (): World => {
+    const state = world.getState()
+    const saved = loaded && loaded.id === state.id ? loaded : { pins: [], roads: [] }
+    const extra = { pins: pins ? pins.getState().pins : saved.pins, roads: saved.roads }
+    return toWorldRecord(state, extra, now())
+  }
+
   const write = (): Promise<void> => {
     if (timer !== null) clearTimeout(timer)
     timer = null
     const seq = ++latest
-    const state = world.getState()
-    const saved = loaded && loaded.id === state.id ? loaded : { pins: [], roads: [] }
-    const extra = { pins: pins ? pins.getState().pins : saved.pins, roads: saved.roads }
-    const record = toWorldRecord(state, extra, now())
+    const record = current()
     store.setState({ status: 'saving' })
     chain = chain.then(() =>
       repo.save(record).then(
@@ -141,6 +147,7 @@ export function createAutosave({
       return timer !== null ? write() : chain
     },
     saveNow: write,
+    record: current,
     dispose() {
       unsubscribe()
       if (timer !== null) clearTimeout(timer)

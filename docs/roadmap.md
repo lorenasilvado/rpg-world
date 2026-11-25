@@ -144,7 +144,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | done | specs/pins.md | #217 |
 | 51 | #163 | [feat] Buscar pins (Ctrl K) | done | specs/pins.md | #221 |
 | 52 | #140 | [chore] Opacidade do Buscar desabilitado igual à dos outros botões da barra | todo | specs/navegacao.md | |
-| 53 | #164 | [feat] Exportar e importar o mundo em JSON | todo | specs/mundos.md | |
+| 53 | #164 | [feat] Exportar e importar o mundo em JSON | doing | specs/mundos.md | |
 | 54 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
 | 55 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
 | 56 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |

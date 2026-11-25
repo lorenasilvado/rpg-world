@@ -40,6 +40,18 @@ describe('SaveIndicator (AC-F4-02)', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('com `onExport`, "Exportar .json" baixa o arquivo do mundo e fecha o menu (AC-F4-02, AC-F4-09)', () => {
+    const { store } = saveStore('error')
+    const onExport = vi.fn(() => Promise.resolve())
+    render(<SaveIndicator save={store} onExport={onExport} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Erro ao salvar' }))
+    const exportItem = screen.getByRole('menuitem', { name: 'Exportar .json' }) as HTMLButtonElement
+    expect(exportItem.disabled).toBe(false)
+    fireEvent.click(exportItem)
+    expect(onExport).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
   it('Esc fecha o menu e devolve o foco ao indicador; um clique fora também fecha', () => {
     const { store } = saveStore('error')
     render(<SaveIndicator save={store} />)
