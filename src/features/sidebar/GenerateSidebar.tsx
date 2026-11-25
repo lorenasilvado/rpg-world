@@ -126,7 +126,10 @@ export function GenerateSidebar({
           </button>
         )}
       </div>
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto" data-testid="sidebar-sections">
+      {/* Em tela baixa (AC-F2-14), as seções e o rodapé rolam juntos: o rodapé fixo deixaria quase
+          nada às seções com os sliders. */}
+      <div className="flex min-h-0 flex-1 flex-col short:overflow-x-hidden short:overflow-y-auto" data-testid="sidebar-body">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto short:flex-none short:overflow-visible" data-testid="sidebar-sections">
         {SECTIONS.map((section) => (
           <Section
             key={section.id}
@@ -168,6 +171,7 @@ export function GenerateSidebar({
           <RotateCcw size={16} aria-hidden="true" />
           Restaurar padrão
         </button>
+      </div>
       </div>
     </>
   )

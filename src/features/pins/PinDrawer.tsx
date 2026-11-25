@@ -202,7 +202,7 @@ function PinCard({
           aria-label="Fechar"
           title="Fechar (Esc)"
           onClick={close}
-          className="absolute top-3.5 right-3 hidden size-11 place-items-center rounded-control border border-line bg-paper-solid text-ink hover:bg-hover active:bg-press focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none md:grid"
+          className="absolute top-3.5 right-3 hidden size-11 place-items-center rounded-control border border-line bg-paper-solid text-ink hover:bg-hover active:bg-press focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none desk:grid"
         >
           <X size={20} aria-hidden="true" />
         </button>

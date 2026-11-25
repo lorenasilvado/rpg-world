@@ -30,7 +30,7 @@ import { GenerationErrorToast } from './GenerationErrorToast'
 import { inDialog, isFieldTarget } from '../render/camera'
 import { focusMap } from './focusMap'
 import { MapView, type CreateMapRenderer } from './MapView'
-import { DESKTOP_QUERY } from './panelInsets'
+import { DESKTOP_QUERY, SHORT_QUERY } from './panelInsets'
 import { useTheme } from './useTheme'
 
 /**
@@ -152,15 +152,27 @@ export function EditorLayout({
   const drawerShown = desktop ? pinSelected : drawerOpen
   /** Os lados da linha inferior a partir de 768 px: da sidebar até a borda direita, ou até o drawer aberto. */
   const barInset = [
-    pinSelected ? 'md:right-[var(--drawer-width)]' : 'md:right-0',
-    sidebarCollapsed ? 'md:left-[var(--sidebar-collapsed-width)]' : 'md:left-[var(--sidebar-width)]',
+    pinSelected ? 'desk:right-[var(--drawer-width)]' : 'desk:right-0',
+    sidebarCollapsed ? 'desk:left-[var(--sidebar-collapsed-width)]' : 'desk:left-[var(--sidebar-width)]',
   ].join(' ')
   const [camera] = useState(createCameraStore)
-  const minimapOpen = useStore(ui, (s) => s.minimapOpen)
+  /** Tela baixa (celular deitado, AC-F2-15): o minimapa tem um aberto próprio, que começa recolhido. */
+  const short = useMedia(SHORT_QUERY)
+  const [shortMinimapOpen, setShortMinimapOpen] = useState(false)
+  const uiMinimapOpen = useStore(ui, (s) => s.minimapOpen)
+  const minimapOpen = short ? shortMinimapOpen : uiMinimapOpen
   /** A largura final da linha inferior, num medidor sem transição (ver `barInset`). */
   const barSizer = useRef<HTMLDivElement>(null)
   const barWidth = useWidth(barSizer)
-  const layout = bottomBarLayout(barWidth, minimapOpen, useCoarsePointer())
+  const layout = bottomBarLayout(barWidth, minimapOpen, useCoarsePointer(), short)
+  const minimap = (
+    <Minimap
+      world={world}
+      ui={ui}
+      camera={camera}
+      {...(short ? { open: shortMinimapOpen, onOpenChange: setShortMinimapOpen } : {})}
+    />
+  )
   // O minimapa só desliza entre ao lado e acima do zoom depois da primeira medição da linha: ao
   // abrir o editor numa área estreita, ele já aparece no lugar, sem subir animado.
   const barAnimated = useAnimatedAfterMeasure(barWidth)
@@ -252,6 +264,8 @@ export function EditorLayout({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [anyOpen, history, pins, world])
 
+  /** O aperto que começou no scrim (ver o `onClick` dele). */
+  const scrimPress = useRef(false)
   const closeAll = () => {
     setSidebarOpen(false)
     setDrawerOpen(false)
@@ -381,15 +395,19 @@ export function EditorLayout({
           style={{ left: BAR_SIDE, bottom: layout.minimapBottom }}
           className={`pointer-events-auto absolute ${barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : ''}`}
         >
-          <Minimap world={world} ui={ui} camera={camera} />
+          {layout.minimapPlace === 'row' && minimap}
         </div>
         <div
           data-testid="toolbar-slot"
           data-place={layout.toolbar}
-          style={layout.toolbar === 'vertical' ? { right: ZOOM_SIDE, bottom: layout.toolbarBottom } : { left: '50%', bottom: layout.toolbarBottom }}
+          style={
+            layout.toolbar === 'vertical'
+              ? { right: ZOOM_SIDE, bottom: layout.toolbarBottom }
+              : { left: layout.toolbarLeft ?? '50%', bottom: layout.toolbarBottom }
+          }
           className={[
             'pointer-events-auto absolute',
-            layout.toolbar === 'vertical' ? '' : '-translate-x-1/2',
+            layout.toolbar === 'vertical' || layout.toolbarLeft !== null ? '' : '-translate-x-1/2',
             // Na segunda linha, ela sobe e desce junto com o minimapa (abrir e recolher), deslizando.
             barAnimated ? 'transition-[bottom] duration-200 ease-[var(--ease-panel)]' : '',
           ].join(' ')}
@@ -419,12 +437,26 @@ export function EditorLayout({
         />
       </div>
 
+      {/* Tela baixa sem lugar na linha (AC-F2-15): o minimapa fica no canto superior esquerdo. */}
+      {layout.minimapPlace === 'top' && (
+        <div data-testid="minimap-top" inert={anyOpen} style={{ left: BAR_SIDE }} className="absolute top-3 z-10">
+          {minimap}
+        </div>
+      )}
+
       {anyOpen && (
         <div
           aria-hidden="true"
           data-testid="scrim"
-          className="absolute inset-0 z-[15] bg-scrim md:hidden"
-          onClick={closeAll}
+          className="absolute inset-0 z-[15] bg-scrim desk:hidden"
+          // Só fecha o clique que começou no scrim: o toque num pin abre o drawer antes do clique que
+          // o navegador gera depois dele, e esse clique cairia no scrim (o drawer não cobre a tela
+          // toda, como no celular deitado) e fecharia o drawer na hora (AC-F2-15).
+          onPointerDown={() => (scrimPress.current = true)}
+          onClick={() => {
+            if (scrimPress.current) closeAll()
+            scrimPress.current = false
+          }}
         />
       )}
 
@@ -439,8 +471,8 @@ export function EditorLayout({
           'bg-paper-solid shadow-[4px_0_24px_rgba(43,30,15,0.18)]',
           'transition-[transform,width] duration-200 ease-[var(--ease-panel)]',
           sidebarOpen ? 'translate-x-0' : 'invisible -translate-x-full',
-          'md:visible md:translate-x-0',
-          sidebarCollapsed ? 'md:w-[var(--sidebar-collapsed-width)]' : 'md:w-[var(--sidebar-width)]',
+          'desk:visible desk:translate-x-0',
+          sidebarCollapsed ? 'desk:w-[var(--sidebar-collapsed-width)]' : 'desk:w-[var(--sidebar-width)]',
         ].join(' ')}
       >
         <header
@@ -472,7 +504,7 @@ export function EditorLayout({
           <IconButton
             ref={sidebarClose}
             label="Fechar painel"
-            className="ml-auto md:hidden"
+            className="ml-auto desk:hidden"
             onClick={() => setSidebarOpen(false)}>
             <X size={20} aria-hidden="true" />
           </IconButton>
@@ -489,15 +521,15 @@ export function EditorLayout({
         data-testid="actions"
         inert={anyOpen}
         className={[
-          'absolute top-3 right-3 z-10 flex h-14 items-center rounded-panel bg-paper px-1 shadow-md backdrop-blur-[14px] md:gap-0.5 md:px-1.5',
+          'absolute top-3 right-3 z-10 flex h-14 items-center rounded-panel bg-paper px-1 shadow-md backdrop-blur-[14px] desk:gap-0.5 desk:px-1.5',
           'transition-[right] duration-200 ease-[var(--ease-panel)]',
-          pinSelected ? 'md:right-[calc(var(--drawer-width)+12px)]' : '',
+          pinSelected ? 'desk:right-[calc(var(--drawer-width)+12px)]' : '',
         ].join(' ')}
       >
-        <IconButton ref={sidebarOpener} label="Abrir painel" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+        <IconButton ref={sidebarOpener} label="Abrir painel" className="desk:hidden" onClick={() => setSidebarOpen(true)}>
           <PanelLeftOpen size={20} aria-hidden="true" />
         </IconButton>
-        <IconButton ref={drawerOpener} label="Abrir detalhes" className="md:hidden" onClick={() => setDrawerOpen(true)}>
+        <IconButton ref={drawerOpener} label="Abrir detalhes" className="desk:hidden" onClick={() => setDrawerOpen(true)}>
           <PanelRightOpen size={20} aria-hidden="true" />
         </IconButton>
         <SearchButton ref={searchButton} label={searchLabel} onClick={openSearch} />
@@ -549,11 +581,11 @@ export function EditorLayout({
           'duration-200 ease-[var(--ease-panel)]',
           drawerOpen ? 'translate-x-0' : 'invisible translate-x-full',
           // A partir de 768 px: à vista só com um pin; sem ele, fora da tela, sombra incluída.
-          pinSelected ? 'md:visible md:translate-x-0' : 'md:invisible md:translate-x-[calc(100%+32px)]',
-          'md:w-[var(--drawer-width)]',
+          pinSelected ? 'desk:visible desk:translate-x-0' : 'desk:invisible desk:translate-x-[calc(100%+32px)]',
+          'desk:w-[var(--drawer-width)]',
         ].join(' ')}
       >
-        <div className="flex h-14 shrink-0 items-center justify-end px-3 md:hidden">
+        <div className="flex h-14 shrink-0 items-center justify-end px-3 desk:hidden">
           <IconButton ref={drawerClose} label="Fechar detalhes" onClick={closeDrawer}>
             <X size={20} aria-hidden="true" />
           </IconButton>
@@ -604,16 +636,21 @@ function useAnimatedAfterMeasure(width: number | null) {
   return animated
 }
 
-/** Se a tela tem 768 px ou mais (sidebar e drawer fixos). */
+/** Se a tela tem 768 px ou mais de largura e 500 px ou mais de altura (sidebar e drawer fixos, AC-F2-14). */
 function useDesktop() {
-  const [desktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches)
+  return useMedia(DESKTOP_QUERY)
+}
+
+/** Se a media query vale agora, acompanhando a troca (o giro do celular, por exemplo). */
+function useMedia(query: string) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
   useEffect(() => {
-    const media = window.matchMedia(DESKTOP_QUERY)
-    const onChange = (e: { matches: boolean }) => setDesktop(e.matches)
+    const media = window.matchMedia(query)
+    const onChange = (e: { matches: boolean }) => setMatches(e.matches)
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
-  }, [])
-  return desktop
+  }, [query])
+  return matches
 }
 
 /** Tipos de `input` que não recebem texto: neles a tecla `[` continua sendo o atalho. */

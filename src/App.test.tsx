@@ -64,6 +64,11 @@ describe('Layout vazio do editor', () => {
     expect(sidebar.dataset.open).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Abrir detalhes' }))
     expect(drawer.dataset.open).toBe('true')
+    // O clique que não começou no scrim (o que o navegador gera depois do toque que abriu o drawer,
+    // AC-F2-15) não fecha; o que começou nele, fecha.
+    fireEvent.click(screen.getByTestId('scrim'))
+    expect(drawer.dataset.open).toBe('true')
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
     fireEvent.click(screen.getByTestId('scrim'))
     expect(drawer.dataset.open).toBe('false')
   })
@@ -81,6 +86,7 @@ describe('Layout vazio do editor', () => {
     const drawerOpener = screen.getByRole('button', { name: 'Abrir detalhes' })
     fireEvent.click(drawerOpener)
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    fireEvent.pointerDown(screen.getByTestId('scrim'))
     fireEvent.click(screen.getByTestId('scrim'))
     expect(document.activeElement).toBe(drawerOpener)
   })

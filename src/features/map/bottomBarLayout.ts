@@ -118,11 +118,16 @@ export const TOOLBAR_ABOVE_FROM = TOOLBAR_LENGTH + 2 * BAR_SIDE
 /** Onde fica a toolbar: na linha, deitada numa segunda linha acima dela, ou em pé acima do zoom. */
 export type ToolbarPlace = 'row' | 'above' | 'vertical'
 
+/** Onde fica o minimapa: na linha inferior, ou no canto superior esquerdo (tela baixa, AC-F2-15). */
+export type MinimapPlace = 'row' | 'top'
+
 export type BottomBarLayout = {
   /** O minimapa fica acima do zoom, em vez de ao lado. */
   stacked: boolean
   /** Base do minimapa, a partir da base da linha. */
   minimapBottom: number
+  /** Onde fica o minimapa (`MinimapPlace`). */
+  minimapPlace: MinimapPlace
   /** O toast fica no canto direito (com `TOAST_WIDTH`); senão, na largura da área. */
   toastBeside: boolean
   /** Base do toast, a partir da base da linha. */
@@ -133,6 +138,8 @@ export type BottomBarLayout = {
   toolbar: ToolbarPlace
   /** Base da toolbar, a partir da base da linha. */
   toolbarBottom: number
+  /** Esquerda da toolbar deitada na linha, a partir da esquerda da linha; `null`: centrada (50%). */
+  toolbarLeft: number | null
 }
 
 /**
@@ -149,8 +156,11 @@ export type BottomBarLayout = {
  *   canto direito; senão, ocupa a largura da área (até a toolbar em pé). Ele fica `BAR_GAP` acima
  *   da toolbar na segunda linha; senão, acima do zoom (no canto) ou do mais alto entre o minimapa e
  *   o zoom (na largura).
+ * - Em tela baixa (`short`, AC-F2-15), a toolbar fica sempre deitada na própria linha, nunca numa
+ *   segunda linha nem em pé, que a levariam ao meio do mapa: ver `shortBottomBarLayout`.
  */
-export function bottomBarLayout(width: number | null, minimapOpen: boolean, touch = false): BottomBarLayout {
+export function bottomBarLayout(width: number | null, minimapOpen: boolean, touch = false, short = false): BottomBarLayout {
+  if (short && width !== null) return shortBottomBarLayout(width, minimapOpen, touch)
   const stacked = width !== null && width < STACK_BELOW
   const minimapBottom = stacked ? ZOOM_BAR_HEIGHT + BAR_GAP : 0
   const minimapTop = minimapBottom + minimapCardHeight(minimapOpen, touch)
@@ -163,5 +173,35 @@ export function bottomBarLayout(width: number | null, minimapOpen: boolean, touc
   const toastBeside = width === null || width - toolbarSpace >= TOAST_BESIDE_FROM
   const toastBottom =
     toolbar === 'above' ? toolbarBottom + TOOLBAR_THICKNESS + BAR_GAP : (toastBeside ? ZOOM_BAR_HEIGHT : rowTop) + BAR_GAP
-  return { stacked, minimapBottom, toastBeside, toastBottom, toastRight, toolbar, toolbarBottom }
+  return { stacked, minimapBottom, minimapPlace: 'row', toastBeside, toastBottom, toastRight, toolbar, toolbarBottom, toolbarLeft: null }
+}
+
+/**
+ * A linha inferior em tela baixa (menos de 500 px de altura, AC-F2-15): o minimapa, a toolbar
+ * deitada e o zoom numa linha só. Se não cabem os três (ex.: 667 px), o minimapa vai para o canto
+ * superior esquerdo, e a linha fica com a toolbar e o zoom. A toolbar fica no centro da linha se ali
+ * não chega ao minimapa nem ao zoom; senão, no centro do espaço entre eles.
+ */
+export function shortBottomBarLayout(width: number, minimapOpen: boolean, touch = false): BottomBarLayout {
+  const zoom = width >= ZOOM_FULL_FROM ? ZOOM_FULL_MAX_WIDTH : ZOOM_COMPACT_MAX_WIDTH
+  const zoomLeft = width - ZOOM_SIDE - zoom
+  const minimapInRow = BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP + TOOLBAR_LENGTH + BAR_GAP <= zoomLeft
+  const from = minimapInRow ? BAR_SIDE + MINIMAP_CARD_WIDTH + BAR_GAP : BAR_SIDE
+  const to = zoomLeft - BAR_GAP
+  const centered = (width - TOOLBAR_LENGTH) / 2
+  const toolbarLeft =
+    centered >= from && centered + TOOLBAR_LENGTH <= to ? centered : Math.max(from, from + (to - from - TOOLBAR_LENGTH) / 2)
+  const rowTop = minimapInRow ? Math.max(minimapCardHeight(minimapOpen, touch), ZOOM_BAR_HEIGHT) : ZOOM_BAR_HEIGHT
+  const toastBeside = width >= TOAST_BESIDE_FROM
+  return {
+    stacked: false,
+    minimapBottom: 0,
+    minimapPlace: minimapInRow ? 'row' : 'top',
+    toastBeside,
+    toastBottom: (toastBeside ? ZOOM_BAR_HEIGHT : rowTop) + BAR_GAP,
+    toastRight: ZOOM_SIDE,
+    toolbar: 'row',
+    toolbarBottom: 0,
+    toolbarLeft,
+  }
 }

@@ -22,13 +22,28 @@ import { useCoarsePointer } from './useCoarsePointer'
  * área visível, que acompanha a câmera. Arrastar o retângulo move a área visível; tocar fora dele
  * centra a câmera ali (e o arrasto continua dali). Com o foco no minimapa, as setas movem a área
  * visível 10 px do minimapa (1/10 do mapa). O cabeçalho "Minimapa" recolhe e abre (`minimapOpen` do
- * `ui`); em tela de toque, ele tem 44 px de altura (a área de toque mínima).
+ * `ui`); em tela de toque, ele tem 44 px de altura (a área de toque mínima). Com `open` e
+ * `onOpenChange`, quem decide é o editor, e não o `ui` (a tela baixa, que começa recolhido sem mudar a
+ * preferência das telas altas, AC-F2-15).
  *
  * O retângulo é posto direto no estilo, a cada mudança do `camera`, sem render do React. Para os
  * testes, o minimapa expõe em `data-drawn` o tamanho do campo desenhado (vazio antes do primeiro).
  */
-export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore; camera: CameraStore }) {
-  const open = useStore(ui, (s) => s.minimapOpen)
+export function Minimap({
+  world,
+  ui,
+  camera,
+  open: openOverride,
+  onOpenChange,
+}: {
+  world: WorldStore
+  ui: UiStore
+  camera: CameraStore
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const uiOpen = useStore(ui, (s) => s.minimapOpen)
+  const open = openOverride ?? uiOpen
   const touch = useCoarsePointer()
   const bodyId = useId()
   return (
@@ -44,7 +59,7 @@ export function Minimap({ world, ui, camera }: { world: WorldStore; ui: UiStore;
         aria-expanded={open}
         aria-controls={bodyId}
         title={open ? 'Ocultar minimapa' : 'Mostrar minimapa'}
-        onClick={() => ui.getState().setMinimapOpen(!open)}
+        onClick={() => (onOpenChange ? onOpenChange(!open) : ui.getState().setMinimapOpen(!open))}
         style={{ height: minimapHeaderHeight(touch) }}
         className="flex w-full items-center gap-1.5 pr-1.5 pl-2.5 text-[11px]/4 font-extrabold tracking-[0.08em] text-ink-2 uppercase hover:text-ink"
       >
