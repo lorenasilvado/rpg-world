@@ -3,14 +3,18 @@ import { expect, test } from '@playwright/test'
 import { gotoEditor } from './editor.ts'
 
 test.describe('Layout vazio do editor', () => {
-  test('desktop 1440×900: sidebar de 320 px, mapa e drawer de 400 px (AC-M0-01)', async ({ page }) => {
+  test('desktop 1440×900: sidebar de 320 px, mapa e drawer de 400 px, fora da tela sem pin (AC-M0-01, AC-F3-19)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await gotoEditor(page)
     const sidebar = await page.getByTestId('sidebar').boundingBox()
-    const drawer = await page.getByTestId('drawer').boundingBox()
     const map = await page.getByTestId('map').boundingBox()
     expect(sidebar).toMatchObject({ x: 0, width: 320, height: 900 })
-    expect(drawer).toMatchObject({ x: 1040, width: 400, height: 900 })
+    // Sem pin selecionado, o drawer (400 px) fica além da borda direita, com a sombra (32 px).
+    const drawer = page.getByTestId('drawer')
+    await expect(drawer).toBeHidden()
+    await expect
+      .poll(() => drawer.evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x, width: r.width, height: r.height } }))
+      .toEqual({ x: 1440 + 32, width: 400, height: 900 })
     expect(map).toMatchObject({ x: 0, y: 0, width: 1440, height: 900 })
     await expect(page.getByRole('button', { name: 'Abrir painel' })).toBeHidden()
   })

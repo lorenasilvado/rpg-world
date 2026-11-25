@@ -63,23 +63,36 @@ export function fitView(area: Area, world = WORLD_SIZE): View {
   return { cx: world / 2, cy: world / 2, scale: fitScale(area, world) }
 }
 
-/** Um eixo do limite de pan: `pos` é a borda do mapa na tela, `size` o tamanho dele. */
-function clampAxis(pos: number, size: number, start: number, length: number): number {
-  // Maior que a área livre: o mapa a cobre toda, sem mostrar o fundo além da borda. Menor: o
-  // mapa fica inteiro dentro dela.
+/**
+ * Um eixo do limite de pan: onde pode ficar a borda do mapa na tela (`size` é o tamanho dele).
+ * Maior que a área livre: o mapa a cobre toda, sem mostrar o fundo além da borda. Menor: o mapa
+ * fica inteiro dentro dela.
+ */
+function axisRange(size: number, start: number, length: number): [number, number] {
   const a = start
   const b = start + length - size
-  return Math.min(Math.max(a, b), Math.max(Math.min(a, b), pos))
+  return [Math.min(a, b), Math.max(a, b)]
 }
 
-/** Limita o pan e o zoom: zoom de 0,4× a 4×, e o mapa não sai da área livre nem mostra o fundo além da borda quando a cobre. */
-export function clampTransform(t: Transform, area: Area, world = WORLD_SIZE): Transform {
+/**
+ * Limita o pan e o zoom: zoom de 0,4× a 4×, e o mapa não sai da área livre nem mostra o fundo além da borda quando a cobre.
+ * Com `rightCover` (o drawer aberto sobre a direita da área livre), na largura vale também o limite da área à esquerda
+ * dele: o mapa pode ir até a borda direita dele chegar à do drawer, e o que estava embaixo dele vem à vista.
+ */
+export function clampTransform(t: Transform, area: Area, world = WORLD_SIZE, rightCover = 0): Transform {
   const scale = clampScale(t.scale, area, world)
   const size = world * scale
+  let [xMin, xMax] = axisRange(size, area.x, area.width)
+  if (rightCover > 0) {
+    const [min, max] = axisRange(size, area.x, Math.max(1, area.width - rightCover))
+    xMin = Math.min(xMin, min)
+    xMax = Math.max(xMax, max)
+  }
+  const [yMin, yMax] = axisRange(size, area.y, area.height)
   return {
     scale,
-    x: clampAxis(t.x, size, area.x, area.width),
-    y: clampAxis(t.y, size, area.y, area.height),
+    x: Math.min(xMax, Math.max(xMin, t.x)),
+    y: Math.min(yMax, Math.max(yMin, t.y)),
   }
 }
 

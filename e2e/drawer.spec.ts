@@ -323,3 +323,98 @@ test('celular 390: todo campo de texto do drawer tem fonte de 16 px ou mais, par
   await page.getByRole('tab', { name: 'Descrição' }).click()
   expect(await fieldFontSizes(page)).toMatchObject({ Descrição: 14, 'Nova tag': 13 })
 })
+
+// AC-F3-19 (#212): a partir de 768 px, sem pin selecionado, o drawer fica fora da tela, e a área livre
+// vai até a borda direita; com um pin, ele entra deslizando, e os controles se alinham à borda dele.
+for (const size of [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+]) {
+  test(`${size.width}: sem pin, o drawer fica fora da tela e o zoom a 12 px da borda; com um pin, o drawer entra e os controles se alinham a ele (AC-F3-19)`, async ({ page }, info) => {
+    test.setTimeout(90_000)
+    await page.setViewportSize(size)
+    await gotoEditor(page, '/', twoPins())
+    await waitFinalMap(page)
+    const aside = page.getByTestId('drawer')
+    const zoomRight = async () => (await page.getByTestId('zoom-controls').boundingBox())!
+    const actionsBox = async () => (await page.getByTestId('actions').boundingBox())!
+
+    // Sem pin: o drawer está fora da tela (e invisível), o mapa usa a largura até a borda direita.
+    await expect(aside).toBeHidden()
+    const free = size.width - 320
+    const side = Math.min(free, size.height)
+    await expect(map(page)).toHaveAttribute('data-map-rect', `${320 + (free - side) / 2},${(size.height - side) / 2},${side},${side}`)
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - (z.x + z.width) }).toBe(12)
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - (a.x + a.width) }).toBe(12)
+    await info.attach(`sem-pin-${size.width}.png`, { body: await page.screenshot(), contentType: 'image/png' })
+
+    // Com um pin: o drawer entra (400 px à direita), e o zoom e a barra superior ficam a 12 px dele.
+    const zoomBefore = await map(page).getAttribute('data-zoom')
+    await clickPin(page, 0.45, 0.5)
+    await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-valdora')
+    await expect(aside).toBeVisible()
+    await expect.poll(async () => (await aside.boundingBox())?.x).toBe(size.width - 400)
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - 400 - (z.x + z.width) }).toBe(12)
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - 400 - (a.x + a.width) }).toBe(12)
+    // Abrir o drawer não muda a porcentagem do zoom.
+    expect(await map(page).getAttribute('data-zoom')).toBe(zoomBefore)
+    await info.attach(`com-pin-${size.width}.png`, { body: await page.screenshot(), contentType: 'image/png' })
+
+    // Esc fecha: o drawer sai, e os controles voltam à borda direita.
+    await page.keyboard.press('Escape')
+    await expect(map(page)).toHaveAttribute('data-pin-selected', '')
+    await expect(aside).toBeHidden()
+    await expect.poll(async () => { const z = await zoomRight(); return size.width - (z.x + z.width) }).toBe(12)
+
+    // O botão fechar do drawer faz o mesmo.
+    await clickPin(page, 0.45, 0.5)
+    await expect(aside).toBeVisible()
+    await drawer(page).getByRole('button', { name: 'Fechar', exact: true }).click()
+    await expect(aside).toBeHidden()
+    await expect.poll(async () => { const a = await actionsBox(); return size.width - (a.x + a.width) }).toBe(12)
+  })
+}
+
+test('1440: ao abrir o drawer, a toolbar vai para a segunda linha logo no começo do deslize, pela largura final (AC-F3-19)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', twoPins())
+  await waitFinalMap(page)
+  const slot = page.getByTestId('toolbar-slot')
+  await expect(slot).toHaveAttribute('data-place', 'row')
+  // Registra a largura da linha inferior no momento em que a toolbar troca de lugar.
+  await page.evaluate(() => {
+    const w = window as unknown as { placeChanges: { place: string; barWidth: number }[] }
+    w.placeChanges = []
+    const el = document.querySelector('[data-testid="toolbar-slot"]')!
+    new MutationObserver(() => {
+      const bar = document.querySelector('[data-testid="bottom-bar"]')!.getBoundingClientRect()
+      w.placeChanges.push({ place: el.getAttribute('data-place')!, barWidth: Math.round(bar.width) })
+    }).observe(el, { attributes: true, attributeFilter: ['data-place'] })
+  })
+  await clickPin(page, 0.45, 0.5)
+  await expect(slot).toHaveAttribute('data-place', 'above')
+  await expect.poll(async () => (await page.getByTestId('bottom-bar').boundingBox())?.width).toBe(720)
+  const changes = await page.evaluate(() => (window as unknown as { placeChanges: { place: string; barWidth: number }[] }).placeChanges)
+  // Uma troca só, com a linha ainda larga (1120 px, antes de encolher): não no meio, ao cruzar 829 px.
+  expect(changes.map((c) => c.place)).toEqual(['above'])
+  expect(changes[0].barWidth).toBeGreaterThan(829)
+})
+
+test('1440, zoom 1×: um pin perto da borda direita sai de baixo do drawer ao ser selecionado; ao fechar, o mapa volta aos limites sem ele (AC-F3-03, AC-F3-19)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await gotoEditor(page, '/', defaultWorld({ pins: [pin('p-leste', 'Porto Leste', 0.8, 0.45)] }))
+  await waitFinalMap(page)
+  // No 1×, o mapa (900 px) vai de 430 a 1330: o pin (u 0,8) fica em 1150, onde o drawer vai abrir (de 1040 em diante).
+  await expect(map(page)).toHaveAttribute('data-map-rect', '430,0,900,900')
+  await clickPin(page, 0.8, 0.45)
+  await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-leste')
+  // A borda direita do mapa para na do drawer (1040): o mapa vai a 140, e o pin, a 860, à vista.
+  await expect(map(page)).toHaveAttribute('data-map-rect', '140,0,900,900')
+  expect((await screenOf(page, 0.8, 0.45)).x).toBeLessThan(1040)
+  expect(await map(page).getAttribute('data-zoom')).toBe('1.000')
+
+  // Fechar: sem o drawer, o mapa menor que a área livre volta para dentro dela (a esquerda em 320).
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('drawer')).toBeHidden()
+  await expect(map(page)).toHaveAttribute('data-map-rect', '320,0,900,900')
+})

@@ -14,8 +14,12 @@ import { worldView } from './layers/decorCull'
 import { createMapBlur, MAP_BLUR_PX } from './mapBlur'
 import { CANVAS_BACKGROUND } from './style/palette'
 
-/** Faixas da área do mapa cobertas por painéis, em px CSS: o mapa cabe no que sobra. */
-export type MapInsets = { left: number; right: number; top: number; bottom: number }
+/**
+ * Faixas da área do mapa cobertas por painéis, em px CSS: o mapa cabe no que sobra (a área livre).
+ * `drawer` é a faixa à direita que o drawer cobre quando abre (com um pin selecionado): ele não entra
+ * na área livre, mas centrar um pin o põe no centro do que sobra à esquerda dele.
+ */
+export type MapInsets = { left: number; right: number; top: number; bottom: number; drawer?: number }
 
 export type MapRenderer = {
   /** Recalcula a área livre (ex.: os painéis mudaram), mantendo o centro e o zoom. */
@@ -53,7 +57,8 @@ export type MapRenderer = {
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
  * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
  * Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
- * área livre (deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
+ * área livre à esquerda do drawer aberto (`insets().drawer`, com os limites de pan
+ * contando com ele; deslizando em 350 ms, ou na hora com movimento reduzido). Para os testes, o `host`
  * expõe os pins no mapa em `data-pins`, os rótulos à vista em `data-pin-labels`, o selecionado em
  * `data-pin-selected`, a largura de um pin na tela, em px, em `data-pin-size` e as texturas de
  * imagens enviadas na GPU em `data-pin-image-textures`. Sem o desenho dos
@@ -157,8 +162,12 @@ export async function createMapRenderer(
   }
   // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
   const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
+  // O drawer (a partir de 768 px) fica aberto com um pin selecionado: os limites de pan e o centro do
+  // pin contam com a faixa dele.
+  const drawerCover = () => (pins.getState().selectedId !== null ? (insets().drawer ?? 0) : 0)
   const unsubscribePins = pins.subscribe((state, prev) => {
     pinLayer?.sync(state, performance.now())
+    if (state.selectedId !== prev.selectedId) camera.setRightCover(drawerCover())
     if (state.selectedId !== prev.selectedId && state.selectedId !== null) {
       const pin = state.pins.find((p) => p.id === state.selectedId)
       if (pin) {
@@ -218,7 +227,11 @@ export async function createMapRenderer(
     if (state.field !== prev.field) show()
     if (isGenerating(state) !== isGenerating(prev)) updateBlur()
   })
-  const onResize = (w: number, h: number) => camera.resize(w, h)
+  const onResize = (w: number, h: number) => {
+    // Ao passar por 768 px, o drawer vira painel sobreposto (ou volta a ser fixo).
+    camera.setRightCover(drawerCover())
+    camera.resize(w, h)
+  }
   app.renderer.on('resize', onResize)
 
   return {

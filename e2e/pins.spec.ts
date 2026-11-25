@@ -413,9 +413,9 @@ test('celular 390×844 com toque: arrastar um pin o move sem pan; Desfazer da ba
   }
 })
 
-test('1280×800 com a sidebar e o drawer: o toast "Pin excluído" ocupa a largura da área livre (16 px à esquerda, 12 à direita), acima da toolbar na segunda linha (AC-F3-05)', async ({ page }) => {
+test('885×800 com a sidebar: o toast "Pin excluído" ocupa a largura da área livre (16 px à esquerda, 12 à direita), acima da toolbar na segunda linha (AC-F3-05)', async ({ page }) => {
   test.setTimeout(90_000)
-  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.setViewportSize({ width: 885, height: 800 })
   await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
   await waitFinalMap(page)
   await clickPin(page, 0.45, 0.5)
@@ -425,16 +425,16 @@ test('1280×800 com a sidebar e o drawer: o toast "Pin excluído" ocupa a largur
 
   const toast = page.getByTestId('pin-deleted-toast')
   await expect(toast).toContainText('Pin excluído')
-  // Área livre de 560 px (entre a sidebar de 320 e o drawer de 400): o toast não cabe ao lado do
-  // zoom. Fica de 320 + 16 até 1280 − 400 − 12, 12 px acima da toolbar, que está numa segunda linha
-  // 12 px acima do minimapa aberto (cartão de 140 px, 16 px da base).
+  // Excluir tira a seleção, e o drawer sai (AC-F3-19): a área livre vai da sidebar (320) até a borda,
+  // 565 px, e o toast não cabe ao lado do zoom. Fica de 320 + 16 até 885 − 12, 12 px acima da toolbar,
+  // que está numa segunda linha 12 px acima do minimapa aberto (cartão de 140 px, 16 px da base).
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.x), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([320 + 16, 1280 - 400 - 12, 800 - 16 - 220])
+    .toEqual([320 + 16, 885 - 12, 800 - 16 - 220])
   const toolbar = (await page.getByRole('toolbar', { name: 'Ferramentas' }).boundingBox())!
   const box = (await toast.boundingBox())!
   expect(Math.round(toolbar.y - (box.y + box.height))).toBe(12)
@@ -444,7 +444,6 @@ test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e 
   test.setTimeout(90_000)
   await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
   await waitFinalMap(page)
-  const rectBefore = await map(page).getAttribute('data-map-rect')
   const popover = page.getByTestId('layers-popover')
 
   // Clique num pin: o popover fecha, e o pin é selecionado.
@@ -454,6 +453,16 @@ test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e 
   await expect(popover).toBeHidden()
   await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-cheio')
   await page.keyboard.press('Escape')
+  // Selecionar levou a câmera até o pin (à esquerda do drawer): espera ela parar.
+  let rectBefore: string | null = null
+  await expect
+    .poll(async () => {
+      const prev = rectBefore
+      await page.waitForTimeout(200)
+      rectBefore = await map(page).getAttribute('data-map-rect')
+      return prev === rectBefore
+    })
+    .toBe(true)
 
   // Arrasto de um pin: o popover fecha, e a câmera não faz pan.
   await page.getByRole('toolbar', { name: 'Ferramentas' }).getByRole('button', { name: 'Camadas' }).click()
@@ -481,7 +490,7 @@ test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e 
   await expect.poll(() => map(page).getAttribute('data-map-rect')).not.toBe(zoomed)
 })
 
-test('1440×900: o toast "Pin excluído" fica ao lado do zoom, à esquerda do drawer e acima do controle de zoom, com 352 px (AC-F3-05)', async ({ page }) => {
+test('1440×900: o toast "Pin excluído" fica ao lado do zoom, a 12 px da borda direita e acima do controle de zoom, com 352 px (AC-F3-05)', async ({ page }) => {
   test.setTimeout(90_000)
   await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
   await waitFinalMap(page)
@@ -492,16 +501,17 @@ test('1440×900: o toast "Pin excluído" fica ao lado do zoom, à esquerda do dr
 
   const toast = page.getByTestId('pin-deleted-toast')
   await expect(toast).toContainText('Pin excluído')
-  // Área livre de 720 px: o toast cabe no canto, alinhado com o zoom (12 px à esquerda do drawer de
-  // 400 px), 12 px acima da toolbar na segunda linha (16 px da base + 152 da toolbar sobre o minimapa
-  // aberto + 56 de altura + 12: 236 px), como o toast de erro.
+  // Excluir tira a seleção, e o drawer sai (AC-F3-19): com 1120 px de área livre, a toolbar fica na
+  // linha de baixo, e o toast cabe no canto, alinhado com o zoom (12 px da borda direita), 12 px acima
+  // dele, como o toast de erro.
   // (Espera a animação de entrada, que sobe o toast 8 px em 200 ms.)
+  const zoom = (await page.getByTestId('zoom-controls').boundingBox())!
   await expect
     .poll(async () => {
       const box = await toast.boundingBox()
       return box && [Math.round(box.width), Math.round(box.x + box.width), Math.round(box.y + box.height)]
     })
-    .toEqual([352, 1440 - 400 - 12, 900 - 236])
+    .toEqual([352, 1440 - 12, Math.round(zoom.y) - 12])
   // Não cobre o minimapa.
   const minimap = (await page.getByTestId('minimap').boundingBox())!
   const box = (await toast.boundingBox())!

@@ -313,7 +313,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   água sem degrau nem linha. O afluente, que termina em outro rio, não alarga. As distâncias são frações da largura do mapa, então a
   prévia tem o mesmo desenho, com menos detalhe.
 - O editor abre com o mapa inteiro na área livre, centrado: a partir de 768 px, entre a
-  sidebar e o drawer; abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`. Pan e zoom
+  sidebar e a borda direita (sem pin selecionado, o drawer fica fora da tela); abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`. Pan e zoom
   estão em [navegacao.md](navegacao.md).
 - Dicas de boas-vindas no primeiro acesso ao editor (sliders, toolbar, adicionar pin), que podem ser
   puladas e não voltam a aparecer depois de vistas ou puladas.

@@ -7,15 +7,16 @@ import { gotoEditor } from './editor.ts'
 
 test.describe.configure({ timeout: 60_000 })
 
-// Desktop 1440×900, no zoom 1×: o mapa (800 km) ocupa os 720 px da área livre, de 320 a 1040.
-const KM_PER_PX = 800 / 720
+// Desktop 1440×900, no zoom 1×, sem pin (o drawer fora da tela): o mapa (800 km) ocupa 900 px da
+// área livre (1120 × 900), de 430 a 1330.
+const KM_PER_PX = 800 / 900
 
 async function open(page: Page) {
   await page.setViewportSize({ width: 1440, height: 900 })
   await gotoEditor(page)
   const map = page.getByTestId('map')
   await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 45_000 })
-  await expect(map).toHaveAttribute('data-map-rect', '320,90,720,720')
+  await expect(map).toHaveAttribute('data-map-rect', '430,0,900,900')
 }
 
 const toolbar = (page: Page) => page.getByRole('toolbar', { name: 'Ferramentas' })
@@ -28,24 +29,24 @@ test('a ferramenta da toolbar mede a distância em km entre dois cliques (AC-F2-
   await expect(page.getByTestId('map')).toHaveCSS('cursor', 'crosshair')
   const hint = page.getByTestId('measure-hint')
   await expect(hint).toHaveText('Clique em dois pontos para medir')
-  // A dica fica no topo, centrada na área livre (centro em 680).
+  // A dica fica no topo, centrada na área livre (centro em 880).
   const box = (await hint.boundingBox())!
-  expect(Math.abs(box.x + box.width / 2 - 680)).toBeLessThanOrEqual(1)
+  expect(Math.abs(box.x + box.width / 2 - 880)).toBeLessThanOrEqual(1)
 
-  await page.mouse.click(500, 450)
+  await page.mouse.click(655, 450)
   await expect(hint).toHaveText('Clique no ponto final')
   // A linha segue o mouse até o segundo clique.
-  await page.mouse.move(680, 450)
-  await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(180 * KM_PER_PX)} km`)
+  await page.mouse.move(880, 450)
+  await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(225 * KM_PER_PX)} km`)
   // Sobre a toolbar, a linha fica no último ponto do mapa.
   await toolbar(page).getByRole('button', { name: 'Camadas' }).hover()
-  await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(180 * KM_PER_PX)} km`)
-  await page.mouse.click(860, 450)
-  // 360 px de 720: metade do mundo de 800 km.
+  await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(225 * KM_PER_PX)} km`)
+  await page.mouse.click(1105, 450)
+  // 450 px de 900: metade do mundo de 800 km.
   await expect(page.getByTestId('measure-distance')).toHaveText('400 km')
   await expect(page.getByTestId('measure-distance')).toHaveAttribute('data-final', 'true')
   // O clique não mexeu na câmera.
-  await expect(page.getByTestId('map')).toHaveAttribute('data-map-rect', '320,90,720,720')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-map-rect', '430,0,900,900')
 })
 
 test('a tecla M liga a ferramenta, e 32 px medem o mesmo que a barra de escala (AC-F2-13)', async ({ page }) => {
@@ -55,13 +56,13 @@ test('a tecla M liga a ferramenta, e 32 px medem o mesmo que a barra de escala (
   await expect(toolbar(page).getByRole('button', { name: 'Medir distância' })).toHaveAttribute('aria-pressed', 'true')
   await page.mouse.click(600, 400)
   await page.mouse.click(632, 400)
-  // A barra de escala (32 px) diz 32 × 800 / 720 = 35,6 → "36 km".
+  // A barra de escala (32 px) diz 32 × 800 / 900 = 28,4 → "28 km".
   const scale = page.getByTestId('map-scale')
   await expect(page.getByTestId('measure-distance')).toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
   await expect(scale).toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
-  // Com a sidebar recolhida (992 px de área livre), a mesma medida da barra.
+  // Com a área livre mais alta (o mapa cabe pela altura: 1100 px), a mesma medida da barra.
   await page.keyboard.press('Escape')
-  await page.keyboard.press('[')
+  await page.setViewportSize({ width: 1440, height: 1100 })
   await expect(scale).not.toHaveText(`${Math.round(32 * KM_PER_PX)} km`)
   await page.mouse.click(600, 400)
   await page.mouse.click(632, 400)
@@ -70,8 +71,10 @@ test('a tecla M liga a ferramenta, e 32 px medem o mesmo que a barra de escala (
 
 test('arrastar continua fazendo pan, e a medida acompanha o mapa (AC-F2-13)', async ({ page }) => {
   await open(page)
+  // Duas vezes: em 1,25× o mapa (1125 px) mal passa da largura da área livre (1120), e o pan não andaria.
   await page.keyboard.press('+')
-  await expect(page.getByTestId('map')).toHaveAttribute('data-zoom', '1.250')
+  await page.keyboard.press('+')
+  await expect(page.getByTestId('map')).toHaveAttribute('data-zoom', '1.563')
   await page.keyboard.press('m')
   await page.mouse.click(600, 450)
   await page.mouse.click(700, 450)
@@ -91,8 +94,8 @@ test('arrastar continua fazendo pan, e a medida acompanha o mapa (AC-F2-13)', as
 test('Esc apaga a medida e, de novo, volta para Navegar (AC-F2-13)', async ({ page }) => {
   await open(page)
   await page.keyboard.press('m')
-  await page.mouse.click(500, 450)
-  await page.mouse.click(860, 450)
+  await page.mouse.click(655, 450)
+  await page.mouse.click(1105, 450)
   await expect(page.getByTestId('measure-distance')).toHaveText('400 km')
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('measure-distance')).toHaveCount(0)
@@ -106,8 +109,8 @@ test('Esc apaga a medida e, de novo, volta para Navegar (AC-F2-13)', async ({ pa
 test('com Camadas aberto, Esc fecha só o popover e a medida fica (AC-F2-13)', async ({ page }) => {
   await open(page)
   await page.keyboard.press('m')
-  await page.mouse.click(500, 450)
-  await page.mouse.click(860, 450)
+  await page.mouse.click(655, 450)
+  await page.mouse.click(1105, 450)
   await toolbar(page).getByRole('button', { name: 'Camadas' }).click()
   await expect(page.getByTestId('layers-popover')).toBeVisible()
   await page.keyboard.press('Escape')
@@ -154,8 +157,8 @@ test.describe('celular 390 com toque', () => {
 test('o leitor de tela ouve a distância, e a tecla V volta para Navegar (AC-F2-13)', async ({ page }) => {
   await open(page)
   await page.keyboard.press('m')
-  await page.mouse.click(500, 450)
-  await page.mouse.click(860, 450)
+  await page.mouse.click(655, 450)
+  await page.mouse.click(1105, 450)
   await expect(page.getByRole('status').filter({ hasText: 'Distância' })).toHaveText('Clique em dois pontos para medir. Distância: 400 km')
   await page.keyboard.press('v')
   await expect(toolbar(page).getByRole('button', { name: 'Navegar' })).toHaveAttribute('aria-pressed', 'true')
