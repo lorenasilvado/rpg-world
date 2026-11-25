@@ -199,24 +199,43 @@ test('"Escolher outro arquivo" abre o seletor e o arquivo escolhido é validado 
   await expect(page.getByRole('button', { name: 'Importar' })).toBeFocused()
 })
 
-test('no editor, Exportar › Arquivo do mundo (.json) baixa o mundo como está na tela (AC-F4-09)', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await setup(page)
-  await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
-  const seed = page.getByRole('textbox', { name: 'Seed' })
-  await seed.fill('valdora-2')
-  await seed.press('Enter')
+for (const { width, height } of [
+  { width: 1440, height: 900 },
+  { width: 1024, height: 768 },
+  { width: 390, height: 844 },
+]) {
+  test(`no editor, Exportar › Arquivo do mundo (.json) baixa o mundo como está na tela; o menu cabe na tela (AC-F4-09, ${width})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height })
+    await setup(page)
+    await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
+    // Abaixo de 768 px, a seed fica no painel sobreposto: abre, troca e fecha (Esc).
+    if (width < 768) await page.getByRole('button', { name: 'Abrir painel' }).click()
+    const seed = page.getByRole('textbox', { name: 'Seed' })
+    await seed.fill('valdora-2')
+    await seed.press('Enter')
+    if (width < 768) {
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('button', { name: 'Abrir painel' })).toBeVisible()
+    }
 
-  await page.getByRole('button', { name: 'Exportar', exact: true }).click()
-  const menu = page.getByRole('menu', { name: 'Exportar' })
-  await expect(menu.getByRole('menuitem', { name: 'Imagem (.png)' })).toBeDisabled()
-  const downloading = page.waitForEvent('download')
-  await menu.getByRole('menuitem', { name: 'Arquivo do mundo (.json)' }).click()
-  const download = await downloading
-  expect(download.suggestedFilename()).toBe('terras-de-valdora.json')
-  const file = JSON.parse(await readFile((await download.path())!, 'utf8'))
-  expect(file.world.seed).toBe('valdora-2')
-  expect(file.world.pins).toHaveLength(2)
-  expect(file.images).toHaveLength(1)
-  await expect(menu).toHaveCount(0)
-})
+    await page.getByRole('button', { name: 'Exportar', exact: true }).click()
+    const menu = page.getByRole('menu', { name: 'Exportar' })
+    await expect(menu).toBeInViewport({ ratio: 1 })
+    const box = (await menu.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(8)
+    expect(box.x + box.width).toBeLessThanOrEqual(width - 8)
+    await expect(menu.getByRole('menuitem', { name: 'Arquivo do mundo (.json)' })).toBeFocused()
+    await expect(menu.getByRole('menuitem', { name: 'Imagem (.png)' })).toBeDisabled()
+    const downloading = page.waitForEvent('download')
+    await menu.getByRole('menuitem', { name: 'Arquivo do mundo (.json)' }).click()
+    const download = await downloading
+    expect(download.suggestedFilename()).toBe('terras-de-valdora.json')
+    const file = JSON.parse(await readFile((await download.path())!, 'utf8'))
+    expect(file.world.seed).toBe('valdora-2')
+    expect(file.world.pins).toHaveLength(2)
+    expect(file.images).toHaveLength(1)
+    await expect(menu).toHaveCount(0)
+  })
+}
