@@ -94,10 +94,12 @@ import { useTheme } from './useTheme'
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
  *
- * Com `welcomeTips`, no primeiro acesso ao editor (a marca ainda não gravada, `welcomeTips.ts`),
- * aparecem as dicas de boas-vindas (`WelcomeTips`, AC-F1-31), no alto da área livre: os sliders, a
- * toolbar e o adicionar pin, um por vez (na tela baixa, o cartão é mais largo), com um contorno âmbar no que cada passo apresenta (abaixo de
- * 768 px, nos sliders, o botão Abrir painel). Pular, o X ou Começar (no último passo) fecham as dicas e
+ * Com `welcomeTips`, no primeiro acesso ao editor (a marca ainda não gravada, `welcome.ts`), aparecem
+ * as dicas de boas-vindas (`WelcomeTips`, AC-F1-31), no alto da área livre (na tela baixa, mais
+ * largas): os sliders, a toolbar e o adicionar pin, um por vez, com um contorno âmbar no que cada
+ * passo apresenta. Nos sliders, o contorno fica na sidebar (recolhida, no trilho de 48 px, e o texto
+ * manda expandi-la) e, abaixo de 768 px, no botão Abrir painel. Com um painel sobreposto aberto, as
+ * dicas ficam atrás do scrim, `inert`. Pular, o X ou Começar (no último passo) fecham as dicas e
  * gravam a marca: elas não voltam, em nenhum mundo. Sair do editor antes disso não grava nada.
  */
 export function EditorLayout({
@@ -478,6 +480,7 @@ export function EditorLayout({
       {welcomeStep !== null && (
         <div
           inert={anyOpen}
+          data-testid="welcome-tips-slot"
           className={[
             'pointer-events-none absolute top-20 right-0 left-0 z-[12] flex justify-center px-3',
             'transition-[left,right] duration-200 ease-[var(--ease-panel)]',
@@ -486,7 +489,12 @@ export function EditorLayout({
         >
           {/* Tela baixa (celular deitado): mais largo, com menos linhas, para não chegar à toolbar. */}
           <div className={`pointer-events-auto w-full ${short ? 'max-w-[480px]' : 'max-w-[360px]'}`}>
-            <WelcomeTips step={welcomeStep} mobile={!desktop} onNext={nextWelcome} onSkip={closeWelcome} />
+            <WelcomeTips
+              step={welcomeStep}
+              layout={!desktop ? 'mobile' : sidebarCollapsed ? 'collapsed' : 'desktop'}
+              onNext={nextWelcome}
+              onSkip={closeWelcome}
+            />
           </div>
         </div>
       )}

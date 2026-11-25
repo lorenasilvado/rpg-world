@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { gotoEditor } from './editor.ts'
+import { defaultWorld, gotoEditor, putWorlds } from './editor.ts'
 
 // Dicas de boas-vindas (#166, AC-F1-31). Os outros testes abrem o editor com a marca de dicas vistas
 // (playwright.config.ts); aqui o navegador começa sem ela, como no primeiro acesso.
@@ -50,10 +50,19 @@ test('no primeiro acesso, as dicas apresentam os sliders, a toolbar e o adiciona
 
 test('Pular fecha as dicas, e elas não voltam ao recarregar nem em outro mundo (AC-F1-31)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await gotoEditor(page)
+  await page.goto('/')
+  await putWorlds(page, [defaultWorld(), defaultWorld({ id: 'mundo-dois', name: 'Ilhas de Brumar', seed: 'brumar' })])
+  await page.reload()
+  await page.getByRole('button', { name: /^Terras de Valdora/ }).click()
+  await expect(tips(page)).toBeVisible()
   await tips(page).getByRole('button', { name: 'Pular' }).click()
   await expect(tips(page)).toHaveCount(0)
   await reopen(page)
+  await expect(tips(page)).toHaveCount(0)
+  // Outro mundo: a marca é do navegador, não do mundo.
+  await page.getByRole('button', { name: 'Voltar à lista de mundos' }).click()
+  await page.getByRole('button', { name: /^Ilhas de Brumar/ }).click()
+  await expect(page.getByTestId('editor')).toBeVisible()
   await expect(tips(page)).toHaveCount(0)
   await page.reload()
   await page.getByRole('button', { name: /^Terras de Valdora/ }).click()

@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useId } from 'react'
-import { WELCOME_TIPS } from './welcome'
+import { WELCOME_TIPS, welcomeTipText, type WelcomeLayout } from './welcome'
 
 /**
  * Cartão das dicas de boas-vindas (geracao-terreno.md → Regras, AC-F1-31): um passo por vez (os
@@ -10,19 +10,21 @@ import { WELCOME_TIPS } from './welcome'
  *
  * Fica no alto da área livre do mapa, abaixo da barra de ações: a partir de 768 px, centrado entre a
  * sidebar e a borda direita; abaixo, na largura da tela, com 12 px de cada lado (até 360 px; na tela
- * baixa, até 480). Segue o design
- * system: `--paper-solid`, `--shadow-lg`, botão primário âmbar.
+ * baixa, até 480). Segue o design system: `--paper-solid`, `--shadow-lg`, botão primário âmbar.
  */
 export function WelcomeTips({
   step,
-  mobile,
+  layout,
   onNext,
   onSkip,
 }: {
   /** O passo à vista (0 a `WELCOME_TIPS.length - 1`). */
   step: number
-  /** Abaixo de 768 px: os textos de toque (os sliders atrás do botão Abrir painel, tocar no mapa). */
-  mobile: boolean
+  /**
+   * O texto de cada passo: `mobile`, abaixo de 768 px (os sliders atrás do Abrir painel, tocar no
+   * mapa); `collapsed`, com a sidebar recolhida (expandir o painel para ver os sliders).
+   */
+  layout: WelcomeLayout
   onNext: () => void
   onSkip: () => void
 }) {
@@ -58,7 +60,7 @@ export function WelcomeTips({
         {tip.title}
       </h2>
       <p id={textId} className="text-sm/5 text-ink-2">
-        {mobile && tip.mobileText ? tip.mobileText : tip.text}
+        {welcomeTipText(tip, layout)}
       </p>
       <div className="mt-1 flex items-center gap-2">
         <span aria-hidden="true" className="flex gap-1.5">

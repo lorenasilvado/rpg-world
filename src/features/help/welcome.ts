@@ -19,6 +19,18 @@ export type WelcomeTip = {
   text: string
   /** O texto abaixo de 768 px, quando difere (a sidebar fica atrás do botão Abrir painel). */
   mobileText?: string
+  /** O texto a partir de 768 px com a sidebar recolhida a 48 px, quando difere (os sliders fora de vista). */
+  collapsedText?: string
+}
+
+/** Onde as dicas aparecem: a partir de 768 px, com a sidebar aberta ou recolhida, ou abaixo disso. */
+export type WelcomeLayout = 'desktop' | 'collapsed' | 'mobile'
+
+/** O texto do passo para o layout. */
+export function welcomeTipText(tip: WelcomeTip, layout: WelcomeLayout) {
+  if (layout === 'mobile') return tip.mobileText ?? tip.text
+  if (layout === 'collapsed') return tip.collapsedText ?? tip.text
+  return tip.text
 }
 
 export const WELCOME_TIPS: readonly WelcomeTip[] = [
@@ -28,6 +40,8 @@ export const WELCOME_TIPS: readonly WelcomeTip[] = [
     text: 'Os sliders do painel à esquerda mudam oceano, biomas, relevo e clima. Arraste para ver a prévia; ao soltar, o mapa é gerado.',
     mobileText:
       'Abra o painel pelo primeiro botão da barra do topo: os sliders mudam oceano, biomas, relevo e clima. Arraste para ver a prévia; ao soltar, o mapa é gerado.',
+    collapsedText:
+      'Expanda o painel à esquerda (pelo botão do alto dele ou pela tecla [): os sliders mudam oceano, biomas, relevo e clima. Arraste para ver a prévia; ao soltar, o mapa é gerado.',
   },
   {
     target: 'toolbar',
