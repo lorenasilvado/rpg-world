@@ -1,10 +1,10 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { summarizeFrames } from '../src/sprites/frameStats.ts'
-import { gotoEditor } from './editor.ts'
+import { defaultWorld, gotoEditor } from './editor.ts'
 
 // Fps de pan, zoom e pinça com o app completo e 5.000 ícones decorativos (#55, AC-F2-07; critério
-// de saída do M1). Roda no projeto desempenho, sozinho e depois dos outros: em paralelo, a disputa
+// de saída do M1) e, com 500 pins por cima, AC-F3-17 (#168; critério de saída do M2). Roda no projeto desempenho, sozinho e depois dos outros: em paralelo, a disputa
 // pela CPU atrasa os quadros.
 //
 // O editor nunca passa de uns 3.600 ícones (a amostra de Poisson-disk inteira, com a distância
@@ -15,11 +15,39 @@ import { gotoEditor } from './editor.ts'
 // Durante 30 s, o teste faz gestos de verdade (roda, Ctrl+roda da pinça do touchpad, pinça de dois
 // dedos e arrasto), e um laço de requestAnimationFrame guarda o instante de cada quadro. A média e
 // o mínimo (pior janela de 1 s) saem de `summarizeFrames`, a mesma conta do spike de 5.000 sprites.
+// Com os 500 pins, cada arrasto começa num ponto sem pin nem grupo embaixo (o cursor do mapa diz),
+// para ser pan, e não o arrasto de um pin.
 //
 // As metas só são conferidas fora do CI. No CI, sem GPU, o Chrome desenha por software e o número
 // não vale; fora dele, um renderer por software faz o teste falhar, em vez de passar sem medir. A máquina, a GPU e os números vão para as anotações e para o
-// anexo `fps.json` (e para o PR). Para medir com a janela à vista:
+// anexo `fps-<AC>.json` (e para o PR). Para medir com a janela à vista:
 // `npx playwright test e2e/fps.spec.ts --project=desempenho --no-deps --headed`.
+
+const TYPES = ['cidade', 'vila', 'castelo', 'masmorra', 'npc', 'poi', 'custom'] as const
+
+/** 500 pins numa grade de 25 × 20 sobre o mapa (de 0,12 a 0,88), com os 7 tipos alternados. */
+function pins500() {
+  return Array.from({ length: 500 }, (_, i) => {
+    const type = TYPES[i % TYPES.length]
+    const col = i % 25
+    const row = Math.floor(i / 25)
+    return {
+      id: `p-${i}`,
+      type,
+      name: `Pin ${i + 1}`,
+      pos: { u: 0.12 + (col * 0.76) / 24, v: 0.12 + (row * 0.76) / 19 },
+      icon: { kind: 'builtin', key: type },
+      description: '',
+      tags: [],
+      fields: {},
+    }
+  })
+}
+
+const CASES = [
+  { ac: 'AC-F2-07', pins: 0, title: 'pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F2-07)' },
+  { ac: 'AC-F3-17', pins: 500, title: 'pan, zoom e pinça com 500 pins, 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F3-17)' },
+]
 
 const CONFERE_FPS = !process.env.CI
 const DURATION_MS = 30_000
@@ -34,7 +62,10 @@ const zoom = async (page: Page) => Number(await map(page).getAttribute('data-zoo
 // Desktop 1440×900: a área livre fica entre a sidebar (320) e o drawer (400).
 const CENTER = { x: 320 + 360, y: 450 }
 
-test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F2-07)', async ({ page, context }) => {
+// Os dois casos um depois do outro, no mesmo worker: em paralelo, um atrasaria os quadros do outro.
+test.describe.configure({ mode: 'default' })
+
+for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) => {
   test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -46,11 +77,12 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
     await route.fulfill({ response, body })
   })
   await page.setViewportSize({ width: 1440, height: 900 })
-  await gotoEditor(page)
+  await gotoEditor(page, '/', defaultWorld({ pins: pins === 0 ? [] : pins500() }))
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 60_000 })
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 60_000 })
   await expect(map(page)).toHaveAttribute('data-decor-total', '5000')
   await expect(map(page)).toHaveAttribute('data-decor-layer', 'on')
+  await expect(map(page)).toHaveAttribute('data-pins', String(pins))
 
   const machine = await page.evaluate(() => {
     const gl = document.createElement('canvas').getContext('webgl2')
@@ -97,10 +129,24 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
     }
     if (ctrl) await page.keyboard.up('Control')
   }
+  /** Um ponto perto do centro sem pin nem grupo embaixo: apertar nele faz pan. */
+  const freeSpot = async () => {
+    for (const [ox, oy] of [[0, 0], [0, 30], [30, 0], [-30, 0], [0, -30], [30, 30], [-30, 30], [30, -30], [-30, -30], [0, 60], [60, 0], [-60, 0], [0, -60]]) {
+      const at = { x: CENTER.x + ox, y: CENTER.y + oy }
+      await page.mouse.move(at.x, at.y)
+      if (pins === 0) return at
+      await page.waitForTimeout(20)
+      if (!/cursor-(pointer|zoom-in)/.test((await map(page).getAttribute('class')) ?? '')) return at
+    }
+    return null
+  }
+  let pinDrags = 0
   const drag = async (dx: number, dy: number) => {
-    await page.mouse.move(CENTER.x, CENTER.y)
+    const at = await freeSpot()
+    if (!at) return
     await page.mouse.down()
-    await page.mouse.move(CENTER.x + dx, CENTER.y + dy, { steps: 40 })
+    await page.mouse.move(at.x + dx, at.y + dy, { steps: 40 })
+    if ((await map(page).getAttribute('data-pin-dragging')) !== '') pinDrags++
     await page.mouse.up()
   }
 
@@ -139,6 +185,9 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
   const hardware = machine.gpu !== null && !SOFTWARE_GPU.test(machine.gpu)
   const report = {
     machine,
+    ac,
+    pins,
+    pinDrags,
     decor: { total: 5000, drawnAtEnd: drawn },
     durationMs: DURATION_MS,
     cycles,
@@ -148,17 +197,17 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
     stats,
     pass: !recorded.hidden && hardware && stats.avgFps >= TARGET_AVG - 0.5 && stats.minFps >= TARGET_MIN,
   }
-  await test.info().attach('fps.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' })
+  await test.info().attach(`fps-${ac}.json`, { body: JSON.stringify(report, null, 2), contentType: 'application/json' })
   test.info().annotations.push(
     { type: 'máquina', description: `${machine.userAgent} · ${machine.cores} núcleos` },
     { type: 'GPU', description: `${machine.gpu ?? 'sem WebGL2'}${hardware ? '' : ' (por software: não vale para a meta)'}` },
     { type: 'tela', description: `${machine.screen.cssWidth}×${machine.screen.cssHeight} CSS, DPR ${machine.screen.devicePixelRatio}` },
     {
       type: 'fps',
-      description: `média ${stats.avgFps}, mínimo ${stats.minFps} (pior janela de 1 s), pior quadro ${stats.worstFrameMs} ms, ${stats.slowFrames} quadros acima de 1/55 s, ${stats.frames} quadros em ${stats.durationMs} ms`,
+      description: `${pins} pins: média ${stats.avgFps}, mínimo ${stats.minFps} (pior janela de 1 s), pior quadro ${stats.worstFrameMs} ms, ${stats.slowFrames} quadros acima de 1/55 s, ${stats.frames} quadros em ${stats.durationMs} ms`,
     },
   )
-  console.log(`[fps] ${JSON.stringify(report)}`)
+  console.log(`[fps ${ac}] ${JSON.stringify(report)}`)
 
   // Os gestos aconteceram: o zoom passou do mapa inteiro para os dois lados, e o mapa andou.
   expect(cycles).toBeGreaterThan(0)
@@ -167,9 +216,10 @@ test('pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de m
   expect(rects.size).toBeGreaterThan(2)
   expect(stats.frames).toBeGreaterThan(0)
   expect(report.visible, 'a aba ficou escondida: a medição não vale').toBe(true)
+  expect(pinDrags, 'um arrasto pegou um pin em vez de fazer pan').toBe(0)
 
   if (CONFERE_FPS) {
-    // Fora do CI, um verde por software não pode passar por medição do AC-F2-07.
+    // Fora do CI, um verde por software não pode passar por medição do AC.
     expect(hardware, `sem GPU de verdade (${machine.gpu ?? 'sem WebGL2'}): a medição não vale; rode numa máquina com GPU`).toBe(true)
     // "60 fps de média" num monitor de 60 Hz: a média arredondada é 60.
     expect(stats.avgFps).toBeGreaterThanOrEqual(TARGET_AVG - 0.5)

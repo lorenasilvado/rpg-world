@@ -9,16 +9,17 @@ import { defineConfig, devices } from '@playwright/test'
 // - determinismo-chrome, -firefox e -webkit: o hash do núcleo de geração nos 3 motores
 //   (#8, RNF-4), no servidor de desenvolvimento. Firefox e WebKit são os do Playwright:
 //   instale uma vez com `npx playwright install firefox webkit`;
-// - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 de ponta a ponta (#55), no
-//   servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
-// - desempenho: a medição da geração no worker (#9, RNF-2), no servidor de desenvolvimento.
+// - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 (#55) e os de pins e mundos do M2
+//   (#168) de ponta a ponta, no servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
+// - desempenho: a medição da geração no worker (#9, RNF-2) e o fps de pan e zoom (#55, #168), no
+//   servidor de desenvolvimento.
 //   Roda depois de todos os outros projetos e sozinha: em paralelo com eles, a disputa pela CPU
 //   atrasa os quadros da UI e a medição deixa de valer. Para rodar só ela:
 //   `npx playwright test --project=desempenho --no-deps`.
 const DEV = 'http://localhost:5199'
 const DETERMINISMO = /determinismo\.spec\.ts/
 const DESEMPENHO = /(desempenho|fps)\.spec\.ts/
-const FLUXOS = /fluxos\.spec\.ts/
+const FLUXOS = /fluxos(-m2)?\.spec\.ts/
 const PREVIEW = 'npx vite preview --port 5198 --strictPort'
 
 // Os testes abrem o editor com as dicas de boas-vindas já vistas (AC-F1-31), para o cartão não
