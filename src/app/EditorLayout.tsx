@@ -266,6 +266,11 @@ export function EditorLayout({
 
   /** O aperto que começou no scrim (ver o `onClick` dele). */
   const scrimPress = useRef(false)
+  // Cada painel que abre começa sem aperto: um que ficou pela metade (o painel fechou pelo X, por
+  // exemplo) não deixa o clique gerado depois do toque num pin fechar o drawer.
+  useEffect(() => {
+    scrimPress.current = false
+  }, [anyOpen])
   const closeAll = () => {
     setSidebarOpen(false)
     setDrawerOpen(false)
@@ -453,6 +458,9 @@ export function EditorLayout({
           // o navegador gera depois dele, e esse clique cairia no scrim (o drawer não cobre a tela
           // toda, como no celular deitado) e fecharia o drawer na hora (AC-F2-15).
           onPointerDown={() => (scrimPress.current = true)}
+          // O aperto que sai do scrim ou é cancelado não vale para o próximo clique.
+          onPointerLeave={() => (scrimPress.current = false)}
+          onPointerCancel={() => (scrimPress.current = false)}
           onClick={() => {
             if (scrimPress.current) closeAll()
             scrimPress.current = false
