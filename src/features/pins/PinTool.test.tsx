@@ -202,6 +202,34 @@ describe('Tipos escondidos e grupos (AC-F3-14, AC-F3-15)', () => {
     fireEvent.pointerMove(canvas, { clientX: 600, clientY: 600, pointerType: 'mouse' })
     expect(pins.getState().groupHovered).toBe(false)
   })
+
+  it('com o mouse parado, o hover acompanha o zoom: o pin entra no grupo e o cursor vira a lupa; o tipo escondido sai do hover', () => {
+    const { ui, pins, camera } = setup()
+    const canvas = screen.getByTestId('canvas')
+    // O jsdom não acha o elemento sob o ponto: o mouse fica sobre o canvas do mapa.
+    const doc = document as Document & { elementFromPoint?: (x: number, y: number) => Element | null }
+    const original = doc.elementFromPoint
+    doc.elementFromPoint = () => canvas
+    // No zoom 1 (1 px por unidade), dois pins a 20 px: soltos.
+    act(() => pins.getState().replacePins([at('a', 400, 600), at('b', 420, 600)]))
+    fireEvent.pointerMove(canvas, { clientX: 400, clientY: 590, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBe('a')
+    // Afasta para 0,5: os pins (200 e 210 px) viram um grupo em (205, 284); o mouse, em (400, 590), fica fora dele.
+    act(() => camera.getState().update({ zoom: 0.5, scale: 0.5, view: { x: 0, y: 0, width: 2048, height: 2048 }, origin: { x: 0, y: 0 } }))
+    expect(pins.getState().hoveredId).toBeNull()
+    expect(pins.getState().groupHovered).toBe(false)
+    // O mouse sobre o grupo, e a câmera volta ao zoom 1: o grupo se desfaz, e a lupa sai.
+    fireEvent.pointerMove(canvas, { clientX: 205, clientY: 284, pointerType: 'mouse' })
+    expect(pins.getState().groupHovered).toBe(true)
+    act(() => camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } }))
+    expect(pins.getState().groupHovered).toBe(false)
+    // Sobre um pin, esconder o tipo dele tira o hover.
+    fireEvent.pointerMove(canvas, { clientX: 400, clientY: 590, pointerType: 'mouse' })
+    expect(pins.getState().hoveredId).toBe('a')
+    act(() => ui.getState().setLayer('cidade', false))
+    expect(pins.getState().hoveredId).toBeNull()
+    doc.elementFromPoint = original
+  })
 })
 
 describe('Arrastar pin (AC-F3-04)', () => {

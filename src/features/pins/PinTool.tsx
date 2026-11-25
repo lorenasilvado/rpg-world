@@ -30,7 +30,8 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * Só os pins à vista contam: os dos tipos desligados em Camadas (AC-F3-15) e os que estão num grupo
  * (zoom abaixo de 0,8×, AC-F3-14) não recebem clique nem hover. Um clique num grupo (com Navegar ou
  * Adicionar pin) leva a câmera ao ponto médio dele, no zoom 1,3× (`focusOn`), sem criar pin; com o
- * mouse sobre um grupo, `groupHovered` fica ligado (o cursor é a lupa).
+ * mouse sobre um grupo, `groupHovered` fica ligado (o cursor é a lupa). Com o mouse parado, o hover
+ * é refeito quando a câmera ou as camadas mudam.
  *
  * Esc fecha o drawer (tira a seleção); sem pin selecionado, com Adicionar pin, volta para Navegar.
  * Delete ou Backspace exclui o pin selecionado (`onDelete`), sem confirmação. As teclas seguem as exceções dos
@@ -188,12 +189,34 @@ export function PinTool({
         return
       }
       if (e.pointerType === 'touch' || pins.getState().dragging) return
-      const map = mapUnder(e.target)
-      const at = map && camera.getState().ready && ui.getState().tool !== 'measure' ? local(e, map) : null
+      mouse = { x: e.clientX, y: e.clientY }
+      hoverAt(mapUnder(e.target), e.clientX, e.clientY)
+    }
+    /** A última posição do mouse (não do dedo), para refazer o hover quando o mapa muda sob ele. */
+    let mouse: { x: number; y: number } | null = null
+    /** Marca o pin ou o grupo sob o ponto da página (`map`: a área do mapa sob ele, ou `null`). */
+    const hoverAt = (map: HTMLElement | null, clientX: number, clientY: number) => {
+      let at: { x: number; y: number } | null = null
+      if (map && camera.getState().ready && ui.getState().tool !== 'measure') {
+        const rect = map.getBoundingClientRect()
+        at = { x: clientX - rect.left, y: clientY - rect.top }
+      }
       const hit = at ? under(at.x, at.y) : null
       pins.getState().setHovered(hit ? hit.id : null)
       pins.getState().setGroupHovered(at !== null && hit === null && groupUnder(at.x, at.y) !== null)
     }
+    // O zoom, o pan e as camadas mudam o que está sob o mouse parado (um pin entra num grupo, um
+    // grupo se desfaz, um tipo some): o hover e o cursor acompanham sem esperar o próximo movimento.
+    const refresh = () => {
+      if (!mouse || press || pins.getState().dragging) return
+      hoverAt(mapUnder(document.elementFromPoint?.(mouse.x, mouse.y) ?? null), mouse.x, mouse.y)
+    }
+    const unsubscribeCamera = camera.subscribe((state, prev) => {
+      if (state.scale !== prev.scale || state.zoom !== prev.zoom || state.view !== prev.view || state.ready !== prev.ready) refresh()
+    })
+    const unsubscribeLayers = ui.subscribe((state, prev) => {
+      if (state.layers !== prev.layers) refresh()
+    })
     // Na captura: o aperto num pin segura o pan antes de o canvas (e a câmera) o receber.
     document.addEventListener('pointerdown', onDown, true)
     document.addEventListener('pointerup', onUp)
@@ -201,6 +224,8 @@ export function PinTool({
     document.addEventListener('pointermove', onMove)
     document.addEventListener('keydown', onEscape, true)
     return () => {
+      unsubscribeCamera()
+      unsubscribeLayers()
       document.removeEventListener('keydown', onEscape, true)
       document.removeEventListener('pointerdown', onDown, true)
       document.removeEventListener('pointerup', onUp)

@@ -114,6 +114,7 @@ barra inferior.
 | Recolher o minimapa | Esconde o minimapa |
 | Camadas | Abre um popover com interruptores de liga/desliga para cada camada do mapa ("Decoração" e os 7 tipos de pin) |
 | Interruptor "Decoração" | Mostra ou esconde os ícones decorativos |
+| Interruptor de um tipo de pin (Cidade, Vila…) | Mostra ou esconde os pins daquele tipo (ver [pins.md](pins.md)) |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
 | Buscar, exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
 | Desfazer, refazer (Ctrl+Z, Ctrl+Shift+Z) | Desfazem e refazem as mudanças nos pins e nos parâmetros de geração (ver [mundos.md](mundos.md)) |
