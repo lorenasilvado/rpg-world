@@ -156,7 +156,9 @@ do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, params 
 `pinsStore` e o `worldStore` e troca o espelho a cada mudança que vale um passo (os parâmetros só ao
 soltar o slider: `paramsDragging` do `worldStore`). Desfazer devolve os pins pelo `replacePins` e os
 parâmetros pelo `setParams`, que pede só o mapa final. O `EditorLayout` liga os botões Desfazer e
-Refazer da barra, as teclas e o toast "Pin excluído" (`src/features/pins/PinDeletedToast.tsx`).
+Refazer da barra, as teclas e o toast "Pin excluído" (`src/features/pins/PinDeletedToast.tsx`). Ele também mostra o aviso
+"N pins ficaram sobre a água" (`src/features/pins/PinsOnWaterToast.tsx`) quando um mapa final regerado
+deixa pins em oceano ou lago (`pinsOnWater`, em `place.ts`).
 
 A busca dos pins fica em `src/features/search/`: `searchPins.ts` (TS puro: acha por nome e tag, sem
 acento nem maiúscula, e ordena) e `SearchDialog.tsx` (o modal, com o `Dialog` do Radix e o campo

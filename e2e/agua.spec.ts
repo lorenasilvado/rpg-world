@@ -1,0 +1,44 @@
+/// <reference lib="dom" />
+import { expect, test } from '@playwright/test'
+import { defaultWorld, gotoEditor } from './editor.ts'
+
+// Aviso de pins sobre a água (#165): subir o Oceano deixa pins do litoral debaixo d'água, e o toast
+// "N pins ficaram sobre a água" oferece Mostrar, que leva a câmera até o primeiro deles (AC-F1-30).
+
+/** Uma grade de 64 pins pelo mapa todo: com o Oceano no máximo, os de terra perto da costa afundam. */
+function gridPins() {
+  return Array.from({ length: 64 }, (_, i) => ({
+    id: `p${i}`,
+    type: 'cidade',
+    name: `Lugar ${i + 1}`,
+    pos: { u: 0.1 + (i % 8) * 0.114, v: 0.1 + Math.floor(i / 8) * 0.114 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  }))
+}
+
+test('AC-F1-30: subir o Oceano mostra o aviso dos pins sobre a água, e Mostrar centraliza no primeiro', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await gotoEditor(page, '/', defaultWorld({ pins: gridPins() }))
+  const map = page.getByTestId('map')
+  await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle')
+  const toast = page.getByTestId('pins-on-water-toast')
+  // O mapa de quando o mundo abre não é uma regeração: sem aviso, mesmo com pins no mar.
+  await expect(toast).toHaveCount(0)
+  await expect(map).toHaveAttribute('data-zoom', '1.000')
+
+  // Oceano no máximo (End, com o foco no slider): o mapa final chega com mais água.
+  const ocean = page.getByRole('slider', { name: 'Oceano' })
+  await ocean.focus()
+  await ocean.press('End')
+  await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 30_000 })
+  await expect(toast).toHaveText(/^\d+ pins? fic(ou|aram) sobre a água\s*Mostrar$/, { timeout: 30_000 })
+
+  await toast.getByRole('button', { name: 'Mostrar' }).click()
+  await expect(toast).toHaveCount(0)
+  await expect(map).toHaveAttribute('data-zoom', '1.600')
+})

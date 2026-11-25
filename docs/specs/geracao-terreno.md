@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -13,7 +13,8 @@ o comportamento atualiza esta spec.
 > (`src/core/world/`) e da decoração (`src/core/decor/`), o worker de geração com o cache do ruído
 > da seed e o `worldStore` com a prévia durante o arrasto e o mapa final ao soltar. O editor gera o
 > mapa final ao abrir, desenha o terreno (com a costa, a água rasa, o hillshade, os rios e os lagos)
-> e mostra o toast de erro se a geração ou o worker falhar. A sidebar tem as seções Seed, Presets,
+> e mostra o toast de erro se a geração ou o worker falhar, e o aviso quando o mapa regerado deixa pins
+> sobre a água. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
 > a 48 px; o rodapé tem a barra "Distribuição do mapa", e o mapa fica borrado durante a geração.
 > Sem WebGL2, o aviso toma o lugar do editor. O app abre na Lista de mundos, que abre o editor de
@@ -154,7 +155,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Carregando / gerando | Um slider, a seed ou um preset muda, ou o editor abre | "Distribuição do mapa" mostra "Gerando" (com o ícone girando) e os valores do mapa exibido, que durante o arrasto são os da prévia; o terreno e a decoração do mapa ficam borrados (3 px) enquanto o pedido mais novo não chega ou o mapa exibido é a prévia, e ficam nítidos em 260 ms quando o mapa final chega; o desfoque vale só para o terreno e a decoração, e o que fica acima deles (pins e rotas) continua nítido; com movimento reduzido, o mapa borra e fica nítido na hora, e o ícone de "Gerando" não gira; o minimapa acompanha a prévia |
 | Slider recuou | Desertos + Florestas passaria de 100% | O outro slider recua sozinho e pisca (flash âmbar de 700 ms). Ex.: Desertos de 15% para 70% → Florestas de 35% para 30% |
 | Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, logo acima do controle de zoom (com área livre abaixo de 566 px, como no celular e no tablet com a sidebar aberta, na largura da área e acima do minimapa aberto), com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
-| Aviso | Pins ficam sobre a água depois de regerar | Toast "2 pins ficaram sobre a água", com a ação "Mostrar", que centraliza a câmera no primeiro deles; os pins ficam onde estão |
+| Aviso | Um mapa final regerado (não o primeiro, ao abrir o mundo; nem a prévia do arrasto) deixa pins em célula de oceano (fundo ou raso) ou de lago | Toast "2 pins ficaram sobre a água" (com um pin, "1 pin ficou sobre a água"), no lugar dos toasts, acima dos outros à vista, com a ação "Mostrar", que centraliza a câmera no primeiro deles (na ordem da lista, com o zoom do Centralizar do drawer) e fecha o toast; os pins ficam onde estão. Some sozinho depois de 6 s, e cada mapa final novo o refaz (ou o fecha, sem pins na água) |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
 | Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso "Este navegador não tem WebGL2": "O editor desenha o mapa com WebGL2, que este navegador não oferece ou está desligado. Abra o RPG World Builder na versão atual de um destes navegadores:", a lista Google Chrome, Microsoft Edge, Mozilla Firefox e Safari, e "Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações." O aviso tem o botão de tema claro e escuro do editor. O mapa não é gerado. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)) |
 

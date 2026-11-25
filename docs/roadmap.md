@@ -144,7 +144,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 50 | #162 | [feat] Pins: agrupamento e ocultar por tipo | done | specs/pins.md | #217 |
 | 51 | #163 | [feat] Buscar pins (Ctrl K) | done | specs/pins.md | #221 |
 | 52 | #164 | [feat] Exportar e importar o mundo em JSON | done | specs/mundos.md | #225 |
-| 53 | #165 | [feat] Aviso de pins sobre a água | todo | specs/geracao-terreno.md | |
+| 53 | #165 | [feat] Aviso de pins sobre a água | doing | specs/geracao-terreno.md | |
 | 54 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
 | 55 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
 | 56 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |
