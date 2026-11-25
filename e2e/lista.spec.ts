@@ -141,11 +141,11 @@ test('menu "⋯": renomear, duplicar (a contagem sobe) e excluir com confirmaç�
   const names = cards(page).getByTestId('world-card-name')
   await expect(names).toHaveText(['Terras de Valdora', 'Vale Sombrio'])
 
-  // O menu: o cartão ganha o contorno âmbar; Exportar fica desabilitado.
+  // O menu: o cartão ganha o contorno âmbar; Exportar baixa o .json (e2e/importar.spec.ts).
   await page.getByRole('button', { name: 'Mais ações de Vale Sombrio' }).click()
   const menu = page.getByRole('menu', { name: 'Ações de Vale Sombrio' })
   await expect(menu.getByRole('menuitem')).toHaveText(['Renomear', 'Duplicar', 'Exportar', 'Excluir'])
-  await expect(menu.getByRole('menuitem', { name: 'Exportar' })).toBeDisabled()
+  await expect(menu.getByRole('menuitem', { name: 'Exportar' })).toBeEnabled()
   await expect(cards(page).nth(1)).toHaveAttribute('data-menu-open', 'true')
   await expect(menu).toBeInViewport({ ratio: 1 })
 
@@ -187,10 +187,12 @@ test('menu "⋯" só com teclado: abrir, andar, renomear e excluir (AC-F4-07)', 
   const more = page.getByRole('button', { name: 'Mais ações de Terras de Valdora' })
   await more.focus()
 
-  // Enter abre com o foco em Renomear; as setas pulam o Exportar desabilitado; Esc devolve ao "⋯".
+  // Enter abre com o foco em Renomear; as setas andam pelos itens; Esc devolve ao "⋯".
   await page.keyboard.press('Enter')
   await expect(page.getByRole('menuitem', { name: 'Renomear' })).toBeFocused()
   await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: 'Exportar' })).toBeFocused()
   await page.keyboard.press('ArrowDown')
   await expect(page.getByRole('menuitem', { name: 'Excluir' })).toBeFocused()
   await page.keyboard.press('Escape')

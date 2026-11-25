@@ -1,11 +1,13 @@
 import { CircleHelp, Compass, Moon, Plus, Sun, Upload, X } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { useTheme } from '../../app/useTheme'
 import type { World } from '../../persistence/types'
 import { worldStoreInitial } from '../../persistence/worldRecord'
 import { ShortcutsDialog } from '../help/ShortcutsDialog'
 import { LIST_THUMBNAIL_SIZE, type CreateThumbnails, type Thumbnails } from '../wizard/thumbnails'
 import { worldCaption } from './editedAgo'
+import { ImportWorldDialog } from './ImportWorldDialog'
+import type { ImportFailure, ImportFailureReason } from './importMessages'
 import { WorldCardMenu, type WorldMenuAction } from './WorldCardMenu'
 import { DeleteWorldDialog, RenameWorldDialog } from './WorldDialogs'
 
@@ -13,14 +15,21 @@ import { DeleteWorldDialog, RenameWorldDialog } from './WorldDialogs'
  * 01 · Lista de mundos e 02 · Lista vazia (mundos.md, AC-F4-04, AC-F4-05): a tela inicial do app.
  *
  * Cabeçalho de 72 px com o logo, o tema e a Ajuda (o modal "Atalhos de teclado"); o título "Seus
- * mundos" com a contagem e os botões Importar (desabilitado até a importação existir) e Novo mundo.
+ * mundos" com a contagem e os botões Importar e Novo mundo.
  * Com `worlds` nulo (lendo o IndexedDB), a grade mostra cartões esqueleto do mesmo tamanho dos
  * cartões. Sem mundos, a ilustração "Terra incognita", "Criar meu primeiro mundo" e o link de
- * importar (desabilitado como o botão).
+ * importar.
+ *
+ * Importar (AC-F4-09, AC-F4-10): o botão e o link abrem o seletor de arquivos, e um arquivo solto
+ * sobre a tela também é importado (`onImport`). O mundo importado entra no topo da lista; um arquivo
+ * recusado abre o modal "Importar mundo" (03) com o motivo, onde outro arquivo pode ser solto ou
+ * escolhido sem fechá-lo (um que entra fecha o modal). Um arquivo que chega durante outra importação
+ * é importado logo depois dela (se chegam vários, o último).
  *
  * Cada cartão abre o mundo (`onOpen`) e tem a miniatura 16:10, o nome, "Editado há X · N pins" e o
  * botão "⋯" com o menu do mundo (AC-F4-07): Renomear e Excluir abrem os modais deles, Duplicar
- * chama `onDuplicate` já (se falha, o toast de erro oferece "Tentar de novo"); com o menu aberto, o cartão ganha o contorno âmbar. Um menu aberto por
+ * chama `onDuplicate` já e Exportar, `onExport` (se um deles falha, o toast de erro oferece "Tentar
+ * de novo"); com o menu aberto, o cartão ganha o contorno âmbar. Um menu aberto por
  * vez. Ao fechar um modal, o foco volta ao "⋯" do cartão (ou ao "Novo mundo", se o mundo saiu).
  * As miniaturas são geradas num worker só delas (`createThumbnails`), uma por vez, na ordem da
  * lista; até chegar, o cartão mostra o fundo do mar.
@@ -33,6 +42,8 @@ export function WorldList({
   onRename,
   onDuplicate,
   onDelete,
+  onExport,
+  onImport,
   createThumbnails,
 }: {
   /** Os mundos salvos, do editado por último ao mais antigo; `null` enquanto carrega. */
@@ -47,6 +58,10 @@ export function WorldList({
   onDuplicate: (world: World) => Promise<void>
   /** Exclui o mundo de vez; uma falha mantém o modal aberto. */
   onDelete: (world: World) => Promise<void>
+  /** Baixa o arquivo do mundo (.json); uma falha mostra o toast "Não foi possível exportar". */
+  onExport: (world: World) => Promise<void>
+  /** Importa o arquivo: `null` se o mundo entrou, ou o motivo da recusa (o modal 03). */
+  onImport: (file: File) => Promise<ImportFailureReason | null>
   /** Sem ele (os testes do jsdom), os cartões ficam sem miniatura. */
   createThumbnails?: CreateThumbnails
 }) {
@@ -67,14 +82,14 @@ export function WorldList({
   }
   /** O mundo do último modal aberto: quando o modal termina de fechar, `dialog` já é nulo. */
   const dialogWorld = useRef<string | null>(null)
-  /** O mundo cuja cópia falhou (o toast de erro), ou `null`. */
-  const [duplicateFailed, setDuplicateFailed] = useState<World | null>(null)
-  const duplicate = (world: World) => {
-    setDuplicateFailed(null)
-    onDuplicate(world).catch(() => setDuplicateFailed(world))
+  /** O mundo cuja cópia ou exportação falhou (o toast de erro), ou `null`. */
+  const [failed, setFailed] = useState<{ action: 'duplicate' | 'export'; world: World } | null>(null)
+  const run = (action: 'duplicate' | 'export', world: World) => {
+    setFailed(null)
+    ;(action === 'duplicate' ? onDuplicate : onExport)(world).catch(() => setFailed({ action, world }))
   }
   const act = (world: World, action: WorldMenuAction) => {
-    if (action === 'duplicate') return duplicate(world)
+    if (action === 'duplicate' || action === 'export') return run(action, world)
     dialogWorld.current = world.id
     setDialog({ kind: action, world })
   }
@@ -86,8 +101,69 @@ export function WorldList({
     ;(target?.isConnected ? target : newButton.current)?.focus()
   }
 
+  const fileInput = useRef<HTMLInputElement>(null)
+  const importButton = useRef<HTMLButtonElement>(null)
+  const [importFailure, setImportFailure] = useState<ImportFailure | null>(null)
+  const [importing, setImporting] = useState(false)
+  const chooseFile = () => fileInput.current?.click()
+  /** Se uma importação está em curso, e o arquivo que chegou durante ela (o último solto ou escolhido). */
+  const importQueue = useRef<{ running: boolean; next: File | null }>({ running: false, next: null })
+  // Um arquivo que chega durante outra importação não se perde: é importado logo depois dela.
+  const importFile = async (file: File) => {
+    const queue = importQueue.current
+    if (queue.running) {
+      queue.next = file
+      return
+    }
+    queue.running = true
+    setImporting(true)
+    for (let current: File | null = file; current; current = queue.next) {
+      queue.next = null
+      let reason: ImportFailureReason | null
+      try {
+        reason = await onImport(current)
+      } catch {
+        reason = 'save-failed'
+      }
+      setImportFailure(reason ? { fileName: current.name, size: current.size, reason } : null)
+    }
+    queue.running = false
+    setImporting(false)
+  }
+  const hasFiles = (e: DragEvent) => e.dataTransfer.types.includes('Files')
+  const onDragOver = (e: DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+  // Soltar um arquivo na lista (ou no modal 03, que está dentro dela na árvore do React) importa.
+  const onDrop = (e: DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) void importFile(file)
+  }
+
   return (
-    <div className="flex h-full flex-col bg-bg text-ink" data-testid="world-list" data-state={worlds === null ? 'loading' : empty ? 'empty' : 'ready'}>
+    <div
+      className="flex h-full flex-col bg-bg text-ink"
+      data-testid="world-list"
+      data-state={worlds === null ? 'loading' : empty ? 'empty' : 'ready'}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        data-testid="import-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) void importFile(file)
+        }}
+      />
       <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-line px-4 sm:px-8 lg:px-12">
         <span className="grid size-9 shrink-0 place-items-center rounded-control bg-amber text-on-amber">
           <Compass size={22} aria-hidden="true" />
@@ -120,7 +196,7 @@ export function WorldList({
             )}
           </div>
           <div className="flex gap-3">
-            <button type="button" disabled title="Importar (em breve)" className={SECONDARY}>
+            <button ref={importButton} type="button" onClick={chooseFile} disabled={importing} className={SECONDARY}>
               <Upload size={18} aria-hidden="true" />
               Importar
             </button>
@@ -132,7 +208,7 @@ export function WorldList({
         </div>
 
         {empty ? (
-          <EmptyState onNew={onNew} />
+          <EmptyState onNew={onNew} onImport={chooseFile} />
         ) : (
           <ul
             aria-label="Mundos"
@@ -158,16 +234,18 @@ export function WorldList({
         )}
       </main>
 
-      {duplicateFailed && (
+      {failed && (
         <div
           role="alert"
-          data-testid="duplicate-error-toast"
+          data-testid={`${failed.action}-error-toast`}
           className="toast-in fixed bottom-4 left-1/2 z-30 flex w-[min(440px,calc(100vw-32px))] -translate-x-1/2 items-center gap-2 rounded-panel bg-brick py-2 pr-2 pl-4 text-white shadow-lg"
         >
-          <span className="min-w-0 flex-1 font-semibold">Não foi possível duplicar o mundo</span>
+          <span className="min-w-0 flex-1 font-semibold">
+            {failed.action === 'duplicate' ? 'Não foi possível duplicar o mundo' : 'Não foi possível exportar o mundo'}
+          </span>
           <button
             type="button"
-            onClick={() => duplicate(duplicateFailed)}
+            onClick={() => run(failed.action, failed.world)}
             className="h-11 shrink-0 rounded-control bg-white/18 px-3 font-extrabold hover:bg-white/28 active:bg-white/36"
           >
             Tentar de novo
@@ -176,7 +254,7 @@ export function WorldList({
             type="button"
             aria-label="Fechar aviso"
             title="Fechar aviso"
-            onClick={() => setDuplicateFailed(null)}
+            onClick={() => setFailed(null)}
             className="grid size-11 shrink-0 place-items-center rounded-control hover:bg-white/18 active:bg-white/28"
           >
             <X size={18} aria-hidden="true" />
@@ -198,6 +276,16 @@ export function WorldList({
         }}
         onClose={() => setDialog(null)}
         onCloseAutoFocus={returnFocus}
+      />
+      <ImportWorldDialog
+        failure={importFailure}
+        busy={importing}
+        onChoose={chooseFile}
+        onClose={() => setImportFailure(null)}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault()
+          importButton.current?.focus()
+        }}
       />
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} returnFocus={helpReturn} />
     </div>
@@ -318,7 +406,7 @@ function SkeletonCard() {
 }
 
 /** 02 · Lista vazia: a moldura "Terra incognita", o convite e o botão grande. */
-function EmptyState({ onNew }: { onNew: () => void }) {
+function EmptyState({ onNew, onImport }: { onNew: () => void; onImport: () => void }) {
   return (
     <section aria-labelledby="world-list-empty" className="mx-auto mt-10 flex max-w-[440px] flex-col items-center text-center sm:mt-14">
       <div aria-hidden="true" className="w-full rounded-panel border border-dashed border-line-2 bg-paper-solid p-4 shadow-md">
@@ -346,12 +434,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       </button>
       <p className="mt-9 text-[13px] font-semibold text-ink-2">
         ou{' '}
-        <button
-          type="button"
-          disabled
-          title="Importar (em breve)"
-          className="font-bold text-amber-ink underline underline-offset-2 disabled:opacity-60"
-        >
+        <button type="button" onClick={onImport} className={`rounded-[4px] font-bold text-amber-ink underline underline-offset-2 ${FOCUS}`}>
           importe um arquivo .json
         </button>
       </p>

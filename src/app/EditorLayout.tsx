@@ -1,4 +1,4 @@
-import { CircleHelp, Compass, Download, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
+import { CircleHelp, Compass, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
 import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, TOAST_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
@@ -13,6 +13,7 @@ import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
+import { ExportMenu } from '../features/worlds/ExportMenu'
 import { SaveIndicator } from '../features/worlds/SaveIndicator'
 import type { SaveStore } from '../persistence/autosave'
 import { pinToWorld } from '../render/layers/pinMath'
@@ -76,7 +77,8 @@ import { useTheme } from './useTheme'
  *
  * A barra de ações do topo (navegacao.md → Elementos do editor, AC-F2-10): Buscar (ou Ctrl K) abre o
  * modal de busca dos pins (`SearchDialog`, AC-F3-16): escolher um resultado seleciona o pin e leva a
- * câmera até ele, como o Centralizar do drawer. Exportar fica desabilitado (vem no M3); o tema alterna, e Ajuda
+ * câmera até ele, como o Centralizar do drawer. Exportar abre o menu com "Arquivo do mundo (.json)"
+ * (`ExportMenu`, `onExport`, AC-F4-09), também no menu do Erro ao salvar; o tema alterna, e Ajuda
  * (ou a tecla ?) abre o modal "Atalhos de teclado" (`ShortcutsDialog`). Buscar mostra o rótulo e o
  * atalho só a partir de 768 px e com a área livre de pelo menos `SEARCH_LABEL_FROM`; senão, só o
  * ícone. Abaixo de 768 px, os botões da barra ficam sem folga entre si, para caber no celular.
@@ -90,6 +92,7 @@ export function EditorLayout({
   save,
   createRenderer,
   onBack,
+  onExport,
 }: {
   world: WorldStore
   pins: PinsStore
@@ -103,6 +106,8 @@ export function EditorLayout({
   createRenderer?: CreateMapRenderer
   /** Volta à Lista de mundos; sem ele (testes), o logo não é um botão. */
   onBack?: () => void
+  /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
+  onExport?: () => Promise<void>
 }) {
   const { theme, toggle } = useTheme()
   const generationStatus = useStore(world, (s) => s.status)
@@ -416,7 +421,7 @@ export function EditorLayout({
               <span className="max-w-full min-w-0 truncate px-1.5 font-title text-base/5 font-semibold" data-testid="world-name" title={worldName}>
                 {worldName}
               </span>
-              {save && <SaveIndicator save={save} />}
+              {save && <SaveIndicator save={save} onExport={onExport} />}
             </div>
           )}
           <IconButton
@@ -463,9 +468,7 @@ export function EditorLayout({
         >
           <Redo2 size={20} aria-hidden="true" />
         </IconButton>
-        <IconButton label="Exportar" disabled>
-          <Download size={20} aria-hidden="true" />
-        </IconButton>
+        <ExportMenu onExportJson={onExport} />
         <IconButton
           label={theme === 'light' ? 'Usar tema escuro' : 'Usar tema claro'}
           onClick={toggle}

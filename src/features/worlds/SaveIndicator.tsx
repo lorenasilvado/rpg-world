@@ -7,12 +7,31 @@ import type { SaveStore } from '../../persistence/autosave'
  * Indicador de salvamento, abaixo do nome do mundo na barra da sidebar (design-system.md →
  * Feedback, AC-F4-02): "Salvando…" (`loader-circle` girando, `--ink-2`), "Salvo" (`cloud`, `--ok`)
  * e "Erro ao salvar" (`cloud-off`, `--brick-ink` sobre `--brick-soft`). Com erro, ele vira um botão
- * que abre o menu com "Tentar de novo" (grava já) e "Exportar .json" (o backup, desabilitado até a
- * exportação do mundo existir). Esc ou um clique fora fecha o menu.
+ * que abre o menu com "Tentar de novo" (grava já) e "Exportar .json" (o backup: baixa o arquivo do
+ * mundo como está na tela, `onExport`; sem ele, desabilitado). Se a exportação falha, o menu
+ * continua aberto com o aviso. Esc ou um clique fora fecha o menu.
  */
-export function SaveIndicator({ save }: { save: SaveStore }) {
+export function SaveIndicator({ save, onExport }: { save: SaveStore; onExport?: () => Promise<void> }) {
   const status = useStore(save, (s) => s.status)
   const [menuOpen, setMenuOpen] = useState(false)
+  /** O "Exportar .json" deste menu: exportando, ou o aviso de que falhou. */
+  const [exporting, setExporting] = useState<'idle' | 'exporting' | 'error'>('idle')
+  const toggleMenu = () => {
+    setExporting('idle')
+    setMenuOpen((o) => !o)
+  }
+  const exportJson = async () => {
+    if (!onExport || exporting === 'exporting') return
+    setExporting('exporting')
+    try {
+      await onExport()
+    } catch {
+      setExporting('error')
+      return
+    }
+    setExporting('idle')
+    setMenuOpen(false)
+  }
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const firstItem = useRef<HTMLButtonElement>(null)
@@ -70,7 +89,7 @@ export function SaveIndicator({ save }: { save: SaveStore }) {
           aria-haspopup="menu"
           aria-expanded={open}
           aria-controls={open ? menuId : undefined}
-          onClick={() => setMenuOpen((o) => !o)}
+          onClick={toggleMenu}
           className={`${label} rounded-full bg-brick-soft px-1.5 text-brick-ink hover:brightness-95`}
         >
           <CloudOff size={13} aria-hidden="true" />
@@ -100,14 +119,18 @@ export function SaveIndicator({ save }: { save: SaveStore }) {
           <button
             type="button"
             role="menuitem"
-            disabled
-            aria-disabled="true"
-            title="Exportar .json (em breve)"
-            className="flex h-10 items-center gap-2 rounded-control px-2.5 text-left text-sm font-semibold text-ink opacity-50"
+            disabled={!onExport || exporting === 'exporting'}
+            onClick={() => void exportJson()}
+            className="flex h-10 items-center gap-2 rounded-control px-2.5 text-left text-sm font-semibold text-ink enabled:hover:bg-hover enabled:active:bg-press disabled:opacity-50"
           >
             <FileJson size={16} aria-hidden="true" />
-            Exportar .json
+            {exporting === 'exporting' ? 'Exportando…' : 'Exportar .json'}
           </button>
+          {exporting === 'error' && (
+            <p role="alert" className="mx-1 mt-1 mb-0.5 rounded-control bg-brick-soft px-2.5 py-2 text-[13px]/[18px] font-semibold text-brick-ink">
+              Não foi possível exportar o mundo. Tente de novo.
+            </p>
+          )}
         </div>
       )}
     </div>

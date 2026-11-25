@@ -5,7 +5,7 @@ import type { WorldsRepo } from '../persistence/worldsRepo'
 /** Um repositório de mundos em memória, para os testes do jsdom (o mesmo contrato do Dexie). */
 export function memoryRepo(
   initial: World[] = [],
-): Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage' | 'pruneImages'> & { worlds: Map<string, World>; images: Map<string, StoredImage> } {
+): Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'importWorld' | 'saveImage' | 'getImage' | 'pruneImages'> & { worlds: Map<string, World>; images: Map<string, StoredImage> } {
   const worlds = new Map(initial.map((w) => [w.id, structuredClone(w)]))
   const images = new Map<string, StoredImage>()
   return {
@@ -42,6 +42,10 @@ export function memoryRepo(
     },
     async remove(id) {
       worlds.delete(id)
+    },
+    async importWorld(world, list) {
+      for (const image of list) images.set(image.id, image)
+      worlds.set(world.id, structuredClone(world))
     },
     async list() {
       return [...worlds.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((w) => structuredClone(w))

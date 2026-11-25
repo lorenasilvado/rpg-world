@@ -25,6 +25,7 @@ function App({
   createRenderer,
   webgl2 = true,
   onBack,
+  onExport,
 }: {
   world: WorldStore
   /** Os pins do mundo; sem ele (testes), o App cria um store vazio. */
@@ -39,6 +40,8 @@ function App({
   createRenderer?: CreateMapRenderer
   webgl2?: boolean
   onBack?: () => void
+  /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
+  onExport?: () => Promise<void>
 }) {
   // Sem `ui` na prop (os testes), o App cria o seu, uma vez.
   const [uiStore] = useState(() => ui ?? createUiStore())
@@ -56,6 +59,7 @@ function App({
       save={save}
       createRenderer={createRenderer}
       onBack={onBack}
+      onExport={onExport}
     />
   )
 }

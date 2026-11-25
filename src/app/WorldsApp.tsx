@@ -5,7 +5,10 @@ import { NewWorldWizard } from '../features/wizard/NewWorldWizard'
 import type { CreateThumbnails } from '../features/wizard/thumbnails'
 import { UnsavedLeaveDialog } from '../features/worlds/UnsavedLeaveDialog'
 import { WorldList } from '../features/worlds/WorldList'
+import { downloadFile } from '../features/worlds/download'
+import type { ImportFailureReason } from '../features/worlds/importMessages'
 import { createAutosave, type Autosave } from '../persistence/autosave'
+import { exportWorldJson, importedWorldRecord, parseWorldFile, worldFileName } from '../persistence/exportImport'
 import type { World } from '../persistence/types'
 import { copyName, loadWorlds, newWorldRecord, worldStoreInitial } from '../persistence/worldRecord'
 import type { WorldsRepo } from '../persistence/worldsRepo'
@@ -42,20 +45,28 @@ type Session = { world: WorldStore; pins: PinsStore; images: PinImages; history:
  *
  * O menu "⋯" dos cartões (AC-F4-07) renomeia, duplica (a cópia, "<nome> (cópia)", vai para o topo)
  * e exclui pelo repositório; depois de cada um, a lista é lida de novo sem os cartões esqueleto.
+ *
+ * Exportar (AC-F4-09) baixa o arquivo do mundo (.json, `exportImport.ts`): pelo menu "⋯" do cartão, o
+ * mundo salvo; no editor (a barra e o "Exportar .json" do Erro ao salvar), o mundo como está na
+ * tela, mesmo sem ter sido gravado. Importar valida o arquivo e grava um mundo novo, com as imagens,
+ * que vai para o topo da lista; um arquivo recusado volta com o motivo (o modal 03, AC-F4-10).
  */
 export function WorldsApp({
   repo,
   generator,
   webgl2 = true,
+  download = downloadFile,
   ui,
   createThumbnails,
   createRenderer,
   now = currentTime,
   newId = newWorldId,
 }: {
-  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'saveImage' | 'getImage' | 'pruneImages'>
+  repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'importWorld' | 'saveImage' | 'getImage' | 'pruneImages'>
   generator: WorldGenerator
   webgl2?: boolean
+  /** Baixa um arquivo (o Exportar); o padrão é o download do navegador. */
+  download?: (blob: Blob, fileName: string) => void
   ui?: UiStore
   /** Miniaturas da lista e do assistente; sem ele (testes do jsdom), os cartões ficam sem imagem. */
   createThumbnails?: CreateThumbnails
@@ -149,6 +160,37 @@ export function WorldsApp({
     else leave()
   }, [session, leave])
 
+  const exportWorld = useCallback(
+    async (world: World, images?: PinImages) => {
+      const getImage = async (id: string) => images?.blob(id) ?? (await repo.getImage(id))?.blob
+      const json = await exportWorldJson(world, getImage)
+      download(new Blob([json], { type: 'application/json' }), worldFileName(world.name))
+    },
+    [repo, download],
+  )
+
+  const importWorld = useCallback(
+    async (file: File): Promise<ImportFailureReason | null> => {
+      let text: string
+      try {
+        text = await file.text()
+      } catch {
+        return 'unreadable'
+      }
+      const parsed = parseWorldFile(text)
+      if (!parsed.ok) return parsed.reason
+      const { world, images } = importedWorldRecord(parsed, { id: newId(), now: now(), newId })
+      try {
+        await repo.importWorld(world, images)
+      } catch {
+        return 'save-failed'
+      }
+      refreshList()
+      return null
+    },
+    [repo, newId, now, refreshList],
+  )
+
   if (session) {
     return (
       <>
@@ -163,6 +205,7 @@ export function WorldsApp({
           webgl2={webgl2}
           createRenderer={createRenderer}
           onBack={() => void back()}
+          onExport={() => exportWorld(session.autosave.record(), session.images)}
         />
         <UnsavedLeaveDialog
           open={unsaved !== 'closed'}
@@ -194,6 +237,8 @@ export function WorldsApp({
           await repo.remove(world.id)
           refreshList()
         }}
+        onExport={(world) => exportWorld(world)}
+        onImport={importWorld}
         createThumbnails={createThumbnails}
       />
       <NewWorldWizard

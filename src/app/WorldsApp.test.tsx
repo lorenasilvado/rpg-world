@@ -101,9 +101,9 @@ describe('Lista de mundos (AC-F4-04)', () => {
       'Editado há 2 h · 2 pins',
       'Editado há 1 mês · sem pins',
     ])
-    // O "⋯" abre o menu (AC-F4-07); Importar fica desabilitado até a importação existir.
+    // O "⋯" abre o menu (AC-F4-07); Importar abre o seletor de arquivos (AC-F4-09).
     expect(within(cards[0]).getByRole('button', { name: 'Mais ações de Terras de Valdora' })).toHaveProperty('disabled', false)
-    expect(screen.getByRole('button', { name: 'Importar' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Importar' })).toHaveProperty('disabled', false)
   })
 
   it('a contagem fica no singular com um mundo', async () => {
@@ -237,14 +237,14 @@ describe('Menu "⋯" do cartão (AC-F4-07)', () => {
     return screen.getByRole('menu', { name: `Ações de ${name}` })
   }
 
-  it('abre com Renomear, Duplicar, Exportar (desabilitado) e Excluir; o cartão ganha o contorno; Esc fecha', async () => {
+  it('abre com Renomear, Duplicar, Exportar e Excluir; o cartão ganha o contorno; Esc fecha', async () => {
     setup([VALDORA, SOMBRIO])
     await settle()
     const menu = openMenu('Vale Sombrio')
     expect(within(menu).getAllByRole('menuitem').map((i) => [i.textContent, (i as HTMLButtonElement).disabled])).toEqual([
       ['Renomear', false],
       ['Duplicar', false],
-      ['Exportar', true],
+      ['Exportar', false],
       ['Excluir', false],
     ])
     expect(within(menu).getByRole('separator')).toBeTruthy()
@@ -252,8 +252,10 @@ describe('Menu "⋯" do cartão (AC-F4-07)', () => {
     expect(card('Terras de Valdora').dataset.menuOpen).toBe('false')
     expect(document.activeElement?.textContent).toBe('Renomear')
 
-    // Setas pulam o Exportar desabilitado e dão a volta; Home e End vão às pontas.
+    // Setas andam pelos itens e dão a volta; Home e End vão às pontas.
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+    expect(document.activeElement?.textContent).toBe('Exportar')
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
     expect(document.activeElement?.textContent).toBe('Excluir')
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
@@ -501,6 +503,200 @@ describe('Voltar com "Erro ao salvar" (AC-F4-02, AC-F4-06)', () => {
     await settle()
     expect(screen.queryByTestId('editor')).toBeNull()
     expect(repo.worlds.get('sombrio')?.seed).toBe('sombrio')
+  })
+})
+
+describe('Exportar e importar o mundo em JSON (AC-F4-09, AC-F4-10)', () => {
+  const names = () => screen.getAllByTestId('world-card-name').map((n) => n.textContent)
+  const card = (name: string) => screen.getAllByTestId('world-card').find((c) => within(c).getByTestId('world-card-name').textContent === name)!
+  const input = () => screen.getByTestId('import-input') as HTMLInputElement
+  const flush = async () => {
+    for (let i = 0; i < 4; i++) await settle()
+  }
+  const choose = async (file: File) => {
+    fireEvent.change(input(), { target: { files: [file] } })
+    await flush()
+  }
+  const drop = async (target: Element, file: File) => {
+    fireEvent.drop(target, { dataTransfer: { types: ['Files'], files: [file] } })
+    await flush()
+  }
+  const jsonFile = (text: string, name = 'mundo.json') => new File([text], name, { type: 'application/json' })
+  const dialog = () => screen.getByRole('dialog', { name: 'Importar mundo' })
+  const TORRE: World['pins'][number] = { ...pin('torre'), type: 'custom', icon: { kind: 'image', blobId: 'img-1' } }
+  const COM_IMAGEM = { ...VALDORA, pins: [pin('a'), TORRE] }
+  const exportFromMenu = async (name: string) => {
+    fireEvent.click(within(card(name)).getByRole('button', { name: `Mais ações de ${name}` }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Exportar' }))
+    await flush()
+  }
+
+  /** A lista com a Valdora (e a imagem do pin dela) e o Vale Sombrio, com os downloads guardados. */
+  async function withExport(props: Partial<Parameters<typeof WorldsApp>[0]> = {}) {
+    const downloads: { name: string; text: Promise<string> }[] = []
+    const download = (blob: Blob, name: string) => void downloads.push({ name, text: blob.text() })
+    const ids = ['importado', 'img-novo']
+    const out = setup([COM_IMAGEM, SOMBRIO], { download, newId: () => ids.shift() ?? 'extra', ...props })
+    await out.repo.saveImage({ id: 'img-1', worldId: VALDORA.id, blob: new Blob(['png'], { type: 'image/png' }) })
+    await settle()
+    return { ...out, downloads }
+  }
+
+  it('Exportar no menu "⋯" baixa o arquivo do mundo, com a imagem do pin; importá-lo cria um mundo igual, no topo', async () => {
+    const { repo, downloads } = await withExport()
+    await exportFromMenu('Terras de Valdora')
+    expect(downloads.map((d) => d.name)).toEqual(['terras-de-valdora.json'])
+    const text = await downloads[0].text
+    expect(JSON.parse(text).images).toEqual([{ id: 'img-1', type: 'image/png', data: btoa('png') }])
+
+    await choose(jsonFile(text, 'terras-de-valdora.json'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(names()).toEqual(['Terras de Valdora', 'Terras de Valdora', 'Vale Sombrio'])
+    expect(repo.worlds.get('importado')).toEqual({
+      ...COM_IMAGEM,
+      id: 'importado',
+      pins: [pin('a'), { ...TORRE, icon: { kind: 'image', blobId: 'img-novo' } }],
+      createdAt: NOW.toISOString(),
+      updatedAt: NOW.toISOString(),
+    })
+    const image = repo.images.get('img-novo')!
+    expect(image.worldId).toBe('importado')
+    expect(await image.blob.text()).toBe('png')
+  })
+
+  it('um arquivo inválido abre o modal com o motivo; outro arquivo é escolhido sem fechar, e o válido fecha o modal', async () => {
+    const { downloads } = await withExport()
+    await exportFromMenu('Vale Sombrio')
+    const valid = await downloads[0].text
+    const noSeed = JSON.parse(valid)
+    delete noSeed.world.seed
+
+    await choose(jsonFile(JSON.stringify(noSeed), 'reino-antigo.json'))
+    expect(within(dialog()).getByTestId('import-file-name').textContent).toBe('reino-antigo.json')
+    expect(within(dialog()).getByText('Não aceito')).toBeTruthy()
+    expect(within(dialog()).getByRole('alert').textContent).toContain('Este arquivo não é um mundo válido')
+    expect(within(dialog()).getByTestId('import-reason').textContent).toBe(
+      'Falta a parte do terreno. Abra o mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo.',
+    )
+    expect(document.activeElement).toBe(within(dialog()).getByRole('button', { name: 'Escolher outro arquivo' }))
+
+    // "Escolher outro arquivo" abre o seletor; um arquivo que não é JSON troca o motivo, sem fechar.
+    const click = vi.spyOn(input(), 'click').mockImplementation(() => {})
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Escolher outro arquivo' }))
+    expect(click).toHaveBeenCalledTimes(1)
+    await choose(jsonFile('não é json', 'notas.txt'))
+    expect(dialog().dataset.reason).toBe('not-json')
+    expect(within(dialog()).getByTestId('import-file-name').textContent).toBe('notas.txt')
+
+    await choose(jsonFile(valid, 'vale.json'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(names()).toEqual(['Vale Sombrio', 'Terras de Valdora', 'Vale Sombrio'])
+  })
+
+  it('soltar um arquivo na lista importa; soltar outro no modal troca o arquivo; Cancelar fecha e devolve o foco ao Importar', async () => {
+    await withExport()
+    await drop(screen.getByTestId('world-list'), jsonFile('{"format":"outro"}', 'outro.json'))
+    expect(dialog().dataset.reason).toBe('not-world')
+    const newer = {
+      format: 'rpg-world-builder/world',
+      version: 1,
+      world: { seed: 's', params: DEFAULT_WORLD_PARAMS, generatorVersion: GENERATOR_VERSION + 1 },
+    }
+    await drop(dialog(), jsonFile(JSON.stringify(newer)))
+    expect(dialog().dataset.reason).toBe('newer-version')
+    expect(within(dialog()).getByTestId('import-reason').textContent).toContain('versão mais nova do gerador')
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    // O Radix devolve o foco depois de desmontar o modal, num timer.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Importar' }))
+    expect(names()).toEqual(['Terras de Valdora', 'Vale Sombrio'])
+  })
+
+  it('se o banco não grava o mundo importado, o modal diz que não foi possível importar', async () => {
+    const { repo, downloads } = await withExport()
+    await exportFromMenu('Vale Sombrio')
+    repo.importWorld = () => Promise.reject(new Error('cota'))
+    await choose(jsonFile(await downloads[0].text))
+    expect(dialog().dataset.reason).toBe('save-failed')
+    expect(within(dialog()).getByRole('alert').textContent).toContain('Não foi possível importar o mundo')
+  })
+
+  it('se o arquivo não pode ser lido, o modal diz que não foi possível ler o arquivo', async () => {
+    await withExport()
+    const file = jsonFile('{}', 'sumiu.json')
+    file.text = () => Promise.reject(new DOMException('não encontrado', 'NotFoundError'))
+    await choose(file)
+    expect(dialog().dataset.reason).toBe('unreadable')
+    expect(within(dialog()).getByRole('alert').textContent).toContain('Não foi possível ler o arquivo')
+    expect(within(dialog()).getByTestId('import-reason').textContent).toContain('Escolha o arquivo de novo.')
+  })
+
+  it('um arquivo solto enquanto outro é importado não se perde: entra logo depois', async () => {
+    const { repo, downloads } = await withExport({ newId: (() => { let n = 0; return () => `id-${++n}` })() })
+    await exportFromMenu('Vale Sombrio')
+    const text = await downloads[0].text
+    const importWorld = repo.importWorld
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    repo.importWorld = async (world, images) => {
+      await gate
+      return importWorld(world, images)
+    }
+    await drop(screen.getByTestId('world-list'), jsonFile(text, 'primeiro.json'))
+    expect((screen.getByRole('button', { name: 'Importar' }) as HTMLButtonElement).disabled).toBe(true)
+    // O segundo chega no meio do primeiro: é inválido, e o modal aparece depois.
+    await drop(screen.getByTestId('world-list'), jsonFile('não é json', 'segundo.json'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await act(async () => release())
+    await flush()
+    expect(names()).toEqual(['Vale Sombrio', 'Terras de Valdora', 'Vale Sombrio'])
+    expect(dialog().dataset.reason).toBe('not-json')
+    expect(within(dialog()).getByTestId('import-file-name').textContent).toBe('segundo.json')
+    // Com o modal aberto, a lista fica escondida da árvore de acessibilidade.
+    expect((screen.getByRole('button', { name: 'Importar', hidden: true }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('Exportar com falha mostra o toast "Não foi possível exportar o mundo"', async () => {
+    await withExport({
+      download: () => {
+        throw new Error('bloqueado')
+      },
+    })
+    await exportFromMenu('Vale Sombrio')
+    expect(screen.getByTestId('export-error-toast').textContent).toContain('Não foi possível exportar o mundo')
+  })
+
+  it('na lista vazia, o link "importe um arquivo .json" abre o seletor', async () => {
+    setup([])
+    await settle()
+    const click = vi.spyOn(input(), 'click').mockImplementation(() => {})
+    fireEvent.click(screen.getByRole('button', { name: 'importe um arquivo .json' }))
+    expect(click).toHaveBeenCalledTimes(1)
+  })
+
+  it('no editor, Exportar › Arquivo do mundo (.json) baixa o mundo como está na tela, com as imagens dos pins', async () => {
+    const { downloads } = await withExport()
+    fireEvent.click(screen.getByRole('button', { name: /^Terras de Valdora/ }))
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    fireEvent.change(seed, { target: { value: 'valdora-2' } })
+    fireEvent.keyDown(seed, { key: 'Enter' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    const menu = screen.getByRole('menu', { name: 'Exportar' })
+    expect(within(menu).getAllByRole('menuitem').map((i) => [i.textContent, (i as HTMLButtonElement).disabled])).toEqual([
+      ['Arquivo do mundo (.json)', false],
+      ['Imagem (.png)', true],
+    ])
+    expect(document.activeElement?.textContent).toBe('Arquivo do mundo (.json)')
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Arquivo do mundo (.json)' }))
+    await flush()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(downloads.map((d) => d.name)).toEqual(['terras-de-valdora.json'])
+    const file = JSON.parse(await downloads[0].text)
+    expect(file.world.seed).toBe('valdora-2')
+    expect(file.world.pins).toEqual([pin('a'), TORRE])
+    expect(file.images.map((i: { id: string }) => i.id)).toEqual(['img-1'])
   })
 })
 

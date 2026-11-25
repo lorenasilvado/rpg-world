@@ -1,7 +1,7 @@
 ---
 feature: F4
 area: area:mundos
-updated: 2026-11-24
+updated: 2026-11-25
 ---
 
 # F4 · Mundos e persistência
@@ -12,14 +12,15 @@ o comportamento atualiza esta spec.
 > Hoje o app abre na Lista de mundos: os cartões dos mundos salvos (miniatura, nome, "Editado há
 > X · N pins"), cartões esqueleto enquanto lê o banco, a lista vazia no primeiro acesso, abrir um
 > mundo, Novo mundo pelo assistente, a volta do editor para a lista pelo logo da sidebar e o menu
-> "⋯" do cartão, que renomeia, duplica e exclui (com confirmação). Importar, o link "importe um
-> arquivo .json" e o Exportar do menu ficam desabilitados até a importação e a exportação
-> existirem. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
+> "⋯" do cartão, que renomeia, duplica, exporta e exclui (com confirmação). Exportar baixa o
+> arquivo do mundo (.json), pelo "⋯", pela barra do editor (Exportar › Arquivo do mundo (.json)) e
+> pelo menu do "Erro ao salvar"; Importar (o botão, o link "importe um arquivo .json" ou um
+> arquivo solto na lista) cria um mundo novo a partir dele, e um arquivo recusado abre o modal 03.
+> Exportar o mapa como PNG ainda não existe: "Imagem (.png)" fica desabilitado no menu do editor. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
 > indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
 > sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
 > parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página); com
-> "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. No menu do
-> erro, "Exportar .json" fica desabilitado até a exportação do mundo existir. As estradas ainda não
+> "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. As estradas ainda não
 > existem: o mundo é salvo com a lista de estradas vazia. Desfazer e Refazer (botões da barra,
 > Ctrl+Z e Ctrl+Shift+Z) cobrem os pins e os parâmetros de geração. O resto vem do material de
 > design e do PRD.
@@ -52,7 +53,8 @@ PNG e o histórico de desfazer/refazer do mundo.
 - "Editado há X" conta do `updatedAt` (a última gravação): "agora" (menos de 1 min), "N min",
   "N h", "ontem" (de 24 a 48 h), "N dias", "N semana(s)" (a partir de 7 dias), "N mês/meses" (a
   partir de 30 dias) e "N ano(s)" (a partir de 365 dias), arredondado para baixo.
-- Menu "⋯": Renomear (`pencil`), Duplicar (`copy`), Exportar (`download`) e, após um separador,
+- Menu "⋯": Renomear (`pencil`), Duplicar (`copy`), Exportar (`download`, baixa o arquivo do mundo,
+  .json) e, após um separador,
   Excluir (`trash-2`) em vermelho. Abre abaixo do "⋯", alinhado à direita do cartão (acima, se não
   cabe abaixo, como no último cartão no celular), com o foco em Renomear; um menu aberto por vez.
   Com o menu aberto, o cartão ganha contorno âmbar. Teclado: Enter, Espaço ou seta para baixo no
@@ -88,10 +90,26 @@ PNG e o histórico de desfazer/refazer do mundo.
   (.json) e tente de novo."
 - Dica "Arraste outro arquivo .json para esta janela ou escolha no computador."; botões Cancelar e
   "Escolher outro arquivo".
-- Motivos de recusa: o arquivo não é JSON; não é um mundo do RPG World Builder; falta a parte do
-  terreno (seed ou parâmetros); o mundo é de uma versão do gerador mais nova que a do app. Cada um
-  tem a causa e o passo para corrigir. TODO: texto de cada motivo, além de "falta o terreno"
-  (revisto por print no PR).
+- O foco começa em "Escolher outro arquivo"; Cancelar, o fechar, Esc ou o clique fora fecham e
+  devolvem o foco ao Importar. Enquanto um arquivo é lido, os botões ficam desabilitados.
+- Motivos de recusa, cada um com a causa e o passo para corrigir (o alerta é "Este arquivo não é um
+  mundo válido"):
+  - não é JSON: "O arquivo não está em JSON: pode ser de outro tipo ou estar corrompido. Abra o
+    mundo de origem, use Exportar › Arquivo do mundo (.json) e tente de novo."
+  - não é um mundo do RPG World Builder (ou está fora do formato: um pin, uma estrada ou uma imagem
+    que não fecha, um pin ou ponto de estrada fora do mapa, ou dois pins com o mesmo id): "O arquivo é um JSON, mas não é um mundo do RPG World Builder. Abra o mundo de
+    origem, …"
+  - falta a parte do terreno (a seed, um dos parâmetros ou a versão do gerador, ou um parâmetro fora
+    de 0 a 100): "Falta a parte do
+    terreno. Abra o mundo de origem, …"
+  - o mundo é de uma versão do gerador (ou do arquivo) mais nova que a do app: "O mundo foi criado
+    numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo."
+- Se o navegador não consegue ler o arquivo (movido, apagado ou bloqueado), o modal mostra o alerta
+  "Não foi possível ler o arquivo" com "O navegador não conseguiu abrir o arquivo: ele pode ter
+  sido movido, apagado ou estar bloqueado. Escolha o arquivo de novo."
+- Se o arquivo é válido mas o navegador não grava o mundo, o mesmo modal mostra o alerta "Não foi
+  possível importar o mundo" com "O navegador não conseguiu gravar o mundo. Tente de novo; se
+  continuar, libere espaço no navegador."
 
 ## Estados
 
@@ -102,7 +120,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Erro ao importar | O arquivo não é um mundo válido | 03 · Erro ao importar |
 | Salvando | Mudança no mundo ativo | Indicador "Salvando…" (`loader-circle` girando) |
 | Salvo | Salvamento concluído | Indicador "Salvo" (`cloud`, verde) |
-| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup) |
+| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup: baixa o mundo como está na tela; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo.") |
 | Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor, com o botão "Voltar à lista" (ver [geracao-terreno.md](geracao-terreno.md)) |
 | Carregando | Lista sendo lida do IndexedDB | Grade de 4 colunas com cartões esqueleto (em `--sunken` no lugar da miniatura e do texto), sem pular de layout quando os dados chegam |
 
@@ -114,11 +132,14 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Clicar num cartão | Abre o mundo no editor (E1), que gera o mapa dele |
 | Voltar à lista (o logo no cabeçalho da sidebar do editor, "Voltar à lista de mundos") | Grava o que esperava a pausa e volta à Lista de mundos, lida de novo; o mundo editado vai para o topo. Se a gravação falha ("Erro ao salvar"), o mundo não fecha: o modal "Mudanças não salvas" avisa que as últimas mudanças se perdem e oferece "Tentar de novo" (grava e volta, se der certo), "Voltar sem salvar" e "Ficar no mundo" (ou Esc) |
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
-| Importar / "importe um arquivo .json" | Abre a importação; arquivo inválido → 03 |
-| Soltar ou escolher um arquivo | Valida na hora; o arquivo pode ser substituído sem fechar o modal |
+| Importar / "importe um arquivo .json" | Abre o seletor de arquivos (.json); o arquivo escolhido é importado |
+| Soltar um arquivo sobre a lista (ou sobre o modal 03) | Importa o arquivo, como escolhê-lo. Um arquivo que chega durante outra importação é importado logo depois dela (se chegam vários, o último) |
+| Importar um arquivo válido | Grava um mundo novo (id novo, "Editado agora", no topo da lista), com o nome, a seed, os parâmetros, `sizeKm`, os pins (fichas, descrições, tags, campos, hierarquia), as estradas e as imagens do arquivo (cada imagem com um id novo; um pin cuja imagem não veio no arquivo fica sem ela, com o círculo hachurado); o modal 03, se aberto, fecha. Importar o mesmo arquivo de novo cria outro mundo |
+| Importar um arquivo inválido | Abre 03 com o motivo; outro arquivo pode ser solto ou escolhido ("Escolher outro arquivo") sem fechar o modal, e é validado na hora |
 | Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
 | Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |
-| Exportar | Exporta o mundo em JSON; o mapa pode ser exportado como PNG em 1×, 2× ou 4× (o terreno é regerado na resolução maior, para impressão), com opção de incluir pins e rótulos |
+| Exportar (menu "⋯" do cartão) | Baixa o arquivo do mundo salvo, `<nome-do-mundo>.json` (sem acento, em minúsculas, com hífens). Se falha, o toast de erro "Não foi possível exportar o mundo" oferece "Tentar de novo" e fechar |
+| Exportar (barra do editor) | Abre o menu com "Arquivo do mundo (.json)" e "Imagem (.png)" (desabilitado: o PNG ainda não existe). "Arquivo do mundo (.json)" baixa o mundo como está na tela, mesmo o que ainda não foi gravado, e fecha o menu; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo." Teclado: setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao botão |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
 | Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição, as tags e, na aba Detalhes, o tipo, o ícone e os campos livres) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Na aba Detalhes, cada escolha de tipo, imagem enviada ou removida é um passo; as teclas seguidas no valor de um campo livre são um passo só, até sair dele, e trocar a chave, adicionar ou remover um campo são um passo cada. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
 
@@ -128,7 +149,13 @@ PNG e o histórico de desfazer/refazer do mundo.
 - Salva só seed, parâmetros, pins e estradas; o terreno é regerado (RNF-5).
 - Imagens enviadas ficam no IndexedDB como blobs.
 - O JSON importado é validado por schema; um JSON exportado reimporta idêntico. As imagens enviadas
-  vão embutidas no JSON (base64).
+  que os pins usam vão embutidas no JSON (base64); as que nenhum pin usa ficam de fora.
+- O arquivo do mundo tem `format` ("rpg-world-builder/world"), `version` (do formato do arquivo), o
+  mundo sem o `id` (com todos os parâmetros: um que falte no mundo salvo vai com o padrão) e as
+  imagens. Num arquivo editado à mão, o nome, `sizeKm`, os pins e as estradas que faltem ganham o
+  padrão ("Mundo importado", 800 km, nenhum); a seed, os parâmetros (cada um de 0 a 100, como os
+  sliders) e a versão do gerador são obrigatórios. As posições dos pins e os pontos das estradas
+  vão de 0 a 1, e cada pin tem um id próprio. Um mundo de uma versão do gerador mais velha é aceito.
 - Desfazer e refazer usam um histórico único por mundo, que vale enquanto o mundo está aberto
   (voltar à lista o descarta; ele não é salvo) e guarda os últimos 100 passos.
 - O mundo guarda `generatorVersion`, para ser regerado igual.
@@ -153,7 +180,7 @@ lista e o número não volta a ser usado.
 
 ## Pendências
 
-Exportar (JSON e PNG): sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
+Exportar PNG: sem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
 
 > Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
 > mantidas ([overview.md](../overview.md)).

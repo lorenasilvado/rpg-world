@@ -30,8 +30,9 @@ barra inferior.
 ### Elementos do editor
 
 - Barra flutuante no topo direito (pílula, h 56): Buscar (Ctrl K), desfazer, refazer, exportar,
-  alternar tema, ajuda. Buscar abre a busca dos pins (ver [pins.md](pins.md)). Exportar aparece
-  desabilitado (opacidade .4), até a função existir; desfazer e refazer ficam desabilitados enquanto não há o que desfazer ou refazer
+  alternar tema, ajuda. Buscar abre a busca dos pins (ver [pins.md](pins.md)). Exportar abre o
+  menu com "Arquivo do mundo (.json)" e "Imagem (.png)" (desabilitado até a função existir; ver
+  [mundos.md](mundos.md)); desfazer e refazer ficam desabilitados enquanto não há o que desfazer ou refazer
   (ver [mundos.md](mundos.md)). Buscar aparece como um campo com "Buscar" e a tecla "Ctrl K" a
   partir de 768 px de tela e com a área livre de pelo menos 420 px; senão, só com o ícone. Abaixo de
   768 px, os botões de abrir o painel e os detalhes vêm antes, e os botões ficam sem folga entre si
@@ -117,7 +118,8 @@ barra inferior.
 | Interruptor de um tipo de pin (Cidade, Vila…) | Mostra ou esconde os pins daquele tipo (ver [pins.md](pins.md)) |
 | Ajuda (atalho ?) | Abre o modal "Atalhos de teclado" |
 | Buscar (Ctrl K) | Abre a busca dos pins por nome e tag (ver [pins.md](pins.md)) |
-| Exportar, desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
+| Exportar | Abre o menu de exportar: "Arquivo do mundo (.json)" baixa o mundo (ver [mundos.md](mundos.md)); "Imagem (.png)" fica desabilitado |
+| Desenhar estrada, rota automática | Desabilitados: as funções ainda não existem |
 | Desfazer, refazer (Ctrl+Z, Ctrl+Shift+Z) | Desfazem e refazem as mudanças nos pins e nos parâmetros de geração (ver [mundos.md](mundos.md)) |
 | Adicionar pin (atalho P) | Liga a ferramenta de criar pin (ver [pins.md](pins.md)) |
 | Medir distância (atalho M) | Liga a ferramenta de medir |

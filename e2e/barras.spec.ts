@@ -25,7 +25,9 @@ const box = async (page: Page, testId: string) => {
 test('a barra superior e a toolbar: funções que ainda não existem desabilitadas (AC-F2-10)', async ({ page }) => {
   await open(page)
   const actions = page.getByTestId('actions')
-  for (const name of ['Desfazer', 'Refazer', 'Exportar']) await expect(actions.getByRole('button', { name })).toBeDisabled()
+  for (const name of ['Desfazer', 'Refazer']) await expect(actions.getByRole('button', { name })).toBeDisabled()
+  // Exportar abre o menu (AC-F4-09).
+  await expect(actions.getByRole('button', { name: 'Exportar', exact: true })).toBeEnabled()
   await expect(actions.getByRole('button', { name: 'Buscar' })).toBeEnabled()
   await expect(actions.getByRole('button', { name: 'Usar tema escuro' })).toBeEnabled()
   await expect(actions.getByRole('button', { name: 'Ajuda' })).toBeEnabled()
