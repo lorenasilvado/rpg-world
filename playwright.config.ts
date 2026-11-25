@@ -21,10 +21,22 @@ const DESEMPENHO = /(desempenho|fps)\.spec\.ts/
 const FLUXOS = /fluxos\.spec\.ts/
 const PREVIEW = 'npx vite preview --port 5198 --strictPort'
 
+// Os testes abrem o editor com as dicas de boas-vindas já vistas (AC-F1-31), para o cartão não
+// cobrir o mapa; o e2e/boas-vindas.spec.ts começa sem a marca.
+const WELCOME_DONE = [{ name: 'rpg-world:welcome-tips', value: 'done' }]
+const TIPS_SEEN = {
+  cookies: [],
+  origins: [
+    { origin: DEV, localStorage: WELCOME_DONE },
+    { origin: 'http://localhost:5198', localStorage: WELCOME_DONE },
+  ],
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   reporter: process.env.CI ? 'github' : 'list',
+  use: { storageState: TIPS_SEEN },
   projects: [
     {
       name: 'app',

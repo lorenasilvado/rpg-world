@@ -146,6 +146,6 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 52 | #164 | [feat] Exportar e importar o mundo em JSON | done | specs/mundos.md | #225 |
 | 53 | #165 | [feat] Aviso de pins sobre a água | done | specs/geracao-terreno.md | #228 |
 | 54 | #231 | [bug] Celular deitado: barras cobrem o mapa e as funções ficam inacessíveis | done | specs/navegacao.md | #233 |
-| 55 | #166 | [feat] Dicas de boas-vindas | todo | specs/geracao-terreno.md | |
+| 55 | #166 | [feat] Dicas de boas-vindas | done | specs/geracao-terreno.md | #236 |
 | 56 | #167 | [feat] Exportar o mapa como PNG | todo | specs/mundos.md | |
 | 57 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | todo | specs/pins.md | |

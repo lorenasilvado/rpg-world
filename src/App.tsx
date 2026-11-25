@@ -26,6 +26,7 @@ function App({
   webgl2 = true,
   onBack,
   onExport,
+  welcomeTips = false,
 }: {
   world: WorldStore
   /** Os pins do mundo; sem ele (testes), o App cria um store vazio. */
@@ -42,6 +43,8 @@ function App({
   onBack?: () => void
   /** Baixa o arquivo do mundo (.json); sem ele (testes), o Exportar fica desabilitado. */
   onExport?: () => Promise<void>
+  /** Mostra as dicas de boas-vindas no primeiro acesso (AC-F1-31); os testes não ligam. */
+  welcomeTips?: boolean
 }) {
   // Sem `ui` na prop (os testes), o App cria o seu, uma vez.
   const [uiStore] = useState(() => ui ?? createUiStore())
@@ -60,6 +63,7 @@ function App({
       createRenderer={createRenderer}
       onBack={onBack}
       onExport={onExport}
+      welcomeTips={welcomeTips}
     />
   )
 }

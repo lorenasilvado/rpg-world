@@ -17,7 +17,8 @@ o comportamento atualiza esta spec.
 > sobre a água. A sidebar tem as seções Seed, Presets,
 > Terreno, Biomas, Relevo e Avançado com os 9 sliders, o rodapé com "Restaurar padrão", e recolhe
 > a 48 px; o rodapé tem a barra "Distribuição do mapa", e o mapa fica borrado durante a geração.
-> Sem WebGL2, o aviso toma o lugar do editor. O app abre na Lista de mundos, que abre o editor de
+> Sem WebGL2, o aviso toma o lugar do editor. No primeiro acesso ao editor, as dicas de boas-vindas
+> apresentam os sliders, a toolbar e o adicionar pin. O app abre na Lista de mundos, que abre o editor de
 > um mundo e o assistente de novo mundo (ver [mundos.md](mundos.md)). A barra da sidebar mostra o
 > logo, que volta à lista, o nome do mundo e, abaixo dele, o status de salvamento. Os cartões de
 > preset da sidebar não têm miniatura (os do assistente
@@ -157,6 +158,7 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Erro | A geração do pedido mais novo falha, ou o worker de geração falha (não carrega, por exemplo) | Toast de erro "Não foi possível gerar o mapa", no canto inferior direito do mapa, logo acima do controle de zoom (com área livre abaixo de 566 px, como no celular e no tablet com a sidebar aberta, na largura da área e acima do minimapa aberto), com a ação "Tentar de novo", que gera o mapa final de novo (num worker novo, se o anterior falhou) e fecha o toast |
 | Aviso | Um mapa final regerado (não o primeiro, ao abrir o mundo; nem a prévia do arrasto) deixa pins em célula de oceano (fundo ou raso) ou de lago | Toast "2 pins ficaram sobre a água" (com um pin, "1 pin ficou sobre a água"), no lugar dos toasts, acima dos outros à vista, com a ação "Mostrar", que centraliza a câmera no primeiro deles (na ordem da lista, com o zoom do Centralizar do drawer), fecha o toast e leva o foco do teclado ao mapa; os pins ficam onde estão. Some sozinho depois de 6 s, e cada mapa final novo o refaz (ou o fecha, sem pins na água) |
 | Vazio | — | n/a: o editor sempre abre com um mundo |
+| Dicas de boas-vindas | O usuário abre o editor pela primeira vez neste navegador (as dicas ainda não foram vistas até o fim nem puladas) | Um cartão no alto da área livre do mapa, abaixo da barra de ações (a partir de 768 px, centrado entre a sidebar e a borda direita, com até 360 px; abaixo disso, na largura da tela, com 12 px de cada lado; na tela baixa, até 480 px, sem chegar à toolbar), com "Boas-vindas · 1 de 3", o título, o texto, os pontos dos passos, "Pular", o X ("Fechar dicas") e "Próxima" (no último passo, "Começar"). Os passos: 1. "Molde o mundo" (os sliders; contorno âmbar na sidebar; com a sidebar recolhida a 48 px, o contorno fica no trilho e o texto manda expandir o painel à esquerda, pelo botão do alto dele ou pela tecla `[`; abaixo de 768 px, o texto manda abrir o painel pelo primeiro botão da barra do topo, e o contorno fica no Abrir painel), 2. "Ferramentas do mapa" (contorno na toolbar), 3. "Marque lugares" (contorno em Adicionar pin). O cartão não é modal: o mapa, os painéis e o teclado continuam funcionando, e o foco não muda. Com um painel sobreposto aberto, ele fica atrás do scrim |
 | Sem WebGL2 | O navegador não tem WebGL2 (obrigatório pelo RNF-6) e o usuário abre um mundo | No lugar do editor, um aviso "Este navegador não tem WebGL2": "O editor desenha o mapa com WebGL2, que este navegador não oferece ou está desligado. Abra o RPG World Builder na versão atual de um destes navegadores:", a lista Google Chrome, Microsoft Edge, Mozilla Firefox e Safari, e "Se você já usa um deles, atualize-o e confira se a aceleração por hardware está ligada nas configurações." O aviso tem o botão de tema claro e escuro do editor. O mapa não é gerado. A Lista de mundos continua funcionando (ver [mundos.md](mundos.md)) |
 
 ## Ações
@@ -173,6 +175,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
 | Copiar seed | Copia a seed e mostra o check por 1,5 s |
 | Escolher preset | Aplica os 9 parâmetros do preset, mantém a seed e gera o mapa final |
 | "Restaurar padrão" | Volta os 9 parâmetros ao padrão, mantém a seed e gera o mapa final (já no padrão, não faz nada) |
+| "Próxima" nas dicas de boas-vindas | Mostra o passo seguinte e o contorno dele |
+| "Pular", X ou "Começar" (último passo) nas dicas | Fecha as dicas e grava no navegador (`localStorage`) que foram vistas: elas não voltam, em nenhum mundo, nem ao recarregar. Sair do editor antes disso não grava nada, e elas voltam no próximo acesso. Sem acesso ao `localStorage`, as dicas não aparecem |
 | Recolher / abrir painel (`[`) | Sidebar passa a 48 px / volta a 320 px (abaixo de 768 px, a tecla abre e fecha o painel sobreposto) |
 | "Criar mundo →" no assistente | Cria um mundo com o nome, a seed e os 9 parâmetros do assistente (os do preset escolhido), salva o mundo, fecha o assistente e o abre no editor (E1), que gera o mapa final (ver [mundos.md](mundos.md)) |
 | Cancelar, `x` ou Esc no assistente | Fecha o assistente e volta à Lista de mundos, sem criar nada |
@@ -317,7 +321,8 @@ Neve fica na seção Relevo, junto de Montanhas. Os controles avançados ficam n
   sidebar e a borda direita (sem pin selecionado, o drawer fica fora da tela); abaixo disso, na tela toda. Fora do mapa fica o fundo `#1F4E79`. Pan e zoom
   estão em [navegacao.md](navegacao.md).
 - Dicas de boas-vindas no primeiro acesso ao editor (sliders, toolbar, adicionar pin), que podem ser
-  puladas e não voltam a aparecer depois de vistas ou puladas.
+  puladas e não voltam a aparecer depois de vistas até o fim ou puladas (ver Estados e Ações). A marca
+  fica no navegador, não no mundo: vale para todos os mundos e não vai no arquivo exportado.
 
 ## Critérios de aceite vigentes
 

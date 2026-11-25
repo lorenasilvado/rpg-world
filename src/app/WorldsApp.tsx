@@ -61,6 +61,7 @@ export function WorldsApp({
   createRenderer,
   now = currentTime,
   newId = newWorldId,
+  welcomeTips = false,
 }: {
   repo: Pick<WorldsRepo, 'list' | 'save' | 'rename' | 'duplicate' | 'remove' | 'importWorld' | 'saveImage' | 'getImage' | 'pruneImages'>
   generator: WorldGenerator
@@ -73,6 +74,8 @@ export function WorldsApp({
   createRenderer?: CreateMapRenderer
   now?: () => Date
   newId?: () => string
+  /** Mostra as dicas de boas-vindas no primeiro acesso ao editor (AC-F1-31); o app liga, os testes não. */
+  welcomeTips?: boolean
 }) {
   const [uiStore] = useState(() => ui ?? createUiStore())
   const [session, setSession] = useState<Session | null>(null)
@@ -206,6 +209,7 @@ export function WorldsApp({
           createRenderer={createRenderer}
           onBack={() => void back()}
           onExport={() => exportWorld(session.autosave.record(), session.images)}
+          welcomeTips={welcomeTips}
         />
         <UnsavedLeaveDialog
           open={unsaved !== 'closed'}
