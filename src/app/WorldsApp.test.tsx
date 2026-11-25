@@ -622,6 +622,16 @@ describe('Exportar e importar o mundo em JSON (AC-F4-09, AC-F4-10)', () => {
     expect(within(dialog()).getByRole('alert').textContent).toContain('Não foi possível importar o mundo')
   })
 
+  it('se o arquivo não pode ser lido, o modal diz que não foi possível ler o arquivo', async () => {
+    await withExport()
+    const file = jsonFile('{}', 'sumiu.json')
+    file.text = () => Promise.reject(new DOMException('não encontrado', 'NotFoundError'))
+    await choose(file)
+    expect(dialog().dataset.reason).toBe('unreadable')
+    expect(within(dialog()).getByRole('alert').textContent).toContain('Não foi possível ler o arquivo')
+    expect(within(dialog()).getByTestId('import-reason').textContent).toContain('Escolha o arquivo de novo.')
+  })
+
   it('Exportar com falha mostra o toast "Não foi possível exportar o mundo"', async () => {
     await withExport({
       download: () => {

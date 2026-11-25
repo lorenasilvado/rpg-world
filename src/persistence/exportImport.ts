@@ -169,14 +169,25 @@ export function parseWorldFile(text: string, generatorVersion = GENERATOR_VERSIO
 /**
  * O mundo importado, como ele é gravado: um mundo novo (`id`), com as duas datas em `now` (vai
  * para o topo da lista) e as imagens com ids novos (`newId`), como a cópia do Duplicar; assim,
- * importar o mesmo arquivo de novo, ou o de um mundo que ainda existe, não substitui nada.
+ * importar o mesmo arquivo de novo, ou o de um mundo que ainda existe, não substitui nada. Um pin
+ * cuja imagem não veio no arquivo também ganha um id novo, sem imagem (o círculo hachurado): o id
+ * do arquivo poderia ser o de uma imagem de outro mundo deste navegador.
  */
 export function importedWorldRecord(
   file: { world: World; images: readonly ImportedImage[] },
   { id, now, newId }: { id: string; now: Date; newId: () => string },
 ): { world: World; images: StoredImage[] } {
   const images = file.images.map((image) => ({ id: image.id, worldId: file.world.id, blob: image.blob }))
-  return copyWorldRecord(file.world, images, { id, name: file.world.name, now, newId })
+  const inFile = new Set(images.map((image) => image.id))
+  /** O id novo de cada imagem que falta (o mesmo para os pins que dividem a imagem). */
+  const missing = new Map<string, string>()
+  const pins = file.world.pins.map((pin) => {
+    if (pin.icon.kind !== 'image' || inFile.has(pin.icon.blobId)) return pin
+    const blobId = missing.get(pin.icon.blobId) ?? newId()
+    missing.set(pin.icon.blobId, blobId)
+    return { ...pin, icon: { kind: 'image' as const, blobId } }
+  })
+  return copyWorldRecord({ ...file.world, pins }, images, { id, name: file.world.name, now, newId })
 }
 
 /** O nome do arquivo exportado: o nome do mundo, sem acento, em minúsculas e com hífens. */

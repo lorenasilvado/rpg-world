@@ -40,7 +40,7 @@ describe('SaveIndicator (AC-F4-02)', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
-  it('com `onExport`, "Exportar .json" baixa o arquivo do mundo e fecha o menu (AC-F4-02, AC-F4-09)', () => {
+  it('com `onExport`, "Exportar .json" baixa o arquivo do mundo e fecha o menu (AC-F4-02, AC-F4-09)', async () => {
     const { store } = saveStore('error')
     const onExport = vi.fn(() => Promise.resolve())
     render(<SaveIndicator save={store} onExport={onExport} />)
@@ -49,7 +49,22 @@ describe('SaveIndicator (AC-F4-02)', () => {
     expect(exportItem.disabled).toBe(false)
     fireEvent.click(exportItem)
     expect(onExport).toHaveBeenCalledTimes(1)
+    await act(() => Promise.resolve())
     expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('se "Exportar .json" falha, o menu continua aberto com o aviso; reabrir limpa o aviso', async () => {
+    const { store } = saveStore('error')
+    render(<SaveIndicator save={store} onExport={() => Promise.reject(new Error('bloqueado'))} />)
+    const button = screen.getByRole('button', { name: 'Erro ao salvar' })
+    fireEvent.click(button)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Exportar .json' }))
+    await act(() => Promise.resolve())
+    expect(screen.getByRole('menu')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toBe('Não foi possível exportar o mundo. Tente de novo.')
+    fireEvent.click(button)
+    fireEvent.click(button)
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('Esc fecha o menu e devolve o foco ao indicador; um clique fora também fecha', () => {

@@ -109,6 +109,25 @@ describe('exportar e importar o mundo (AC-F4-09)', () => {
     expect(new Uint8Array(await image.blob.arrayBuffer())).toEqual(PNG)
   })
 
+  it('um pin cuja imagem não veio no arquivo ganha um id novo, sem imagem, e não pega a de outro mundo', async () => {
+    const repo = freshRepo()
+    // A imagem 'alheia' é de outro mundo deste navegador.
+    await repo.saveImage({ id: 'alheia', worldId: 'outro', blob: new Blob([PNG], { type: 'image/png' }) })
+    const lost = { ...VALDORA, pins: [pin({ id: 'a', type: 'custom', icon: { kind: 'image', blobId: 'alheia' } }), pin({ id: 'b', type: 'custom', icon: { kind: 'image', blobId: 'alheia' } })] }
+    const parsed = parseWorldFile(await exportWorldJson(lost, async () => undefined))
+    if (!parsed.ok) throw new Error(parsed.reason)
+    const ids = ['sem-imagem', 'extra']
+    const { world, images } = importedWorldRecord(parsed, { id: 'importado', now: new Date(), newId: () => ids.shift()! })
+    expect(images).toEqual([])
+    expect(world.pins.map((p) => p.icon)).toEqual([
+      { kind: 'image', blobId: 'sem-imagem' },
+      { kind: 'image', blobId: 'sem-imagem' },
+    ])
+    await repo.importWorld(world, images)
+    expect(await repo.getImage('sem-imagem')).toBeUndefined()
+    expect((await repo.getImage('alheia'))!.worldId).toBe('outro')
+  })
+
   it('o arquivo exportado de novo é igual ao primeiro (fora as datas)', async () => {
     const first = await exportValdora()
     const parsed = parseWorldFile(first)

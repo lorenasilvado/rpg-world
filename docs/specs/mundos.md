@@ -103,6 +103,9 @@ PNG e o histórico de desfazer/refazer do mundo.
     terreno. Abra o mundo de origem, …"
   - o mundo é de uma versão do gerador (ou do arquivo) mais nova que a do app: "O mundo foi criado
     numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo."
+- Se o navegador não consegue ler o arquivo (movido, apagado ou bloqueado), o modal mostra o alerta
+  "Não foi possível ler o arquivo" com "O navegador não conseguiu abrir o arquivo: ele pode ter
+  sido movido, apagado ou estar bloqueado. Escolha o arquivo de novo."
 - Se o arquivo é válido mas o navegador não grava o mundo, o mesmo modal mostra o alerta "Não foi
   possível importar o mundo" com "O navegador não conseguiu gravar o mundo. Tente de novo; se
   continuar, libere espaço no navegador."
@@ -116,7 +119,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Erro ao importar | O arquivo não é um mundo válido | 03 · Erro ao importar |
 | Salvando | Mudança no mundo ativo | Indicador "Salvando…" (`loader-circle` girando) |
 | Salvo | Salvamento concluído | Indicador "Salvo" (`cloud`, verde) |
-| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup: baixa o mundo como está na tela) |
+| Erro ao salvar | O salvamento falha | Indicador "Erro ao salvar" (`cloud-off`, vermelho). O app tenta salvar de novo a cada mudança; clicar no indicador oferece "Tentar de novo" e "Exportar .json" (backup: baixa o mundo como está na tela; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo.") |
 | Sem WebGL2 | O navegador não tem WebGL2 | A lista funciona (abrir o menu "⋯", renomear, duplicar, exportar, importar, excluir); abrir um mundo mostra o aviso no lugar do editor, com o botão "Voltar à lista" (ver [geracao-terreno.md](geracao-terreno.md)) |
 | Carregando | Lista sendo lida do IndexedDB | Grade de 4 colunas com cartões esqueleto (em `--sunken` no lugar da miniatura e do texto), sem pular de layout quando os dados chegam |
 
@@ -130,7 +133,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Novo mundo / "Criar meu primeiro mundo" | Abre o assistente (04, ver [geracao-terreno.md](geracao-terreno.md)); "Criar mundo" salva o mundo novo e o abre no editor, e Cancelar volta à lista |
 | Importar / "importe um arquivo .json" | Abre o seletor de arquivos (.json); o arquivo escolhido é importado |
 | Soltar um arquivo sobre a lista (ou sobre o modal 03) | Importa o arquivo, como escolhê-lo |
-| Importar um arquivo válido | Grava um mundo novo (id novo, "Editado agora", no topo da lista), com o nome, a seed, os parâmetros, `sizeKm`, os pins (fichas, descrições, tags, campos, hierarquia), as estradas e as imagens do arquivo (cada imagem com um id novo); o modal 03, se aberto, fecha. Importar o mesmo arquivo de novo cria outro mundo |
+| Importar um arquivo válido | Grava um mundo novo (id novo, "Editado agora", no topo da lista), com o nome, a seed, os parâmetros, `sizeKm`, os pins (fichas, descrições, tags, campos, hierarquia), as estradas e as imagens do arquivo (cada imagem com um id novo; um pin cuja imagem não veio no arquivo fica sem ela, com o círculo hachurado); o modal 03, se aberto, fecha. Importar o mesmo arquivo de novo cria outro mundo |
 | Importar um arquivo inválido | Abre 03 com o motivo; outro arquivo pode ser solto ou escolhido ("Escolher outro arquivo") sem fechar o modal, e é validado na hora |
 | Renomear (menu "⋯") | Abre o modal "Renomear mundo"; "Renomear" grava o nome sem os espaços das pontas (o mundo vai para o topo, "Editado agora"); o mesmo nome só fecha; Cancelar, Esc ou o clique fora não mudam nada. Se a gravação falha, o modal continua com "Não foi possível renomear o mundo. Tente de novo." |
 | Duplicar (menu "⋯") | Grava já uma cópia, "<nome> (cópia)", com seed, parâmetros, pins, estradas e as imagens enviadas (cada uma copiada com um id novo); a cópia vai para o topo e a contagem sobe. Se a gravação falha, o toast de erro "Não foi possível duplicar o mundo" (em `--brick`, na base da tela) oferece "Tentar de novo" e fechar |

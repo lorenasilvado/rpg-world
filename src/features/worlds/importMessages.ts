@@ -1,7 +1,7 @@
 import type { ImportRefusal } from '../../persistence/exportImport'
 
-/** Por que a importação não deu certo: a recusa do arquivo ou a gravação no banco. */
-export type ImportFailureReason = ImportRefusal | 'save-failed'
+/** Por que a importação não deu certo: a recusa do arquivo, a leitura dele ou a gravação no banco. */
+export type ImportFailureReason = ImportRefusal | 'unreadable' | 'save-failed'
 
 /** O arquivo que não entrou: o nome, o tamanho e o motivo. */
 export type ImportFailure = { fileName: string; size: number; reason: ImportFailureReason }
@@ -21,6 +21,11 @@ export function importMessage(reason: ImportFailureReason): { title: string; tex
       return {
         title: invalid,
         text: 'O mundo foi criado numa versão mais nova do gerador. Recarregue a página para atualizar o app e tente de novo.',
+      }
+    case 'unreadable':
+      return {
+        title: 'Não foi possível ler o arquivo',
+        text: 'O navegador não conseguiu abrir o arquivo: ele pode ter sido movido, apagado ou estar bloqueado. Escolha o arquivo de novo.',
       }
     case 'save-failed':
       return {

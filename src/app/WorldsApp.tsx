@@ -171,7 +171,13 @@ export function WorldsApp({
 
   const importWorld = useCallback(
     async (file: File): Promise<ImportFailureReason | null> => {
-      const parsed = parseWorldFile(await file.text())
+      let text: string
+      try {
+        text = await file.text()
+      } catch {
+        return 'unreadable'
+      }
+      const parsed = parseWorldFile(text)
       if (!parsed.ok) return parsed.reason
       const { world, images } = importedWorldRecord(parsed, { id: newId(), now: now(), newId })
       try {
