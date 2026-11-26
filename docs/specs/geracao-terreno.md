@@ -56,8 +56,9 @@ de dados em [overview.md](../overview.md).
   dígitos hexadecimais) e regenera o mapa. Copiar põe a seed na área de transferência e troca o
   ícone por um check por 1,5 s, contados de novo a cada cópia (o leitor de tela ouve "Seed copiada"); sem acesso à área de
   transferência, a seed fica selecionada no campo.
-- Abaixo de 768 px, o campo da seed tem fonte de 16 px (no desktop, 13 px), para o iOS não
-  aproximar a página ao focá-lo.
+- Em tela de toque, o campo da seed tem fonte de 16 px em qualquer largura, inclusive no celular
+  deitado (no desktop, com mouse, 13 px), para o iOS não aproximar a página ao focá-lo. Vale para
+  todos os campos de texto do app com fonte menor que 16 px.
 - Presets: os 4 presets do assistente em cartões de duas colunas, com o nome e a descrição.
   Escolher um aplica os 9 valores dele (a seed fica) e gera o mapa final. O cartão do preset cujos
   valores são os dos sliders agora tem a borda âmbar e o check; mexer num slider tira a marca. No

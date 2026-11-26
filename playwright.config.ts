@@ -11,6 +11,8 @@ import { defineConfig, devices } from '@playwright/test'
 //   instale uma vez com `npx playwright install firefox webkit`;
 // - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 (#55) e os de pins e mundos do M2
 //   (#168) de ponta a ponta, no servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
+// - iphone: os bugs de viewport do editor no iPhone (Safari), no device iPhone 15 do Playwright
+//   (WebKit, isMobile, hasTouch), no servidor de desenvolvimento;
 // - desempenho: a medição da geração no worker (#9, RNF-2) e o fps de pan e zoom (#55, #168), no
 //   servidor de desenvolvimento.
 //   Roda depois de todos os outros projetos e sozinha: em paralelo com eles, a disputa pela CPU
@@ -20,6 +22,7 @@ const DEV = 'http://localhost:5199'
 const DETERMINISMO = /determinismo\.spec\.ts/
 const DESEMPENHO = /(desempenho|fps)\.spec\.ts/
 const FLUXOS = /fluxos(-m2)?\.spec\.ts/
+const IPHONE = /iphone\.spec\.ts/
 const PREVIEW = 'npx vite preview --port 5198 --strictPort'
 
 // Os testes abrem o editor com as dicas de boas-vindas já vistas (AC-F1-31), para o cartão não
@@ -41,7 +44,7 @@ export default defineConfig({
   projects: [
     {
       name: 'app',
-      testIgnore: [/pages\.spec\.ts/, DETERMINISMO, DESEMPENHO],
+      testIgnore: [/pages\.spec\.ts/, DETERMINISMO, DESEMPENHO, IPHONE],
       use: { channel: 'chrome', baseURL: DEV },
     },
     {
@@ -81,6 +84,11 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'], baseURL: DEV },
     },
     {
+      name: 'iphone',
+      testMatch: IPHONE,
+      use: { ...devices['iPhone 15'], baseURL: DEV },
+    },
+    {
       name: 'desempenho',
       testMatch: DESEMPENHO,
       dependencies: [
@@ -91,6 +99,7 @@ export default defineConfig({
         'determinismo-webkit',
         'fluxos-firefox',
         'fluxos-webkit',
+        'iphone',
       ],
       use: { channel: 'chrome', baseURL: DEV },
     },

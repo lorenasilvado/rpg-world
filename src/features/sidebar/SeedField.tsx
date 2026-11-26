@@ -77,7 +77,7 @@ export function SeedField({ seed, onSeed }: { seed: string; onSeed: (seed: strin
             setDraft(seed)
           } else commit(draft, true)
         }}
-        className="h-10 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2.5 font-mono text-[13px] font-medium text-ink outline-none max-md:text-[16px] focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
+        className="h-10 min-w-0 flex-1 rounded-control border border-line-2 bg-field px-2.5 font-mono text-[13px] font-medium text-ink outline-none focus:border-amber focus:shadow-[0_0_0_3px_var(--amber-soft)]"
       />
       {/* Sem tirar o foco do campo: o sorteio não gera antes o mapa do texto digitado (no blur). */}
       <SeedButton label="Seed aleatória" onClick={roll} keepFocus>
