@@ -640,3 +640,50 @@ describe('Fechar o drawer do pin a partir de 768 px (#189)', () => {
     expect(mapEl.hasAttribute('tabindex')).toBe(false)
   })
 })
+
+describe('Fechar o drawer do pin abaixo de 768 px (#189)', () => {
+  const pin: Pin = {
+    id: 'v',
+    type: 'cidade',
+    name: 'Valdora',
+    pos: { u: 0.5, v: 0.5 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  }
+
+  // Sem o override do matchMedia: abaixo de 768 px, selecionar o pin abre o painel sobreposto.
+  function editor() {
+    const pins = createPinsStore([pin])
+    render(<App world={world()} pins={pins} createRenderer={noRenderer} />)
+    act(() => pins.getState().select('v'))
+    expect(screen.getByTestId('drawer').dataset.open).toBe('true')
+    // O mapa fica inerte com o painel aberto (o jsdom não aplica o inert): ele não recebe o foco nem de passagem.
+    const mapFocus = vi.fn()
+    screen.getByTestId('map').addEventListener('focus', mapFocus)
+    return { pins, mapFocus }
+  }
+
+  it('pelo Esc no nome, o painel fecha e o foco vai para o Abrir detalhes, não para o mapa', () => {
+    const { pins, mapFocus } = editor()
+    const name = screen.getByRole('textbox', { name: 'Nome do pin' })
+    name.focus()
+    fireEvent.keyDown(name, { key: 'Escape' })
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.getByTestId('drawer').dataset.open).toBe('false')
+    expect(mapFocus).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    expect(screen.getByTestId('map').hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('pelo Fechar detalhes do painel, o foco vai para o Abrir detalhes, não para o mapa', () => {
+    const { pins, mapFocus } = editor()
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.getByTestId('drawer').dataset.open).toBe('false')
+    expect(mapFocus).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    expect(screen.getByTestId('map').hasAttribute('tabindex')).toBe(false)
+  })
+})
