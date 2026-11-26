@@ -282,6 +282,13 @@ export function EditorLayout({
     camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)
   }
 
+  // Fechar o drawer do pin pelo botão ou pelo Esc no nome tira o controle com o foco: a partir de
+  // 768 px, o foco vai para o mapa (não para o body). Abaixo, o painel sobreposto devolve o foco a
+  // quem o abriu.
+  const closePinDrawer = useCallback(() => {
+    if (window.matchMedia(DESKTOP_QUERY).matches) focusMap(mapRef.current)
+  }, [])
+
   // Excluir pelo rodapé tira o botão com o foco (o drawer fecha, sem pin): a partir de 768 px, o foco
   // vai para o Desfazer da barra, que acabou de habilitar. Abaixo, o painel sobreposto devolve o
   // foco a quem o abriu.
@@ -718,6 +725,7 @@ export function EditorLayout({
           onDelete={deleteFromDrawer}
           // Abaixo de 768 px, o painel sobreposto cobre o mapa: fecha para a câmera aparecer (o pin continua selecionado).
           onCentered={() => setDrawerOpen(false)}
+          onClose={closePinDrawer}
         />
         {roads && <RoadDrawer roads={roads} pins={pins} images={images} world={world} onDelete={deleteRoadFromDrawer} />}
       </aside>
