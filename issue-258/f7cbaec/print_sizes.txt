@@ -1,0 +1,6 @@
+commit: f7cbaec67e201d468cceaa03a8fbea281920ee6d
+ac-258-1280-drawer-desktop-sem-mudanca.png  1280x800  cc727f56c6e18bef1f877024be4752942f06c3ed76b0db88d81fa6d6ea842bae
+ac-258-1440-drawer-desktop-sem-mudanca.png  1440x900  c0ecbece2890a39d8556329d84d5e1f2e171e17c4a7c0050d514ba7076fe72c1
+ac-f3-18-390-depois-de-fechar-zoom.png  390x844  bc8064a62be333410863175cb03043d11d46c3e2875bcffcbb6325a8444d0801
+ac-f3-18-390-drawer-320px-faixa-do-mapa.png  390x844  6dab39786ec2e03b186c8c9a5a0cfc6fb479589c61e74a938f1c907858d2e125
+ac-f3-18-390-drawer-detalhes.png  390x844  98fa11bf4e0a3ea9e96eea57c40f607fa0f194d45c980f20f80b32006b98227d
