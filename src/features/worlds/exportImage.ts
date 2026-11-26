@@ -4,6 +4,7 @@ import { decorSheet, drawMapImage, exportImageSize, labelFont, type MapImageInk,
 import type { PinImage } from '../../render/style/pinShapes'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import type { PinsStore } from '../../state/pinsStore'
+import type { RoadsStore } from '../../state/roadsStore'
 import { PIN_TYPES, type PinType } from '../../state/pinTypes'
 import type { UiStore } from '../../state/uiStore'
 import type { WorldStore } from '../../state/worldStore'
@@ -13,12 +14,12 @@ import type { GenerateRequest } from '../../workers/generatorApi'
  * Exportar › Imagem (.png) (AC-F4-11): monta o PNG do mapa aberto (`drawMapImage`) e o devolve como
  * blob. O terreno vem na resolução da imagem: no 1×, o mapa 1024² que o editor já mostra (se ele
  * terminou bem: sem estar gerando nem com a última geração em erro); senão, `exportTerrain` o gera de novo, no worker, com a seed e os parâmetros do
- * mundo. A decoração e os tipos de pin seguem Camadas (`ui`); os pins e os rótulos só vão com
- * `options.pins`, com as imagens enviadas do Personalizado.
+ * mundo. A decoração, as estradas e os tipos de pin seguem Camadas (`ui`); as estradas, os pins e os
+ * rótulos só vão com `options.pins` ("Pins e rótulos"), com as imagens enviadas do Personalizado.
  */
 export type ExportTerrain = (req: GenerateRequest) => Promise<{ terrainRgba: Uint8ClampedArray<ArrayBuffer>; decor: Decor }>
 
-export type MapImageSource = { world: WorldStore; pins: PinsStore; images: PinImages; ui: UiStore }
+export type MapImageSource = { world: WorldStore; pins: PinsStore; roads?: RoadsStore; images: PinImages; ui: UiStore }
 
 /** O canvas do PNG (os testes do jsdom, sem canvas, passam um falso). */
 export type ImageCanvas = {
@@ -69,6 +70,7 @@ export async function renderMapImage(source: MapImageSource, options: MapImageOp
   const opened: { close?: () => void }[] = []
   try {
     let pins = null
+    let roads = null
     if (options.pins) {
       const list = source.pins.getState().pins
       const hidden = new Set<PinType>(PIN_TYPES.map((t) => t.id).filter((t) => !layers[t]))
@@ -86,6 +88,7 @@ export async function renderMapImage(source: MapImageSource, options: MapImageOp
       }
       if (list.some((p) => p.name)) await loadFont(labelFont(options.scale)).catch(() => {})
       pins = { list, hidden, images }
+      if (layers.roads && source.roads) roads = { list: source.roads.getState().roads, pins: list }
     }
 
     const canvas = createCanvas(size)
@@ -94,7 +97,7 @@ export async function renderMapImage(source: MapImageSource, options: MapImageOp
     try {
       drawMapImage(
         ctx,
-        { scale: options.scale, terrainRgba: terrain.terrainRgba, decor: decorSprites ? { icons: terrain.decor, sheet: decorSprites } : null, pins },
+        { scale: options.scale, terrainRgba: terrain.terrainRgba, decor: decorSprites ? { icons: terrain.decor, sheet: decorSprites } : null, pins, roads },
         deps.makeImageData,
       )
       return await new Promise<Blob>((resolve, reject) =>

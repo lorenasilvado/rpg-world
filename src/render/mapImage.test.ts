@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DECOR, type Decor } from '../core/types'
-import type { Pin } from '../persistence/types'
+import type { Pin, Road } from '../persistence/types'
 import { EXPORT_SCALES, drawMapImage, exportImageSize, labelFont, type MapImageInk } from './mapImage'
 import { DECOR_UNIT, INK_PX, decorVariant, inkAnchor, inkFrame } from './style/decorInk'
 
 /** Contexto 2D falso: guarda as chamadas, com o estado da fonte no momento de cada texto. */
 function fakeCtx() {
-  const calls: { name: string; args: unknown[]; font?: string }[] = []
+  const calls: { name: string; args: unknown[]; font?: string; strokeStyle?: string; lineWidth?: number }[] = []
   const ctx: Record<string, unknown> = { fillStyle: '', strokeStyle: '', lineWidth: 0, lineJoin: 'miter', lineCap: 'butt', globalAlpha: 1, font: '', textAlign: 'start', textBaseline: 'alphabetic' }
-  const methods = ['save', 'restore', 'translate', 'scale', 'rotate', 'clip', 'beginPath', 'ellipse', 'fillRect', 'stroke', 'fill', 'drawImage', 'putImageData', 'strokeText', 'fillText', 'moveTo', 'lineTo', 'quadraticCurveTo', 'bezierCurveTo', 'arc', 'closePath', 'setTransform']
-  for (const m of methods) ctx[m] = vi.fn((...args: unknown[]) => calls.push({ name: m, args, font: ctx.font as string }))
+  const methods = ['save', 'restore', 'translate', 'scale', 'rotate', 'clip', 'beginPath', 'ellipse', 'fillRect', 'stroke', 'fill', 'drawImage', 'putImageData', 'strokeText', 'fillText', 'moveTo', 'lineTo', 'quadraticCurveTo', 'bezierCurveTo', 'arc', 'closePath', 'setTransform', 'setLineDash']
+  for (const m of methods) ctx[m] = vi.fn((...args: unknown[]) => calls.push({ name: m, args, font: ctx.font as string, strokeStyle: ctx.strokeStyle as string, lineWidth: ctx.lineWidth as number }))
   return { ctx: ctx as unknown as MapImageInk, calls, of: (name: string) => calls.filter((c) => c.name === name) }
 }
 
@@ -118,5 +118,35 @@ describe('PNG do mapa (AC-F4-11)', () => {
     const firstLabel = calls.findIndex((c) => c.name === 'strokeText')
     expect(firstLabel).toBeGreaterThan(lastPin)
     expect(calls.filter((c) => c.name === 'fillText').map((c) => c.args[0])).toEqual(['De Cima', 'De Baixo'])
+  })
+
+  it('as estradas vão entre a decoração e os pins, com os traços de cada tipo na escala (AC-F5-03)', () => {
+    const { ctx, calls, of } = fakeCtx()
+    const a = pin('a', 'cidade', 0.5, 0.5)
+    const road = (id: string, kind: Road['kind']): Road => ({ id, name: id, kind, points: [{ u: 0.1, v: 0.1 }, { u: 0.2, v: 0.3 }, { u: 0.4, v: 0.4 }], from: 'a' })
+    const list = [road('r', 'road'), road('t', 'trail'), road('s', 'sea')]
+    drawMapImage(ctx, { scale: 2, terrainRgba: rgba(2048), decor: null, pins: { list: [a], hidden: new Set(), images: new Map() }, roads: { list, pins: [a] } }, imageData)
+    const strokes = of('stroke')
+      .slice(0, 4)
+      .map((c) => [c.strokeStyle, c.lineWidth])
+    expect(strokes).toEqual([
+      ['#f5eacb', 14],
+      ['#7a5230', 7],
+      ['#7a5230', 6.4],
+      ['#ffffff', 5],
+    ])
+    expect(of('setLineDash').map((c) => c.args[0])).toEqual([[], [], [2, 14], [20, 16]])
+    // A ponta ligada fica no pin: a curva começa em (0,5; 0,5) × 2048.
+    expect(of('moveTo')[0].args).toEqual([1024, 1024])
+    // Duas cúbicas por estrada (3 pontos), e os pins depois de todas.
+    expect(of('bezierCurveTo')).toHaveLength(8)
+    const lastRoad = calls.map((c) => c.name).lastIndexOf('bezierCurveTo')
+    expect(calls.findIndex((c) => c.name === 'translate')).toBeGreaterThan(lastRoad)
+  })
+
+  it('sem as estradas, nada de traço de estrada', () => {
+    const { ctx, of } = fakeCtx()
+    drawMapImage(ctx, { scale: 1, terrainRgba: rgba(1024), decor: null, pins: null, roads: null }, imageData)
+    expect(of('bezierCurveTo')).toHaveLength(0)
   })
 })

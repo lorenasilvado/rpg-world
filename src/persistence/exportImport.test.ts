@@ -51,7 +51,7 @@ const VALDORA: World = {
     pin({ id: 'capital' }),
     pin({ id: 'torre', name: 'Torre', type: 'custom', icon: { kind: 'image', blobId: 'img-1' }, parentId: 'capital' }),
   ],
-  roads: [{ id: 'r1', kind: 'road', points: [{ u: 0.1, v: 0.2 }, { u: 0.3, v: 0.4 }], from: 'capital', to: 'torre' }],
+  roads: [{ id: 'r1', name: 'Estrada Real', kind: 'road', points: [{ u: 0.1, v: 0.2 }, { u: 0.3, v: 0.4 }], from: 'capital', to: 'torre' }],
   createdAt: '2026-10-01T00:00:00.000Z',
   updatedAt: '2026-11-20T00:00:00.000Z',
 }
@@ -141,6 +141,17 @@ describe('exportar e importar o mundo (AC-F4-09)', () => {
     const parsed = parseWorldFile(await exportWorldJson(partial, async () => undefined))
     if (!parsed.ok) throw new Error(parsed.reason)
     expect(parsed.world.params).toEqual({ ...DEFAULT_WORLD_PARAMS, ocean: 70 })
+  })
+
+  it('as estradas dos três tipos vão no arquivo e voltam iguais; uma sem nome vira "Estrada" (AC-F5-02)', () => {
+    const roads = [
+      { id: 'r1', name: 'Estrada Real', kind: 'road', points: [{ u: 0.1, v: 0.2 }, { u: 0.2, v: 0.3 }, { u: 0.3, v: 0.4 }], from: 'a', to: 'b' },
+      { id: 'r2', name: 'Trilha dos Pinheiros', kind: 'trail', points: [{ u: 0.5, v: 0.5 }, { u: 0.6, v: 0.6 }] },
+      { id: 'r3', name: 'Rota de Sal', kind: 'sea', points: [{ u: 0.8, v: 0.1 }, { u: 0.9, v: 0.2 }], from: 'b' },
+    ]
+    const parsed = parseWorldFile(raw({}, { roads: [...roads, { id: 'r4', kind: 'road', points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] }] }))
+    if (!parsed.ok) throw new Error(parsed.reason)
+    expect(parsed.world.roads).toEqual([...roads, { id: 'r4', name: 'Estrada', kind: 'road', points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] }])
   })
 
   it('um arquivo editado à mão sem nome, pins nem estradas ganha os padrões', () => {

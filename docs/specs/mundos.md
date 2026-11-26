@@ -19,11 +19,12 @@ o comportamento atualiza esta spec.
 > Exportar › Imagem (.png), na barra do editor, baixa o mapa em PNG em 1×, 2× ou 4×, com ou sem os
 > pins e os rótulos. O mundo aberto é salvo sozinho no IndexedDB (Dexie, em `src/persistence/`), com o
 > indicador Salvando… / Salvo / Erro ao salvar abaixo do nome do mundo, na barra da sidebar (só com a
-> sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed ou nos
-> parâmetros (e já, ao criar o mundo, ao voltar à lista e ao esconder ou sair da página); com
-> "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. As estradas ainda não
-> existem: o mundo é salvo com a lista de estradas vazia. Desfazer e Refazer (botões da barra,
-> Ctrl+Z e Ctrl+Shift+Z) cobrem os pins e os parâmetros de geração. O resto vem do material de
+> sidebar aberta). A gravação acontece 500 ms depois da última mudança no nome, na seed, nos
+> parâmetros, nos pins ou nas estradas (e já, ao criar o mundo, ao voltar à lista e ao esconder ou
+> sair da página); com "Erro ao salvar", voltar à lista pergunta antes de fechar o mundo. As
+> estradas ainda só entram por um arquivo importado (ver [estradas.md](estradas.md)). Desfazer e
+> Refazer (botões da barra, Ctrl+Z e Ctrl+Shift+Z) cobrem os pins, as estradas e os parâmetros de
+> geração. O resto vem do material de
 > design e do PRD.
 
 ## Resumo
@@ -143,7 +144,7 @@ PNG e o histórico de desfazer/refazer do mundo.
 | Exportar (barra do editor) | Abre o menu com "Arquivo do mundo (.json)" e "Imagem (.png)". "Arquivo do mundo (.json)" baixa o mundo como está na tela, mesmo o que ainda não foi gravado, e fecha o menu; se falha, o menu continua com "Não foi possível exportar o mundo. Tente de novo." "Imagem (.png)" fecha o menu e abre o modal "Exportar imagem". Teclado: setas, Home e End andam entre os itens habilitados; Esc fecha e devolve o foco ao botão |
 | Exportar › Imagem (.png) | Abre o modal "Exportar imagem" (480 px): a Escala, em três opções lado a lado com o tamanho da imagem (1× "1024 × 1024 px", 2× "2048 × 2048 px", 4× "4096 × 4096 px"; começa em 1×; no 4×, o aviso "Em 4×, gerar a imagem pode levar até um minuto."), a caixa "Pins e rótulos" (marcada ao abrir), Cancelar e "Baixar PNG". "Baixar PNG" gera a imagem ("Gerando imagem…", com os controles desabilitados; nem Esc nem o clique fora fecham o modal), baixa `<nome-do-mundo>-<escala>x.png` (o nome como no .json, ex.: `terras-de-valdora-2x.png`) e fecha o modal. Se falha, o modal continua com "Não foi possível exportar a imagem. Tente de novo." Cancelar, Esc ou o clique fora fecham sem exportar. Ao fechar, o foco volta ao Exportar |
 | Excluir (menu "⋯") | Abre a confirmação; "Excluir mundo" apaga o mundo e as imagens dele do IndexedDB, de vez (não há Desfazer: o histórico é do mundo), e o cartão sai da lista (sem mundos, a lista vazia). Cancelar, Esc ou o clique fora mantêm o mundo. Se a exclusão falha, o modal continua com "Não foi possível excluir o mundo. Tente de novo." |
-| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição, as tags e, na aba Detalhes, o tipo, o ícone e os campos livres) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Na aba Detalhes, cada escolha de tipo, imagem enviada ou removida é um passo; as teclas seguidas no valor de um campo livre são um passo só, até sair dele, e trocar a chave, adicionar ou remover um campo são um passo cada. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
+| Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z, ⌘ no Mac, ou os botões da barra do editor) | Desfaz ou refaz, um passo de cada vez, as mudanças nos pins (criar, mover, excluir, duplicar, renomear, a descrição, as tags e, na aba Detalhes, o tipo, o ícone e os campos livres), nas estradas (excluir um pin exclui as estradas ligadas a ele no mesmo passo) e nos parâmetros de geração (sliders, presets, "Restaurar padrão"). Arrastar um slider ou um pin é um passo só, contado ao soltar; as teclas seguidas no nome do mesmo pin também, e as da descrição, até o campo perder o foco ou a seleção mudar (depois disso, editar de novo é outro passo; o nome e a descrição são passos separados). Cada tag adicionada ou removida é um passo. Na aba Detalhes, cada escolha de tipo, imagem enviada ou removida é um passo; as teclas seguidas no valor de um campo livre são um passo só, até sair dele, e trocar a chave, adicionar ou remover um campo são um passo cada. Desfazer ou refazer parâmetros pede só o mapa final 1024², sem prévia. Os botões ficam desabilitados sem o que desfazer ou refazer. As teclas não valem com o foco num campo de texto (aí o desfazer é do campo), num modal, com um painel sobreposto aberto nem durante o arrasto de um pin ou de um slider (o passo do arrasto só entra ao soltar). Uma mudança nova depois de desfazer apaga o que havia para refazer. A seed não entra no histórico |
 
 ## Regras
 
@@ -167,8 +168,8 @@ PNG e o histórico de desfazer/refazer do mundo.
   mesma escala. No 1×, a imagem usa o mapa já exibido; enquanto ele gera, ou se a última geração falhou, gera o
   1024² de novo.
 - O PNG mostra todos os ícones da decoração (sem o nível de detalhe do zoom) e, com "Pins e
-  rótulos", todos os pins soltos (sem os grupos), cada um com o nome embaixo; os nomes ficam por cima dos
-  pins, e nenhum pin cobre um nome. A decoração e os tipos
+  rótulos", as estradas e todos os pins soltos (sem os grupos), cada um com o nome embaixo; os nomes ficam por cima dos
+  pins, e nenhum pin cobre um nome. A decoração, as estradas e os tipos
   de pin desligados em Camadas ficam de fora, como no mapa.
 
 ## Critérios de aceite vigentes

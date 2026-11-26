@@ -4,6 +4,7 @@ import type { MapInsets, MapRenderer } from '../render/MapRenderer'
 import type { CameraStore } from '../state/cameraStore'
 import type { PinImages } from '../state/pinImages'
 import type { PinsStore } from '../state/pinsStore'
+import type { RoadsStore } from '../state/roadsStore'
 import type { UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
 import { panelInsets } from './panelInsets'
@@ -16,11 +17,12 @@ export type CreateMapRenderer = (
   camera: CameraStore,
   pins: PinsStore,
   images?: PinImages,
+  roads?: RoadsStore,
 ) => Promise<MapRenderer>
 
 /** O renderer do Pixi, carregado à parte: o React não depende dele para montar o editor. */
-const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, pins, images) =>
-  import('../render/MapRenderer').then((m) => m.createMapRenderer(host, world, insets, ui, camera, pins, images))
+const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, pins, images, roads) =>
+  import('../render/MapRenderer').then((m) => m.createMapRenderer(host, world, insets, ui, camera, pins, images, roads))
 
 /**
  * Área do mapa do editor: o renderer desenha nela o campo do `world`, com as camadas ligadas no
@@ -32,7 +34,7 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, 
  * guardou (o minimapa e o controle de zoom leem e comandam por ele). Com a ferramenta Medir distância
  * (`tool` do `ui`) e com Adicionar pin, o cursor sobre o mapa é a cruz, e a ferramenta fica em
  * `data-tool`. O renderer desenha os pins do `pins`; com o mouse sobre um pin, o cursor é a mãozinha, e
- * arrastando um pin, a mão fechada; sobre um grupo de pins, a lupa. As imagens enviadas dos pins (`images`) vão para o renderer.
+ * arrastando um pin, a mão fechada; sobre um grupo de pins, a lupa. As imagens enviadas dos pins (`images`) e as estradas (`roads`) vão para o renderer.
  */
 export function MapView({
   world,
@@ -41,6 +43,7 @@ export function MapView({
   camera,
   inert,
   images,
+  roads,
   createRenderer = createPixiRenderer,
   ref,
 }: {
@@ -50,6 +53,7 @@ export function MapView({
   camera: CameraStore
   inert: boolean
   images?: PinImages
+  roads?: RoadsStore
   createRenderer?: CreateMapRenderer
   /** O elemento do mapa (o `<main>`), para quem precisa levar o foco até ele (`focusMap`). */
   ref?: RefObject<HTMLElement | null>
@@ -69,7 +73,7 @@ export function MapView({
     const unsubscribe = ui.subscribe((state, prev) => {
       if (state.sidebarCollapsed !== prev.sidebarCollapsed) mounted.renderer?.refit()
     })
-    createRenderer(el, world, insets, ui, camera, pins, images).then(
+    createRenderer(el, world, insets, ui, camera, pins, images, roads).then(
       (r) => {
         if (mounted.disposed) {
           r.destroy()
@@ -87,7 +91,7 @@ export function MapView({
       if (controls && camera.getState().controls === controls) camera.getState().setControls(null)
       mounted.renderer?.destroy()
     }
-  }, [world, pins, ui, camera, images, createRenderer])
+  }, [world, pins, ui, camera, images, roads, createRenderer])
 
   return (
     <main

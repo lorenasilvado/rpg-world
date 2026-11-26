@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION, type WorldParams } from '../core'
 import { pinImageIds } from '../state/pinImages'
+import { DEFAULT_ROAD_NAME } from '../state/roadsStore'
 import { DEFAULT_SIZE_KM } from '../state/worldStore'
 import type { StoredImage, World } from './types'
 import { copyWorldRecord } from './worldRecord'
@@ -65,6 +66,8 @@ const pinSchema = z.object({
 
 const roadSchema = z.object({
   id: z.string().min(1),
+  // Um arquivo editado à mão pode vir sem o nome.
+  name: z.string().default(DEFAULT_ROAD_NAME),
   kind: z.enum(['road', 'trail', 'sea']),
   points: z.array(point),
   from: z.string().optional(),

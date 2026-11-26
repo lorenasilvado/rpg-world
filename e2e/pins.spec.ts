@@ -442,14 +442,15 @@ test('885×800 com a sidebar: o toast "Pin excluído" ocupa a largura da área l
 
 test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e arrastar o pin continua sem pan (AC-F3-04)', async ({ page }) => {
   test.setTimeout(90_000)
-  await gotoEditor(page, '/', defaultWorld({ pins: [fullPin()] }))
+  // O pin fica acima do popover de Camadas (que abre acima da toolbar): apertar nele é um clique fora.
+  await gotoEditor(page, '/', defaultWorld({ pins: [{ ...fullPin(), pos: { u: 0.45, v: 0.4 } }] }))
   await waitFinalMap(page)
   const popover = page.getByTestId('layers-popover')
 
   // Clique num pin: o popover fecha, e o pin é selecionado.
   await page.getByRole('toolbar', { name: 'Ferramentas' }).getByRole('button', { name: 'Camadas' }).click()
   await expect(popover).toBeVisible()
-  await clickPin(page, 0.45, 0.5)
+  await clickPin(page, 0.45, 0.4)
   await expect(popover).toBeHidden()
   await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-cheio')
   await page.keyboard.press('Escape')
@@ -467,7 +468,7 @@ test('com o popover de Camadas aberto, apertar num pin o fecha (clique fora), e 
   // Arrasto de um pin: o popover fecha, e a câmera não faz pan.
   await page.getByRole('toolbar', { name: 'Ferramentas' }).getByRole('button', { name: 'Camadas' }).click()
   await expect(popover).toBeVisible()
-  const from = await screenOf(page, 0.45, 0.5)
+  const from = await screenOf(page, 0.45, 0.4)
   await page.mouse.move(from.x, from.y - 10)
   await page.mouse.down()
   await expect(popover).toBeHidden()

@@ -1,21 +1,27 @@
 import { temporal, type TemporalState } from 'zundo'
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { WorldParams } from '../core'
-import type { Pin } from '../persistence/types'
+import type { Pin, Road } from '../persistence/types'
 import type { PinsStore } from './pinsStore'
+import type { RoadsStore } from './roadsStore'
 import type { WorldStore } from './worldStore'
 
-/** O que o histórico guarda de cada passo: os pins e os parâmetros de geração do mundo. */
-export type HistoryDoc = { pins: readonly Pin[]; params: WorldParams }
+/** O que o histórico guarda de cada passo: os pins, as estradas e os parâmetros de geração do mundo. */
+export type HistoryDoc = { pins: readonly Pin[]; roads: readonly Road[]; params: WorldParams }
+
+/** As estradas de um histórico sem `roadsStore` (a mesma lista: não vira mudança). */
+const NO_ROADS: readonly Road[] = []
 
 /** Quantos passos o histórico guarda (os mais antigos saem). */
 export const HISTORY_LIMIT = 100
 
 /**
  * O histórico de desfazer e refazer do mundo aberto (mundos.md → Regras, AC-F4-08): um só, para as
- * mudanças nos pins (`pinsStore`) e nos parâmetros de geração (`worldStore`). Ele usa o middleware
- * `temporal` do zundo (ADR 0001) sobre um espelho `{ pins, params }`: cada mudança que vale um passo
- * troca o espelho, e o zundo guarda o estado anterior.
+ * mudanças nos pins (`pinsStore`), nas estradas (`roadsStore`, estradas.md AC-F5-02) e nos parâmetros
+ * de geração (`worldStore`). Ele usa o middleware `temporal` do zundo (ADR 0001) sobre um espelho
+ * `{ pins, roads, params }`: cada mudança que vale um passo troca o espelho, e o zundo guarda o
+ * estado anterior. Excluir um pin exclui as estradas ligadas a ele (o `roadsStore` ouve os pins) num
+ * passo só: o espelho lê as duas listas a cada mudança de uma delas.
  *
  * - Arrastar um slider só entra ao soltar (`paramsDragging` do `worldStore`), um passo por arrasto;
  *   arrastar um pin, um passo ao soltar (a lista só muda no `endDrag`).
@@ -23,7 +29,8 @@ export const HISTORY_LIMIT = 100
  *   livre) viram um passo só. A edição termina quando o campo perde o foco (`textEditEnds` do
  *   `pinsStore`) ou a seleção muda: depois disso, mais teclas no mesmo texto são outro passo.
  *   Trocar de texto (do nome para a descrição) também começa outro passo.
- * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita) e,
+ * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita), as
+ *   estradas ao `roadsStore` e,
  *   se os parâmetros mudaram, os troca no `worldStore` pelo `setParams`, que pede só o mapa final
  *   1024², sem prévia.
  *
@@ -89,11 +96,12 @@ export function editedText(before: readonly Pin[], after: readonly Pin[]): strin
   return edited
 }
 
-export function createWorldHistory({ world, pins }: { world: WorldStore; pins: PinsStore }): WorldHistory {
+export function createWorldHistory({ world, pins, roads }: { world: WorldStore; pins: PinsStore; roads?: RoadsStore }): WorldHistory {
+  const currentRoads = (): readonly Road[] => roads?.getState().roads ?? NO_ROADS
   const doc = createStore<HistoryDoc>()(
-    temporal<HistoryDoc>(() => ({ pins: pins.getState().pins, params: world.getState().params }), {
+    temporal<HistoryDoc>(() => ({ pins: pins.getState().pins, roads: currentRoads(), params: world.getState().params }), {
       limit: HISTORY_LIMIT,
-      equality: (a, b) => a.pins === b.pins && sameParams(a.params, b.params),
+      equality: (a, b) => a.pins === b.pins && a.roads === b.roads && sameParams(a.params, b.params),
     }),
   )
   const version = createStore<{ value: number }>()(() => ({ value: 0 }))
@@ -106,8 +114,8 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
   const record = (next: Partial<HistoryDoc>) => {
     const current = doc.getState()
     const merged = { ...current, ...next }
-    if (merged.pins === current.pins && sameParams(merged.params, current.params)) return
-    const edited = next.pins ? editedText(current.pins, next.pins) : null
+    if (merged.pins === current.pins && merged.roads === current.roads && sameParams(merged.params, current.params)) return
+    const edited = next.pins && merged.roads === current.roads ? editedText(current.pins, next.pins) : null
     if (edited !== null && edited === editing && doc.temporal.getState().pastStates.length > 0) {
       // Mais uma tecla no mesmo texto: troca o espelho sem guardar outro passo.
       doc.temporal.getState().pause()
@@ -123,8 +131,13 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
   const unsubscribePins = pins.subscribe((state, prev) => {
     if (state.textEditEnds !== prev.textEditEnds || state.selectedId !== prev.selectedId) editing = null
     if (applying || state.pins === prev.pins) return
-    record({ pins: state.pins })
+    record({ pins: state.pins, roads: currentRoads() })
   })
+  const unsubscribeRoads =
+    roads?.subscribe((state, prev) => {
+      if (applying || state.roads === prev.roads) return
+      record({ roads: state.roads, pins: pins.getState().pins })
+    }) ?? (() => {})
   const unsubscribeWorld = world.subscribe((state, prev) => {
     if (applying || state.params === prev.params || state.paramsDragging) return
     record({ params: state.params })
@@ -139,6 +152,8 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
     applying = true
     try {
       if (after.pins !== pins.getState().pins) pins.getState().replacePins(after.pins)
+      // Os pins voltam antes: o `roadsStore` tira as estradas de um pin que saiu, e a lista do passo as troca.
+      if (roads && after.roads !== roads.getState().roads) roads.getState().replaceRoads(after.roads)
       if (!sameParams(after.params, world.getState().params)) world.getState().setParams(after.params)
     } finally {
       applying = false
@@ -155,6 +170,7 @@ export function createWorldHistory({ world, pins }: { world: WorldStore; pins: P
     canRedo: () => doc.temporal.getState().futureStates.length > 0,
     dispose() {
       unsubscribePins()
+      unsubscribeRoads()
       unsubscribeWorld()
     },
   }

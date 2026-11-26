@@ -1,21 +1,23 @@
 import type { Decor } from '../core/types'
-import type { Pin } from '../persistence/types'
+import type { Pin, Road } from '../persistence/types'
 import { pinType, type PinType } from '../state/pinTypes'
 import { WORLD_SIZE } from './camera'
 import { drawOrder } from './layers/pinMath'
+import { ROAD_STROKES, cssColor, curveSegments, roadPoints } from './layers/roadMath'
 import { DECOR_UNIT, INK_BOXES, INK_PX, INK_SHEET, decorVariant, drawDecorSheet, inkAnchor, inkFrame, type Ink } from './style/decorInk'
 import { PIN_SIZE_PX, PIN_VIEWBOX, drawPin, type PinImage, type PinInk } from './style/pinShapes'
 
 /**
  * O mapa exportado em PNG (mundos.md → Exportar › Imagem (.png), AC-F4-11), desenhado num canvas 2D,
  * sem o Pixi: o terreno (o RGBA do `terrainPixels`, gerado na resolução da imagem), os ícones da
- * decoração (os quadros do mesmo spritesheet do editor) e, se pedidos, os pins e os rótulos, na
- * ordem de desenho do mapa. Tudo é o mapa inteiro, sem a câmera: o 1× é o mapa 1024², e o 2× e o 4×
+ * decoração (os quadros do mesmo spritesheet do editor) e, se pedidos, as estradas (estradas.md,
+ * AC-F5-03), os pins e os rótulos, na ordem de desenho do mapa. As estradas usam a mesma curva e os
+ * mesmos traços do editor, com as larguras na escala da imagem. Tudo é o mapa inteiro, sem a câmera: o 1× é o mapa 1024², e o 2× e o 4×
  * são a mesma imagem com mais detalhe (os pins, os rótulos e os ícones crescem junto).
  *
  * Diferente do editor, a imagem mostra todos os ícones (sem o nível de detalhe do zoom), os pins
  * soltos (sem os grupos) e o rótulo de todos os pins, desenhados depois de todos os pins (nenhum pin
- * cobre um rótulo). Os tipos de pin e a decoração desligados em
+ * cobre um rótulo). Os tipos de pin, as estradas e a decoração desligados em
  * Camadas ficam de fora, como no mapa.
  */
 
@@ -34,7 +36,7 @@ export type MapImageOptions = { scale: ExportScale; pins: boolean }
 /** O contexto 2D que o desenho usa (o do `<canvas>` e o do `OffscreenCanvas`). */
 export type MapImageInk = PinInk &
   Ink &
-  Pick<CanvasRenderingContext2D, 'putImageData' | 'strokeText' | 'fillText'> & {
+  Pick<CanvasRenderingContext2D, 'putImageData' | 'strokeText' | 'fillText' | 'setLineDash'> & {
     font: string
     textAlign: CanvasTextAlign
     textBaseline: CanvasTextBaseline
@@ -48,6 +50,8 @@ export type MapImageInput = {
   decor: { icons: Decor; sheet: CanvasImageSource } | null
   /** Os pins a desenhar (sem eles, a imagem fica sem pins), com as imagens enviadas por id. */
   pins: { list: readonly Pin[]; hidden: ReadonlySet<PinType>; images: ReadonlyMap<string, PinImage> } | null
+  /** As estradas a desenhar, com os pins das pontas ligadas (sem elas, a imagem fica sem estradas). */
+  roads?: { list: readonly Road[]; pins: readonly Pin[] } | null
 }
 
 /** O rótulo do pin, como o do mapa: Cinzel 700 13 px, com contorno claro de 2 px, 5 px abaixo da âncora. */
@@ -65,6 +69,7 @@ export function drawMapImage(ctx: MapImageInk, input: MapImageInput, makeImageDa
   if (input.terrainRgba.length !== size * size * 4) throw new Error(`drawMapImage: o terreno não tem ${size}² px`)
   ctx.putImageData(makeImageData(input.terrainRgba, size), 0, 0)
   if (input.decor) drawDecor(ctx, input.decor.icons, input.decor.sheet, scale)
+  if (input.roads) drawRoads(ctx, input.roads, scale)
   if (input.pins) drawPins(ctx, input.pins, scale)
 }
 
@@ -82,6 +87,29 @@ function drawDecor(ctx: MapImageInk, icons: Decor, sheet: CanvasImageSource, sca
     const h = f.height * k
     ctx.drawImage(sheet, f.x, f.y, f.width, f.height, icons.u[i] * size - a.x * w, icons.v[i] * size - a.y * h, w, h)
   }
+}
+
+/** As estradas, na curva do editor, com as larguras e os tracejados na escala da imagem. */
+function drawRoads(ctx: MapImageInk, roads: NonNullable<MapImageInput['roads']>, scale: number) {
+  const size = WORLD_SIZE * scale
+  const byId = new Map(roads.pins.map((p) => [p.id, p.pos]))
+  ctx.save()
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  for (const road of roads.list) {
+    const points = roadPoints(road, (id) => byId.get(id)).map((p) => ({ x: p.u * size, y: p.v * size }))
+    if (points.length < 2) continue
+    for (const stroke of ROAD_STROKES[road.kind] ?? ROAD_STROKES.road) {
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      for (const seg of curveSegments(points)) ctx.bezierCurveTo(seg.c1.x, seg.c1.y, seg.c2.x, seg.c2.y, seg.to.x, seg.to.y)
+      ctx.setLineDash(stroke.dash ? [stroke.dash[0] * scale, stroke.dash[1] * scale] : [])
+      ctx.strokeStyle = cssColor(stroke.color)
+      ctx.lineWidth = stroke.width * scale
+      ctx.stroke()
+    }
+  }
+  ctx.restore()
 }
 
 function drawPins(ctx: MapImageInk, pins: NonNullable<MapImageInput['pins']>, scale: number) {

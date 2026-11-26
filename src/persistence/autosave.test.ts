@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_WORLD_PARAMS, GENERATOR_VERSION } from '../core'
 import { createPinsStore } from '../state/pinsStore'
+import { createRoadsStore } from '../state/roadsStore'
 import { createWorldStore, type WorldGenerator } from '../state/worldStore'
 import { createAutosave, SAVE_DELAY_MS } from './autosave'
 import type { World } from './types'
@@ -195,4 +196,24 @@ describe('salvamento automático (AC-F4-01, AC-F4-02)', () => {
     expect(repo.save).toHaveBeenCalledTimes(2)
     autosave.dispose()
   })
+
+  it('mudar as estradas grava as estradas do store, e excluir um pin grava sem as ligadas a ele (AC-F5-02)', async () => {
+    const world = createWorldStore(generator, { id: 'w1', createdAt: '2026-11-20T09:00:00.000Z' })
+    const pin = { id: 'a', type: 'cidade', name: 'A', pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin' as const, key: 'cidade' }, description: '', tags: [], fields: {} }
+    const pins = createPinsStore([pin])
+    const road = { id: 'r', name: 'Estrada Real', kind: 'road' as const, points: [{ u: 0.1, v: 0.1 }, { u: 0.5, v: 0.5 }], to: 'a' }
+    const roads = createRoadsStore([], pins)
+    const repo = { save: vi.fn((_w: World) => Promise.resolve()) }
+    const autosave = createAutosave({ world, pins, roads, repo, now: () => NOW })
+    roads.getState().replaceRoads([road])
+    expect(autosave.store.getState().status).toBe('saving')
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+    expect(repo.save.mock.calls[0][0].roads).toEqual([road])
+    pins.getState().removePin('a')
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS)
+    expect(repo.save).toHaveBeenCalledTimes(2)
+    expect(repo.save.mock.calls[1][0]).toMatchObject({ pins: [], roads: [] })
+    autosave.dispose()
+  })
 })
+
