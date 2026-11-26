@@ -382,6 +382,20 @@ for (const size of [
         return box && [box.x, box.width, box.y, box.height]
       })
       .toEqual([size.width - 400, 400, 0, size.height])
+    // O rodapé do design: três botões que dividem a largura (flex: 1), com ícone e texto numa linha. O
+    // Excluir não tem borda, daí até 2 px de diferença entre as larguras.
+    const footer = await drawer(page)
+      .locator('footer button')
+      .evaluateAll((buttons) =>
+        buttons.map((b) => ({ flex: getComputedStyle(b).flex, width: b.getBoundingClientRect().width, icon: b.querySelector('svg')!.getBoundingClientRect().width, fits: b.scrollWidth <= b.clientWidth })),
+      )
+    expect(footer.map((b) => [b.flex, b.icon, b.fits])).toEqual([
+      ['1 1 0%', 16, true],
+      ['1 1 0%', 16, true],
+      ['1 1 0%', 16, true],
+    ])
+    const widths = footer.map((b) => b.width)
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(2)
     await expect.poll(async () => { const z = await zoomRight(); return size.width - 400 - (z.x + z.width) }).toBe(12)
     await expect.poll(async () => { const a = await actionsBox(); return size.width - 400 - (a.x + a.width) }).toBe(12)
     // Abrir o drawer não muda a porcentagem do zoom.
