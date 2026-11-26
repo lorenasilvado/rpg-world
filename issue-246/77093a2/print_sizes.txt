@@ -1,0 +1,16 @@
+commit: 77093a20c111cc2d8ad4aa7e88586e8b9e48a5dc
+ac-f5-01-ponta-acompanha-arrasto.png  1280x800  5343ed2fe6c783cd00ff73fd86726d04e4c3b7f5079ebd99c4b3e55d4c02d362
+ac-f5-01-ponta-depois-de-soltar.png  1280x800  17c1c1402326bb1a055ca691aabe6ac13e89f3968eb8dc14f7a857e6ed255021
+ac-f5-01-tres-estilos-1280-claro.png  1280x800  90dee513a73f9547e20c0eb639c674ac9e81946666dcd2579a520d500cdab32a
+ac-f5-01-tres-estilos-1280-escuro.png  1280x800  27565bd38091205208c5d6c06a58cc6101293b06c16f4a55f120e2e61acbb226
+ac-f5-01-tres-estilos-1440-claro.png  1440x900  37cbdb5acf331c942d6352c8388dd8f41e993df557e706e16c2b1f1c8e888ccd
+ac-f5-01-tres-estilos-1440-escuro.png  1440x900  fe4943280fb9327078562680482ab77d97e6cad344bf96a3ef78a51fa8f7dfc5
+ac-f5-01-tres-estilos-390-claro.png  390x844  ad68629584e628f1a08dac9145d0739bd072b5adecf9a4ec887e151901ef8d6f
+ac-f5-01-tres-estilos-390-escuro.png  390x844  5a9cd4ccaa6f19515d1cecfd8364df63f5ec1fca5fc2471ad6687cc92c50a8f3
+ac-f5-02-desfazer-devolve-pin-e-estradas.png  1280x800  ff72a4faf303985f4d6455399351a7b95d4a4e43dc5381876be0f1374c89f576
+ac-f5-02-excluir-pin-tira-estradas-ligadas.png  1280x800  8d4b68e9ea485dd68e0ab0fe211308c1c8c98de1cc5180bd550569d95736c3c3
+ac-f5-02-recarregar-mantem.png  1280x800  90dee513a73f9547e20c0eb639c674ac9e81946666dcd2579a520d500cdab32a
+ac-f5-03-camadas-estradas-desligada.png  1280x800  a716359ce1bb76d33faa60dab6ba1b7c7bc1f5aabfe9a426b0b90262f626423b
+ac-f5-03-camadas-estradas-ligada.png  1280x800  dc9807437690ce0e56dbb5b7b377d9db94d405f65389a1ce69b998fb159deb0f
+ac-f5-03-png-com-pins-e-estradas.png  1024x1024  83dc3d73e9c7eeb08e30584d12882e580da49254fcda6d269c7ab7f3338039ed
+ac-f5-03-png-sem-pins-sem-estradas.png  1024x1024  6b640fd6cb0c8b3bc98744a7fcca69afe78109464e4bf3d7e254437a09f2b1e6
