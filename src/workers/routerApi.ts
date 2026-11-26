@@ -19,9 +19,13 @@ export type RouteResponse = {
 let grid: CostGrid | null = null
 
 export const routerApi = {
-  /** Monta a grade de custo do campo; devolve o tempo dela, em ms. */
+  /**
+   * Monta a grade de custo do campo; devolve o tempo dela, em ms. A grade anterior sai antes: se o
+   * campo novo falhar, as rotas seguintes falham também, em vez de rodar no mapa antigo.
+   */
   setField(field: RouteField): { gridMs: number } {
     const start = performance.now()
+    grid = null
     grid = buildCostGrid(field)
     return { gridMs: performance.now() - start }
   },

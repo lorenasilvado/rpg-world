@@ -3,7 +3,7 @@ import { sampleCurve } from '../../render/layers/roadMath'
 import { BIOME } from '../types'
 import { generateField } from '../world/generateField'
 import { buildCostGrid, cellOf, type RouteField } from './costGrid'
-import { findRoute, MAX_SEGMENT, segmentCells, type RoutePoint } from './findRoute'
+import { BRIDGE_COST, findRoute, MAX_SEGMENT, segmentCells, SLOPE_COST, type RoutePoint } from './findRoute'
 
 const WATER: number[] = [BIOME.deepOcean, BIOME.shallowWater, BIOME.lake]
 
@@ -151,6 +151,83 @@ describe('rota pelo terreno: água (AC-F5-09)', () => {
 })
 
 describe('rota pelo terreno: montanhas e planícies (AC-F5-10)', () => {
+  it('nos mapas de seeds fixas, a rota custa menos que a reta e passa menos por montanha e neve', () => {
+    let detours = 0
+    for (const seed of ['rpg-world', 'rotas', 'arquipelago', 'cordilheira']) {
+      const f = generateField(seed, 256)
+      const grid = buildCostGrid(f)
+      /**
+       * Custo da reta como caminho na grade (Bresenham, 8 vizinhos), no modelo da busca: a média do
+       * custo das duas células, a inclinação e uma ponte por célula de rio. `Infinity` se a reta
+       * passa pela água ou corta o canto de água ou de rio num passo na diagonal.
+       */
+      const straightCost = (from: RoutePoint, to: RoutePoint) => {
+        const n = grid.size
+        let x = Math.floor(from.u * n)
+        let y = Math.floor(from.v * n)
+        const tx = Math.floor(to.u * n)
+        const ty = Math.floor(to.v * n)
+        const dx = Math.abs(tx - x)
+        const dy = -Math.abs(ty - y)
+        const sx = x < tx ? 1 : -1
+        const sy = y < ty ? 1 : -1
+        let err = dx + dy
+        let total = 0
+        while (x !== tx || y !== ty) {
+          const a = y * n + x
+          const e2 = 2 * err
+          let nx = x
+          let ny = y
+          if (e2 >= dy) {
+            err += dy
+            nx += sx
+          }
+          if (e2 <= dx) {
+            err += dx
+            ny += sy
+          }
+          const b = ny * n + nx
+          const diagonal = nx !== x && ny !== y
+          if (grid.cost[b] === Infinity) return Infinity
+          if (diagonal) {
+            const p = y * n + nx
+            const q = ny * n + x
+            if (grid.cost[p] === Infinity || grid.cost[q] === Infinity) return Infinity
+            if ((grid.river[p] || grid.river[q]) && !grid.river[a] && !grid.river[b]) return Infinity
+          }
+          const slope = Math.abs(grid.elevation[b] - grid.elevation[a]) * n * SLOPE_COST
+          const bridge = grid.river[b] && !(nx === tx && ny === ty) ? BRIDGE_COST : 0
+          total += (diagonal ? Math.SQRT2 : 1) * ((grid.cost[a] + grid.cost[b]) / 2 + slope) + bridge
+          x = nx
+          y = ny
+        }
+        return total
+      }
+      const high: number[] = [BIOME.rockyMountain, BIOME.snow]
+      const mountain = (points: RoutePoint[]) => dense(points, f).filter((p) => high.includes(biomeAt(f, p))).length
+      const land: RoutePoint[] = []
+      for (let i = 0; i < f.biome.length && land.length < 24; i += 2711) {
+        const p = { u: ((i % 256) + 0.5) / 256, v: (Math.floor(i / 256) + 0.5) / 256 }
+        if (grid.cost[cellOf(grid.size, p.u, p.v)] !== Infinity) land.push(p)
+      }
+      for (let k = 1; k < land.length; k++) {
+        const from = land[k - 1]
+        const to = land[k]
+        const straight = straightCost(from, to)
+        const route = findRoute(grid, from, to, 'land')
+        if (!route || straight === Infinity) continue
+        // A reta na grade é um caminho possível: a rota mais barata nunca custa mais que ela.
+        expect(route.cost, `${seed} #${k}`).toBeLessThanOrEqual(straight + 1e-6)
+        const m = mountain(route.points)
+        const ms = mountain([from, to])
+        expect(m, `${seed} #${k}`).toBeLessThanOrEqual(ms)
+        if (ms > 0 && m < ms) detours++
+      }
+    }
+    // Pelo menos uma reta cruza montanha ou neve, e a rota a desvia.
+    expect(detours).toBeGreaterThan(0)
+  })
+
   it('contorna uma cordilheira pelo desvio, com custo menor que o da reta', () => {
     // Uma parede de montanha rochosa e neve de cima até perto de baixo, com um desvio pelo sul.
     const f = field(256, (set) => {

@@ -111,8 +111,16 @@ export function createRouter(spawn: () => WorkerLike = createWorker): Router {
     if (running) return
     const job = queue.shift()
     if (!job) return
+    let api: Remote<RouterApi>
+    try {
+      api = connect().api
+    } catch (error) {
+      // O worker não pôde ser criado: este pedido falha, e a fila segue (o próximo tenta de novo).
+      settle(job, () => job.reject(new RouterWorkerError('o worker de rota não pôde ser criado', { cause: error })))
+      pump()
+      return
+    }
     running = job
-    const { api } = connect()
     // Num worker novo (o primeiro, ou depois de uma falha), o último campo vai antes.
     const field = !fieldSent && !job.sendsField ? lastField : null
     fieldSent = true

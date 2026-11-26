@@ -71,7 +71,9 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
   rochosa e neve muito mais; água (oceano, lago, oásis) não é atravessável.
 - Na grade, uma célula com qualquer água do mapa é água (assim a rota não passa por um canal mais
   estreito que a célula), e a terra junto da água custa um pouco mais, para a rota não raspar na
-  margem. As pontas valem mesmo numa célula com água (um pin na margem).
+  margem. As pontas valem mesmo numa célula com água (um pin na margem). Por isso, uma faixa de
+  terra mais estreita que uma célula da grade (cerca de 4 a 8 px num mapa 1024², conforme cai nos
+  blocos), como um istmo fino ou uma ponta de terra, não tem caminho por terra.
 - O caminho volta simplificado em pontos: os trechos retos não cortam canto de água, de montanha
   nem de rio, e têm no máximo 4 células da grade, para a curva suavizada ficar perto do caminho.
   A rota termina nos pontos exatos de origem e de destino.

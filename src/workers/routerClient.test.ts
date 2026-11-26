@@ -165,4 +165,28 @@ describe('createRouter', () => {
     expect(spawned[0].calls).toEqual(['setField', 'route', 'setField', 'route'])
     router.terminate()
   })
+  it('se o worker não pode ser criado, o pedido falha e a fila segue', async () => {
+    let first = true
+    const router = createRouter(() => {
+      if (first) {
+        first = false
+        throw new Error('sem worker')
+      }
+      return fakeWorker() as unknown as WorkerLike
+    })
+    await expect(router.setField(island())).rejects.toBeInstanceOf(RouterWorkerError)
+    expect(router.pendingCalls()).toBe(0)
+    // O campo do pedido que falhou vai antes da rota, no worker que agora foi criado.
+    expect((await router.route(near)).route).not.toBeNull()
+    router.terminate()
+  })
+
+  it('um campo que falha tira a grade anterior: a rota seguinte falha, em vez de usar o mapa velho', async () => {
+    const { router } = routerWith()
+    await router.setField(island())
+    const notSquare: RouteField = { ...island(), height: 32 }
+    await expect(router.setField(notSquare)).rejects.toThrow(/quadrado/)
+    await expect(router.route(near)).rejects.toThrow(/campo/)
+    router.terminate()
+  })
 })
