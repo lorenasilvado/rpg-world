@@ -279,6 +279,19 @@ for (const size of [
       await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
       await expect(page.getByTestId('scrim')).toBeVisible()
       await expect(page.getByTestId('road-drawer').getByRole('textbox', { name: 'Nome da estrada' })).toHaveValue('Trilha dos Pinheiros')
+      // O seletor do tipo de via cabe no painel de 320 px: cada rótulo numa linha, sem cortar.
+      const kinds = await page.getByTestId('road-kind').getByRole('button').evaluateAll((buttons) =>
+        buttons.map((b) => {
+          const range = document.createRange()
+          range.selectNodeContents(b)
+          // Uma caixa por linha do texto: o rótulo quebrado tem duas.
+          const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size
+          return { text: b.textContent, lines, cut: b.scrollWidth > b.clientWidth }
+        }),
+      )
+      expect(kinds).toEqual(['Estrada', 'Trilha', 'Rota marítima'].map((text) => ({ text, lines: 1, cut: false })))
+      const kindBox = await page.getByTestId('road-kind').boundingBox()
+      expect(kindBox!.x + kindBox!.width).toBeLessThanOrEqual(size.width)
       await page.getByRole('button', { name: 'Fechar detalhes' }).tap()
       await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'false')
       await expect(map).toHaveAttribute('data-road-selected', '')

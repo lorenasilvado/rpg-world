@@ -96,6 +96,8 @@ function RoadCard({
           <span id={`${ids}-tipo`} className="font-bold">
             Tipo de via
           </span>
+          {/* Abaixo de 768 px, o drawer tem 320 px: cada botão fica com a largura do texto, numa linha
+              só ("Rota marítima" não quebra); a partir de 768 px, os três iguais, como no protótipo. */}
           <div className="flex rounded-[10px] border border-line bg-sunken p-[3px]" data-testid="road-kind">
             {ROAD_KINDS.map((k) => {
               const on = road.kind === k.id
@@ -106,7 +108,7 @@ function RoadCard({
                   aria-pressed={on}
                   onClick={() => roads.getState().updateRoad(road.id, { kind: k.id })}
                   className={[
-                    'h-[34px] min-w-0 flex-1 rounded-[7px] px-1 text-[13px] font-bold text-ink',
+                    'h-[34px] min-w-0 flex-auto rounded-[7px] px-2 text-[13px] font-bold whitespace-nowrap text-ink desk:flex-1 desk:px-1',
                     'focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none',
                     on ? 'bg-paper-solid shadow-sm' : 'hover:bg-hover',
                   ].join(' ')}
