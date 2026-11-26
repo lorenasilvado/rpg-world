@@ -1,3 +1,4 @@
+import { Route } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { WORLD_SIZE, inDialog, isFieldTarget } from '../../render/camera'
@@ -9,6 +10,9 @@ import { CLICK_SLOP_PX, HINT_TOP_PX } from '../map/MeasureTool'
 import { clampToWorld, screenToWorld, worldToScreen } from '../map/measure'
 import { createVisiblePins } from '../pins/visiblePins'
 import { addDraftPoint, curvePath, draftToRoad, isDoubleTap, roadHint, type DraftPoint, type Tap } from './drawRoad'
+
+/** Distância mínima da dica às bordas laterais da área do mapa. */
+const HINT_GUTTER_PX = 12
 
 /**
  * Desenhar estrada (estradas.md, AC-F5-04, AC-F5-05). A tecla R (ouvida pelo `MeasureTool`, com as
@@ -23,8 +27,9 @@ import { addDraftPoint, curvePath, draftToRoad, isDoubleTap, roadHint, type Draf
  *
  * A prévia é um SVG por cima do mapa, sem eventos, que acompanha a câmera: a curva suavizada pelos
  * pontos, com o traço da estrada, os pontos marcados e, com o mouse, a linha tracejada do último ponto
- * até o cursor (ou até o pin sob ele). A dica, no topo da área do mapa, é a região `status`; numa
- * área estreita (celular), ela quebra em duas linhas.
+ * até o cursor (ou até o pin sob ele). A dica, no topo da área do mapa, é a região `status`: uma
+ * pílula escura com borda âmbar e o ícone da ferramenta, em 16/22 negrito, maior que a da Régua para
+ * não passar despercebida; numa área estreita (celular), ela quebra em linhas, a 12 px das bordas.
  */
 export function RoadTool({
   ui,
@@ -215,9 +220,10 @@ function RoadLayer({ ui, roads, pins, camera, disabled }: { ui: UiStore; roads: 
       <div
         role="status"
         data-testid="road-draw-status"
-        style={{ left: hintLeft, top: HINT_TOP_PX, maxWidth: Math.max(160, cam.view.width * cam.scale - 32) }}
-        className="absolute w-max -translate-x-1/2 rounded-[18px] bg-[#2B2420] px-3.5 py-2 text-center text-[13px]/[18px] font-semibold text-[#F7F1E3] shadow-md"
+        style={{ left: hintLeft, top: HINT_TOP_PX, maxWidth: Math.max(160, cam.view.width * cam.scale - HINT_GUTTER_PX * 2) }}
+        className="absolute flex w-max -translate-x-1/2 items-center gap-2.5 rounded-[22px] border-2 border-[#C8892B] bg-[#2B2420] py-3 pr-5 pl-4 text-[16px]/[22px] font-bold text-[#F7F1E3] shadow-lg"
       >
+        <Route aria-hidden size={20} strokeWidth={2.25} className="shrink-0 text-[#D99A3A]" />
         <span data-testid="road-draw-hint">{roadHint(draft)}</span>
       </div>
     </div>
