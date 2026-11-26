@@ -33,3 +33,4 @@ export { cutRivers, minLakeCells, traceHydrology, visibleLakes, type Hydrology }
 export { hillshade } from './world/shade'
 export { OASIS_LAKE_RADIUS, OASIS_RING_RADIUS, placeOases, type Oasis } from './world/oasis'
 export { depressions, seaWater, spillLevels, type Depressions, type SeaWater } from './world/water'
+export * from './routing'

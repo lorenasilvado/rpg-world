@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
-import type { BenchReport, Timing } from '../src/bench/report.ts'
+import type { BenchReport, RouteBenchReport, Timing } from '../src/bench/report.ts'
 
 // Desempenho da geração (#9, #45, #36, #90; RNF-2): a página /bench.html gera no worker, com o pipeline
 // completo, e mede. Os tempos são medianas depois de uma geração de aquecimento, e também num
@@ -99,5 +99,25 @@ test('a geração no worker atinge as metas, a prévia atualiza no arrasto e a U
     expect(report.map.maxFrameGap).toBeLessThan(100)
     expect(report.mainThread!.maxFrameGap).toBeGreaterThan(report.map.maxFrameGap)
   }
+  expect(errors).toEqual([])
+})
+
+test('a rota pelo terreno roda no worker de rota em até 300 ms num mapa 1024² (AC-F5-11)', async ({ page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/bench.html')
+  await page.getByRole('button', { name: 'Testar rotas' }).click()
+  await expect(page.locator('body')).toHaveAttribute('data-routes', 'done', { timeout: 110_000 })
+  const report = JSON.parse((await page.getByTestId('routes-report').textContent()) ?? '') as RouteBenchReport
+  test.info().annotations.push(
+    { type: 'máquina', description: `${report.machine.userAgent} · ${report.machine.cores} núcleos` },
+    { type: 'rota 1024²', description: `mediana ${report.median} ms, máx. ${report.max} ms, grade ${report.gridMs} ms` },
+  )
+  expect(report.size).toBe(1024)
+  expect(report.runs).toHaveLength(30)
+  // A maior parte dos pares sorteados tem caminho por terra.
+  expect(report.noPath).toBeLessThan(report.runs.length / 2)
+  if (CONFERE_TEMPO) expect(report.max).toBeLessThanOrEqual(report.targetMs)
   expect(errors).toEqual([])
 })

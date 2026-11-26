@@ -75,3 +75,27 @@ export type BenchReport = {
    */
   mainThread: { ms: number; maxFrameGap: number } | null
 }
+
+/** Meta da rota pelo terreno num mapa 1024², em ms (AC-F5-11). */
+export const ROUTE_TARGET_MS = 300
+
+/** Medição da rota pelo terreno (#249, AC-F5-11), no worker de rota, num mapa 1024². */
+export type RouteBenchReport = {
+  machine: { userAgent: string; cores: number }
+  seed: string
+  size: number
+  targetMs: typeof ROUTE_TARGET_MS
+  /** Tempo da grade de custo no worker (uma vez por campo), em ms. */
+  gridMs: number
+  /** Ida e volta de cada rota (pedido → resposta na thread principal), em ms. */
+  runs: number[]
+  median: number
+  max: number
+  /** Mediana e máximo do tempo da rota dentro do worker, em ms. */
+  workerMedian: number
+  workerMax: number
+  /** Rotas sem caminho por terra (a busca percorre toda a terra alcançável: o pior caso). */
+  noPath: number
+  /** Maior intervalo entre dois quadros da UI durante as rotas, em ms. */
+  maxFrameGap: number
+}
