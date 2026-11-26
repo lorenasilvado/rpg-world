@@ -136,3 +136,22 @@ test('em tela de toque, os campos do drawer têm 16 px ou mais, e o nome do pin 
   expect(sizes['Nome do pin']).toBe(21)
   for (const size of Object.values(sizes)) expect(size).toBeGreaterThanOrEqual(16)
 })
+
+// O mesmo para o drawer da estrada: o nome (21 px, com `!`) não cai para a fonte do pai.
+test('em tela de toque, os campos do drawer da estrada têm 16 px ou mais, e o nome da estrada continua com 21 px', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.setViewportSize(PORTRAIT)
+  const road = { id: 'r-centro', name: 'Estrada do Centro', kind: 'road', points: [{ u: 0.3, v: 0.5 }, { u: 0.5, v: 0.5 }, { u: 0.7, v: 0.5 }] }
+  await gotoEditor(page, '/', defaultWorld({ roads: [road] }))
+  test.skip(await page.getByTestId('no-webgl2').isVisible(), 'WebKit sem WebGL2 neste ambiente')
+  const map = page.getByTestId('map')
+  await expect(map).toHaveAttribute('data-terrain-size', '1024', { timeout: 30_000 })
+  const [x, y, w, h] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+  await page.touchscreen.tap(x + w / 2, y + h / 2)
+  await expect(map).toHaveAttribute('data-road-selected', road.id)
+  await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
+
+  const sizes = await textFieldFontSizes(page.getByTestId('road-drawer'))
+  expect(sizes['Nome da estrada']).toBe(21)
+  for (const size of Object.values(sizes)) expect(size).toBeGreaterThanOrEqual(16)
+})

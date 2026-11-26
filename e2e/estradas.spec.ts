@@ -278,6 +278,8 @@ for (const size of [
       await expect(map).toHaveAttribute('data-road-selected', 'r2')
       await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
       await expect(page.getByTestId('scrim')).toBeVisible()
+      // O painel desliza (200 ms) para dentro: as medidas abaixo valem com ele parado.
+      await expect(page.getByTestId('drawer')).toBeInViewport({ ratio: 1 })
       await expect(page.getByTestId('road-drawer').getByRole('textbox', { name: 'Nome da estrada' })).toHaveValue('Trilha dos Pinheiros')
       // O seletor do tipo de via cabe no painel de 320 px: cada rótulo numa linha, sem cortar.
       const kinds = await page.getByTestId('road-kind').getByRole('button').evaluateAll((buttons) =>
