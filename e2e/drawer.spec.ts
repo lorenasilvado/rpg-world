@@ -240,13 +240,16 @@ test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser c
   await clickPin(page, 0.45, 0.5)
   const panel = page.getByTestId('drawer')
   await expect(panel).toHaveAttribute('data-open', 'true')
-  // Depois de deslizar (200 ms), o painel cobre a tela de ponta a ponta.
+  // Depois de deslizar (200 ms), o painel tem a largura da sidebar (320 px), encostado à direita: não
+  // cobre a tela inteira, e uma faixa do mapa fica à vista à esquerda, como com a sidebar (#258).
   await expect
     .poll(async () => {
       const box = await panel.boundingBox()
       return box && [Math.round(box.x), Math.round(box.width)]
     })
-    .toEqual([0, 390])
+    .toEqual([70, 320])
+  const sidebarWidth = await page.getByTestId('sidebar').evaluate((el) => el.getBoundingClientRect().width)
+  expect(sidebarWidth).toBe(320)
   await expect(page.getByTestId('scrim')).toBeVisible()
   await expect(page.getByTestId('pin-drawer-place')).toBeVisible()
   await expect(description(page)).toHaveText('Capital do reino')
@@ -258,7 +261,23 @@ test('celular 390: o drawer é o painel sobreposto, e a ficha inteira pode ser c
   await page.getByRole('button', { name: 'Fechar detalhes' }).click()
   await clickPin(page, 0.45, 0.5)
   for (const label of ['Centralizar no pin', 'Duplicar', 'Excluir']) await expect(drawer(page).getByRole('button', { name: label })).toBeInViewport()
+  // Nos 320 px, os três botões do rodapé cabem inteiros, com o ícone (16 px) e o texto numa linha.
+  const footer = await drawer(page)
+    .locator('footer button')
+    .evaluateAll((buttons) => buttons.map((b) => [b.querySelector('svg')!.getBoundingClientRect().width, b.scrollWidth <= b.clientWidth, b.getBoundingClientRect().height]))
+  expect(footer).toEqual([
+    [16, true, 40],
+    [16, true, 40],
+    [16, true, 40],
+  ])
   await info.attach('drawer-390.png', { body: await page.screenshot(), contentType: 'image/png' })
+
+  // Tocar na faixa do mapa à vista (no scrim) fecha o painel, como com a sidebar.
+  await page.mouse.click(35, 422)
+  await expect(panel).toHaveAttribute('data-open', 'false')
+  await expect(page.getByTestId('scrim')).toHaveCount(0)
+  await clickPin(page, 0.45, 0.5)
+  await expect(panel).toHaveAttribute('data-open', 'true')
 
   // Centralizar fecha o painel para o mapa aparecer; o pin continua selecionado.
   await drawer(page).getByRole('button', { name: 'Centralizar no pin' }).click()
@@ -356,7 +375,13 @@ for (const size of [
     await clickPin(page, 0.45, 0.5)
     await expect(map(page)).toHaveAttribute('data-pin-selected', 'p-valdora')
     await expect(aside).toBeVisible()
-    await expect.poll(async () => (await aside.boundingBox())?.x).toBe(size.width - 400)
+    // A largura e a posição do design (400 px, encostado à direita) não mudam com o celular (#258).
+    await expect
+      .poll(async () => {
+        const box = await aside.boundingBox()
+        return box && [box.x, box.width, box.y, box.height]
+      })
+      .toEqual([size.width - 400, 400, 0, size.height])
     await expect.poll(async () => { const z = await zoomRight(); return size.width - 400 - (z.x + z.width) }).toBe(12)
     await expect.poll(async () => { const a = await actionsBox(); return size.width - 400 - (a.x + a.width) }).toBe(12)
     // Abrir o drawer não muda a porcentagem do zoom.

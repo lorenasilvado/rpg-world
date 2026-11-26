@@ -647,7 +647,10 @@ export function EditorLayout({
         data-open={drawerOpen}
         inert={sidebarOpen}
         className={[
-          'absolute inset-y-0 right-0 z-20 flex w-[min(var(--drawer-width),100vw)] flex-col',
+          // Abaixo de 768 px, com a largura da sidebar (320 px): no celular ele não cobre a tela
+          // inteira e deixa uma faixa do mapa à vista, como ela; o painel de tela inteira quebrava o
+          // zoom no iPhone (#258). A partir de 768 px, a largura do design (desk:).
+          'absolute inset-y-0 right-0 z-20 flex w-[min(var(--sidebar-width),100vw)] flex-col',
           'bg-paper-solid shadow-lg',
           // Ao fechar, a visibilidade entra na transição: o drawer some só depois de deslizar. Ao abrir,
           // não: ele fica visível na hora, e o foco pode ir para dentro dele (o nome do pin novo).

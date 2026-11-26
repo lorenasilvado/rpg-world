@@ -284,7 +284,9 @@ function PinCard({
         ))}
       </div>
 
-      <footer className="flex shrink-0 gap-2 border-t border-line px-4 py-3">
+      {/* Abaixo de 768 px, o drawer tem 320 px (#258): margem de 12 px e botões na largura do conteúdo,
+          para os três caberem com o ícone; a partir de 768 px, como no design (três iguais). */}
+      <footer className="flex shrink-0 gap-2 border-t border-line px-3 py-3 desk:px-4">
         <FooterButton label="Centralizar no pin" onClick={center}>
           <LocateFixed size={16} aria-hidden="true" />
           Centralizar
@@ -343,7 +345,7 @@ function FooterButton({
       title={label}
       onClick={onClick}
       className={[
-        'flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-control px-2 text-[13px] font-bold',
+        'flex h-10 min-w-0 flex-auto items-center justify-center gap-1.5 rounded-control px-2 text-[13px] font-bold whitespace-nowrap desk:flex-1 [&>svg]:shrink-0',
         'focus-visible:shadow-[0_0_0_2px_var(--paper-solid),0_0_0_4px_var(--amber)] focus-visible:outline-none',
         destructive
           ? 'bg-brick text-white hover:bg-[#9C2F25] active:bg-[#86281F]'
