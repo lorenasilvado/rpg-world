@@ -457,8 +457,11 @@ export function EditorLayout({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [anyOpen, pins, roads])
 
+  // overflow-clip, não overflow-hidden: com hidden, a raiz continua um contêiner de rolagem, e o foco
+  // num painel ainda fora da tela (o drawer em translate-x-full) a rola para o lado. No iPhone, ela
+  // não volta sozinha e o mapa fica deslocado.
   return (
-    <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
+    <div className="relative h-full overflow-clip bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
       <MapView ref={mapRef} world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} roads={roads} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={anyOpen} onDelete={deletePin} onDeleteRoad={deleteRoad} />
@@ -798,7 +801,8 @@ function isTextField(target: EventTarget | null) {
 
 /**
  * Ao abrir o painel, foca o botão de fechar (se o foco já não está dentro dele: o nome do pin novo,
- * em edição); ao fechar, devolve o foco a quem o abriu.
+ * em edição); ao fechar, devolve o foco a quem o abriu. Sem rolar: ao abrir, o painel ainda está
+ * fora da tela, no começo da transição.
  */
 function usePanelFocus(
   open: boolean,
@@ -808,9 +812,9 @@ function usePanelFocus(
   const wasOpen = useRef(false)
   useEffect(() => {
     if (open) {
-      if (!closeButton.current?.closest('aside')?.contains(document.activeElement)) closeButton.current?.focus()
+      if (!closeButton.current?.closest('aside')?.contains(document.activeElement)) closeButton.current?.focus({ preventScroll: true })
     }
-    else if (wasOpen.current) opener.current?.focus()
+    else if (wasOpen.current) opener.current?.focus({ preventScroll: true })
     wasOpen.current = open
   }, [open, closeButton, opener])
 }

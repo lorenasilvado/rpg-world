@@ -41,7 +41,7 @@ export function SearchDialog({
             const target = returnFocus?.current
             if (!target?.isConnected) return
             e.preventDefault()
-            target.focus()
+            target.focus({ preventScroll: true })
           }}
           data-testid="search-dialog"
           className={[
