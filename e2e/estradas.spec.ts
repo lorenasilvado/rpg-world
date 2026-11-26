@@ -188,6 +188,26 @@ test.describe('com o toque', () => {
     await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points.length).toBe(3)
     expect(await savedRoad(page, 'Nova estrada')).toMatchObject({ from: 'Alda', to: 'Brena' })
   })
+
+  // A dica da estrada (#279) é maior, mas cabe na tela do celular: quebra em linhas, a 12 px das bordas.
+  for (const [width, height] of [[360, 800], [390, 844]]) {
+    test(`a dica de Desenhar estrada cabe na tela, sem cortar o texto (AC-F5-04, ${width})`, async ({ page }) => {
+      await page.setViewportSize({ width, height })
+      const { map, at } = await importAndOpen(page)
+      await page.getByRole('button', { name: 'Desenhar estrada' }).tap()
+      await expect(map).toHaveAttribute('data-tool', 'road')
+      const start = at(0.3, 0.35)
+      await page.touchscreen.tap(start.x, start.y)
+      const hint = page.getByTestId('road-draw-hint')
+      await expect(hint).toHaveText('Clique para adicionar pontos · Enter ou duplo clique termina · Esc cancela')
+      const box = await page.getByTestId('road-draw-status').boundingBox()
+      expect(box).not.toBeNull()
+      expect(box!.x).toBeGreaterThanOrEqual(12 - 0.5)
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width - 12 + 0.5)
+      expect(await hint.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+      await expect(hint).toHaveCSS('font-size', '16px')
+    })
+  }
 })
 
 // Selecionar estrada e o drawer dela (#248, AC-F5-06 a AC-F5-08): clicar na Trilha dos Pinheiros a

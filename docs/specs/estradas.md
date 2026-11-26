@@ -36,7 +36,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Desenhando | Ferramenta "Desenhar estrada" ativa | Cursor em cruz; a dica "Clique no mapa ou num pin para começar a estrada" e, depois do primeiro ponto, "Clique para adicionar pontos · Enter ou duplo clique termina · Esc cancela"; a curva pelos pontos marcados, com o traço da estrada, os pontos (círculos claros com borda escura) e, com o mouse, a linha tracejada do último ponto até o cursor |
+| Desenhando | Ferramenta "Desenhar estrada" ativa | Cursor em cruz; no topo da área do mapa, a dica "Clique no mapa ou num pin para começar a estrada" e, depois do primeiro ponto, "Clique para adicionar pontos · Enter ou duplo clique termina · Esc cancela", numa pílula escura com borda âmbar de 2 px e o ícone da ferramenta, em Nunito 16/22 negrito (no celular, quebra em linhas a 12 px das bordas); a curva pelos pontos marcados, com o traço da estrada, os pontos (círculos claros com borda escura) e, com o mouse, a linha tracejada do último ponto até o cursor |
 | Selecionada | Clique numa estrada, ou a estrada recém-desenhada | Halo âmbar (13 px `#C8892B` a 55%, sob os traços); drawer da estrada aberto |
 | Vazio | Mundo sem estradas | Nada no mapa; a aba Conexões do pin diz "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)." |
 | Calculando | Rota automática ou "Conectar cidades" esperando o worker | Prévia tracejada âmbar em linha reta entre os pins (na rota) ou "Conectando…" na dica (na malha) |
