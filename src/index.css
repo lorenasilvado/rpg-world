@@ -153,3 +153,19 @@ aside[data-welcome-highlight='true'] {
   color: var(--ink-3);
   pointer-events: none;
 }
+
+/*
+ * Toque (iPhone): o Safari aproxima a página ao focar um campo com fonte menor que 16 px e não volta
+ * sozinho, nem ao girar a tela. Fora de @layer, esta regra vence os utilitários do Tailwind
+ * (`text-[13px]` etc.) em qualquer largura, inclusive no celular deitado acima de 768 px.
+ * Atenção: em font-size, `1em` é a fonte do pai, não a do campo. Um campo com mais de 16 px precisa
+ * do tamanho com `!` (ex.: `text-[21px]!`, o nome do pin), senão cai para max(16px, fonte do pai).
+ */
+@media (pointer: coarse) {
+  input:not([type='range'], [type='checkbox'], [type='radio']),
+  textarea,
+  select,
+  [contenteditable='true'] {
+    font-size: max(16px, 1em);
+  }
+}

@@ -188,13 +188,24 @@ for (const [label, width, height] of [
   })
 }
 
-test('celular 390: o campo da seed tem fonte de 16 px, para o iOS não aproximar a página ao focar; no desktop continua com 13 px (AC-F1-15)', async ({ page }) => {
-  await openEditor(page, 390, 844)
-  await page.getByRole('button', { name: 'Abrir painel' }).click()
-  const sections = page.getByTestId('sidebar-sections')
-  await expect(page.getByRole('textbox', { name: 'Seed' })).toBeVisible()
-  expect(await textFieldFontSizes(sections)).toEqual({ Seed: 16 })
+// O tamanho depende do toque, não da largura: no celular deitado (832 px no iPhone Pro Max) ainda é
+// toque, e o iOS aproximaria a página com 13 px (`pointer: coarse` em src/index.css).
+test.describe('tela de toque', () => {
+  test.use({ hasTouch: true, isMobile: true })
 
-  await page.setViewportSize({ width: 1440, height: 900 })
-  expect(await textFieldFontSizes(sections)).toEqual({ Seed: 13 })
+  test('em pé (390) e deitado (832): o campo da seed tem fonte de 16 px, para o iOS não aproximar a página ao focar (AC-F1-15)', async ({ page }) => {
+    await openEditor(page, 390, 844)
+    await page.getByRole('button', { name: 'Abrir painel' }).click()
+    const sections = page.getByTestId('sidebar-sections')
+    await expect(page.getByRole('textbox', { name: 'Seed' })).toBeVisible()
+    expect(await textFieldFontSizes(sections)).toEqual({ Seed: 16 })
+
+    await page.setViewportSize({ width: 832, height: 376 })
+    expect(await textFieldFontSizes(sections)).toEqual({ Seed: 16 })
+  })
+})
+
+test('desktop com mouse: o campo da seed tem fonte de 13 px (AC-F1-15)', async ({ page }) => {
+  await openEditor(page)
+  expect(await textFieldFontSizes(page.getByTestId('sidebar-sections'))).toEqual({ Seed: 13 })
 })

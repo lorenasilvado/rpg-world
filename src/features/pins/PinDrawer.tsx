@@ -415,7 +415,7 @@ function NameField({ pin, pins, edit, onEscape }: { pin: Pin; pins: PinsStore; e
           }
         }}
         maxLength={80}
-        className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7 font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
+        className="-mx-1.5 w-full rounded-control border border-transparent bg-transparent px-1.5 font-title text-[21px]/7! font-semibold text-ink hover:border-line-2 focus:border-amber focus:bg-field focus:shadow-[0_0_0_3px_var(--amber-soft)] focus:outline-none"
       />
     </>
   )
