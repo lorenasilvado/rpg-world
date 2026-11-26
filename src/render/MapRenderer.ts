@@ -152,6 +152,9 @@ export async function createMapRenderer(
     }
   })
   app.stage.addChild(camera.viewport)
+  // Ninguém escuta eventos do Pixi nos filhos da câmera (o hover e o clique dos pins são calculados
+  // pelo app): sem isso, cada movimento do ponteiro percorria os pins e a decoração (AC-F3-17).
+  camera.viewport.interactiveChildren = false
   // Terreno e decoração num grupo: o desfoque da prévia vale só para ele.
   const base = new Container()
   base.addChild(terrain.view)

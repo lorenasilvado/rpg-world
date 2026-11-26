@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Pin } from '../../persistence/types'
 import { createPinImages } from '../../state/pinImages'
 import { PIN_TYPES, type PinType } from '../../state/pinTypes'
-import { LABELS_PER_FRAME, PinLayer, type PinLayerState } from './PinLayer'
+import { COUNTS_WARMED, LABELS_PER_FRAME, LABELS_WARMED_PER_FRAME, PinLayer, type PinLayerState } from './PinLayer'
 
 const pin = (id: string, blobId: string): Pin => ({
   id,
@@ -114,7 +114,7 @@ describe('PinLayer: rótulos com muitos pins (AC-F3-17)', () => {
     expect(layer.labelCount).toBe(LABELS_PER_FRAME)
     layer.frame(2, 2, 16, true, whole)
     expect(layer.labelCount).toBe(2 * LABELS_PER_FRAME)
-    for (let i = 2; i < 5; i++) layer.frame(2, 2, i * 16, true, whole)
+    for (let i = 2; i < Math.ceil(100 / LABELS_PER_FRAME); i++) layer.frame(2, 2, i * 16, true, whole)
     expect(layer.labelCount).toBe(100)
     layer.destroy()
   })
@@ -132,5 +132,93 @@ describe('PinLayer: rótulos com muitos pins (AC-F3-17)', () => {
     layer.frame(2, 2, 64, true)
     expect(layer.labelCount).toBe(10 + LABELS_PER_FRAME + 1)
     layer.destroy()
+  })
+})
+
+describe('PinLayer: textos preparados antes (AC-F3-17)', () => {
+  const at = (id: string, u: number, name = id): Pin => ({
+    id,
+    type: 'cidade',
+    name,
+    pos: { u, v: 0.5 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  })
+  /** Um renderer falso: conta as texturas seguradas no cache de textos, por chave. */
+  function fakeRenderer() {
+    const refs = new Map<string, number>()
+    const uploads: unknown[] = []
+    const renderer = {
+      render: vi.fn(),
+      canvasText: {
+        getManagedTexture: (text: { styleKey: string }) => {
+          refs.set(text.styleKey, (refs.get(text.styleKey) ?? 0) + 1)
+          return Texture.EMPTY
+        },
+        decreaseReferenceCount: (key: string) => {
+          const n = (refs.get(key) ?? 0) - 1
+          if (n > 0) refs.set(key, n)
+          else refs.delete(key)
+        },
+      },
+      texture: { initSource: (source: unknown) => uploads.push(source) },
+    }
+    return { renderer, refs, uploads }
+  }
+  const layerWith = () => new PinLayer(new Map<PinType, Texture>(PIN_TYPES.map((t) => [t.id, Texture.EMPTY])))
+  const held = (refs: Map<string, number>, name: string) => [...refs.keys()].filter((k) => k.startsWith(`${name}:`)).length
+  /** As texturas seguradas que são de rótulos (os nomes dos pins começam por "p"). */
+  const labels = (refs: Map<string, number>) => [...refs.keys()].filter((k) => k.startsWith('p')).length
+
+  it(`prepara ${LABELS_WARMED_PER_FRAME} rótulos por quadro, escondidos abaixo de 1,5×, e envia a textura à GPU`, () => {
+    const { renderer, refs, uploads } = fakeRenderer()
+    const layer = layerWith()
+    layer.warmUp(renderer as never)
+    const pins = Array.from({ length: 10 }, (_, i) => at(`p${i}`, 0.05 + i * 0.09))
+    layer.sync(state(pins), 0)
+    const before = uploads.length
+    layer.frame(1, 1, 0, true)
+    expect(labels(refs)).toBe(LABELS_WARMED_PER_FRAME)
+    expect(uploads).toHaveLength(before + LABELS_WARMED_PER_FRAME)
+    expect(layer.labelCount).toBe(0)
+    layer.frame(1, 1, 16, true)
+    layer.frame(1, 1, 32, true)
+    expect(labels(refs)).toBe(10)
+    layer.destroy()
+  })
+
+  it('renomear solta a textura do nome antigo e segura a do novo; o pin que sai solta a dele; destroy solta tudo', () => {
+    const { renderer, refs } = fakeRenderer()
+    const layer = layerWith()
+    layer.warmUp(renderer as never)
+    layer.sync(state([at('a', 0.3, 'Valdora'), at('b', 0.6, 'Vau')]), 0)
+    layer.frame(1, 1, 0, true)
+    expect(held(refs, 'Valdora')).toBe(1)
+    layer.sync(state([at('a', 0.3, 'Valdora Alta'), at('b', 0.6, 'Vau')]), 16)
+    expect(held(refs, 'Valdora')).toBe(0)
+    expect(held(refs, 'Valdora Alta')).toBe(1)
+    // O pin excluído encolhe e, depois de sumir, solta a textura.
+    layer.sync(state([at('a', 0.3, 'Valdora Alta')]), 32)
+    layer.frame(1, 1, 1000, true)
+    expect(held(refs, 'Vau')).toBe(0)
+    layer.destroy()
+    expect(refs.size).toBe(0)
+  })
+
+  it('a textura de cada número de grupo fica segura, para não ser redesenhada quando os grupos mudam', () => {
+    const { renderer, refs } = fakeRenderer()
+    const layer = layerWith()
+    layer.warmUp(renderer as never)
+    // Os números de 2 a COUNTS_WARMED ficam prontos já no warmUp.
+    for (const n of [2, COUNTS_WARMED]) expect(held(refs, String(n))).toBe(1)
+    expect(held(refs, String(COUNTS_WARMED + 1))).toBe(0)
+    layer.sync(state([at('a', 0.5), at('b', 0.505), at('c', 0.51), at('d', 0.9)]), 0)
+    layer.frame(0.5, 0.6, 0, true)
+    expect(layer.groups.map((g) => g.ids.length)).toEqual([3])
+    expect(held(refs, '3')).toBe(1)
+    layer.destroy()
+    expect(refs.size).toBe(0)
   })
 })
