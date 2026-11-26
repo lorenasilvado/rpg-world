@@ -166,6 +166,18 @@ test('com movimento reduzido, o pin selecionado não pulsa (sem quique nem pulsa
   test.setTimeout(90_000)
   await gotoEditor(page, '/', sevenPins())
   await waitFinalMap(page)
+  await clickPin(page, 0.35, 0.5)
+  await page.mouse.move(10, 450)
+  // Selecionar leva a câmera até o pin: a área do print é medida depois que ela para, onde o pin está.
+  let rect: string | null = null
+  await expect
+    .poll(async () => {
+      const prev = rect
+      await page.waitForTimeout(200)
+      rect = await map(page).getAttribute('data-map-rect')
+      return prev === rect
+    })
+    .toBe(true)
   const p = await screenOf(page, 0.35, 0.5)
   const clip = { x: p.x - 40, y: p.y - 50, width: 80, height: 70 }
   const differs = async () => {
@@ -173,9 +185,6 @@ test('com movimento reduzido, o pin selecionado não pulsa (sem quique nem pulsa
     await page.waitForTimeout(400)
     return !a.equals(await page.screenshot({ clip }))
   }
-  await clickPin(page, 0.35, 0.5)
-  await page.mouse.move(10, 450)
-  await page.waitForTimeout(500)
   expect(await differs(), 'sem movimento reduzido, a pulsação anima').toBe(true)
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
