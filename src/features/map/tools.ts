@@ -7,7 +7,7 @@ export type Tool = {
   icon: LucideIcon
   /** Tecla do atalho, mostrada no tooltip (design-system.md → Ícones de interface). */
   shortcut?: string
-  /** A função ainda não existe (estradas e rotas no M3). */
+  /** A função ainda não existe (a rota automática, no M3). */
   disabled?: boolean
 }
 
@@ -15,7 +15,7 @@ export type Tool = {
 export const TOOLS: readonly Tool[] = [
   { id: 'nav', label: 'Navegar', icon: Hand, shortcut: 'V' },
   { id: 'pin', label: 'Adicionar pin', icon: MapPinPlus, shortcut: 'P' },
-  { id: 'road', label: 'Desenhar estrada', icon: Route, shortcut: 'R', disabled: true },
+  { id: 'road', label: 'Desenhar estrada', icon: Route, shortcut: 'R' },
   { id: 'route', label: 'Rota automática', icon: Waypoints, shortcut: 'A', disabled: true },
   { id: 'layers', label: 'Camadas', icon: Layers },
   { id: 'measure', label: 'Medir distância', icon: Ruler, shortcut: 'M' },

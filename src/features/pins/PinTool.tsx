@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { inDialog, isFieldTarget } from '../../render/camera'
-import { GROUP_FOCUS_ZOOM, createPinGrouper, groupAt } from '../../render/layers/pinGroups'
-import { pinAt, pinToScreen, screenToPin, screenToPinClamped } from '../../render/layers/pinMath'
-import type { Pin } from '../../persistence/types'
+import { GROUP_FOCUS_ZOOM } from '../../render/layers/pinGroups'
+import { pinToScreen, screenToPin, screenToPinClamped } from '../../render/layers/pinMath'
 import type { CameraStore } from '../../state/cameraStore'
 import type { PinsStore } from '../../state/pinsStore'
-import type { UiStore } from '../../state/uiStore'
+import type { MapTool, UiStore } from '../../state/uiStore'
 import { CLICK_SLOP_PX } from '../map/MeasureTool'
+import { createVisiblePins } from './visiblePins'
 
 /** O elemento da área do mapa sob o evento (`null` fora dela: painéis, barras, minimapa). */
 function mapUnder(target: EventTarget | null): HTMLElement | null {
@@ -19,7 +19,7 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * clique (o ponteiro anda até `CLICK_SLOP_PX`; mais que isso é pan) num pin o seleciona, com Navegar
  * ou Adicionar pin. Com Adicionar pin, um clique no mapa fora dos pins cria um pin ali (`addPin`), que
  * já fica selecionado, e a ferramenta volta para Navegar. Com Medir distância, os cliques são da
- * medida. O mouse sobre um pin o marca em `hoveredId` (o renderer o aumenta e mostra o nome).
+ * medida; com Desenhar estrada, do desenho (`RoadTool`: o clique num pin liga a ponta a ele). O mouse sobre um pin o marca em `hoveredId` (o renderer o aumenta e mostra o nome).
  *
  * Apertar num pin e andar mais que `CLICK_SLOP_PX` o arrasta (`dragTo`), com o ponto onde ele foi
  * pego preso ao ponteiro, e soltar o deixa ali (`endDrag`): a posição fica presa entre 0 e 1. O
@@ -90,19 +90,10 @@ export function PinTool({
       const rect = map.getBoundingClientRect()
       return { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
-    const grouper = createPinGrouper<Pin>()
     /** Os pins soltos à vista e os grupos, como o renderer os desenha. */
-    const visible = () => {
-      const s = pins.getState()
-      const cam = camera.getState()
-      const g = grouper(s.pins, ui.getState().layers, cam.scale, cam.zoom, s.selectedId, s.dragging?.id ?? null)
-      return { singles: g.grouped.size ? g.shown.filter((p) => !g.grouped.has(p.id)) : g.shown, groups: g.groups }
-    }
-    const under = (x: number, y: number) => {
-      const s = pins.getState()
-      return pinAt(x, y, visible().singles, camera.getState(), s.selectedId, s.hoveredId)
-    }
-    const groupUnder = (x: number, y: number) => groupAt(x, y, visible().groups, camera.getState())
+    const visible = createVisiblePins(ui, pins, camera)
+    const under = visible.pinAt
+    const groupUnder = visible.groupAt
     /** O pan da câmera está seguro por um aperto num pin. */
     let panHeld = false
     const holdPan = (held: boolean) => {
@@ -125,7 +116,7 @@ export function PinTool({
         return
       }
       press = e.button === 0 ? { id: e.pointerId, x: e.clientX, y: e.clientY, pin: null, dragging: false } : null
-      if (!press || ui.getState().tool === 'measure' || !camera.getState().ready) return
+      if (!press || !clicksPins(ui.getState().tool) || !camera.getState().ready) return
       const at = local(e, map)
       const hit = under(at.x, at.y)
       if (!hit) return
@@ -146,7 +137,7 @@ export function PinTool({
       }
       const map = mapUnder(e.target) ?? mapUnder(document.elementFromPoint?.(e.clientX, e.clientY) ?? null)
       const tool = ui.getState().tool
-      if (!map || tool === 'measure' || Math.hypot(e.clientX - p.x, e.clientY - p.y) > CLICK_SLOP_PX || !camera.getState().ready) return
+      if (!map || !clicksPins(tool) || Math.hypot(e.clientX - p.x, e.clientY - p.y) > CLICK_SLOP_PX || !camera.getState().ready) return
       const at = local(e, map)
       const hit = p.pin ? pins.getState().pins.find((x) => x.id === p.pin?.id) : under(at.x, at.y)
       if (hit) {
@@ -239,6 +230,11 @@ export function PinTool({
   }, [ui, pins, camera, disabled])
 
   return null
+}
+
+/** Se os cliques nos pins são do `PinTool`: com Medir distância ou Desenhar estrada, são da ferramenta. */
+function clicksPins(tool: MapTool): boolean {
+  return tool !== 'measure' && tool !== 'road'
 }
 
 /** Se o alvo do teclado está dentro do drawer do pin (`data-pin-drawer`). */

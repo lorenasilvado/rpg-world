@@ -15,6 +15,7 @@ import { PinsOnWaterToast } from '../features/pins/PinsOnWaterToast'
 import { pinsOnWater } from '../features/pins/place'
 import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
+import { RoadTool } from '../features/roads/RoadTool'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { ExportMenu } from '../features/worlds/ExportMenu'
@@ -68,7 +69,8 @@ import { useTheme } from './useTheme'
  * lado a lado: tablet com a sidebar aberta) e o toast. O minimapa e o zoom leem a câmera do
  * renderer (`cameraStore.ts`). A toolbar de ferramentas (`MapToolbar`) fica no centro da linha, numa
  * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`). A
- * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa.
+ * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa, e a
+ * Desenhar estrada (`RoadTool`, tecla R), o desenho da estrada (estradas.md).
  *
  * Os pins (`pins`, pins.md): o renderer os desenha, e o `PinTool` cria (Adicionar pin, tecla P) e
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
@@ -414,6 +416,7 @@ export function EditorLayout({
       <MapView ref={mapRef} world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} roads={roads} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
+      {roads && <RoadTool ui={ui} roads={roads} pins={pins} camera={camera} disabled={anyOpen} />}
 
       <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
       <div

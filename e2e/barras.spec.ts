@@ -37,19 +37,18 @@ test('a barra superior e a toolbar: funções que ainda não existem desabilitad
   const toolbar = page.getByRole('toolbar', { name: 'Ferramentas' })
   await expect(toolbar.getByRole('button', { name: 'Navegar' })).toHaveAttribute('aria-pressed', 'true')
   await expect(toolbar.getByRole('button', { name: 'Navegar' })).toHaveCSS('background-color', 'rgb(200, 137, 43)')
-  for (const name of ['Desenhar estrada', 'Rota automática']) {
-    await expect(toolbar.getByRole('button', { name })).toBeDisabled()
-    await expect(toolbar.getByRole('button', { name })).toHaveCSS('opacity', '0.55')
-  }
+  await expect(toolbar.getByRole('button', { name: 'Rota automática' })).toBeDisabled()
+  await expect(toolbar.getByRole('button', { name: 'Rota automática' })).toHaveCSS('opacity', '0.55')
   await expect(toolbar.getByRole('button', { name: 'Adicionar pin' })).toBeEnabled()
+  await expect(toolbar.getByRole('button', { name: 'Desenhar estrada' })).toBeEnabled()
   await expect(toolbar.getByRole('button', { name: 'Camadas' })).toBeEnabled()
   await expect(toolbar.getByRole('button', { name: 'Medir distância' })).toBeEnabled()
 
   // Hover numa ferramenta (mesmo desabilitada) mostra o tooltip com o atalho.
   await toolbar.getByRole('button', { name: 'Adicionar pin' }).hover()
   await expect(page.getByRole('tooltip')).toHaveText('Adicionar pinP')
-  await toolbar.getByRole('button', { name: 'Desenhar estrada' }).hover({ force: true })
-  await expect(page.getByRole('tooltip')).toHaveText('Desenhar estradaR')
+  await toolbar.getByRole('button', { name: 'Rota automática' }).hover({ force: true })
+  await expect(page.getByRole('tooltip')).toHaveText('Rota automáticaA')
 })
 
 test('o foco do teclado numa ferramenta habilitada mostra o tooltip; o Tab pula as desabilitadas (AC-F2-10)', async ({ page }) => {
@@ -61,9 +60,12 @@ test('o foco do teclado numa ferramenta habilitada mostra o tooltip; o Tab pula 
   await page.keyboard.press('Tab')
   await expect(toolbar.getByRole('button', { name: 'Navegar' })).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('NavegarV')
-  // Do Navegar, o Tab vai para Adicionar pin e dele direto para Camadas (as duas desabilitadas não recebem foco).
+  // Do Navegar, o Tab vai para Adicionar pin, Desenhar estrada e dele direto para Camadas (Rota automática, desabilitada, não recebe foco).
   await page.keyboard.press('Tab')
   await expect(toolbar.getByRole('button', { name: 'Adicionar pin' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(toolbar.getByRole('button', { name: 'Desenhar estrada' })).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Desenhar estradaR')
   await page.keyboard.press('Tab')
   await expect(toolbar.getByRole('button', { name: 'Camadas' })).toBeFocused()
   await expect(page.getByRole('tooltip')).toHaveText('Camadas')
@@ -169,7 +171,7 @@ test('Ajuda abre o modal "Atalhos de teclado"; Esc fecha e devolve o foco; ? tam
   await help.click()
   const dialog = page.getByRole('dialog', { name: 'Atalhos de teclado' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator('dt')).toHaveText(['Navegar', 'Adicionar pin', 'Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Excluir pin', 'Buscar pins', 'Desfazer', 'Refazer', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
+  await expect(dialog.locator('dt')).toHaveText(['Navegar', 'Adicionar pin', 'Desenhar estrada', 'Medir distância', 'Mover o mapa', 'Zoom', 'Centralizar mapa', 'Excluir pin', 'Buscar pins', 'Desfazer', 'Refazer', 'Recolher painel', 'Cancelar / fechar', 'Atalhos'])
   // Duas colunas a partir de 640 px: "Adicionar pin" fica ao lado de "Navegar", na mesma linha.
   const first = (await dialog.locator('dt').nth(0).boundingBox())!
   const second = (await dialog.locator('dt').nth(1).boundingBox())!

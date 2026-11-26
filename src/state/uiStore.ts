@@ -10,10 +10,11 @@ import { PIN_TYPES, type PinType } from './pinTypes'
 export type MapLayer = 'decor' | 'roads' | PinType
 
 /**
- * Ferramenta do mapa em uso: navegar (pan e zoom), adicionar pin (pins.md, AC-F3-01) ou medir
+ * Ferramenta do mapa em uso: navegar (pan e zoom), adicionar pin (pins.md, AC-F3-01), desenhar
+ * estrada (estradas.md, AC-F5-04) ou medir
  * distância (navegacao.md, AC-F2-13).
  */
-export type MapTool = 'nav' | 'pin' | 'measure'
+export type MapTool = 'nav' | 'pin' | 'road' | 'measure'
 
 export type UiState = {
   /** Camadas do mapa à vista (todas ligadas ao abrir). */

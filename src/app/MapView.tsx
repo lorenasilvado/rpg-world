@@ -32,7 +32,7 @@ const createPixiRenderer: CreateMapRenderer = (host, world, insets, ui, camera, 
  * fica `aria-busy` e `data-blurred`; o desfoque do terreno e da decoração é do renderer (AC-F1-18).
  * O renderer publica a câmera no `camera`, e o `MapView` registra nele os comandos do renderer que
  * guardou (o minimapa e o controle de zoom leem e comandam por ele). Com a ferramenta Medir distância
- * (`tool` do `ui`) e com Adicionar pin, o cursor sobre o mapa é a cruz, e a ferramenta fica em
+ * (`tool` do `ui`), com Adicionar pin e com Desenhar estrada, o cursor sobre o mapa é a cruz, e a ferramenta fica em
  * `data-tool`. O renderer desenha os pins do `pins`; com o mouse sobre um pin, o cursor é a mãozinha, e
  * arrastando um pin, a mão fechada; sobre um grupo de pins, a lupa. As imagens enviadas dos pins (`images`) e as estradas (`roads`) vão para o renderer.
  */
@@ -105,7 +105,7 @@ export function MapView({
       data-tool={tool}
       aria-busy={blurred}
       inert={inert}
-      className={`absolute inset-0 bg-map-canvas outline-none ${draggingPin ? 'cursor-grabbing' : overPin ? 'cursor-pointer' : overGroup ? 'cursor-zoom-in' : tool === 'measure' || tool === 'pin' ? 'cursor-crosshair' : ''}`}
+      className={`absolute inset-0 bg-map-canvas outline-none ${draggingPin ? 'cursor-grabbing' : overPin ? 'cursor-pointer' : overGroup ? 'cursor-zoom-in' : tool === 'measure' || tool === 'pin' || tool === 'road' ? 'cursor-crosshair' : ''}`}
     />
   )
 }
