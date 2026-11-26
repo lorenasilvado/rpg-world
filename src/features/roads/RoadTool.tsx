@@ -221,7 +221,7 @@ function RoadLayer({ ui, roads, pins, camera, disabled }: { ui: UiStore; roads: 
         role="status"
         data-testid="road-draw-status"
         style={{ left: hintLeft, top: HINT_TOP_PX, maxWidth: Math.max(160, cam.view.width * cam.scale - HINT_GUTTER_PX * 2) }}
-        className="absolute flex w-max -translate-x-1/2 items-center gap-2.5 rounded-[22px] border-2 border-[#C8892B] bg-[#2B2420] py-3 pr-5 pl-4 text-[16px]/[22px] font-bold text-[#F7F1E3] shadow-lg"
+        className="absolute flex w-max -translate-x-1/2 items-center gap-2.5 rounded-[22px] border-2 border-[#D99A3A] bg-[#2B2420] py-3 pr-5 pl-4 text-[16px]/[22px] font-bold text-[#F7F1E3] shadow-lg"
       >
         <Route aria-hidden size={20} strokeWidth={2.25} className="shrink-0 text-[#D99A3A]" />
         <span data-testid="road-draw-hint">{roadHint(draft)}</span>
