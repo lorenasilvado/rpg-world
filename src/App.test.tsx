@@ -593,3 +593,97 @@ describe('Aviso de pins sobre a água (AC-F1-30)', () => {
     expect(px(toast()!)).toBe(px(screen.getByTestId('pin-deleted-toast')) + TOAST_HEIGHT + BAR_GAP)
   })
 })
+
+describe('Fechar o drawer do pin a partir de 768 px (#189)', () => {
+  const pin: Pin = {
+    id: 'v',
+    type: 'cidade',
+    name: 'Valdora',
+    pos: { u: 0.5, v: 0.5 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  }
+
+  beforeEach(() => {
+    const narrow = window.matchMedia
+    window.matchMedia = ((query: string) => ({ ...narrow(query), matches: true })) as typeof window.matchMedia
+  })
+
+  function editor() {
+    const pins = createPinsStore([pin])
+    render(<App world={world()} pins={pins} createRenderer={noRenderer} />)
+    act(() => pins.getState().select('v'))
+    return { pins }
+  }
+
+  it('pelo botão Fechar, o foco vai para o mapa, não para o body', () => {
+    const { pins } = editor()
+    const close = within(screen.getByTestId('pin-drawer')).getByRole('button', { name: 'Fechar' })
+    close.focus()
+    fireEvent.click(close)
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.queryByTestId('pin-drawer')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByTestId('map'))
+  })
+
+  it('pelo Esc no nome, o foco vai para o mapa, que deixa de ser focável ao perder o foco', () => {
+    const { pins } = editor()
+    const name = screen.getByRole('textbox', { name: 'Nome do pin' })
+    name.focus()
+    fireEvent.keyDown(name, { key: 'Escape' })
+    expect(pins.getState().selectedId).toBeNull()
+    const mapEl = screen.getByTestId('map')
+    expect(document.activeElement).toBe(mapEl)
+    act(() => mapEl.blur())
+    expect(mapEl.hasAttribute('tabindex')).toBe(false)
+  })
+})
+
+describe('Fechar o drawer do pin abaixo de 768 px (#189)', () => {
+  const pin: Pin = {
+    id: 'v',
+    type: 'cidade',
+    name: 'Valdora',
+    pos: { u: 0.5, v: 0.5 },
+    icon: { kind: 'builtin', key: 'cidade' },
+    description: '',
+    tags: [],
+    fields: {},
+  }
+
+  // Sem o override do matchMedia: abaixo de 768 px, selecionar o pin abre o painel sobreposto.
+  function editor() {
+    const pins = createPinsStore([pin])
+    render(<App world={world()} pins={pins} createRenderer={noRenderer} />)
+    act(() => pins.getState().select('v'))
+    expect(screen.getByTestId('drawer').dataset.open).toBe('true')
+    // O mapa fica inerte com o painel aberto (o jsdom não aplica o inert): ele não recebe o foco nem de passagem.
+    const mapFocus = vi.fn()
+    screen.getByTestId('map').addEventListener('focus', mapFocus)
+    return { pins, mapFocus }
+  }
+
+  it('pelo Esc no nome, o painel fecha e o foco vai para o Abrir detalhes, não para o mapa', () => {
+    const { pins, mapFocus } = editor()
+    const name = screen.getByRole('textbox', { name: 'Nome do pin' })
+    name.focus()
+    fireEvent.keyDown(name, { key: 'Escape' })
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.getByTestId('drawer').dataset.open).toBe('false')
+    expect(mapFocus).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    expect(screen.getByTestId('map').hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('pelo Fechar detalhes do painel, o foco vai para o Abrir detalhes, não para o mapa', () => {
+    const { pins, mapFocus } = editor()
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    expect(pins.getState().selectedId).toBeNull()
+    expect(screen.getByTestId('drawer').dataset.open).toBe('false')
+    expect(mapFocus).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Abrir detalhes' }))
+    expect(screen.getByTestId('map').hasAttribute('tabindex')).toBe(false)
+  })
+})

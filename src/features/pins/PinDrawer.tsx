@@ -47,6 +47,9 @@ type TabId = (typeof TABS)[number]['id']
  * selecionado). O nome muda a cada tecla; um nome vazio não fica: ao sair do campo, volta o último
  * nome. Fora do foco, o campo acompanha o nome do pin (desfazer e refazer). Enter sai do campo; Esc,
  * nele, fecha o drawer.
+ *
+ * Fechar pelo botão ou pelo Esc no nome chama `onClose` depois de tirar a seleção: o drawer some com o
+ * foco dentro, e quem o mostra decide para onde o foco vai (a partir de 768 px, o mapa).
  */
 export function PinDrawer({
   pins,
@@ -55,6 +58,7 @@ export function PinDrawer({
   camera,
   onDelete,
   onCentered,
+  onClose,
   resizeImage,
 }: {
   pins: PinsStore
@@ -66,6 +70,8 @@ export function PinDrawer({
   onDelete: (id: string) => void
   /** Depois do Centralizar (abaixo de 768 px, o painel sobreposto fecha para o mapa aparecer). */
   onCentered?: () => void
+  /** Depois de fechar pelo botão ou pelo Esc no nome (o pin já sem seleção). */
+  onClose?: () => void
   /** Reduz a imagem enviada (os testes do jsdom, sem canvas, trocam). */
   resizeImage?: (file: Blob) => Promise<Blob>
 }) {
@@ -98,6 +104,7 @@ export function PinDrawer({
       onOpenedHandled={() => setOpened(null)}
       onDelete={onDelete}
       onCentered={onCentered}
+      onClose={onClose}
     />
   )
 }
@@ -117,6 +124,7 @@ function PinCard({
   onOpenedHandled,
   onDelete,
   onCentered,
+  onClose,
 }: {
   pin: Pin
   pins: PinsStore
@@ -137,6 +145,7 @@ function PinCard({
   onOpenedHandled: () => void
   onDelete: (id: string) => void
   onCentered?: () => void
+  onClose?: () => void
 }) {
   const type = pinType(pin.type)
   const chip = typeChipColors(PIN_SHAPES[type])
@@ -154,7 +163,10 @@ function PinCard({
     onOpenedHandled()
   }, [openedFromConnections, onOpenedHandled])
 
-  const close = () => pins.getState().select(null)
+  const close = () => {
+    pins.getState().select(null)
+    onClose?.()
+  }
   const center = () => {
     const p = pinToWorld(pin.pos)
     camera.getState().controls?.focusOn(p.x, p.y, CENTER_PIN_ZOOM)

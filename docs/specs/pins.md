@@ -152,7 +152,7 @@ do banco.
 | Escolher um resultado da busca (Enter ou clique) | Fecha a busca, seleciona o pin (o drawer abre) e leva a câmera até ele como o Centralizar: desliza (350 ms) até o centro da área livre, aproximando até o zoom 1,6× se estiver mais longe; perto da borda do mapa, para no limite do pan. Um pin de tipo escondido em Camadas aparece, por estar selecionado. A partir de 768 px, o foco volta a quem o tinha ao abrir a busca (sem ninguém, o Buscar da barra); abaixo, o painel sobreposto abre com a ficha, e o foco vai para o fechar dele |
 | Fechar a busca (Esc ou clique fora) | Fecha sem mudar a seleção; o foco volta a quem o tinha ao abrir |
 | Clicar num grupo (Navegar ou Adicionar pin) | A câmera desliza (350 ms) até o ponto médio do grupo, no centro da área livre, no zoom 1,3× (os pins se soltam); não seleciona nem cria pin |
-| Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. Esc com Adicionar pin e sem pin selecionado volta para Navegar |
+| Fechar o drawer (Esc, o botão fechar ou, abaixo de 768 px, o scrim) | Fecha o drawer e tira a seleção. A partir de 768 px, fechar pelo botão ou pelo Esc no nome leva o foco ao mapa; abaixo, o painel sobreposto fecha e o foco vai para o Abrir detalhes da barra superior. Esc com Adicionar pin e sem pin selecionado volta para Navegar |
 
 ## Regras
 
