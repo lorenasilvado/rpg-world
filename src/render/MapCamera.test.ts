@@ -274,6 +274,41 @@ describe('MapCamera', () => {
     now.mockRestore()
   })
 
+  it('moving: vale desde o fechar do drawer, antes de qualquer quadro, até o fim do deslizamento', () => {
+    const area = { x: 320, y: 0, width: 1120, height: 900 }
+    const { camera, last, viewport } = setup(area)
+    const now = vi.spyOn(performance, 'now')
+    now.mockReturnValue(1000)
+    camera.showWorld()
+    expect(camera.moving).toBe(false)
+    camera.setRightCover(400)
+    camera.panTo(820, 460)
+    expect(camera.moving).toBe(true)
+    now.mockReturnValue(1400)
+    viewport.emit('frame-end')
+    expect(camera.moving).toBe(false)
+
+    // Fechar o drawer começa a volta aos limites: sem nenhum quadro ainda, a posição não mudou, mas a
+    // câmera vai andar.
+    const before = last().t
+    camera.setRightCover(0)
+    expect(camera.moving).toBe(true)
+    expect(last().t).toEqual(before)
+    now.mockReturnValue(1575)
+    viewport.emit('frame-end')
+    expect(camera.moving).toBe(true)
+    now.mockReturnValue(1800)
+    viewport.emit('frame-end')
+    expect(last().t.x).toBeCloseTo(320)
+    expect(camera.moving).toBe(false)
+
+    // Dentro dos limites, abrir e fechar não deixa nada pendente.
+    camera.setRightCover(400)
+    camera.setRightCover(0)
+    expect(camera.moving).toBe(false)
+    now.mockRestore()
+  })
+
   /** 1440 × 900 com a sidebar, o drawer aberto e o mapa na esquerda dele (x 140), parado. */
   function drawerOpenAtLeft() {
     const area = { x: 320, y: 0, width: 1120, height: 900 }

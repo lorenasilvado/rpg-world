@@ -197,14 +197,14 @@ test('selecionar, renomear, trocar o tipo, excluir e desfazer a estrada (AC-F5-0
   await page.setViewportSize({ width: 1440, height: 900 })
   const { map } = await importAndOpen(page)
   // O ponto do mapa (u, v) na página, lido de novo a cada vez: a câmera desliza quando o drawer abre
-  // ou fecha, então espera o retângulo do mapa parar (duas leituras iguais seguidas).
+  // ou fecha, então espera ela parar (sem deslizamento pendente e duas leituras iguais seguidas).
   const at = async (u: number, v: number) => {
     let rect = ''
     await expect
       .poll(async () => {
         const before = rect
         rect = (await map.getAttribute('data-map-rect')) ?? ''
-        return rect !== '' && rect === before
+        return rect !== '' && rect === before && (await map.getAttribute('data-camera-moving')) === 'false'
       }, { intervals: [150] })
       .toBe(true)
     const [x, y, width, height] = rect.split(',').map(Number)

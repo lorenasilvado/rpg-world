@@ -124,6 +124,15 @@ export class MapCamera {
     this.settle()
   }
 
+  /**
+   * A câmera ainda vai andar sozinha: um deslizamento em curso, ou a volta aos limites do drawer que
+   * acabou de fechar. O deslizamento é medido no tempo, e a posição só muda a cada quadro: com os
+   * quadros atrasados, a posição parada não quer dizer que a câmera parou.
+   */
+  get moving(): boolean {
+    return this.tween !== null || this.pendingCover !== null
+  }
+
   /** A tela ou os painéis mudaram: mantém o ponto no centro da área livre e o zoom relativo. */
   resize(width: number, height: number) {
     const before = this.currentView()

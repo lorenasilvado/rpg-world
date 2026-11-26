@@ -51,7 +51,8 @@ export type MapRenderer = {
  *
  * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
- * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre), o desfoque atual do terreno em px
+ * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre), se a câmera ainda vai andar sozinha
+ * (um deslizamento em curso) em `data-camera-moving` (`true` ou `false`), o desfoque atual do terreno em px
  * em `data-map-blur` (de 0 a 3, uma casa decimal); da decoração, os ícones com desenho
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
  * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não é desenhado,
@@ -145,7 +146,16 @@ export async function createMapRenderer(
   const pinLayer = pinTextures ? new PinLayer(pinTextures, images) : null
   const roadLayer = new RoadLayer()
   const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
+  /**
+   * Escreve em `data-camera-moving` se a câmera ainda vai andar sozinha (`MapCamera.moving`): a cada
+   * quadro e logo que um deslizamento começa, antes do próximo quadro.
+   */
+  const writeMoving = (moving: boolean) => {
+    const value = String(moving)
+    if (host.dataset.cameraMoving !== value) host.dataset.cameraMoving = value
+  }
+  const camera: MapCamera = new MapCamera(app, host, freeArea, (t, zoom) => {
+    writeMoving(camera.moving)
     if (!terrain.size) return
     const area = freeArea()
     const view = worldView(t, area)
@@ -199,7 +209,10 @@ export async function createMapRenderer(
     roads?.subscribe((state, prev) => {
       syncRoads()
       // O drawer abre e fecha com a estrada selecionada: os limites de pan contam com a faixa dele.
-      if (state.selectedId !== prev.selectedId) camera.setRightCover(drawerCover())
+      if (state.selectedId !== prev.selectedId) {
+        camera.setRightCover(drawerCover())
+        writeMoving(camera.moving)
+      }
     }) ?? (() => {})
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
@@ -228,6 +241,7 @@ export async function createMapRenderer(
         camera.panTo(p.x, p.y)
       }
     }
+    if (state.selectedId !== prev.selectedId) writeMoving(camera.moving)
   })
 
   // O filtro roda a cada quadro enquanto gera, junto com o worker de geração: 2 passadas por eixo
@@ -318,6 +332,7 @@ export async function createMapRenderer(
       delete host.dataset.terrainSize
       delete host.dataset.mapRect
       delete host.dataset.zoom
+      delete host.dataset.cameraMoving
       delete host.dataset.mapBlur
       delete host.dataset.decorTotal
       delete host.dataset.decorDrawn

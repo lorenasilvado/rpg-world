@@ -31,8 +31,14 @@ async function waitFinalMap(page: Page) {
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 60_000 })
 }
 
-/** Espera a câmera parar (o retângulo do mapa igual por 400 ms, mais que o deslizamento de 350 ms). */
+/**
+ * Espera a câmera parar: sem deslizamento pendente (`data-camera-moving`) e o retângulo do mapa igual
+ * por 400 ms, mais que o deslizamento de 350 ms. Só o retângulo não basta: o deslizamento é medido no
+ * tempo, e com os quadros atrasados (WebKit por software no CI) o retângulo fica parado antes de a
+ * câmera andar.
+ */
 async function settledRect(page: Page) {
+  await expect(map(page)).toHaveAttribute('data-camera-moving', 'false', { timeout: 30_000 })
   let last = ''
   let since = 0
   await expect
@@ -42,7 +48,7 @@ async function settledRect(page: Page) {
         last = now
         since = Date.now()
       }
-      return Date.now() - since >= 400
+      return Date.now() - since >= 400 && (await map(page).getAttribute('data-camera-moving')) === 'false'
     }, { intervals: [100], timeout: 30_000 })
     .toBe(true)
   const [x, y, width, height] = last.split(',').map(Number)
