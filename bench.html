@@ -33,6 +33,25 @@
 
       <section id="results" data-testid="results" class="mt-4"></section>
       <pre id="json" data-testid="report" class="mt-4 overflow-auto rounded-panel bg-sunken p-3 font-mono text-xs"></pre>
+
+      <section class="mt-8" aria-labelledby="routes-title">
+        <h2 id="routes-title" class="font-title text-xl">Rota pelo terreno</h2>
+        <p class="mt-1 text-sm text-ink-2">
+          #249 (AC-F5-11): cada rota no worker de rota, num mapa 1024², em até 300 ms.
+        </p>
+        <div class="mt-3 flex items-center gap-3">
+          <button
+            id="run-routes"
+            type="button"
+            class="rounded-control bg-amber px-4 py-2 font-semibold text-on-amber shadow-sm disabled:opacity-50"
+          >
+            Testar rotas
+          </button>
+          <span id="routes-status" data-testid="routes-status" class="text-sm text-ink-2"></span>
+        </div>
+        <section id="routes-results" data-testid="routes-results" class="mt-3"></section>
+        <pre id="routes-json" data-testid="routes-report" class="mt-3 overflow-auto rounded-panel bg-sunken p-3 font-mono text-xs"></pre>
+      </section>
     </main>
     <script type="module" src="/src/bench/main.ts"></script>
   </body>

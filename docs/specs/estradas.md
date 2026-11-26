@@ -13,7 +13,8 @@ o comportamento atualiza esta spec.
 > Refazer, no JSON e no PNG; o desenho no mapa (estrada, trilha e rota marítima, na curva
 > suavizada, com a ponta ligada acompanhando o pin), o interruptor "Estradas" em Camadas, Desenhar
 > estrada (R), o clique numa estrada (com o halo âmbar) e o drawer da estrada (nome, tipo de via,
-> extensão, "Liga" e Excluir). Rota automática aparece desabilitada na toolbar, e a aba Conexões do
+> extensão, "Liga" e Excluir) e o núcleo da rota pelo terreno (o A\* no worker de rota, com a
+> medição em `/bench.html`). Rota automática aparece desabilitada na toolbar, e a aba Conexões do
 > pin ainda não lista as estradas. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
 > das decisões do [plano do M3](../milestones/m3.md).
 
@@ -68,10 +69,19 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 - A rota pelo terreno roda num worker, numa grade de 256² (com a curva suavizada depois). O custo
   vem do bioma e da inclinação: planícies são baratas, floresta e colina custam mais, montanha
   rochosa e neve muito mais; água (oceano, lago, oásis) não é atravessável.
+- Na grade, uma célula com qualquer água do mapa é água (assim a rota não passa por um canal mais
+  estreito que a célula), e a terra junto da água custa um pouco mais, para a rota não raspar na
+  margem. As pontas valem mesmo numa célula com água (um pin na margem). Por isso, uma faixa de
+  terra mais estreita que uma célula da grade (cerca de 4 a 8 px num mapa 1024², conforme cai nos
+  blocos), como um istmo fino ou uma ponta de terra, não tem caminho por terra.
+- O caminho volta simplificado em pontos: os trechos retos não cortam canto de água, de montanha
+  nem de rio, e têm no máximo 4 células da grade, para a curva suavizada ficar perto do caminho.
+  A rota termina nos pontos exatos de origem e de destino.
 - Rios: a rota pode cruzar um rio, e cada travessia custa como uma ponte (caro), então ela
   prefere uma travessia só, no ponto mais estreito, e não segue o rio por dentro. No mapa, a
   estrada passa por cima do rio, sem traço próprio de ponte.
-- A rota marítima usa a mesma busca só pela água (a terra só vale perto de cada pin).
+- A rota marítima usa a mesma busca só pela água (a terra só vale perto de cada pin, até 6 células
+  da grade em cada eixo).
 - A ponta de uma estrada ligada a um pin acompanha o pin quando ele é arrastado; o meio do
   traçado não é recalculado. Excluir um pin exclui as estradas ligadas a ele; Desfazer devolve tudo.
 - O comprimento da estrada é o da curva suavizada (com as pontas nos pins ligados), no tamanho do

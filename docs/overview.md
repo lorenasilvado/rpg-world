@@ -109,6 +109,16 @@ textura do terreno (`terrainPixels`, de `src/render/layers/`, com a paleta de `s
 os dois são TS puro, sem Pixi) e o transfere junto com o campo: no mapa 1024², a conversão travaria
 a thread principal.
 
+A rota pelo terreno (F5) tem um worker só dela, `src/workers/router.worker.ts`, que expõe o
+`routerApi.ts` pelo Comlink. O núcleo fica em `src/core/routing/`, TS puro e determinístico: o
+`costGrid.ts` reduz o campo a uma grade de custo de até 256² (o custo do bioma, a água, a margem,
+o oceano e os rios numa linha 4-conectada), e o `findRoute.ts` roda o A\* nela, por terra ou só pela
+água, e simplifica o caminho em pontos (u, v). O worker guarda a grade do último campo recebido;
+cada rota roda só o A\*. O `routerClient.ts` manda um pedido por vez: uma rota cancelada na fila não
+chega ao worker, e uma cancelada no worker rejeita na hora e tem o resultado descartado; se o worker
+falha, o próximo pedido cria um novo e manda de novo o último campo. A medição fica em
+`/bench.html` ("Testar rotas", `src/bench/routeBench.ts`).
+
 O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi na área do mapa do
 editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno
 (`layers/TerrainLayer.ts`) a cada campo novo do `worldStore`, com o RGBA que já vem pronto do
@@ -338,12 +348,14 @@ src/
     noise/              # fbm, ridged, domain warp (ruído 3D)
     world/              # generateWorld, campos, quantis, biomas
     decor/              # Poisson-disk para árvores/montanhas
-    routing/            # A* e suavização de estradas
+    routing/            # grade de custo (costGrid) e A* com simplificação (findRoute)
     projection/         # Plane (v1) e Sphere (futuro)
     types.ts
   workers/
     generator.worker.ts # expõe o core via Comlink (generatorApi.ts), com o cache do ruído
     generatorClient.ts  # cria o worker; entrega o mais novo (newerOnly.ts)
+    router.worker.ts    # a rota pelo terreno (routerApi.ts), com a grade de custo do campo
+    routerClient.ts     # cria o worker de rota; um pedido por vez, com cancelamento
   render/
     MapRenderer.ts      # cria app Pixi + viewport
     layers/             # TerrainLayer (+ terrainPixels), DecorLayer, PinLayer (+ pinMath), RoadLayer (+ roadMath), LabelLayer

@@ -1,5 +1,8 @@
 import '../index.css'
 import { createGenerator } from '../workers/generatorClient'
+import { createRouter } from '../workers/routerClient'
+import type { RouteBenchReport } from './report'
+import { runRouteBench } from './routeBench'
 import { FULL, QUICK, runBench, TARGETS, type BenchReport, type Timing } from './runBench'
 
 /**
@@ -118,3 +121,38 @@ button.addEventListener('click', async () => {
 })
 
 document.body.dataset.state = 'idle'
+
+// Rota pelo terreno (#249): um gerador e um worker de rota só desta medição.
+const routesButton = $<HTMLButtonElement>('run-routes')
+const routesStatus = $('routes-status')
+const routesResults = $('routes-results')
+const routesJson = $('routes-json')
+const routeGen = createGenerator()
+const router = createRouter()
+
+function renderRoutes(r: RouteBenchReport) {
+  routesResults.innerHTML = `
+    <ul class="space-y-1 text-sm">
+      <li>${ok(r.median <= r.targetMs && r.max <= r.targetMs)} ${r.runs.length} rotas por terra no mapa ${r.size}² (seed
+        ${r.seed}): mediana ${r.median} ms, máx. ${r.max} ms (no worker: ${r.workerMedian} e ${r.workerMax} ms); meta
+        ${r.targetMs} ms</li>
+      <li>Grade de custo, uma vez por campo: ${r.gridMs} ms · sem caminho: ${r.noPath} · maior quadro: ${r.maxFrameGap} ms</li>
+    </ul>`
+  routesJson.textContent = JSON.stringify(r, null, 2)
+}
+
+routesButton.addEventListener('click', async () => {
+  routesButton.disabled = true
+  document.body.dataset.routes = 'running'
+  try {
+    renderRoutes(await runRouteBench(routeGen, router, quick ? 5 : 30, (step) => (routesStatus.textContent = step)))
+    routesStatus.textContent = 'Pronto.'
+    document.body.dataset.routes = 'done'
+  } catch (e) {
+    routesStatus.textContent = `Erro: ${e instanceof Error ? e.message : String(e)}`
+    document.body.dataset.routes = 'error'
+  } finally {
+    routesButton.disabled = false
+  }
+})
+
