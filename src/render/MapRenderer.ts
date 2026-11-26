@@ -1,3 +1,4 @@
+import { claimHost, releaseHost } from './hostOwner'
 import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
 import type { PinImages } from '../state/pinImages'
@@ -50,7 +51,8 @@ export type MapRenderer = {
  *
  * Expõe no `host`, para os testes: o tamanho do campo desenhado em `data-terrain-size`, o
  * retângulo do mapa na tela em `data-map-rect` (x, y, largura, altura em px CSS, arredondados) e o
- * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre), o desfoque atual do terreno em px
+ * zoom relativo em `data-zoom` (1 = mapa inteiro na área livre), se a câmera ainda vai andar sozinha
+ * (um deslizamento em curso) em `data-camera-moving` (`true` ou `false`), o desfoque atual do terreno em px
  * em `data-map-blur` (de 0 a 3, uma casa decimal); da decoração, os ícones com desenho
  * no spritesheet em `data-decor-total`, os desenhados depois do culling e do nível de detalhe em
  * `data-decor-drawn` e a camada em `data-decor-layer` (`on` ou `off`). Se o spritesheet não é desenhado,
@@ -61,7 +63,8 @@ export type MapRenderer = {
  * fora do desfoque, e abaixo dos pins, com os traços em px na tela em qualquer zoom; a ponta ligada a
  * um pin acompanha o pin, também durante o arrasto. O interruptor "Estradas" de Camadas
  * (`layers.roads` do `ui`) as mostra e esconde. Para os testes, o `host` expõe as estradas desenhadas
- * em `data-roads` e a camada em `data-road-layer` (`on` ou `off`).
+ * em `data-roads`, a camada em `data-road-layer` (`on` ou `off`) e a estrada selecionada (com o halo,
+ * AC-F5-06) em `data-road-selected`.
  *
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
  * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
@@ -89,6 +92,9 @@ export async function createMapRenderer(
   images: PinImages | null = null,
   roads: RoadsStore | null = null,
 ): Promise<MapRenderer> {
+  // O mais recente a começar é o dono do host: um renderer antigo, destruído depois, não apaga os
+  // atributos que este escrever (`hostOwner.ts`, os dois renderers do StrictMode no dev).
+  const owner = claimHost(host)
   const app = new Application()
   // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
   const loading = loadDecorTextures().catch((error: unknown) => {
@@ -115,6 +121,7 @@ export async function createMapRenderer(
     const loadedPins = await loadingPins
     if (loadedPins) destroyPinTextures(loadedPins)
     app.destroy()
+    releaseHost(host, owner)
     throw error
   }
   const textures = await loading
@@ -139,7 +146,16 @@ export async function createMapRenderer(
   const pinLayer = pinTextures ? new PinLayer(pinTextures, images) : null
   const roadLayer = new RoadLayer()
   const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
+  /**
+   * Escreve em `data-camera-moving` se a câmera ainda vai andar sozinha (`MapCamera.moving`): a cada
+   * quadro e logo que um deslizamento começa, antes do próximo quadro.
+   */
+  const writeMoving = (moving: boolean) => {
+    const value = String(moving)
+    if (host.dataset.cameraMoving !== value) host.dataset.cameraMoving = value
+  }
+  const camera: MapCamera = new MapCamera(app, host, freeArea, (t, zoom) => {
+    writeMoving(camera.moving)
     if (!terrain.size) return
     const area = freeArea()
     const view = worldView(t, area)
@@ -177,10 +193,27 @@ export async function createMapRenderer(
   camera.viewport.addChild(base)
   // As estradas ficam acima do grupo borrado (nítidas durante a geração) e abaixo dos pins.
   camera.viewport.addChild(roadLayer.view)
-  const syncRoads = () => roadLayer.sync(roads?.getState().roads ?? [], pins.getState())
+  // O drawer (a partir de 768 px) fica aberto com um pin ou uma estrada selecionada: os limites de pan
+  // e o centro do pin contam com a faixa dele.
+  const drawerCover = () =>
+    pins.getState().selectedId !== null || (roads?.getState().selectedId ?? null) !== null ? (insets().drawer ?? 0) : 0
+  const syncRoads = () => {
+    const selected = roads?.getState().selectedId ?? null
+    roadLayer.sync(roads?.getState().roads ?? [], pins.getState(), selected)
+    const value = selected ?? ''
+    if (host.dataset.roadSelected !== value) host.dataset.roadSelected = value
+  }
   syncRoads()
   roadLayer.setVisible(ui.getState().layers.roads)
-  const unsubscribeRoads = roads?.subscribe(syncRoads) ?? (() => {})
+  const unsubscribeRoads =
+    roads?.subscribe((state, prev) => {
+      syncRoads()
+      // O drawer abre e fecha com a estrada selecionada: os limites de pan contam com a faixa dele.
+      if (state.selectedId !== prev.selectedId) {
+        camera.setRightCover(drawerCover())
+        writeMoving(camera.moving)
+      }
+    }) ?? (() => {})
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
     pinLayer.warmUp(app.renderer)
@@ -197,9 +230,6 @@ export async function createMapRenderer(
   })
   // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
   const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
-  // O drawer (a partir de 768 px) fica aberto com um pin selecionado: os limites de pan e o centro do
-  // pin contam com a faixa dele.
-  const drawerCover = () => (pins.getState().selectedId !== null ? (insets().drawer ?? 0) : 0)
   const unsubscribePins = pins.subscribe((state, prev) => {
     pinLayer?.sync(state, performance.now())
     syncRoads()
@@ -211,6 +241,7 @@ export async function createMapRenderer(
         camera.panTo(p.x, p.y)
       }
     }
+    if (state.selectedId !== prev.selectedId) writeMoving(camera.moving)
   })
 
   // O filtro roda a cada quadro enquanto gera, junto com o worker de geração: 2 passadas por eixo
@@ -296,15 +327,19 @@ export async function createMapRenderer(
       roadLayer.destroy()
       blurFilter.destroy()
       app.destroy({ removeView: true }, { children: true })
+      // Outro renderer já é o dono do host: os atributos dele ficam.
+      if (!releaseHost(host, owner)) return
       delete host.dataset.terrainSize
       delete host.dataset.mapRect
       delete host.dataset.zoom
+      delete host.dataset.cameraMoving
       delete host.dataset.mapBlur
       delete host.dataset.decorTotal
       delete host.dataset.decorDrawn
       delete host.dataset.decorLayer
       delete host.dataset.roads
       delete host.dataset.roadLayer
+      delete host.dataset.roadSelected
       delete host.dataset.pins
       delete host.dataset.pinLabels
       delete host.dataset.pinSelected

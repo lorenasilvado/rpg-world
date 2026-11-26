@@ -346,4 +346,41 @@ describe('histórico com as estradas (AC-F5-02, AC-F5-08)', () => {
     history.redo()
     expect(roads.getState().roads.at(-1)).toEqual(created)
   })
+
+
+  it('as teclas seguidas no nome da estrada viram um passo; sair do campo encerra (AC-F5-07)', () => {
+    const { roads, history } = setupRoads()
+    roads.getState().select('ab')
+    roads.getState().updateRoad('ab', { name: 'E' })
+    roads.getState().updateRoad('ab', { name: 'Es' })
+    roads.getState().updateRoad('ab', { name: 'Est' })
+    expect(history.temporal.getState().pastStates).toHaveLength(1)
+    roads.getState().endTextEdit()
+    roads.getState().updateRoad('ab', { name: 'Estr' })
+    expect(history.temporal.getState().pastStates).toHaveLength(2)
+    history.undo()
+    expect(roads.getState().roads[0].name).toBe('Est')
+    history.undo()
+    expect(roads.getState().roads[0].name).toBe('ab')
+  })
+
+  it('o nome de outra estrada e o tipo de via são passos separados (AC-F5-07)', () => {
+    const { roads, history } = setupRoads()
+    roads.getState().updateRoad('ab', { name: 'A' })
+    roads.getState().updateRoad('livre', { name: 'B' })
+    roads.getState().updateRoad('livre', { kind: 'road' })
+    roads.getState().updateRoad('livre', { kind: 'sea' })
+    expect(history.temporal.getState().pastStates).toHaveLength(4)
+    history.undo()
+    expect(roads.getState().roads[1].kind).toBe('road')
+  })
+
+  it('excluir a estrada é um passo; Desfazer a devolve no mesmo lugar da lista (AC-F5-08)', () => {
+    const { roads, history } = setupRoads()
+    const before = roads.getState().roads
+    roads.getState().removeRoad('ab')
+    expect(roads.getState().roads.map((r) => r.id)).toEqual(['livre'])
+    history.undo()
+    expect(roads.getState().roads).toBe(before)
+  })
 })

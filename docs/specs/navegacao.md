@@ -96,9 +96,10 @@ barra inferior.
   largura da área livre (até a toolbar em pé) e fica acima da toolbar na segunda linha, ou do
   minimapa aberto (ou do zoom, com o minimapa recolhido), inclusive quando o minimapa está
   empilhado.
-- Sem pin selecionado, o drawer fica fora da tela, e a barra superior e os controles de zoom ficam a
-  12 px da borda direita. Com o drawer aberto (um pin selecionado), eles se alinham à borda esquerda
-  dele, deslizando junto com ele (200 ms), e voltam ao fechá-lo (ver [pins.md](pins.md)).
+- Sem pin nem estrada selecionada, o drawer fica fora da tela, e a barra superior e os controles de
+  zoom ficam a 12 px da borda direita. Com o drawer aberto (um pin ou uma estrada selecionada), eles
+  se alinham à borda esquerda dele, deslizando junto com ele (200 ms), e voltam ao fechá-lo (ver
+  [pins.md](pins.md) e [estradas.md](estradas.md)).
 
 ## Estados
 

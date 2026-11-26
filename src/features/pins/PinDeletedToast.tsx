@@ -5,7 +5,8 @@ import { BAR_GAP, BAR_SIDE, TOAST_WIDTH, ZOOM_BAR_HEIGHT, ZOOM_SIDE } from '../m
 export const PIN_DELETED_TOAST_MS = 6000
 
 /**
- * Toast "Pin excluído" (pins.md → Estados: Excluído, AC-F3-05): aparece ao excluir um pin, com a ação
+ * Toast "Pin excluído" (pins.md → Estados: Excluído, AC-F3-05), ou "Estrada excluída" (`message`,
+ * estradas.md AC-F5-08): aparece ao excluir um pin (ou uma estrada), com a ação
  * "Desfazer" (`onUndo`, o desfazer do histórico do mundo, que devolve o pin com a ficha inteira). Some
  * depois de `PIN_DELETED_TOAST_MS`, ou quando `onClose` é chamado (outra mudança no histórico).
  *
@@ -14,6 +15,7 @@ export const PIN_DELETED_TOAST_MS = 6000
  */
 export function PinDeletedToast({
   open,
+  message = 'Pin excluído',
   onUndo,
   onClose,
   beside = true,
@@ -22,6 +24,8 @@ export function PinDeletedToast({
 }: {
   /** Muda a cada exclusão (o tempo recomeça); `null` fecha. */
   open: number | null
+  /** O texto do toast: "Pin excluído" ou, para a estrada (estradas.md, AC-F5-08), "Estrada excluída". */
+  message?: string
   onUndo: () => void
   onClose: () => void
   beside?: boolean
@@ -42,7 +46,7 @@ export function PinDeletedToast({
       style={{ bottom, right, ...(beside ? { width: TOAST_WIDTH } : { left: BAR_SIDE }) }}
       className="toast-in pointer-events-auto absolute z-[2] flex items-center gap-3 rounded-panel bg-paper-solid py-2 pr-2 pl-4 text-ink shadow-lg"
     >
-      <span className="flex-1 font-semibold">Pin excluído</span>
+      <span className="flex-1 font-semibold">{message}</span>
       <button
         type="button"
         onClick={onUndo}

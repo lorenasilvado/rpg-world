@@ -189,3 +189,112 @@ test.describe('com o toque', () => {
     expect(await savedRoad(page, 'Nova estrada')).toMatchObject({ from: 'Alda', to: 'Brena' })
   })
 })
+
+// Selecionar estrada e o drawer dela (#248, AC-F5-06 a AC-F5-08): clicar na Trilha dos Pinheiros a
+// seleciona, com o halo e o drawer; renomear e trocar o tipo são passos no Desfazer, e Excluir (o botão
+// ou Delete) mostra "Estrada excluída", com Desfazer.
+test('selecionar, renomear, trocar o tipo, excluir e desfazer a estrada (AC-F5-06 a AC-F5-08, 1440)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { map } = await importAndOpen(page)
+  // O ponto do mapa (u, v) na página, lido de novo a cada vez: a câmera desliza quando o drawer abre
+  // ou fecha, então espera ela parar (sem deslizamento pendente e duas leituras iguais seguidas).
+  const at = async (u: number, v: number) => {
+    let rect = ''
+    await expect
+      .poll(async () => {
+        const before = rect
+        rect = (await map.getAttribute('data-map-rect')) ?? ''
+        return rect !== '' && rect === before && (await map.getAttribute('data-camera-moving')) === 'false'
+      }, { intervals: [150] })
+      .toBe(true)
+    const [x, y, width, height] = rect.split(',').map(Number)
+    return { x: x + u * width, y: y + v * height }
+  }
+  const trail = await at(0.5, 0.62)
+  await page.mouse.click(trail.x, trail.y + 4)
+  await expect(map).toHaveAttribute('data-road-selected', 'r2')
+  const drawer = page.getByTestId('road-drawer')
+  await expect(drawer).toBeVisible()
+  await expect(page.getByTestId('drawer')).toBeInViewport({ ratio: 1 })
+  const name = drawer.getByRole('textbox', { name: 'Nome da estrada' })
+  await expect(name).toHaveValue('Trilha dos Pinheiros')
+  await expect(drawer.getByRole('button', { name: 'Trilha' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('road-length')).toContainText(/Extensão aproximada: \d+ km/)
+
+  // Renomear: as teclas seguidas são um passo só.
+  await name.fill('Trilha Velha')
+  await name.press('Enter')
+  await expect.poll(async () => (await readRoads(page)).find((r) => r.id === 'r2')?.name).toBe('Trilha Velha')
+  // Trocar o tipo.
+  await drawer.getByRole('button', { name: 'Rota marítima' }).click()
+  await expect.poll(async () => (await savedRoad(page, 'Trilha Velha'))?.kind).toBe('sea')
+  await page.keyboard.press('Control+z')
+  await expect.poll(async () => (await savedRoad(page, 'Trilha Velha'))?.kind).toBe('trail')
+  await page.keyboard.press('Control+z')
+  await expect(name).toHaveValue('Trilha dos Pinheiros')
+
+  // Excluir pelo drawer: o toast oferece Desfazer.
+  await drawer.getByRole('button', { name: 'Excluir estrada' }).click()
+  await expect(map).toHaveAttribute('data-roads', '2')
+  await expect(map).toHaveAttribute('data-road-selected', '')
+  await expect(page.getByTestId('pin-deleted-toast')).toContainText('Estrada excluída')
+  // O drawer fechou: a linha inferior desliza até a borda direita. Clicar no toast no meio do
+  // deslize faz o Playwright rolar o editor (o drawer fora da tela conta na área rolável).
+  await expect(page.getByTestId('bottom-bar')).toHaveCSS('right', '0px')
+  await page.getByTestId('pin-deleted-toast').getByRole('button', { name: 'Desfazer' }).click()
+  await expect(map).toHaveAttribute('data-roads', '3')
+  await expect.poll(async () => (await readRoads(page)).map((r) => r.id)).toEqual(['r1', 'r2', 'r3'])
+
+  // A Estrada Real liga Alda e Brena: clicar em Brena em "Liga" a seleciona. Depois, Delete na estrada.
+  let real = await at(0.45, 0.4)
+  await page.mouse.click(real.x, real.y)
+  await expect(map).toHaveAttribute('data-road-selected', 'r1')
+  await expect(page.getByTestId('road-ends').getByRole('button')).toHaveText(['Alda', 'Brena'])
+  await page.keyboard.press('Delete')
+  await expect(map).toHaveAttribute('data-roads', '2')
+  await expect(page.getByTestId('pin-deleted-toast')).toContainText('Estrada excluída')
+  await page.keyboard.press('Control+z')
+  await expect(map).toHaveAttribute('data-roads', '3')
+  real = await at(0.45, 0.4)
+  await page.mouse.click(real.x, real.y)
+  await page.getByTestId('road-ends').getByRole('button', { name: 'Brena' }).click()
+  await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+  await expect(map).toHaveAttribute('data-road-selected', '')
+  await expect(page.getByTestId('pin-drawer')).toBeVisible()
+})
+
+for (const size of [
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+]) {
+  test.describe(`no celular (${size.width}×${size.height})`, () => {
+    test.use({ hasTouch: true, isMobile: true })
+
+    test(`tocar na estrada abre o drawer sobreposto; fechar tira a seleção (AC-F5-06, ${size.width}×${size.height})`, async ({ page }) => {
+      await page.setViewportSize(size)
+      const { map, at } = await importAndOpen(page)
+      const trail = at(0.5, 0.62)
+      await page.touchscreen.tap(trail.x, trail.y + 3)
+      await expect(map).toHaveAttribute('data-road-selected', 'r2')
+      await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
+      await expect(page.getByTestId('scrim')).toBeVisible()
+      await expect(page.getByTestId('road-drawer').getByRole('textbox', { name: 'Nome da estrada' })).toHaveValue('Trilha dos Pinheiros')
+      // O seletor do tipo de via cabe no painel de 320 px: cada rótulo numa linha, sem cortar.
+      const kinds = await page.getByTestId('road-kind').getByRole('button').evaluateAll((buttons) =>
+        buttons.map((b) => {
+          const range = document.createRange()
+          range.selectNodeContents(b)
+          // Uma caixa por linha do texto: o rótulo quebrado tem duas.
+          const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size
+          return { text: b.textContent, lines, cut: b.scrollWidth > b.clientWidth }
+        }),
+      )
+      expect(kinds).toEqual(['Estrada', 'Trilha', 'Rota marítima'].map((text) => ({ text, lines: 1, cut: false })))
+      const kindBox = await page.getByTestId('road-kind').boundingBox()
+      expect(kindBox!.x + kindBox!.width).toBeLessThanOrEqual(size.width)
+      await page.getByRole('button', { name: 'Fechar detalhes' }).tap()
+      await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'false')
+      await expect(map).toHaveAttribute('data-road-selected', '')
+    })
+  })
+}

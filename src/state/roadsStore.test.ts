@@ -91,4 +91,31 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     roads.getState().replaceRoads([])
     expect(roads.getState().selectedId).toBeNull()
   })
+
+
+  it('updateRoad muda o nome (sem os espaços das pontas) e o tipo; nome vazio ou igual não muda nada (AC-F5-07)', () => {
+    const roads = createRoadsStore([road('r1'), road('r2')])
+    const other = roads.getState().roads[1]
+    roads.getState().updateRoad('r1', { name: '  Estrada Real ' })
+    expect(roads.getState().roads[0]).toMatchObject({ name: 'Estrada Real', kind: 'road' })
+    expect(roads.getState().roads[1]).toBe(other)
+    roads.getState().updateRoad('r1', { kind: 'sea' })
+    expect(roads.getState().roads[0].kind).toBe('sea')
+    const before = roads.getState().roads
+    roads.getState().updateRoad('r1', { name: '   ' })
+    roads.getState().updateRoad('r1', { name: 'Estrada Real', kind: 'sea' })
+    roads.getState().updateRoad('sumiu', { name: 'X' })
+    expect(roads.getState().roads).toBe(before)
+  })
+
+  it('removeRoad tira a estrada e a seleção dela (AC-F5-08)', () => {
+    const roads = createRoadsStore([road('r1'), road('r2')])
+    roads.getState().select('r1')
+    expect(roads.getState().removeRoad('r2')).toBe(true)
+    expect(roads.getState().selectedId).toBe('r1')
+    expect(roads.getState().removeRoad('r1')).toBe(true)
+    expect(roads.getState().roads).toEqual([])
+    expect(roads.getState().selectedId).toBeNull()
+    expect(roads.getState().removeRoad('r1')).toBe(false)
+  })
 })

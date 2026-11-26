@@ -1,6 +1,7 @@
 import { CircleHelp, Compass, Moon, PanelLeftOpen, PanelRightOpen, Redo2, Search, Sun, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { useStore } from 'zustand'
+import { createStore } from 'zustand/vanilla'
 import { BAR_BOTTOM, BAR_GAP, BAR_SIDE, TOAST_HEIGHT, ZOOM_SIDE, bottomBarLayout } from '../features/map/bottomBarLayout'
 import { MapToolbar } from '../features/map/MapToolbar'
 import { MeasureTool } from '../features/map/MeasureTool'
@@ -15,6 +16,7 @@ import { PinsOnWaterToast } from '../features/pins/PinsOnWaterToast'
 import { pinsOnWater } from '../features/pins/place'
 import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
+import { RoadDrawer } from '../features/roads/RoadDrawer'
 import { RoadTool } from '../features/roads/RoadTool'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
@@ -160,8 +162,13 @@ export function EditorLayout({
   const worldName = useStore(world, (s) => s.name)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  /** A partir de 768 px, o drawer só fica à vista com um pin selecionado (AC-F3-19). */
+  /**
+   * A partir de 768 px, o drawer só fica à vista com um pin (AC-F3-19) ou uma estrada (AC-F5-06)
+   * selecionada.
+   */
   const pinSelected = useStore(pins, (s) => s.selectedId !== null)
+  const roadSelected = useStore(roads ?? NO_ROADS_STORE, (s) => s.selectedId !== null)
+  const anySelected = pinSelected || roadSelected
   const [helpOpen, setHelpOpen] = useState(false)
   /** Quem tinha o foco ao abrir a Ajuda: recebe o foco de volta ao fechar. */
   const helpReturn = useRef<HTMLElement | null>(null)
@@ -184,10 +191,10 @@ export function EditorLayout({
   const desktop = useDesktop()
   const sidebarCollapsed = useStore(ui, (s) => s.sidebarCollapsed) && desktop
   /** O drawer à vista: a partir de 768 px, com um pin selecionado; abaixo, o painel sobreposto aberto. */
-  const drawerShown = desktop ? pinSelected : drawerOpen
+  const drawerShown = desktop ? anySelected : drawerOpen
   /** Os lados da linha inferior a partir de 768 px: da sidebar até a borda direita, ou até o drawer aberto. */
   const barInset = [
-    pinSelected ? 'desk:right-[var(--drawer-width)]' : 'desk:right-0',
+    anySelected ? 'desk:right-[var(--drawer-width)]' : 'desk:right-0',
     sidebarCollapsed ? 'desk:left-[var(--sidebar-collapsed-width)]' : 'desk:left-[var(--sidebar-width)]',
   ].join(' ')
   const [camera] = useState(createCameraStore)
@@ -224,15 +231,28 @@ export function EditorLayout({
   usePanelFocus(drawerOpen, drawerClose, drawerOpener)
   const canUndo = useStore(history.temporal, (s) => s.pastStates.length > 0)
   const canRedo = useStore(history.temporal, (s) => s.futureStates.length > 0)
-  /** O toast "Pin excluído": a versão do histórico logo depois da exclusão (`null`: fechado). */
+  /**
+   * O toast "Pin excluído" (ou "Estrada excluída"): a versão do histórico logo depois da exclusão
+   * (`null`: fechado).
+   */
   const [deletedAt, setDeletedAt] = useState<number | null>(null)
+  const [deletedMessage, setDeletedMessage] = useState('Pin excluído')
   const closeDeleted = useCallback(() => setDeletedAt(null), [])
   const deletePin = useCallback(
     (id: string) => {
       if (!pins.getState().removePin(id)) return
+      setDeletedMessage('Pin excluído')
       setDeletedAt(history.version.getState().value)
     },
     [pins, history],
+  )
+  const deleteRoad = useCallback(
+    (id: string) => {
+      if (!roads?.getState().removeRoad(id)) return
+      setDeletedMessage('Estrada excluída')
+      setDeletedAt(history.version.getState().value)
+    },
+    [roads, history],
   )
 
   /** O aviso de pins sobre a água: a versão do mapa, quantos e o primeiro deles (`null`: fechado). */
@@ -272,6 +292,13 @@ export function EditorLayout({
     },
     [deletePin, drawerOpen, pins],
   )
+  const deleteRoadFromDrawer = useCallback(
+    (id: string) => {
+      focusUndo.current = !drawerOpen && (roads?.getState().roads.some((r) => r.id === id) ?? false)
+      deleteRoad(id)
+    },
+    [deleteRoad, drawerOpen, roads],
+  )
   useEffect(() => {
     if (!focusUndo.current || !canUndo || deletedAt === null) return
     focusUndo.current = false
@@ -310,25 +337,36 @@ export function EditorLayout({
     setSidebarOpen(false)
     setDrawerOpen(false)
     pins.getState().select(null)
+    roads?.getState().select(null)
   }
   const closeDrawer = () => {
     setDrawerOpen(false)
     pins.getState().select(null)
+    roads?.getState().select(null)
   }
 
-  // Abaixo de 768 px, o pin selecionado abre o drawer sobreposto; sem seleção, ele fecha.
-  useEffect(
-    () =>
-      pins.subscribe((state, prev) => {
-        if (state.selectedId === prev.selectedId) return
-        if (state.selectedId === null) setDrawerOpen(false)
-        else if (!window.matchMedia(DESKTOP_QUERY).matches) {
-          setSidebarOpen(false)
-          setDrawerOpen(true)
-        }
-      }),
-    [pins],
-  )
+  // Abaixo de 768 px, o pin ou a estrada selecionada abre o drawer sobreposto; sem seleção, ele fecha.
+  useEffect(() => {
+    const selectionChanged = () => {
+      const selected = pins.getState().selectedId !== null || (roads?.getState().selectedId ?? null) !== null
+      if (!selected) setDrawerOpen(false)
+      else if (!window.matchMedia(DESKTOP_QUERY).matches) {
+        setSidebarOpen(false)
+        setDrawerOpen(true)
+      }
+    }
+    const unsubscribePins = pins.subscribe((state, prev) => {
+      if (state.selectedId !== prev.selectedId) selectionChanged()
+    })
+    const unsubscribeRoads =
+      roads?.subscribe((state, prev) => {
+        if (state.selectedId !== prev.selectedId) selectionChanged()
+      }) ?? (() => {})
+    return () => {
+      unsubscribePins()
+      unsubscribeRoads()
+    }
+  }, [pins, roads])
 
   useEffect(() => {
     const desktop = window.matchMedia(DESKTOP_QUERY)
@@ -406,16 +444,17 @@ export function EditorLayout({
       setSidebarOpen(false)
       setDrawerOpen(false)
       pins.getState().select(null)
+      roads?.getState().select(null)
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [anyOpen, pins])
+  }, [anyOpen, pins, roads])
 
   return (
     <div className="relative h-full overflow-hidden bg-map-canvas" data-testid="editor" data-generation-status={generationStatus}>
       <MapView ref={mapRef} world={world} pins={pins} ui={ui} camera={camera} inert={anyOpen} images={images} roads={roads} createRenderer={createRenderer} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
-      <PinTool ui={ui} pins={pins} camera={camera} disabled={anyOpen} onDelete={deletePin} />
+      <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={anyOpen} onDelete={deletePin} onDeleteRoad={deleteRoad} />
       {roads && <RoadTool ui={ui} roads={roads} pins={pins} camera={camera} disabled={anyOpen} />}
 
       <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
@@ -465,6 +504,7 @@ export function EditorLayout({
         <GenerationErrorToast world={world} beside={layout.toastBeside} bottom={layout.toastBottom} right={layout.toastRight} />
         <PinDeletedToast
           open={deletedAt}
+          message={deletedMessage}
           onUndo={() => history.undo()}
           onClose={closeDeleted}
           beside={layout.toastBeside}
@@ -594,7 +634,7 @@ export function EditorLayout({
         className={[
           'absolute top-3 right-3 z-10 flex h-14 items-center rounded-panel bg-paper px-1 shadow-md backdrop-blur-[14px] desk:gap-0.5 desk:px-1.5',
           'transition-[right] duration-200 ease-[var(--ease-panel)]',
-          pinSelected ? 'desk:right-[calc(var(--drawer-width)+12px)]' : '',
+          anySelected ? 'desk:right-[calc(var(--drawer-width)+12px)]' : '',
         ].join(' ')}
       >
         <IconButton
@@ -660,8 +700,8 @@ export function EditorLayout({
           drawerShown ? 'transition-transform' : 'transition-[transform,visibility]',
           'duration-200 ease-[var(--ease-panel)]',
           drawerOpen ? 'translate-x-0' : 'invisible translate-x-full',
-          // A partir de 768 px: à vista só com um pin; sem ele, fora da tela, sombra incluída.
-          pinSelected ? 'desk:visible desk:translate-x-0' : 'desk:invisible desk:translate-x-[calc(100%+32px)]',
+          // A partir de 768 px: à vista só com um pin ou uma estrada; sem eles, fora da tela, sombra incluída.
+          anySelected ? 'desk:visible desk:translate-x-0' : 'desk:invisible desk:translate-x-[calc(100%+32px)]',
           'desk:w-[var(--drawer-width)]',
         ].join(' ')}
       >
@@ -679,6 +719,7 @@ export function EditorLayout({
           // Abaixo de 768 px, o painel sobreposto cobre o mapa: fecha para a câmera aparecer (o pin continua selecionado).
           onCentered={() => setDrawerOpen(false)}
         />
+        {roads && <RoadDrawer roads={roads} pins={pins} images={images} world={world} onDelete={deleteRoadFromDrawer} />}
       </aside>
     </div>
   )
@@ -715,6 +756,9 @@ function useAnimatedAfterMeasure(width: number | null) {
   }, [measured, animated])
   return animated
 }
+
+/** O store das estradas de um editor sem estradas (testes): nada selecionado. */
+const NO_ROADS_STORE = createStore<{ selectedId: string | null }>()(() => ({ selectedId: null }))
 
 /** Se a tela tem 768 px ou mais de largura e 500 px ou mais de altura (sidebar e drawer fixos, AC-F2-14). */
 function useDesktop() {

@@ -1,4 +1,5 @@
 import type { Road, RoadKind } from '../../persistence/types'
+import { WORLD_SIZE } from '../camera'
 
 /**
  * A matemática das estradas (estradas.md, AC-F5-01), TS puro, sem Pixi: serve à `RoadLayer` do
@@ -29,6 +30,9 @@ export const ROAD_STROKES: Record<RoadKind, readonly RoadStroke[]> = {
   trail: [{ color: 0x7a5230, width: 3.2, dash: [1, 7] }],
   sea: [{ color: 0xffffff, width: 2.5, dash: [10, 8] }],
 }
+
+/** O halo da estrada selecionada (design-system.md → Traços): 13 px `#C8892B` a 55%, sob os traços dela. */
+export const ROAD_HALO = { color: 0xc8892b, width: 13, alpha: 0.55 } as const
 
 /**
  * A ordem dos traços de um conjunto de estradas: primeiro o contorno de todas (os traços de baixo,
@@ -153,4 +157,45 @@ export function dashPolyline(line: readonly XY[], dash: number, gap: number): XY
   }
   if (current && current.length > 1) out.push(current)
   return out
+}
+
+/** A curva da estrada em unidades do mundo (0–1024), amostrada a cada `step`; menos de 2 pontos: nenhuma. */
+export function roadLine(road: Pick<Road, 'points' | 'from' | 'to'>, pinPos: (id: string) => UV | undefined, step: number): XY[] {
+  const points = roadPoints(road, pinPos).map((p) => ({ x: p.u * WORLD_SIZE, y: p.v * WORLD_SIZE }))
+  return points.length < 2 ? [] : sampleCurve(points, step)
+}
+
+/** O comprimento da polilinha (nas unidades dos pontos). */
+export function polylineLength(line: readonly XY[]): number {
+  let total = 0
+  for (let i = 1; i < line.length; i++) total += dist(line[i - 1], line[i])
+  return total
+}
+
+/** A menor distância do ponto à polilinha (nas unidades dos pontos); sem trecho, `Infinity`. */
+export function distanceToPolyline(p: XY, line: readonly XY[]): number {
+  if (line.length === 1) return dist(p, line[0])
+  let best = Infinity
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1]
+    const b = line[i]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const len2 = dx * dx + dy * dy
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2))
+    const d = dist(p, { x: a.x + dx * t, y: a.y + dy * t })
+    if (d < best) best = d
+  }
+  return best
+}
+
+/** Passo fino da curva para medir o comprimento (unidades do mundo). */
+const LENGTH_STEP = 0.5
+
+/**
+ * O comprimento da estrada em km (o drawer da estrada, AC-F5-06): a curva suavizada, com as pontas
+ * nos pins ligados, num mundo de `sizeKm` de largura.
+ */
+export function roadLengthKm(road: Pick<Road, 'points' | 'from' | 'to'>, pinPos: (id: string) => UV | undefined, sizeKm: number): number {
+  return (polylineLength(roadLine(road, pinPos, LENGTH_STEP)) * sizeKm) / WORLD_SIZE
 }
