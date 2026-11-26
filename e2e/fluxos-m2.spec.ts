@@ -233,6 +233,12 @@ test('cria um mundo, marca, edita, move, exclui e desfaz pins, recarrega, export
   await expect(map(page)).toHaveAttribute('data-pins', '3')
   await clickPin(page, PINS[2].at)
   await expect(nameField(page)).toHaveValue('Torre do Mago')
+  // O mundo aberto é a cópia, e não o original: renomear o pin muda só ela no banco.
+  await nameField(page).fill('Torre da Cópia')
+  await nameField(page).press('Enter')
+  const after = await savedWorlds(page)
+  expect(after.find((w) => w.id === copy.id)!.pins[2].name).toBe('Torre da Cópia')
+  expect(after.find((w) => w.id === original.id)!.pins[2].name).toBe('Torre do Mago')
 
   expect(errors).toEqual([])
 })

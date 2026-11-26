@@ -225,8 +225,12 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
   expect(stats.frames).toBeGreaterThan(0)
   expect(report.visible, 'a aba ficou escondida: a medição não vale').toBe(true)
   expect(pinDrags, 'um arrasto pegou um pin em vez de fazer pan').toBe(0)
-  // Sem ponto livre, o arrasto é pulado; a medição precisa ter pan de verdade.
-  expect(pans, `${skipped} arrastos pulados sem ponto livre: a medição ficou sem pan`).toBeGreaterThan(0)
+  // Sem ponto livre, o arrasto é pulado; a medição precisa de pan de verdade: no máximo 1 em 4
+  // arrastos pulado.
+  expect(pans, `${skipped} de ${pans + skipped} arrastos pulados sem ponto livre: a medição ficou com pouco pan`).toBeGreaterThanOrEqual(
+    3 * skipped,
+  )
+  expect(pans).toBeGreaterThan(0)
 
   if (CONFERE_FPS) {
     // Fora do CI, um verde por software não pode passar por medição do AC.

@@ -265,7 +265,7 @@ e arrasto, do zoom 0,4× ao 4×, e guarda o instante de cada quadro; a média e 
 mesma conta da página de sprites. São dois casos, um depois do outro: só a decoração (AC-F2-07) e
 a decoração com 500 pins numa grade de 25 × 20 sobre o mapa (AC-F3-17); com os pins, cada arrasto
 começa num ponto sem pin nem grupo embaixo, para ser pan (sem ponto livre, o arrasto é pulado e
-contado, e a medição falha se nenhum arrasto fizer pan). A máquina, a GPU, a tela e os números vão
+contado, e a medição falha se mais de 1 em 4 arrastos for pulado). A máquina, a GPU, a tela e os números vão
 para as anotações e para os anexos `fps-AC-F2-07.json` e `fps-AC-F3-17.json`, e a medição é
 registrada no PR. As metas só são conferidas fora do CI;
 fora dele, um renderer por software faz o teste falhar. Para medir com a janela à vista:
