@@ -156,7 +156,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 |---|---|---|---|---|---|
 | 58 | #246 | [feat] Estradas: modelo, camada no mapa, Camadas, salvar e PNG | done | specs/estradas.md | #256 |
 | 59 | #258 | [bug] No iPhone, o zoom continua quebrado com o drawer da direita, que cobre a tela inteira no celular | done | specs/pins.md | #260 |
-| 60 | #247 | [feat] Desenhar estrada à mão (R) | doing | specs/estradas.md | |
+| 60 | #247 | [feat] Desenhar estrada à mão (R) | done | specs/estradas.md | |
 | 61 | #248 | [feat] Selecionar estrada e drawer da estrada | todo | specs/estradas.md | |
 | 62 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | todo | specs/pins.md | |
 | 63 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | todo | specs/estradas.md | |
