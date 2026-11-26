@@ -115,8 +115,9 @@ lista e o número não volta a ser usado.
 - AC-F5-12: Rota automática (A): o pin de origem e o de destino, com a dica guiando cada passo, criam a estrada "Rota de A a B" ligada aos dois, com o toast "Rota criada"; Esc cancela
 - AC-F5-13: sem caminho por terra entre os dois pins, nada é criado e o toast "Não há caminho por terra entre A e B." oferece "Criar rota marítima", que cria uma rota marítima pela água entre eles
 - AC-F5-14: "Conectar cidades", na dica da Rota automática, liga todas as cidades alcançáveis por terra com a menor malha, sem repetir pares já ligados, num passo só do Desfazer, em até 3 s com 30 cidades ("Conectando…" enquanto calcula); o toast diz quantas estradas foram criadas e quantas cidades ficaram sem caminho
-- AC-F5-15: a aba Conexões do pin lista as estradas ligadas a ele (o outro pin, o tipo e o comprimento), e clicar numa seleciona o outro pin; sem estradas, "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)."
+- AC-F5-15: a aba Conexões do pin lista as estradas ligadas a ele (os pins vizinhos na estrada, o tipo e o comprimento), e clicar numa seleciona o pin vizinho; sem estradas, "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)."
 - AC-F5-16: com 500 pins, 300 estradas e 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
+- AC-F5-17: em Desenhar estrada, clicar num pin no meio do desenho liga o pin à estrada; o ponto dele acompanha o pin arrastado, "Liga" no drawer lista os pins ligados na ordem da estrada, e excluir um pin do meio deixa a estrada com o ponto solto no mapa (Desfazer devolve o vínculo)
 
 ## Pendências
 

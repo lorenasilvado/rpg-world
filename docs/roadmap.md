@@ -163,7 +163,8 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 64 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | done | specs/estradas.md | #276 |
 | 65 | #279 | [feat] Dica maior e mais visível na ferramenta Desenhar estrada | done | specs/estradas.md | #280 |
 | 66 | #250 | [feat] Ferramenta Rota automática (A) | done | specs/estradas.md | #281 |
-| 67 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
-| 68 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
-| 69 | #253 | [feat] Estradas na aba Conexões do pin | todo | specs/estradas.md | |
-| 70 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | todo | specs/estradas.md | |
+| 67 | #285 | [feat] Estrada desenhada liga os pins do meio | todo | specs/estradas.md | |
+| 68 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
+| 69 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
+| 70 | #253 | [feat] Estradas na aba Conexões do pin | todo | specs/estradas.md | |
+| 71 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | todo | specs/estradas.md | |
