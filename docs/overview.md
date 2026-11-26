@@ -257,13 +257,17 @@ custo na GPU ou no driver. O
 `e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do CI não
 usa a GPU.
 
-O AC-F2-07 é medido no editor, com o app completo, pelo `e2e/fps.spec.ts`, no mesmo projeto do
+O AC-F2-07 e o AC-F3-17 são medidos no editor, com o app completo, pelo `e2e/fps.spec.ts`, no mesmo projeto do
 `desempenho.spec.ts` (sozinho e por último). O editor não passa de uns 3.600 ícones, então o
 teste serve o `src/core/decor/decor.ts` com uma distância mínima menor (`DECOR_SPACING` de 0,005)
 e o limite `MAX_DECOR` corta em 5.000. Durante 30 s ele faz roda, Ctrl+roda, pinça de dois dedos
 e arrasto, do zoom 0,4× ao 4×, e guarda o instante de cada quadro; a média e o mínimo saem da
-mesma conta da página de sprites. A máquina, a GPU, a tela e os números vão para as anotações e
-para o anexo `fps.json`, e a medição é registrada no PR. As metas só são conferidas fora do CI;
+mesma conta da página de sprites. São dois casos, um depois do outro: só a decoração (AC-F2-07) e
+a decoração com 500 pins numa grade de 25 × 20 sobre o mapa (AC-F3-17); com os pins, cada arrasto
+começa num ponto sem pin nem grupo embaixo, para ser pan (sem ponto livre, o arrasto é pulado e
+contado, e a medição falha se mais de 1 em 4 arrastos for pulado). A máquina, a GPU, a tela e os números vão
+para as anotações e para os anexos `fps-AC-F2-07.json` e `fps-AC-F3-17.json`, e a medição é
+registrada no PR. As metas só são conferidas fora do CI;
 fora dele, um renderer por software faz o teste falhar. Para medir com a janela à vista:
 `npx playwright test e2e/fps.spec.ts --project=desempenho --no-deps --headed`.
 
@@ -277,6 +281,12 @@ CI mostrar `WebGL2 não`, o fluxo no Firefox fica coberto só localmente. Numa p
 acento, o Firefox do Playwright não abre (o Windows não acha o `mozglue`): copie os navegadores de
 `%LOCALAPPDATA%\ms-playwright` para uma pasta sem acento e rode com `PLAYWRIGHT_BROWSERS_PATH`
 apontando para ela.
+
+Os fluxos de pins e de mundos do M2 rodam do mesmo jeito (os mesmos projetos e o mesmo pulo sem
+WebGL2, com o log `[fluxos-m2]`) no `e2e/fluxos-m2.spec.ts`: criar um mundo pelo assistente,
+marcar 3 pins com nome, descrição e tag, editar um, arrastar outro, excluir e desfazer, recarregar
+a página, exportar o mundo em JSON pela Lista de mundos e reimportá-lo, conferindo o banco a cada
+passo.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.

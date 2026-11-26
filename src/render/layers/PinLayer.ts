@@ -1,4 +1,4 @@
-import { BlurFilter, Container, Graphics, GraphicsContext, ImageSource, Rectangle, Sprite, Text, Texture } from 'pixi.js'
+import { BlurFilter, Container, Graphics, GraphicsContext, ImageSource, Rectangle, RenderTexture, Sprite, Text, TextStyle, Texture, type Renderer } from 'pixi.js'
 import type { Pin } from '../../persistence/types'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import { PIN_TYPES, pinType, type PinType } from '../../state/pinTypes'
@@ -18,6 +18,7 @@ import {
   shrinkFrame,
   showLabel,
 } from './pinMath'
+import type { Rect } from './decorCull'
 import { GROUP_HALO_PX, GROUP_LIFT_PX, GROUP_SIZE_PX, createPinGrouper, type PinGroup, type PinTypeLayers } from './pinGroups'
 
 /** Texturas dos pins, uma por tipo. */
@@ -27,6 +28,31 @@ export type PinTextures = ReadonlyMap<PinType, Texture>
 const TEXTURE_SCALE = 4
 /** Folga entre os quadros do spritesheet (os mipmaps não misturam um pin com o vizinho). */
 const GAP = 8
+
+/**
+ * Quantos rótulos novos a camada cria por quadro (fora o do hover e o do selecionado, que entram
+ * na hora). Cada rótulo é um texto com textura própria, desenhada e enviada à GPU no primeiro quadro
+ * em que aparece: com 500 pins, criar todos de uma vez, ao passar do zoom 1,5×, travava o quadro
+ * (AC-F3-17). Os que faltam entram nos quadros seguintes.
+ */
+export const LABELS_PER_FRAME = 8
+
+/**
+ * A folga em volta da vista, em px da tela, para um rótulo contar como à vista: o nome vai até uns
+ * 160 px para cada lado da âncora e desce até 21 px abaixo dela.
+ */
+const LABEL_MARGIN_X = 160
+const LABEL_MARGIN_Y = 48
+
+/** Os números de grupo preparados no `warmUp` (os grupos com mais pins são raros). */
+export const COUNTS_WARMED = 40
+
+/**
+ * Quantos rótulos a camada prepara por quadro antes de precisar deles: o texto e a textura, já
+ * enviada à GPU, ficam prontos, escondidos, e aparecem sem custo quando o zoom passa de 1,5× (com
+ * 500 pins, em uns 2 s depois de abrir o mapa).
+ */
+export const LABELS_WARMED_PER_FRAME = 4
 
 /** Cor do anel de seleção (design-system.md → Pins → Selecionado). */
 const RING = 0xc8892b
@@ -134,6 +160,8 @@ type PinView = {
   shadow: Sprite
   sprite: Sprite
   label: Text | null
+  /** A textura do rótulo que a camada segura no cache de textos do Pixi (`hold`), pela chave. */
+  labelKey: string | null
   name: string
   /** A textura à vista: o tipo, ou `image:<id>` para o Personalizado com a imagem enviada. */
   texture: string
@@ -216,6 +244,10 @@ export class PinLayer {
    */
   private failed = new Set<string>()
   private destroyed = false
+  /** O renderer, depois do `warmUp`: com ele, a camada prepara as texturas dos textos antes. */
+  private renderer: Renderer | null = null
+  /** As texturas dos contadores dos grupos que a camada segura, pela chave (uma por número). */
+  private countKeys = new Set<string>()
 
   constructor(textures: PinTextures, images: PinImages | null = null) {
     this.textures = textures
@@ -299,14 +331,80 @@ export class PinLayer {
   }
 
   /**
-   * A cada quadro: desfaz a escala da câmera (`scale`, px por unidade do mundo), mostra os rótulos
-   * pelo `zoom` relativo e anima o quique e a pulsação.
+   * Segura a textura do texto no cache de textos do Pixi e a envia à GPU já: quando o texto
+   * aparece, o Pixi acha a textura pronta. Sem isso, o texto é desenhado e enviado no quadro em que
+   * aparece, e, quando nenhum texto usa mais a textura (o contador de um grupo que mudou de
+   * número), ela sai do cache e é desenhada de novo na próxima vez (AC-F3-17). Devolve a chave,
+   * para soltar a textura depois (`release`); sem o renderer, não faz nada.
    */
-  frame(scale: number, zoom: number, now: number, reducedMotion: boolean) {
+  private hold(text: Text): string | null {
+    if (!this.renderer) return null
+    const texture = this.renderer.canvasText.getManagedTexture(text)
+    this.renderer.texture.initSource(texture.source)
+    return text.styleKey
+  }
+
+  private release(key: string | null) {
+    if (key === null || !this.renderer) return
+    try {
+      this.renderer.canvasText.decreaseReferenceCount(key)
+    } catch {
+      // O renderer já foi destruído: as texturas foram junto.
+    }
+  }
+
+  /** Cria o rótulo do pin (escondido) e prepara a textura dele. */
+  private createLabel(v: PinView) {
+    v.label = makeLabel(v.name)
+    v.label.visible = false
+    v.root.addChild(v.label)
+    v.labelKey = this.hold(v.label)
+  }
+
+  /** Solta o rótulo do pin (o pin saiu do mapa). */
+  private dropView(v: PinView) {
+    this.release(v.labelKey)
+    v.labelKey = null
+    v.root.destroy({ children: true })
+  }
+
+  /**
+   * Compila de antemão, num desenho fora da tela, o que o primeiro grupo e o primeiro rótulo usam
+   * (o shader do círculo do grupo e o texto): sem isso, o primeiro quadro com grupos, no meio do
+   * zoom, esperava a compilação (AC-F3-17).
+   */
+  warmUp(renderer: Renderer) {
+    this.renderer = renderer
+    if (!this.groupLook) this.groupLook = groupContext()
+    // Os números dos grupos, de 2 a COUNTS_WARMED, prontos antes do primeiro grupo aparecer.
+    for (let n = 2; n <= COUNTS_WARMED; n++) {
+      const count = makeCount(String(n))
+      const key = this.hold(count)
+      if (key) this.countKeys.add(key)
+      count.destroy()
+    }
+    const warm = new Container()
+    warm.addChild(new Graphics(this.groupLook), makeLabel('0'))
+    const target = RenderTexture.create({ width: 4, height: 4 })
+    try {
+      renderer.render({ container: warm, target })
+    } finally {
+      warm.destroy({ children: true })
+      target.destroy(true)
+    }
+  }
+
+  /**
+   * A cada quadro: desfaz a escala da câmera (`scale`, px por unidade do mundo), mostra os rótulos
+   * pelo `zoom` relativo e anima o quique e a pulsação. Com a vista (`view`, o retângulo do mundo à
+   * vista), só os pins dentro dela (com a folga do rótulo) mostram o rótulo, e no máximo
+   * `LABELS_PER_FRAME` rótulos novos são criados no quadro.
+   */
+  frame(scale: number, zoom: number, now: number, reducedMotion: boolean, view: Rect | null = null) {
     const { selectedId, hoveredId, dragging } = this.state
     for (const [id, { view, at }] of this.leaving) {
       if (reducedMotion || now - at >= PIN_SHRINK_MS) {
-        view.root.destroy({ children: true })
+        this.dropView(view)
         this.leaving.delete(id)
         continue
       }
@@ -320,6 +418,12 @@ export class PinLayer {
     this.drawGroups(grouping.groups, scale)
     this.shown = visible.size
     let labels = 0
+    let budget = LABELS_PER_FRAME
+    const mx = LABEL_MARGIN_X / scale
+    const my = LABEL_MARGIN_Y / scale
+    const inView = (v: PinView) =>
+      !view ||
+      (v.root.x >= view.x - mx && v.root.x <= view.x + view.width + mx && v.root.y >= view.y - my && v.root.y <= view.y + view.height + my)
     for (const [id, v] of this.views) {
       v.root.visible = visible.has(id)
       if (!v.root.visible) continue
@@ -349,15 +453,27 @@ export class PinLayer {
         v.pulse.scale.set(p.scale)
         v.pulse.alpha = p.alpha
       }
-      const label = showLabel(zoom, hovered, selected) && !dragged
+      let label = showLabel(zoom, hovered, selected) && !dragged && (hovered || selected || inView(v))
       if (label && !v.label) {
-        v.label = makeLabel(v.name)
-        v.root.addChild(v.label)
+        if (hovered || selected || budget > 0) {
+          if (!hovered && !selected) budget--
+          this.createLabel(v)
+        } else label = false
       }
       if (v.label) v.label.visible = label
       if (label) labels++
     }
     this.labels = labels
+    // Prepara alguns rótulos que ainda não existem, para quando o zoom passar de 1,5×.
+    if (this.renderer) {
+      let warm = LABELS_WARMED_PER_FRAME
+      for (const v of this.views.values()) {
+        if (warm === 0) break
+        if (v.label) continue
+        this.createLabel(v)
+        warm--
+      }
+    }
   }
 
   /** Põe os círculos dos grupos (reaproveitados de um quadro para o outro) no ponto médio de cada um. */
@@ -368,13 +484,7 @@ export class PinLayer {
       const root = new Container()
       const body = new Container()
       body.position.set(0, -GROUP_LIFT_PX)
-      const count = new Text({
-        text: '',
-        style: { fontFamily: 'Nunito, system-ui, sans-serif', fontWeight: '800', fontSize: 15, fill: '#2B2420' },
-      })
-      count.anchor.set(0.5)
-      // O texto nítido no zoom do grupo e em telas de alta densidade.
-      count.resolution = Math.max(2, globalThis.devicePixelRatio || 1)
+      const count = makeCount('')
       body.addChild(new Graphics(this.groupLook ?? undefined), count)
       root.addChild(body)
       this.groupsView.addChild(root)
@@ -389,11 +499,19 @@ export class PinLayer {
       if (g.n !== group.ids.length) {
         g.n = group.ids.length
         g.count.text = String(g.n)
+        const key = g.count.styleKey
+        if (this.renderer && !this.countKeys.has(key)) {
+          this.hold(g.count)
+          this.countKeys.add(key)
+        }
       }
     })
   }
 
   destroy() {
+    for (const v of [...this.views.values(), ...[...this.leaving.values()].map((l) => l.view)]) this.release(v.labelKey)
+    for (const key of this.countKeys) this.release(key)
+    this.countKeys.clear()
     this.view.destroy({ children: true })
     this.groupLook?.destroy()
     this.shadowBlur.destroy()
@@ -495,7 +613,7 @@ export class PinLayer {
       shadow.visible = false
       body.addChild(shadow, sprite)
       root.addChild(mark, pulse, ring, body)
-      v = { root, pulse, ring, mark, body, shadow, sprite, label: null, name: pin.name, texture: look.key, bornAt }
+      v = { root, pulse, ring, mark, body, shadow, sprite, label: null, labelKey: null, name: pin.name, texture: look.key, bornAt }
       this.views.set(pin.id, v)
     }
     const drag = this.state.dragging
@@ -508,24 +626,43 @@ export class PinLayer {
     }
     if (v.name !== pin.name) {
       v.name = pin.name
-      if (v.label) v.label.text = pin.name
+      if (v.label) {
+        // A textura do nome antigo é solta; a do nome novo é preparada já.
+        this.release(v.labelKey)
+        v.label.text = pin.name
+        v.labelKey = this.hold(v.label)
+      }
     }
   }
 }
 
+/**
+ * Os estilos dos textos, um objeto só para todos os contadores e outro para todos os rótulos: a
+ * chave do cache de texturas de texto do Pixi inclui o id do estilo, então dois contadores "3" com
+ * estilos iguais, mas objetos diferentes, teriam cada um a sua textura.
+ */
+const COUNT_STYLE = new TextStyle({ fontFamily: 'Nunito, system-ui, sans-serif', fontWeight: '800', fontSize: 15, fill: '#2B2420' })
+const LABEL_STYLE = new TextStyle({
+  fontFamily: 'Cinzel, serif',
+  fontWeight: '700',
+  fontSize: 13,
+  lineHeight: 16,
+  fill: '#2B2420',
+  stroke: { color: '#F7F1E3', width: 4, join: 'round' },
+})
+
+/** O contador do grupo: Nunito 800 15, `#2B2420`, no meio do círculo. */
+function makeCount(text: string): Text {
+  const count = new Text({ text, style: COUNT_STYLE })
+  count.anchor.set(0.5)
+  // O texto nítido no zoom do grupo e em telas de alta densidade.
+  count.resolution = Math.max(2, globalThis.devicePixelRatio || 1)
+  return count
+}
+
 /** O rótulo do pin: o nome em Cinzel 700 13/16, `#2B2420`, com contorno claro de 2 px, 5 px abaixo da âncora. */
 function makeLabel(name: string): Text {
-  const label = new Text({
-    text: name,
-    style: {
-      fontFamily: 'Cinzel, serif',
-      fontWeight: '700',
-      fontSize: 13,
-      lineHeight: 16,
-      fill: '#2B2420',
-      stroke: { color: '#F7F1E3', width: 4, join: 'round' },
-    },
-  })
+  const label = new Text({ text: name, style: LABEL_STYLE })
   label.anchor.set(0.5, 0)
   label.position.set(0, 5)
   return label

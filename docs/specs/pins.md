@@ -171,7 +171,10 @@ do banco.
 - Um clique fora do mapa (no fundo do canvas) não cria pin.
 - Pins guardam coordenadas `(u, v)` de 0 a 1, independentes da projeção (RNF-9).
 - Desfazer e refazer cobrem pins (ver [mundos.md](mundos.md)).
-- Pan e zoom sem travar com 500 pins.
+- Pan e zoom sem travar com 500 pins. Para isso, os rótulos ficam só nos pins à vista (com uma
+  folga do tamanho do nome) e são preparados antes, uns poucos por quadro, a partir da abertura do
+  mapa (com 500 pins, em uns 2 s); um rótulo que ainda não estava pronto entra em poucos quadros, no
+  máximo 8 novos por quadro (o do hover e o do selecionado, na hora).
 
 ## Critérios de aceite vigentes
 
