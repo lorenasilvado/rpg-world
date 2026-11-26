@@ -155,12 +155,13 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
 | 58 | #246 | [feat] Estradas: modelo, camada no mapa, Camadas, salvar e PNG | done | specs/estradas.md | #256 |
-| 59 | #247 | [feat] Desenhar estrada à mão (R) | todo | specs/estradas.md | |
-| 60 | #248 | [feat] Selecionar estrada e drawer da estrada | todo | specs/estradas.md | |
-| 61 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | todo | specs/pins.md | |
-| 62 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | todo | specs/estradas.md | |
-| 63 | #250 | [feat] Ferramenta Rota automática (A) | todo | specs/estradas.md | |
-| 64 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
-| 65 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
-| 66 | #253 | [feat] Estradas na aba Conexões do pin | todo | specs/estradas.md | |
-| 67 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | todo | specs/estradas.md | |
+| 59 | #258 | [bug] No iPhone, o zoom continua quebrado com o drawer da direita, que cobre a tela inteira no celular | todo | specs/pins.md | |
+| 60 | #247 | [feat] Desenhar estrada à mão (R) | todo | specs/estradas.md | |
+| 61 | #248 | [feat] Selecionar estrada e drawer da estrada | todo | specs/estradas.md | |
+| 62 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | todo | specs/pins.md | |
+| 63 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | todo | specs/estradas.md | |
+| 64 | #250 | [feat] Ferramenta Rota automática (A) | todo | specs/estradas.md | |
+| 65 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
+| 66 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
+| 67 | #253 | [feat] Estradas na aba Conexões do pin | todo | specs/estradas.md | |
+| 68 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | todo | specs/estradas.md | |
