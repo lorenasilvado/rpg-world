@@ -418,8 +418,8 @@ type Pin = {
   parentId?: string;              // pin pai (hierarquia, sem ciclo)
 };
 
-type Road = { id: string; kind: 'road' | 'trail' | 'sea';
-  points: { u: number; v: number }[]; from?: string; to?: string };
+type Road = { id: string; name: string; kind: 'road' | 'trail' | 'sea';
+  points: { u: number; v: number }[]; from?: string; to?: string }; // from/to: pins das pontas
 
 // Saída do worker (não é salva; é regerada)
 type WorldField = { width: number; height: number;

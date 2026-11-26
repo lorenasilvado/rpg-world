@@ -69,8 +69,8 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
 - **Critério de saída:** a rota automática entre dois pins nunca cruza água (exceto rota
   marítima) e evita montanhas quando há desvio; "Conectar cidades" gera a malha; o drawer da
   estrada edita e exclui.
-- **Depende de / decisões abertas:** fim do M2. Em aberto: como a rota trata rios e lagos
-  (pontes); onde fica o botão "Conectar cidades".
+- **Depende de / decisões abertas:** fim do M2. Rios e lagos na rota e o lugar do botão
+  "Conectar cidades" decididos no [plano do M3](milestones/m3.md).
 - **Tamanho:** M
 
 Fora dos milestones: a preparação 3D (Fase 10 do material), porque o planeta 3D é Won't na v1. O
@@ -149,3 +149,18 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 55 | #166 | [feat] Dicas de boas-vindas | done | specs/geracao-terreno.md | #236 |
 | 56 | #167 | [feat] Exportar o mapa como PNG | done | specs/mundos.md | #239 |
 | 57 | #168 | [chore] E2E dos fluxos e medição de saída do M2 | done | specs/pins.md | #243 |
+
+### M3 — Estradas e rotas
+
+| Ordem | Issue | Título | Status | Spec | PR |
+|---|---|---|---|---|---|
+| 58 | #246 | [feat] Estradas: modelo, camada no mapa, Camadas, salvar e PNG | todo | specs/estradas.md | |
+| 59 | #247 | [feat] Desenhar estrada à mão (R) | todo | specs/estradas.md | |
+| 60 | #248 | [feat] Selecionar estrada e drawer da estrada | todo | specs/estradas.md | |
+| 61 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | todo | specs/pins.md | |
+| 62 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | todo | specs/estradas.md | |
+| 63 | #250 | [feat] Ferramenta Rota automática (A) | todo | specs/estradas.md | |
+| 64 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
+| 65 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
+| 66 | #253 | [feat] Estradas na aba Conexões do pin | todo | specs/estradas.md | |
+| 67 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | todo | specs/estradas.md | |
