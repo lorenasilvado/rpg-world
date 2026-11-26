@@ -1,3 +1,4 @@
+import { claimHost, releaseHost } from './hostOwner'
 import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
 import type { PinImages } from '../state/pinImages'
@@ -90,6 +91,9 @@ export async function createMapRenderer(
   images: PinImages | null = null,
   roads: RoadsStore | null = null,
 ): Promise<MapRenderer> {
+  // O mais recente a começar é o dono do host: um renderer antigo, destruído depois, não apaga os
+  // atributos que este escrever (`hostOwner.ts`, os dois renderers do StrictMode no dev).
+  const owner = claimHost(host)
   const app = new Application()
   // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
   const loading = loadDecorTextures().catch((error: unknown) => {
@@ -116,6 +120,7 @@ export async function createMapRenderer(
     const loadedPins = await loadingPins
     if (loadedPins) destroyPinTextures(loadedPins)
     app.destroy()
+    releaseHost(host, owner)
     throw error
   }
   const textures = await loading
@@ -308,6 +313,8 @@ export async function createMapRenderer(
       roadLayer.destroy()
       blurFilter.destroy()
       app.destroy({ removeView: true }, { children: true })
+      // Outro renderer já é o dono do host: os atributos dele ficam.
+      if (!releaseHost(host, owner)) return
       delete host.dataset.terrainSize
       delete host.dataset.mapRect
       delete host.dataset.zoom
