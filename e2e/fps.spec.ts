@@ -141,9 +141,15 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
     return null
   }
   let pinDrags = 0
+  let pans = 0
+  let skipped = 0
   const drag = async (dx: number, dy: number) => {
     const at = await freeSpot()
-    if (!at) return
+    if (!at) {
+      skipped++
+      return
+    }
+    pans++
     await page.mouse.down()
     await page.mouse.move(at.x + dx, at.y + dy, { steps: 40 })
     if ((await map(page).getAttribute('data-pin-dragging')) !== '') pinDrags++
@@ -188,6 +194,8 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
     ac,
     pins,
     pinDrags,
+    pans,
+    skipped,
     decor: { total: 5000, drawnAtEnd: drawn },
     durationMs: DURATION_MS,
     cycles,
@@ -217,6 +225,8 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
   expect(stats.frames).toBeGreaterThan(0)
   expect(report.visible, 'a aba ficou escondida: a medição não vale').toBe(true)
   expect(pinDrags, 'um arrasto pegou um pin em vez de fazer pan').toBe(0)
+  // Sem ponto livre, o arrasto é pulado; a medição precisa ter pan de verdade.
+  expect(pans, `${skipped} arrastos pulados sem ponto livre: a medição ficou sem pan`).toBeGreaterThan(0)
 
   if (CONFERE_FPS) {
     // Fora do CI, um verde por software não pode passar por medição do AC.
