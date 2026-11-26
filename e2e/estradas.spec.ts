@@ -196,9 +196,18 @@ test.describe('com o toque', () => {
 test('selecionar, renomear, trocar o tipo, excluir e desfazer a estrada (AC-F5-06 a AC-F5-08, 1440)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   const { map } = await importAndOpen(page)
-  // O ponto do mapa (u, v) na página, lido de novo a cada vez: a câmera pode andar com o drawer.
+  // O ponto do mapa (u, v) na página, lido de novo a cada vez: a câmera desliza quando o drawer abre
+  // ou fecha, então espera o retângulo do mapa parar (duas leituras iguais seguidas).
   const at = async (u: number, v: number) => {
-    const [x, y, width, height] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+    let rect = ''
+    await expect
+      .poll(async () => {
+        const before = rect
+        rect = (await map.getAttribute('data-map-rect')) ?? ''
+        return rect !== '' && rect === before
+      }, { intervals: [150] })
+      .toBe(true)
+    const [x, y, width, height] = rect.split(',').map(Number)
     return { x: x + u * width, y: y + v * height }
   }
   const trail = await at(0.5, 0.62)
@@ -229,6 +238,9 @@ test('selecionar, renomear, trocar o tipo, excluir e desfazer a estrada (AC-F5-0
   await expect(map).toHaveAttribute('data-roads', '2')
   await expect(map).toHaveAttribute('data-road-selected', '')
   await expect(page.getByTestId('pin-deleted-toast')).toContainText('Estrada excluída')
+  // O drawer fechou: a linha inferior desliza até a borda direita. Clicar no toast no meio do
+  // deslize faz o Playwright rolar o editor (o drawer fora da tela conta na área rolável).
+  await expect(page.getByTestId('bottom-bar')).toHaveCSS('right', '0px')
   await page.getByTestId('pin-deleted-toast').getByRole('button', { name: 'Desfazer' }).click()
   await expect(map).toHaveAttribute('data-roads', '3')
   await expect.poll(async () => (await readRoads(page)).map((r) => r.id)).toEqual(['r1', 'r2', 'r3'])
