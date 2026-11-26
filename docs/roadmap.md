@@ -154,7 +154,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 
 | Ordem | Issue | Título | Status | Spec | PR |
 |---|---|---|---|---|---|
-| 58 | #246 | [feat] Estradas: modelo, camada no mapa, Camadas, salvar e PNG | doing | specs/estradas.md | |
+| 58 | #246 | [feat] Estradas: modelo, camada no mapa, Camadas, salvar e PNG | done | specs/estradas.md | |
 | 59 | #247 | [feat] Desenhar estrada à mão (R) | todo | specs/estradas.md | |
 | 60 | #248 | [feat] Selecionar estrada e drawer da estrada | todo | specs/estradas.md | |
 | 61 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | todo | specs/pins.md | |
