@@ -7,6 +7,7 @@ import type { MapImageOptions } from './render/mapImage'
 import { createWorldHistory, type WorldHistory } from './state/history'
 import { createPinImages, type PinImages } from './state/pinImages'
 import { createPinsStore, type PinsStore } from './state/pinsStore'
+import { createRoadsStore, type RoadsStore } from './state/roadsStore'
 import { createUiStore, type UiStore } from './state/uiStore'
 import type { WorldStore } from './state/worldStore'
 
@@ -19,6 +20,7 @@ import type { WorldStore } from './state/worldStore'
 function App({
   world,
   pins,
+  roads,
   images,
   ui,
   history,
@@ -33,10 +35,12 @@ function App({
   world: WorldStore
   /** Os pins do mundo; sem ele (testes), o App cria um store vazio. */
   pins?: PinsStore
+  /** As estradas do mundo; sem ele (testes), o App cria um store vazio, ligado aos pins. */
+  roads?: RoadsStore
   /** As imagens enviadas dos pins; sem ele (testes), o App cria um, só na memória. */
   images?: PinImages
   ui?: UiStore
-  /** O histórico de desfazer do mundo; sem ele (testes), o App cria um sobre o `world` e os pins. */
+  /** O histórico de desfazer do mundo; sem ele (testes), o App cria um sobre o `world`, os pins e as estradas. */
   history?: WorldHistory
   /** O status do salvamento automático, para o indicador da sidebar. */
   save?: SaveStore
@@ -53,13 +57,16 @@ function App({
   // Sem `ui` na prop (os testes), o App cria o seu, uma vez.
   const [uiStore] = useState(() => ui ?? createUiStore())
   const [pinsStore] = useState(() => pins ?? createPinsStore())
+  // Antes do histórico: excluir um pin tira as estradas dele antes de o histórico ver a mudança.
+  const [roadsStore] = useState(() => roads ?? createRoadsStore([], pinsStore))
   const [imagesStore] = useState(() => images ?? createPinImages({ worldId: world.getState().id }))
-  const [historyStore] = useState(() => history ?? createWorldHistory({ world, pins: pinsStore }))
+  const [historyStore] = useState(() => history ?? createWorldHistory({ world, pins: pinsStore, roads: roadsStore }))
   if (!webgl2) return <NoWebGL2Notice onBack={onBack} />
   return (
     <EditorLayout
       world={world}
       pins={pinsStore}
+      roads={roadsStore}
       images={imagesStore}
       ui={uiStore}
       history={historyStore}

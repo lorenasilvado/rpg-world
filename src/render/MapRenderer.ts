@@ -2,12 +2,14 @@ import { Application, BlurFilter, Container, type Ticker } from 'pixi.js'
 import { createCameraStore, type CameraControls, type CameraStore } from '../state/cameraStore'
 import type { PinImages } from '../state/pinImages'
 import { createPinsStore, type PinsState, type PinsStore } from '../state/pinsStore'
+import type { RoadsStore } from '../state/roadsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { isGenerating, type WorldStore } from '../state/worldStore'
 import { MapCamera } from './MapCamera'
 import { KEY_ZOOM_STEP, WORLD_SIZE, mapRect, type Area } from './camera'
 import { DecorLayer, bindDecorLayer, destroyDecorTextures, loadDecorTextures, writeDecorState } from './layers/DecorLayer'
 import { PinLayer, destroyPinTextures, loadPinTextures } from './layers/PinLayer'
+import { RoadLayer } from './layers/RoadLayer'
 import { pinToWorld, type PinCamera } from './layers/pinMath'
 import { groupToScreen } from './layers/pinGroups'
 import { TerrainLayer } from './layers/TerrainLayer'
@@ -55,6 +57,12 @@ export type MapRenderer = {
  * o mapa segue só com o terreno: a decoração fica `off`, com 0 ícones, mesmo com `layers.decor`
  * ligada no `ui`, e o console avisa.
  *
+ * As estradas do `roads` (`RoadLayer`, estradas.md AC-F5-01) ficam acima do terreno e da decoração,
+ * fora do desfoque, e abaixo dos pins, com os traços em px na tela em qualquer zoom; a ponta ligada a
+ * um pin acompanha o pin, também durante o arrasto. O interruptor "Estradas" de Camadas
+ * (`layers.roads` do `ui`) as mostra e esconde. Para os testes, o `host` expõe as estradas desenhadas
+ * em `data-roads` e a camada em `data-road-layer` (`on` ou `off`).
+ *
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
  * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
  * Selecionar um pin (`selectedId`) leva a câmera até ele, no centro da
@@ -79,6 +87,7 @@ export async function createMapRenderer(
   cameraState: CameraStore = createCameraStore(),
   pins: PinsStore = createPinsStore(),
   images: PinImages | null = null,
+  roads: RoadsStore | null = null,
 ): Promise<MapRenderer> {
   const app = new Application()
   // A decoração é opcional: sem o spritesheet, o mapa aparece só com o terreno.
@@ -128,6 +137,7 @@ export async function createMapRenderer(
   const terrain = new TerrainLayer()
   const decor = textures ? new DecorLayer(textures) : null
   const pinLayer = pinTextures ? new PinLayer(pinTextures, images) : null
+  const roadLayer = new RoadLayer()
   const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const camera = new MapCamera(app, host, freeArea, (t, zoom) => {
     if (!terrain.size) return
@@ -146,6 +156,11 @@ export async function createMapRenderer(
     if (host.dataset.mapRect !== value) host.dataset.mapRect = value
     const z = zoom.toFixed(3)
     if (host.dataset.zoom !== z) host.dataset.zoom = z
+    roadLayer.frame(t.scale)
+    const roadsOn = roadLayer.view.visible ? 'on' : 'off'
+    if (host.dataset.roadLayer !== roadsOn) host.dataset.roadLayer = roadsOn
+    const roadCount = String(roadLayer.view.visible ? roadLayer.count : 0)
+    if (host.dataset.roads !== roadCount) host.dataset.roads = roadCount
     if (pinLayer) {
       pinLayer.frame(t.scale, zoom, performance.now(), reducedMotion(), view)
       writePinState(host, pinLayer, pins.getState(), t.scale, cameraState.getState())
@@ -160,6 +175,12 @@ export async function createMapRenderer(
   base.addChild(terrain.view)
   if (decor) base.addChild(decor.view)
   camera.viewport.addChild(base)
+  // As estradas ficam acima do grupo borrado (nítidas durante a geração) e abaixo dos pins.
+  camera.viewport.addChild(roadLayer.view)
+  const syncRoads = () => roadLayer.sync(roads?.getState().roads ?? [], pins.getState())
+  syncRoads()
+  roadLayer.setVisible(ui.getState().layers.roads)
+  const unsubscribeRoads = roads?.subscribe(syncRoads) ?? (() => {})
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
     pinLayer.warmUp(app.renderer)
@@ -169,7 +190,10 @@ export async function createMapRenderer(
   }
   // Camadas liga e desliga os pins de cada tipo; o quadro seguinte os mostra ou esconde.
   const unsubscribePinLayers = ui.subscribe((state, prev) => {
-    if (state.layers !== prev.layers) pinLayer?.setLayers(state.layers)
+    if (state.layers !== prev.layers) {
+      pinLayer?.setLayers(state.layers)
+      roadLayer.setVisible(state.layers.roads)
+    }
   })
   // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
   const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
@@ -178,6 +202,7 @@ export async function createMapRenderer(
   const drawerCover = () => (pins.getState().selectedId !== null ? (insets().drawer ?? 0) : 0)
   const unsubscribePins = pins.subscribe((state, prev) => {
     pinLayer?.sync(state, performance.now())
+    syncRoads()
     if (state.selectedId !== prev.selectedId) camera.setRightCover(drawerCover())
     if (state.selectedId !== prev.selectedId && state.selectedId !== null) {
       const pin = state.pins.find((p) => p.id === state.selectedId)
@@ -261,12 +286,14 @@ export async function createMapRenderer(
       unsubscribePins()
       unsubscribePinLayers()
       unsubscribeImages()
+      unsubscribeRoads()
       app.ticker.remove(onBlurTick)
       app.renderer.off('resize', onResize)
       camera.destroy()
       terrain.destroy()
       decor?.destroy()
       pinLayer?.destroy()
+      roadLayer.destroy()
       blurFilter.destroy()
       app.destroy({ removeView: true }, { children: true })
       delete host.dataset.terrainSize
@@ -276,6 +303,8 @@ export async function createMapRenderer(
       delete host.dataset.decorTotal
       delete host.dataset.decorDrawn
       delete host.dataset.decorLayer
+      delete host.dataset.roads
+      delete host.dataset.roadLayer
       delete host.dataset.pins
       delete host.dataset.pinLabels
       delete host.dataset.pinSelected

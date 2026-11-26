@@ -151,11 +151,20 @@ o resultado fica guardado até a escala, os pins, as camadas ou a seleção muda
 `PinTool` usam a mesma função, então o clique acerta o que está desenhado; o `e2e/agrupamento.spec.ts`
 cobre o grupo, o clique nele e os interruptores dos tipos.
 
+As estradas ficam no `src/state/roadsStore.ts` (Zustand vanilla, um por mundo aberto), que ouve o
+`pinsStore`: excluir um pin tira as estradas ligadas a ele (`from`/`to`) na mesma mudança. O
+renderer as desenha na `layers/RoadLayer.ts` (um `Graphics` entre o grupo borrado e os pins,
+redesenhado quando as estradas, os pins ou a escala mudam: os traços têm px fixos na tela), com a
+curva, os traços e a ponta que segue o pin em `layers/roadMath.ts`, TS puro, testado no Vitest, que
+também serve ao PNG. O `e2e/estradas.spec.ts` importa um mundo com estradas e cobre Camadas, excluir
+e desfazer e recarregar.
+
 O histórico de desfazer fica no `src/state/history.ts`, um por mundo aberto: o middleware `temporal`
-do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, params }`, que ouve o
-`pinsStore` e o `worldStore` e troca o espelho a cada mudança que vale um passo (os parâmetros só ao
-soltar o slider: `paramsDragging` do `worldStore`). Desfazer devolve os pins pelo `replacePins` e os
-parâmetros pelo `setParams`, que pede só o mapa final. O `EditorLayout` liga os botões Desfazer e
+do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, roads, params }`, que ouve o
+`pinsStore`, o `roadsStore` e o `worldStore` e troca o espelho a cada mudança que vale um passo (os parâmetros só ao
+soltar o slider: `paramsDragging` do `worldStore`). O `roadsStore` é criado antes do histórico, para
+excluir um pin e as estradas dele ser um passo só. Desfazer devolve os pins pelo `replacePins`, as
+estradas pelo `replaceRoads` e os parâmetros pelo `setParams`, que pede só o mapa final. O `EditorLayout` liga os botões Desfazer e
 Refazer da barra, as teclas e o toast "Pin excluído" (`src/features/pins/PinDeletedToast.tsx`). Ele também mostra o aviso
 "N pins ficaram sobre a água" (`src/features/pins/PinsOnWaterToast.tsx`) quando um mapa final regerado
 deixa pins em oceano ou lago (`pinsOnWater`, em `place.ts`).
@@ -211,9 +220,9 @@ arquivo (`features/worlds/download.ts`) e grava o importado como um mundo novo
 `features/worlds/ImportWorldDialog.tsx`. Exportar › Imagem (.png) abre o modal
 `features/worlds/ExportImageDialog.tsx`; o `exportImage.ts` (`renderMapImage`) pega o terreno na
 resolução da imagem (no 2× e no 4×, pelo `exportTerrain` de um worker de geração só dele, que não usa
-o cache e devolve só o RGBA e a decoração) e o `src/render/mapImage.ts` desenha o terreno, os ícones e
-os pins num canvas 2D, sem o Pixi; o `e2e/png.spec.ts` baixa o PNG em 1× e 2×. O `autosave.ts` ouve o `worldStore` e o `pinsStore` e grava o mundo 500 ms depois da
-última mudança no nome, na seed, nos parâmetros, no `sizeKm` ou nos pins, uma gravação de cada vez; o status
+o cache e devolve só o RGBA e a decoração) e o `src/render/mapImage.ts` desenha o terreno, os ícones, as estradas e
+os pins num canvas 2D, sem o Pixi; o `e2e/png.spec.ts` baixa o PNG em 1× e 2×. O `autosave.ts` ouve o `worldStore`, o `pinsStore` e o `roadsStore` e grava o mundo 500 ms depois da
+última mudança no nome, na seed, nos parâmetros, no `sizeKm`, nos pins ou nas estradas, uma gravação de cada vez; o status
 (`saved`, `saving`, `error`) vai para o indicador da sidebar (`src/features/worlds/`). O `WorldsApp`
 grava já o que espera a pausa ao voltar à lista e ao esconder ou sair da página. Os testes do Vitest
 usam o `fake-indexeddb` (o repositório) e um repositório em memória (`src/test/memoryRepo.ts`); o
@@ -331,7 +340,7 @@ src/
     generatorClient.ts  # cria o worker; entrega o mais novo (newerOnly.ts)
   render/
     MapRenderer.ts      # cria app Pixi + viewport
-    layers/             # TerrainLayer (+ terrainPixels), DecorLayer, PinLayer (+ pinMath), RoadLayer, LabelLayer
+    layers/             # TerrainLayer (+ terrainPixels), DecorLayer, PinLayer (+ pinMath), RoadLayer (+ roadMath), LabelLayer
     style/palette.ts    # cores e tons por bioma, costa e rio
   state/
     worldStore.ts       # seed, parâmetros, status da geração
@@ -339,7 +348,7 @@ src/
     history.ts          # desfazer e refazer do mundo (zundo), pins e parâmetros
     pinTypes.ts         # os 7 tipos de pin
     pinImages.ts        # imagens enviadas dos pins (blobs do banco e endereços)
-    roadsStore.ts
+    roadsStore.ts       # estradas do mundo; tira as de um pin excluído
     params.ts           # limite Desertos + Florestas (applyParamChange)
     uiStore.ts          # camadas do mapa, sidebar recolhida, minimapa, ferramenta ativa
   features/
@@ -418,7 +427,7 @@ type Pin = {
   parentId?: string;              // pin pai (hierarquia, sem ciclo)
 };
 
-type Road = { id: string; name: string; kind: 'road' | 'trail' | 'sea';
+type Road = { id: string; name: string; kind: 'road' | 'trail' | 'sea'; // name: "Estrada" se faltar no JSON
   points: { u: number; v: number }[]; from?: string; to?: string }; // from/to: pins das pontas
 
 // Saída do worker (não é salva; é regerada)

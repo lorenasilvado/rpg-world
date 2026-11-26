@@ -87,7 +87,7 @@ describe('Camadas (AC-F2-11)', () => {
     render(<MapToolbar ui={ui} />)
     fireEvent.click(screen.getByRole('button', { name: 'Camadas' }))
     const names = screen.getAllByRole('switch').map((el) => el.textContent)
-    expect(names).toEqual(['Decoração', 'Cidade', 'Vila', 'Castelo', 'Masmorra', 'NPC', 'Ponto de interesse', 'Personalizado'])
+    expect(names).toEqual(['Decoração', 'Estradas', 'Cidade', 'Vila', 'Castelo', 'Masmorra', 'NPC', 'Ponto de interesse', 'Personalizado'])
     const city = screen.getByRole('switch', { name: 'Cidade' })
     expect(city.getAttribute('aria-checked')).toBe('true')
     expect(city.querySelector('svg[data-pin-type="cidade"]')).toBeTruthy()
@@ -97,6 +97,19 @@ describe('Camadas (AC-F2-11)', () => {
     expect(city.getAttribute('aria-checked')).toBe('false')
     fireEvent.click(city)
     expect(ui.getState().layers.cidade).toBe(true)
+  })
+
+  it('"Estradas", depois de "Decoração", mostra e esconde as estradas (AC-F5-03)', () => {
+    const ui = createUiStore()
+    render(<MapToolbar ui={ui} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Camadas' }))
+    const roads = screen.getByRole('switch', { name: 'Estradas' })
+    expect(roads.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(roads)
+    expect(ui.getState().layers.roads).toBe(false)
+    expect(ui.getState().layers.decor).toBe(true)
+    fireEvent.click(roads)
+    expect(ui.getState().layers.roads).toBe(true)
   })
 
   it('o interruptor acompanha o estado (desligado por fora)', () => {

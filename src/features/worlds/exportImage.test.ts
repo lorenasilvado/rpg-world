@@ -3,6 +3,7 @@ import { DECOR, DEFAULT_WORLD_PARAMS, type CoreField, type Decor } from '../../c
 import type { Pin } from '../../persistence/types'
 import type { PinImages } from '../../state/pinImages'
 import { createPinsStore } from '../../state/pinsStore'
+import { createRoadsStore } from '../../state/roadsStore'
 import { createUiStore } from '../../state/uiStore'
 import type { WorldStore } from '../../state/worldStore'
 import { mapImageFileName, renderMapImage, type ImageCanvas, type RenderMapImageDeps } from './exportImage'
@@ -146,4 +147,19 @@ describe('Exportar › Imagem (.png) (AC-F4-11)', () => {
     deps.exportTerrain = () => Promise.reject(new Error('sem memória'))
     await expect(renderMapImage(source, { scale: 4, pins: false }, deps)).rejects.toThrow('sem memória')
   })
+
+  it('com "Pins e rótulos", leva as estradas, que Camadas pode deixar de fora (AC-F5-03)', async () => {
+    const { source, deps, calls, ui } = setup({ pins: [pin('a', 'cidade')] })
+    const roads = createRoadsStore([{ id: 'r', name: 'R', kind: 'road', points: [{ u: 0.1, v: 0.1 }, { u: 0.2, v: 0.2 }], from: 'a' }])
+    const withRoads = { ...source, roads }
+    await renderMapImage(withRoads, { scale: 1, pins: true }, deps)
+    expect(calls.filter((c) => c === 'bezierCurveTo')).toHaveLength(2)
+    calls.length = 0
+    await renderMapImage(withRoads, { scale: 1, pins: false }, deps)
+    expect(calls).not.toContain('bezierCurveTo')
+    ui.getState().setLayer('roads', false)
+    await renderMapImage(withRoads, { scale: 1, pins: true }, deps)
+    expect(calls).not.toContain('bezierCurveTo')
+  })
 })
+

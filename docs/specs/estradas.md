@@ -9,9 +9,12 @@ updated: 2026-11-25
 Descreve como a feature funciona **hoje**. Planos e mudanças ficam nas issues; o PR que muda
 o comportamento atualiza esta spec.
 
-> Nada implementado ainda: o conteúdo abaixo vem do PRD (RF-5, desejável), do protótipo do editor
-> e das decisões do [plano do M3](../milestones/m3.md). Hoje, Desenhar estrada e Rota automática
-> aparecem desabilitadas na toolbar, e o mundo é salvo com a lista de estradas vazia.
+> Implementado: o modelo (`Road`, com nome), as estradas salvas com o mundo, no Desfazer e
+> Refazer, no JSON e no PNG; o desenho no mapa (estrada, trilha e rota marítima, na curva
+> suavizada, com a ponta ligada acompanhando o pin) e o interruptor "Estradas" em Camadas. Hoje as
+> estradas só entram por um arquivo .json importado: Desenhar estrada e Rota automática aparecem
+> desabilitadas na toolbar, e não há seleção nem drawer da estrada. O resto vem do PRD (RF-5,
+> desejável), do protótipo do editor e das decisões do [plano do M3](../milestones/m3.md).
 
 ## Resumo
 
@@ -53,7 +56,13 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 
 ## Regras
 
-- Tipos de via com estilos distintos: estrada, trilha, rota marítima.
+- Tipos de via com estilos distintos: estrada, trilha, rota marítima. Os traços têm a largura e o
+  tracejado do design system em px na tela, em qualquer zoom; no PNG, na escala da imagem.
+- A curva passa por todos os pontos da estrada (Catmull-Rom).
+- Onde duas estradas se cruzam, o contorno de uma não corta o traço da outra: os contornos de
+  todas ficam por baixo dos traços de cima, no mapa e no PNG.
+- Uma estrada sem nome num arquivo editado à mão é importada como "Estrada". Ao abrir o mundo, a
+  ponta ligada a um pin que não existe perde o vínculo e fica no ponto dela.
 - A rota automática nunca cruza água (exceto rota marítima) e evita montanhas quando há desvio.
 - A rota pelo terreno roda num worker, numa grade de 256² (com a curva suavizada depois). O custo
   vem do bioma e da inclinação: planícies são baratas, floresta e colina custam mais, montanha
@@ -64,10 +73,12 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 - A rota marítima usa a mesma busca só pela água (a terra só vale perto de cada pin).
 - A ponta de uma estrada ligada a um pin acompanha o pin quando ele é arrastado; o meio do
   traçado não é recalculado. Excluir um pin exclui as estradas ligadas a ele; Desfazer devolve tudo.
-- As estradas ficam acima do terreno e da decoração e abaixo dos pins.
+- As estradas ficam acima do terreno e da decoração e abaixo dos pins, e não ficam borradas
+  enquanto o mapa gera.
 - Desfazer e refazer cobrem estradas (ver [mundos.md](mundos.md)).
-- As estradas são salvas com o mundo e vão no JSON exportado; o PNG com pins e rótulos leva
-  também as estradas (ver [mundos.md](mundos.md)).
+- As estradas são salvas com o mundo e vão no JSON exportado; o PNG com "Pins e rótulos" leva
+  também as estradas, a não ser que "Estradas" esteja desligada em Camadas (ver
+  [mundos.md](mundos.md)).
 
 ## Critérios de aceite vigentes
 

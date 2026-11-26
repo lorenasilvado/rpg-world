@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_WORLD_PARAMS } from '../core'
-import type { Pin } from '../persistence/types'
+import type { Pin, Road } from '../persistence/types'
 import { createWorldHistory } from './history'
 import { createPinsStore } from './pinsStore'
+import { createRoadsStore } from './roadsStore'
 import { MAP_SIZE, PREVIEW_SIZE } from './sizes'
 import { createWorldStore, type WorldGenerator } from './worldStore'
 
@@ -278,3 +279,60 @@ describe('hierarquia no histórico (AC-F3-12)', () => {
     expect('parentId' in pins.getState().pins[1]).toBe(false)
   })
 })
+
+describe('histórico com as estradas (AC-F5-02, AC-F5-08)', () => {
+  const road = (id: string, from?: string, to?: string): Road => ({
+    id,
+    name: id,
+    kind: 'trail',
+    points: [
+      { u: 0.1, v: 0.1 },
+      { u: 0.2, v: 0.2 },
+    ],
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+  })
+  function setupRoads() {
+    const world = createWorldStore(fakeGenerator().generator)
+    const pins = createPinsStore([pin('a'), pin('b', 0.2, 0.3)])
+    // As estradas ouvem os pins antes do histórico, como no app.
+    const roads = createRoadsStore([road('ab', 'a', 'b'), road('livre')], pins)
+    const history = createWorldHistory({ world, pins, roads })
+    return { pins, roads, history }
+  }
+
+  it('mudar as estradas é um passo, que Desfazer e Refazer trocam', () => {
+    const { roads, history } = setupRoads()
+    const before = roads.getState().roads
+    roads.getState().replaceRoads([road('nova')])
+    expect(history.canUndo()).toBe(true)
+    history.undo()
+    expect(roads.getState().roads).toBe(before)
+    history.redo()
+    expect(roads.getState().roads.map((r) => r.id)).toEqual(['nova'])
+  })
+
+  it('excluir um pin e as estradas ligadas é um passo só, e Desfazer devolve tudo', () => {
+    const { pins, roads, history } = setupRoads()
+    pins.getState().removePin('a')
+    expect(roads.getState().roads.map((r) => r.id)).toEqual(['livre'])
+    expect(history.temporal.getState().pastStates).toHaveLength(1)
+    history.undo()
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['a', 'b'])
+    expect(roads.getState().roads.map((r) => r.id)).toEqual(['ab', 'livre'])
+    expect(history.canUndo()).toBe(false)
+    history.redo()
+    expect(pins.getState().pins.map((p) => p.id)).toEqual(['b'])
+    expect(roads.getState().roads.map((r) => r.id)).toEqual(['livre'])
+  })
+
+  it('arrastar um pin ligado é um passo, e a estrada não muda (a ponta segue o pin no desenho)', () => {
+    const { pins, roads, history } = setupRoads()
+    const before = roads.getState().roads
+    pins.getState().dragTo('a', { u: 0.9, v: 0.9 })
+    pins.getState().endDrag(true)
+    expect(roads.getState().roads).toBe(before)
+    expect(history.temporal.getState().pastStates).toHaveLength(1)
+  })
+})
+

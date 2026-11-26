@@ -17,6 +17,7 @@ import type { WorldsRepo } from '../persistence/worldsRepo'
 import { createWorldHistory, type WorldHistory } from '../state/history'
 import { createPinImages, pinImageIds, type PinImages } from '../state/pinImages'
 import { createPinsStore, type PinsStore } from '../state/pinsStore'
+import { createRoadsStore, type RoadsStore } from '../state/roadsStore'
 import { createUiStore, type UiStore } from '../state/uiStore'
 import { createWorldStore, newWorldId, type WorldGenerator, type WorldStore } from '../state/worldStore'
 import type { CreateMapRenderer } from './MapView'
@@ -25,10 +26,10 @@ import type { CreateMapRenderer } from './MapView'
 const currentTime = () => new Date()
 
 /**
- * O mundo aberto no editor: o estado dele, os pins, as imagens enviadas dos pins, o histórico de
- * desfazer e o salvamento automático.
+ * O mundo aberto no editor: o estado dele, os pins, as estradas, as imagens enviadas dos pins, o
+ * histórico de desfazer e o salvamento automático.
  */
-type Session = { world: WorldStore; pins: PinsStore; images: PinImages; history: WorldHistory; autosave: Autosave }
+type Session = { world: WorldStore; pins: PinsStore; roads: RoadsStore; images: PinImages; history: WorldHistory; autosave: Autosave }
 
 /**
  * O app (mundos.md → Ações, AC-F4-04 a AC-F4-06, AC-F4-12): a Lista de mundos é a tela inicial;
@@ -136,9 +137,11 @@ export function WorldsApp({
       const used = pinImageIds(record.pins)
       void images.load(used)
       void images.prune(used)
-      const history = createWorldHistory({ world, pins })
-      const autosave = createAutosave({ world, pins, repo, loaded: record, now })
-      const session = { world, pins, images, history, autosave }
+      // As estradas ouvem os pins antes do histórico: excluir um pin e as estradas dele é um passo só.
+      const roads = createRoadsStore(record.roads, pins)
+      const history = createWorldHistory({ world, pins, roads })
+      const autosave = createAutosave({ world, pins, roads, repo, loaded: record, now })
+      const session = { world, pins, roads, images, history, autosave }
       setSession(session)
       return session
     },
@@ -149,6 +152,7 @@ export function WorldsApp({
     if (!session) return
     session.autosave.dispose()
     session.history.dispose()
+    session.roads.getState().dispose()
     session.images.dispose()
     setUnsaved('closed')
     setWorlds(null)
@@ -208,6 +212,7 @@ export function WorldsApp({
           key={session.world.getState().id}
           world={session.world}
           pins={session.pins}
+          roads={session.roads}
           images={session.images}
           history={session.history}
           ui={uiStore}
@@ -219,7 +224,7 @@ export function WorldsApp({
           onExportImage={
             renderImage &&
             (async (options) => {
-              const blob = await renderImage({ world: session.world, pins: session.pins, images: session.images, ui: uiStore }, options)
+              const blob = await renderImage({ world: session.world, pins: session.pins, roads: session.roads, images: session.images, ui: uiStore }, options)
               download(blob, mapImageFileName(session.world.getState().name, options.scale))
             })
           }

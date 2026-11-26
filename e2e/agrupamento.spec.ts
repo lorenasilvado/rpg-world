@@ -85,7 +85,7 @@ test('Camadas esconde e mostra os pins de cada tipo, e o grupo acompanha (AC-F3-
 
   await page.getByRole('button', { name: 'Camadas' }).click()
   const popover = page.getByTestId('layers-popover')
-  await expect(popover.getByRole('switch')).toHaveText(['Decoração', 'Cidade', 'Vila', 'Castelo', 'Masmorra', 'NPC', 'Ponto de interesse', 'Personalizado'])
+  await expect(popover.getByRole('switch')).toHaveText(['Decoração', 'Estradas', 'Cidade', 'Vila', 'Castelo', 'Masmorra', 'NPC', 'Ponto de interesse', 'Personalizado'])
   await info.attach('camadas-1440.png', { body: await page.screenshot(), contentType: 'image/png' })
 
   // Sem as cidades: as 100 cidades somem, e o resto continua.

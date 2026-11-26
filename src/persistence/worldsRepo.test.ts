@@ -119,7 +119,7 @@ describe('renomear, duplicar e excluir (AC-F4-07)', () => {
 
   it('duplicate grava a cópia com os pins e as imagens, em ids novos, e o original fica igual', async () => {
     const repo = createWorldsRepo(freshDb())
-    const original = world({ pins: [imagePin('p1', 'img1')], roads: [{ id: 'r1', kind: 'road', points: [{ u: 0, v: 0 }] }] })
+    const original = world({ pins: [imagePin('p1', 'img1')], roads: [{ id: 'r1', name: 'Estrada', kind: 'road', points: [{ u: 0, v: 0 }] }] })
     await repo.save(original)
     await repo.saveImage({ id: 'img1', worldId: 'w1', blob: new Blob([new Uint8Array([7, 8])], { type: 'image/png' }) })
     await repo.saveImage({ id: 'outra', worldId: 'w2', blob: new Blob([]) })

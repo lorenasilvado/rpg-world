@@ -22,4 +22,7 @@ export const TOOLS: readonly Tool[] = [
 ]
 
 /** As camadas que o popover de Camadas liga e desliga (só as que existem no mapa). */
-export const LAYERS: readonly { id: MapLayer; label: string; icon: LucideIcon }[] = [{ id: 'decor', label: 'Decoração', icon: Trees }]
+export const LAYERS: readonly { id: MapLayer; label: string; icon: LucideIcon }[] = [
+  { id: 'decor', label: 'Decoração', icon: Trees },
+  { id: 'roads', label: 'Estradas', icon: Route },
+]

@@ -12,7 +12,7 @@ o comportamento atualiza esta spec.
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
 > (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
-> que ainda não existem desabilitadas), Camadas (interruptores "Decoração" e um por tipo de pin), Ajuda (modal "Atalhos
+> que ainda não existem desabilitadas), Camadas (interruptores "Decoração", "Estradas" e um por tipo de pin), Ajuda (modal "Atalhos
 > de teclado") e Medir distância. Em tela baixa (celular deitado), os painéis são sobrepostos e a
 > toolbar fica na linha inferior.
 
@@ -64,7 +64,8 @@ barra inferior.
   toolbar e o zoom. O minimapa começa recolhido em tela baixa, com um aberto ou recolhido só dela:
   abrir ou recolher ali não muda a preferência das telas altas, e girar o celular de volta a devolve.
 - Camadas abre um popover (248 px) com o título "Camadas" e um interruptor por camada do mapa:
-  "Decoração" (ícone `trees`) e, abaixo dela, depois de um traço, um por tipo de pin (Cidade, Vila,
+  "Decoração" (ícone `trees`), "Estradas" (ícone `route`, ver [estradas.md](estradas.md)) e, abaixo
+  delas, depois de um traço, um por tipo de pin (Cidade, Vila,
   Castelo, Masmorra, NPC, Ponto de interesse e Personalizado, com o ícone do tipo; ver
   [pins.md](pins.md)). O popover fica entre a barra superior e a toolbar, com a toolbar em qualquer
   lugar; sem espaço para todas as linhas (celular, tablet com a toolbar em pé, tela baixa), ele rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
