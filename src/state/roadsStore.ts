@@ -1,5 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { Pin, Road } from '../persistence/types'
+import type { Pin, Road, RoadKind } from '../persistence/types'
 import type { PinsStore } from './pinsStore'
 
 /**
@@ -10,6 +10,8 @@ import type { PinsStore } from './pinsStore'
  * O store ouve os pins do mundo: excluir um pin exclui as estradas ligadas a ele (`from` ou `to`),
  * na mesma mudança dos pins, e o histórico guarda as duas num passo só (o Desfazer devolve tudo).
  * Ao abrir, um vínculo com um pin que não existe sai (a estrada fica, com a ponta no ponto dela).
+ *
+ * O drawer da estrada muda o nome e o tipo (`updateRoad`, AC-F5-07) e exclui (`removeRoad`, AC-F5-08).
  *
  * A estrada desenhada à mão entra pelo `addRoad` (AC-F5-04) e fica selecionada (`selectedId`). A
  * seleção não vai para o mundo salvo nem para o histórico: a estrada que sai da lista (desfeita, ou
@@ -27,6 +29,19 @@ export type RoadsState = {
   addRoad(draft: { points: readonly { u: number; v: number }[]; from?: string; to?: string }): Road | null
   /** Seleciona a estrada (`null`: nenhuma). */
   select(id: string | null): void
+  /**
+   * Muda o nome ou o tipo de via da estrada (o drawer da estrada, AC-F5-07). Um nome vazio (só
+   * espaços) não muda nada; o nome fica sem os espaços das pontas.
+   */
+  updateRoad(id: string, patch: { name?: string; kind?: RoadKind }): void
+  /** Exclui a estrada (AC-F5-08); `false` se ela não existe. */
+  removeRoad(id: string): boolean
+  /**
+   * Sobe quando a edição do nome termina (o campo perdeu o foco): as teclas seguidas no nome viram
+   * um passo só no histórico, e depois disso é outro passo.
+   */
+  textEditEnds: number
+  endTextEdit(): void
   /** Troca a lista inteira (o desfazer e o refazer do histórico). */
   replaceRoads(roads: readonly Road[]): void
   /** Para de ouvir os pins (o mundo fechou). */
@@ -92,6 +107,30 @@ export function createRoadsStore(
       if (get().selectedId === id) return
       set({ selectedId: id })
       if (id !== null) pins?.getState().select(null)
+    },
+    updateRoad(id, patch) {
+      const name = patch.name?.trim()
+      if (patch.name !== undefined && !name) return
+      let changed = false
+      const list = get().roads.map((r) => {
+        if (r.id !== id) return r
+        const next = { ...r, ...(name !== undefined ? { name } : {}), ...(patch.kind !== undefined ? { kind: patch.kind } : {}) }
+        if (next.name === r.name && next.kind === r.kind) return r
+        changed = true
+        return next
+      })
+      if (changed) set({ roads: list })
+    },
+    removeRoad(id) {
+      const { roads, selectedId } = get()
+      const kept = roads.filter((r) => r.id !== id)
+      if (kept.length === roads.length) return false
+      set({ roads: kept, selectedId: selectedId === id ? null : selectedId })
+      return true
+    },
+    textEditEnds: 0,
+    endTextEdit() {
+      set({ textEditEnds: get().textEditEnds + 1 })
     },
     replaceRoads(list) {
       set({ roads: list as Road[], selectedId: keepSelected(get().selectedId, list) })

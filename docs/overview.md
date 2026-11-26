@@ -156,8 +156,14 @@ As estradas ficam no `src/state/roadsStore.ts` (Zustand vanilla, um por mundo ab
 renderer as desenha na `layers/RoadLayer.ts` (um `Graphics` entre o grupo borrado e os pins,
 redesenhado quando as estradas, os pins ou a escala mudam: os traços têm px fixos na tela), com a
 curva, os traços e a ponta que segue o pin em `layers/roadMath.ts`, TS puro, testado no Vitest, que
-também serve ao PNG. O `e2e/estradas.spec.ts` importa um mundo com estradas e cobre Camadas, excluir
-e desfazer e recarregar.
+também serve ao PNG. A estrada selecionada (`selectedId` do `roadsStore`) ganha o halo na `RoadLayer`.
+O clique numa estrada, com Navegar, é do `PinTool` (os pins têm prioridade), pelo `roadAt` de
+`src/features/roads/roadHit.ts` (TS puro, testado no Vitest), e o `RoadDrawer.tsx` mostra a estrada
+selecionada no mesmo drawer do pin: o nome e o tipo de via (`updateRoad`; as teclas seguidas no nome
+viram um passo só no histórico, como no pin), a extensão (`roadLengthKm`, em `roadMath.ts`), os pins
+ligados e Excluir (`removeRoad`, com o toast "Estrada excluída", o mesmo `PinDeletedToast`). O
+`e2e/estradas.spec.ts` importa um mundo com estradas e cobre Camadas, excluir e desfazer, recarregar,
+desenhar, selecionar e o drawer da estrada.
 
 O histórico de desfazer fica no `src/state/history.ts`, um por mundo aberto: o middleware `temporal`
 do zundo ([ADR 0001](adr/0001-stack-da-v1.md)) sobre um espelho `{ pins, roads, params }`, que ouve o

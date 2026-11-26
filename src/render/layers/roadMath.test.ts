@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROAD_STROKES, cssColor, curveSegments, dashPolyline, roadPoints, sampleCurve, strokeOrder, type XY } from './roadMath'
+import { ROAD_STROKES, cssColor, curveSegments, dashPolyline, distanceToPolyline, polylineLength, roadLengthKm, roadPoints, sampleCurve, strokeOrder, type XY } from './roadMath'
 
 const len = (line: readonly XY[]) => line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - line[i].x, p.y - line[i].y), 0)
 
@@ -73,5 +73,29 @@ describe('estradas: curva e traços (AC-F5-01)', () => {
   it('nos cruzamentos, os contornos de todas as estradas vão antes dos traços de cima', () => {
     const order = strokeOrder([{ kind: 'road' as const }, { kind: 'trail' as const }, { kind: 'road' as const }])
     expect(order.map(({ stroke }) => cssColor(stroke.color) + '/' + stroke.width)).toEqual(['#f5eacb/7', '#f5eacb/7', '#7a5230/3.5', '#7a5230/3.2', '#7a5230/3.5'])
+  })
+
+
+  it('o comprimento e a distância até a polilinha', () => {
+    const line = [
+      { x: 0, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 40 },
+    ]
+    expect(polylineLength(line)).toBe(70)
+    expect(distanceToPolyline({ x: 10, y: 5 }, line)).toBe(5)
+    expect(distanceToPolyline({ x: 35, y: 20 }, line)).toBe(5)
+    expect(distanceToPolyline({ x: -3, y: -4 }, line)).toBe(5)
+    expect(distanceToPolyline({ x: 1, y: 1 }, [])).toBe(Infinity)
+  })
+
+  it('o comprimento da estrada em km segue a curva e as pontas nos pins (AC-F5-06)', () => {
+    // Reta de 0,25 do mapa num mundo de 800 km: 200 km.
+    const straight = { points: [{ u: 0.25, v: 0.5 }, { u: 0.5, v: 0.5 }] }
+    expect(roadLengthKm(straight, () => undefined, 800)).toBeCloseTo(200, 6)
+    // A ponta ligada ao pin fica na posição dele.
+    const linked = { ...straight, to: 'p' }
+    expect(roadLengthKm(linked, (id) => (id === 'p' ? { u: 0.75, v: 0.5 } : undefined), 800)).toBeCloseTo(400, 6)
+    expect(roadLengthKm({ points: [{ u: 0.1, v: 0.1 }] }, () => undefined, 800)).toBe(0)
   })
 })

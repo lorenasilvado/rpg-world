@@ -28,7 +28,9 @@ export const HISTORY_LIMIT = 100
  * - As teclas seguidas no mesmo texto do mesmo pin (o nome, a descrição ou o valor de um campo
  *   livre) viram um passo só. A edição termina quando o campo perde o foco (`textEditEnds` do
  *   `pinsStore`) ou a seleção muda: depois disso, mais teclas no mesmo texto são outro passo.
- *   Trocar de texto (do nome para a descrição) também começa outro passo.
+ *   Trocar de texto (do nome para a descrição) também começa outro passo. O nome de uma estrada
+ *   (o drawer da estrada, AC-F5-07) segue a mesma regra, com o `textEditEnds` e a seleção do
+ *   `roadsStore`; trocar o tipo de via é sempre um passo.
  * - Desfazer ou refazer devolve os pins ao `pinsStore` (a seleção de um pin que saiu é desfeita), as
  *   estradas ao `roadsStore` e,
  *   se os parâmetros mudaram, os troca no `worldStore` pelo `setParams`, que pede só o mapa final
@@ -96,6 +98,26 @@ export function editedText(before: readonly Pin[], after: readonly Pin[]): strin
   return edited
 }
 
+/**
+ * O nome editado, como `road:<id>:name`, quando a única diferença entre as duas listas de estradas é
+ * o nome de uma estrada (`null` se a mudança é outra: o tipo de via, uma estrada nova ou excluída).
+ */
+export function editedRoadName(before: readonly Road[], after: readonly Road[]): string | null {
+  if (before.length !== after.length) return null
+  let edited: string | null = null
+  for (let i = 0; i < before.length; i++) {
+    const a = before[i]
+    const b = after[i]
+    if (a === b) continue
+    if (edited !== null || a.id !== b.id || a.name === b.name) return null
+    const { name: _a, ...restA } = a
+    const { name: _b, ...restB } = b
+    if (JSON.stringify(restA) !== JSON.stringify(restB)) return null
+    edited = `road:${a.id}:name`
+  }
+  return edited
+}
+
 export function createWorldHistory({ world, pins, roads }: { world: WorldStore; pins: PinsStore; roads?: RoadsStore }): WorldHistory {
   const currentRoads = (): readonly Road[] => roads?.getState().roads ?? NO_ROADS
   const doc = createStore<HistoryDoc>()(
@@ -115,7 +137,10 @@ export function createWorldHistory({ world, pins, roads }: { world: WorldStore; 
     const current = doc.getState()
     const merged = { ...current, ...next }
     if (merged.pins === current.pins && merged.roads === current.roads && sameParams(merged.params, current.params)) return
-    const edited = next.pins && merged.roads === current.roads ? editedText(current.pins, next.pins) : null
+    const edited =
+      next.pins && merged.roads === current.roads ? editedText(current.pins, next.pins)
+      : next.roads && merged.pins === current.pins ? editedRoadName(current.roads, next.roads)
+      : null
     if (edited !== null && edited === editing && doc.temporal.getState().pastStates.length > 0) {
       // Mais uma tecla no mesmo texto: troca o espelho sem guardar outro passo.
       doc.temporal.getState().pause()
@@ -135,6 +160,7 @@ export function createWorldHistory({ world, pins, roads }: { world: WorldStore; 
   })
   const unsubscribeRoads =
     roads?.subscribe((state, prev) => {
+      if (state.textEditEnds !== prev.textEditEnds || state.selectedId !== prev.selectedId) editing = null
       if (applying || state.roads === prev.roads) return
       record({ roads: state.roads, pins: pins.getState().pins })
     }) ?? (() => {})

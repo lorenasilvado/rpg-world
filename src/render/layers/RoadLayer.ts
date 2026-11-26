@@ -1,7 +1,6 @@
 import { Graphics } from 'pixi.js'
 import type { Pin, Road } from '../../persistence/types'
-import { WORLD_SIZE } from '../camera'
-import { dashPolyline, roadPoints, sampleCurve, strokeOrder, type UV, type XY } from './roadMath'
+import { ROAD_HALO, dashPolyline, roadLine, strokeOrder, type UV, type XY } from './roadMath'
 
 /** O que a camada lê dos pins: as posições, com o pin arrastado na posição do arrasto. */
 export type RoadPinsState = { pins: readonly Pin[]; dragging: { id: string; pos: UV } | null }
@@ -16,11 +15,13 @@ const SAMPLE_PX = 2
  * px na tela, em qualquer zoom: a camada redesenha quando a escala muda. Os contornos de todas as
  * estradas vão antes dos traços de cima (`strokeOrder`): nos cruzamentos, nenhum contorno corta outro
  * traço. A ponta ligada a um pin
- * fica na posição dele, e acompanha o arrasto (`sync` com o `dragging` dos pins).
+ * fica na posição dele, e acompanha o arrasto (`sync` com o `dragging` dos pins). A estrada selecionada
+ * ganha o halo âmbar (`ROAD_HALO`, AC-F5-06), por baixo dos traços.
  */
 export class RoadLayer {
   readonly view = new Graphics()
   private roads: readonly Road[] = []
+  private selectedId: string | null = null
   private pins: RoadPinsState = { pins: [], dragging: null }
   private dirty = true
   private drawnScale = 0
@@ -32,9 +33,10 @@ export class RoadLayer {
   }
 
   /** Troca as estradas ou os pins (posições e arrasto); o próximo quadro redesenha. */
-  sync(roads: readonly Road[], pins: RoadPinsState) {
-    if (roads === this.roads && pins.pins === this.pins.pins && pins.dragging === this.pins.dragging) return
+  sync(roads: readonly Road[], pins: RoadPinsState, selectedId: string | null = null) {
+    if (roads === this.roads && selectedId === this.selectedId && pins.pins === this.pins.pins && pins.dragging === this.pins.dragging) return
     this.roads = roads
+    this.selectedId = selectedId
     this.pins = { pins: pins.pins, dragging: pins.dragging }
     this.dirty = true
   }
@@ -60,6 +62,14 @@ export class RoadLayer {
       const line = roadLine(road, pinPos, SAMPLE_PX / scale)
       if (line.length >= 2) lines.set(road, line)
     }
+    // O halo da estrada selecionada (AC-F5-06) fica por baixo de todos os traços.
+    const selected = this.roads.find((r) => r.id === this.selectedId)
+    const halo = selected && lines.get(selected)
+    if (halo) {
+      g.moveTo(halo[0].x, halo[0].y)
+      for (let i = 1; i < halo.length; i++) g.lineTo(halo[i].x, halo[i].y)
+      g.stroke({ width: ROAD_HALO.width / scale, color: ROAD_HALO.color, alpha: ROAD_HALO.alpha, cap: 'round', join: 'round' })
+    }
     for (const { road, stroke } of strokeOrder([...lines.keys()])) {
       const line = lines.get(road)!
       const parts = stroke.dash ? dashPolyline(line, stroke.dash[0] / scale, stroke.dash[1] / scale) : [line]
@@ -75,10 +85,4 @@ export class RoadLayer {
   destroy() {
     this.view.destroy()
   }
-}
-
-/** A curva da estrada em unidades do mundo, amostrada a cada `step`. */
-export function roadLine(road: Road, pinPos: (id: string) => UV | undefined, step: number): XY[] {
-  const points = roadPoints(road, pinPos).map((p) => ({ x: p.u * WORLD_SIZE, y: p.v * WORLD_SIZE }))
-  return points.length < 2 ? [] : sampleCurve(points, step)
 }

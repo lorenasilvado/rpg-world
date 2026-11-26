@@ -4,8 +4,10 @@ import { GROUP_FOCUS_ZOOM } from '../../render/layers/pinGroups'
 import { pinToScreen, screenToPin, screenToPinClamped } from '../../render/layers/pinMath'
 import type { CameraStore } from '../../state/cameraStore'
 import type { PinsStore } from '../../state/pinsStore'
+import type { RoadsStore } from '../../state/roadsStore'
 import type { MapTool, UiStore } from '../../state/uiStore'
 import { CLICK_SLOP_PX } from '../map/MeasureTool'
+import { createRoadHit } from '../roads/roadHit'
 import { createVisiblePins } from './visiblePins'
 
 /** O elemento da área do mapa sob o evento (`null` fora dela: painéis, barras, minimapa). */
@@ -33,8 +35,12 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * mouse sobre um grupo, `groupHovered` fica ligado (o cursor é a lupa). Com o mouse parado, o hover
  * é refeito quando a câmera ou as camadas mudam.
  *
- * Esc fecha o drawer (tira a seleção); sem pin selecionado, com Adicionar pin, volta para Navegar.
- * Delete ou Backspace exclui o pin selecionado (`onDelete`), sem confirmação. As teclas seguem as exceções dos
+ * As estradas (`roads`, estradas.md AC-F5-06): com Navegar, um clique numa estrada à vista (até
+ * `ROAD_HIT_PX` da linha dela, `roadHit.ts`) a seleciona; os pins e os grupos têm prioridade.
+ *
+ * Esc fecha o drawer (tira a seleção do pin ou da estrada); sem nada selecionado, com Adicionar pin,
+ * volta para Navegar. Delete ou Backspace exclui o pin selecionado (`onDelete`) ou a estrada
+ * selecionada (`onDeleteRoad`, AC-F5-08), sem confirmação. As teclas seguem as exceções dos
  * atalhos do mapa (foco num campo, dentro de um modal), e nada vale com `disabled` (painel sobreposto
  * aberto no celular).
  */
@@ -42,15 +48,21 @@ export function PinTool({
   ui,
   pins,
   camera,
+  roads,
   disabled,
   onDelete,
+  onDeleteRoad,
 }: {
   ui: UiStore
   pins: PinsStore
   camera: CameraStore
+  /** As estradas do mundo: o clique numa delas a seleciona. */
+  roads?: RoadsStore
   disabled: boolean
   /** Exclui o pin (Delete): quem o recebe mostra o toast "Pin excluído". */
   onDelete?: (id: string) => void
+  /** Exclui a estrada (Delete): quem o recebe mostra o toast "Estrada excluída". */
+  onDeleteRoad?: (id: string) => void
 }) {
   useEffect(() => {
     if (disabled) return
@@ -60,11 +72,16 @@ export function PinTool({
       if (e.key === 'Delete' || e.key === 'Backspace') {
         // Com o foco no drawer (um chip de tag, uma aba, o rodapé), a tecla não exclui o pin: um
         // Backspace num chip não pode apagar o pin inteiro.
-        if (inPinDrawer(e.target)) return
+        if (inPinDrawer(e.target) || e.ctrlKey || e.altKey || e.metaKey || pins.getState().dragging) return
         const id = pins.getState().selectedId
-        if (id === null || !onDelete || e.ctrlKey || e.altKey || e.metaKey || pins.getState().dragging) return
-        e.preventDefault()
-        onDelete(id)
+        const roadId = roads?.getState().selectedId ?? null
+        if (id !== null && onDelete) {
+          e.preventDefault()
+          onDelete(id)
+        } else if (roadId !== null && onDeleteRoad) {
+          e.preventDefault()
+          onDeleteRoad(roadId)
+        }
         return
       }
       if (e.key !== 'Escape') return
@@ -72,6 +89,9 @@ export function PinTool({
       if (pins.getState().selectedId !== null) {
         e.preventDefault()
         pins.getState().select(null)
+      } else if (roads && roads.getState().selectedId !== null) {
+        e.preventDefault()
+        roads.getState().select(null)
       } else if (ui.getState().tool === 'pin') {
         e.preventDefault()
         ui.getState().setTool('nav')
@@ -79,7 +99,7 @@ export function PinTool({
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [ui, pins, disabled, onDelete])
+  }, [ui, pins, roads, disabled, onDelete, onDeleteRoad])
 
   useEffect(() => {
     if (disabled) return
@@ -94,6 +114,7 @@ export function PinTool({
     const visible = createVisiblePins(ui, pins, camera)
     const under = visible.pinAt
     const groupUnder = visible.groupAt
+    const roadUnder = roads ? createRoadHit(ui, pins, roads, camera) : () => null
     /** O pan da câmera está seguro por um aperto num pin. */
     let panHeld = false
     const holdPan = (held: boolean) => {
@@ -148,6 +169,11 @@ export function PinTool({
       if (group) {
         camera.getState().controls?.focusOn(group.x, group.y, GROUP_FOCUS_ZOOM)
         pins.getState().setGroupHovered(false)
+        return
+      }
+      if (tool === 'nav' && roads) {
+        const road = roadUnder(at.x, at.y)
+        if (road) roads.getState().select(road.id)
         return
       }
       if (tool !== 'pin') return
@@ -227,7 +253,7 @@ export function PinTool({
       pins.getState().setHovered(null)
       pins.getState().setGroupHovered(false)
     }
-  }, [ui, pins, camera, disabled])
+  }, [ui, pins, camera, roads, disabled])
 
   return null
 }
@@ -237,7 +263,7 @@ function clicksPins(tool: MapTool): boolean {
   return tool !== 'measure' && tool !== 'road'
 }
 
-/** Se o alvo do teclado está dentro do drawer do pin (`data-pin-drawer`). */
+/** Se o alvo do teclado está dentro do drawer do pin ou da estrada (`data-pin-drawer`, `data-road-drawer`). */
 function inPinDrawer(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest('[data-pin-drawer]') !== null
+  return target instanceof Element && target.closest('[data-pin-drawer],[data-road-drawer]') !== null
 }

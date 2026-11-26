@@ -61,7 +61,8 @@ export type MapRenderer = {
  * fora do desfoque, e abaixo dos pins, com os traços em px na tela em qualquer zoom; a ponta ligada a
  * um pin acompanha o pin, também durante o arrasto. O interruptor "Estradas" de Camadas
  * (`layers.roads` do `ui`) as mostra e esconde. Para os testes, o `host` expõe as estradas desenhadas
- * em `data-roads` e a camada em `data-road-layer` (`on` ou `off`).
+ * em `data-roads`, a camada em `data-road-layer` (`on` ou `off`) e a estrada selecionada (com o halo,
+ * AC-F5-06) em `data-road-selected`.
  *
  * Os pins do `pins` (`PinLayer`) ficam acima do terreno e da decoração, fora do desfoque, com 32 px
  * na tela em qualquer zoom; o Personalizado com imagem enviada (`images`) a mostra no círculo.
@@ -177,10 +178,24 @@ export async function createMapRenderer(
   camera.viewport.addChild(base)
   // As estradas ficam acima do grupo borrado (nítidas durante a geração) e abaixo dos pins.
   camera.viewport.addChild(roadLayer.view)
-  const syncRoads = () => roadLayer.sync(roads?.getState().roads ?? [], pins.getState())
+  // O drawer (a partir de 768 px) fica aberto com um pin ou uma estrada selecionada: os limites de pan
+  // e o centro do pin contam com a faixa dele.
+  const drawerCover = () =>
+    pins.getState().selectedId !== null || (roads?.getState().selectedId ?? null) !== null ? (insets().drawer ?? 0) : 0
+  const syncRoads = () => {
+    const selected = roads?.getState().selectedId ?? null
+    roadLayer.sync(roads?.getState().roads ?? [], pins.getState(), selected)
+    const value = selected ?? ''
+    if (host.dataset.roadSelected !== value) host.dataset.roadSelected = value
+  }
   syncRoads()
   roadLayer.setVisible(ui.getState().layers.roads)
-  const unsubscribeRoads = roads?.subscribe(syncRoads) ?? (() => {})
+  const unsubscribeRoads =
+    roads?.subscribe((state, prev) => {
+      syncRoads()
+      // O drawer abre e fecha com a estrada selecionada: os limites de pan contam com a faixa dele.
+      if (state.selectedId !== prev.selectedId) camera.setRightCover(drawerCover())
+    }) ?? (() => {})
   // Os pins ficam acima do grupo borrado: nítidos durante a geração.
   if (pinLayer) {
     pinLayer.warmUp(app.renderer)
@@ -197,9 +212,6 @@ export async function createMapRenderer(
   })
   // Chegou uma imagem enviada (do banco, ou acabou de ser enviada): os pins dela a mostram.
   const unsubscribeImages = images?.store.subscribe(() => pinLayer?.imagesChanged()) ?? (() => {})
-  // O drawer (a partir de 768 px) fica aberto com um pin selecionado: os limites de pan e o centro do
-  // pin contam com a faixa dele.
-  const drawerCover = () => (pins.getState().selectedId !== null ? (insets().drawer ?? 0) : 0)
   const unsubscribePins = pins.subscribe((state, prev) => {
     pinLayer?.sync(state, performance.now())
     syncRoads()
@@ -305,6 +317,7 @@ export async function createMapRenderer(
       delete host.dataset.decorLayer
       delete host.dataset.roads
       delete host.dataset.roadLayer
+      delete host.dataset.roadSelected
       delete host.dataset.pins
       delete host.dataset.pinLabels
       delete host.dataset.pinSelected
