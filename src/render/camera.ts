@@ -12,7 +12,7 @@ export const MIN_ZOOM = 0.4
 export const MAX_ZOOM = 4
 /** Fator de zoom de cada toque em + e −. */
 export const KEY_ZOOM_STEP = 1.25
-/** Passo de pan de cada toque nas setas e no WASD, em fração do menor lado da área livre. */
+/** Passo de pan de cada toque nas setas e em W, S e D, em fração do menor lado da área livre. */
 export const KEY_PAN_STEP = 0.2
 /** Duração do deslizamento da câmera (design-system.md → Movimento). */
 export const CAMERA_TWEEN_MS = 350
@@ -136,14 +136,13 @@ const PAN_KEYS: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
   KeyW: [0, -1],
   KeyS: [0, 1],
-  KeyA: [-1, 0],
   KeyD: [1, 0],
 }
 
 /**
- * Atalho de câmera de uma tecla: setas e WASD fazem pan (a direção é a da câmera: ↑ mostra o
- * norte), + e − fazem zoom e 0 centraliza. WASD vale pela posição da tecla (`code`), em qualquer
- * layout. Com Ctrl, Alt ou Meta não é atalho (Ctrl + 0 e Ctrl + − são o zoom do navegador).
+ * Atalho de câmera de uma tecla: setas e W, S e D fazem pan (a direção é a da câmera: ↑ mostra o
+ * norte), + e − fazem zoom e 0 centraliza. W, S e D valem pela posição da tecla (`code`), em
+ * qualquer layout. O A é da Rota automática (estradas.md, AC-F5-12), não do pan. Com Ctrl, Alt ou Meta não é atalho (Ctrl + 0 e Ctrl + − são o zoom do navegador).
  */
 export function keyAction(e: Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'altKey' | 'metaKey'>): KeyAction | null {
   if (e.ctrlKey || e.altKey || e.metaKey) return null

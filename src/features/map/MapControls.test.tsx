@@ -126,7 +126,7 @@ describe('Minimapa (AC-F2-08)', () => {
       surface.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))
       expect(controls.centerOn).toHaveBeenCalledTimes(1)
       expect(onDocument).not.toHaveBeenCalled()
-      // Outras teclas seguem para o document (WASD, +, −, 0 continuam com a câmera).
+      // Outras teclas seguem para o document (W, S, D, +, −, 0 continuam com a câmera).
       surface.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', bubbles: true, cancelable: true }))
       expect(onDocument).toHaveBeenCalledTimes(1)
     } finally {

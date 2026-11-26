@@ -168,7 +168,7 @@ test('AC-F2-03: a pinça faz zoom (touchpad e toque)', async ({ page }) => {
   expect(await zoom(page)).toBeGreaterThan(afterTrackpad * 1.5)
 })
 
-test('AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza', async ({ page }) => {
+test('AC-F2-04: setas e W, S e D fazem pan, + e − fazem zoom e 0 centraliza', async ({ page }) => {
   await open(page)
   await page.keyboard.press('+')
   const zoomed = await settled(page)
@@ -187,7 +187,6 @@ test('AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza', asyn
     ['ArrowDown', 'y', -1],
     ['ArrowUp', 'y', 1],
     ['d', 'x', -1],
-    ['a', 'x', 1],
     ['s', 'y', -1],
     ['w', 'y', 1],
   ] as const) {
@@ -195,6 +194,16 @@ test('AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza', asyn
     await page.keyboard.press(k)
     const after = await settled(page)
     expect(Math.sign(after[axis] - before[axis]), k).toBe(sign)
+  }
+  // O A não move a câmera: liga a Rota automática (AC-F5-12).
+  {
+    const before = await settled(page)
+    await page.keyboard.press('a')
+    await expect(page.getByTestId('map')).toHaveAttribute('data-tool', 'route')
+    const after = await settled(page)
+    expect([after.x, after.y]).toEqual([before.x, before.y])
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('map')).toHaveAttribute('data-tool', 'nav')
   }
 
   await page.keyboard.press('-')

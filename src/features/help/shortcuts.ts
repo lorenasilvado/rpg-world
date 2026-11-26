@@ -9,7 +9,7 @@ export const SHORTCUTS: readonly { action: string; keys: string }[] = [
   { action: 'Desenhar estrada', keys: 'R' },
   { action: 'Rota automática', keys: 'A' },
   { action: 'Medir distância', keys: 'M' },
-  { action: 'Mover o mapa', keys: 'Setas / WASD' },
+  { action: 'Mover o mapa', keys: 'Setas / W S D' },
   { action: 'Zoom', keys: '+ / −' },
   { action: 'Centralizar mapa', keys: '0' },
   { action: 'Excluir pin', keys: 'Delete / Backspace' },
