@@ -70,6 +70,22 @@ describe('pinsStore (AC-F3-01, AC-F3-03)', () => {
   })
 })
 
+describe('pin marcado (a origem da Rota automática, AC-F5-12)', () => {
+  it('marca o pin com o anel sem selecioná-lo; um pin que não existe não é marcado, e o pin excluído sai da marca', () => {
+    const pins = createPinsStore([saved('a', 'vila'), saved('b', 'vila')])
+    pins.getState().mark('a')
+    expect(pins.getState().markedId).toBe('a')
+    expect(pins.getState().selectedId).toBeNull()
+    pins.getState().mark('x')
+    expect(pins.getState().markedId).toBe('a')
+    pins.getState().removePin('a')
+    expect(pins.getState().markedId).toBeNull()
+    pins.getState().mark('b')
+    pins.getState().mark(null)
+    expect(pins.getState().markedId).toBeNull()
+  })
+})
+
 describe('arrastar e excluir (AC-F3-04, AC-F3-05)', () => {
   it('o arrasto guarda a posição presa entre 0 e 1 e só muda a lista ao soltar', () => {
     const pins = createPinsStore([saved('a', 'vila')])

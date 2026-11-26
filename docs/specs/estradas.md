@@ -13,9 +13,10 @@ o comportamento atualiza esta spec.
 > Refazer, no JSON e no PNG; o desenho no mapa (estrada, trilha e rota marítima, na curva
 > suavizada, com a ponta ligada acompanhando o pin), o interruptor "Estradas" em Camadas, Desenhar
 > estrada (R), o clique numa estrada (com o halo âmbar) e o drawer da estrada (nome, tipo de via,
-> extensão, "Liga" e Excluir) e o núcleo da rota pelo terreno (o A\* no worker de rota, com a
-> medição em `/bench.html`). Rota automática aparece desabilitada na toolbar, e a aba Conexões do
-> pin ainda não lista as estradas. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
+> extensão, "Liga" e Excluir), o núcleo da rota pelo terreno (o A\* no worker de rota, com a
+> medição em `/bench.html`) e a Rota automática (A) entre dois pins. Ainda não existem o toast Sem
+> caminho (com "Criar rota marítima") nem "Conectar cidades", e a aba Conexões do pin ainda não
+> lista as estradas. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
 > das decisões do [plano do M3](../milestones/m3.md).
 
 ## Resumo
@@ -39,7 +40,8 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Desenhando | Ferramenta "Desenhar estrada" ativa | Cursor em cruz; no topo da área do mapa, a dica "Clique no mapa ou num pin para começar a estrada" e, depois do primeiro ponto, "Clique para adicionar pontos · Enter ou duplo clique termina · Esc cancela", numa pílula escura com borda âmbar de 2 px e o ícone da ferramenta, em Nunito 16/22 negrito (no celular, quebra em linhas a 12 px das bordas); a curva pelos pontos marcados, com o traço da estrada, os pontos (círculos claros com borda escura) e, com o mouse, a linha tracejada do último ponto até o cursor |
 | Selecionada | Clique numa estrada, ou a estrada recém-desenhada | Halo âmbar (13 px `#C8892B` a 55%, sob os traços); drawer da estrada aberto |
 | Vazio | Mundo sem estradas | Nada no mapa; a aba Conexões do pin diz "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)." |
-| Calculando | Rota automática ou "Conectar cidades" esperando o worker | Prévia tracejada âmbar em linha reta entre os pins (na rota) ou "Conectando…" na dica (na malha) |
+| Escolhendo a rota | Ferramenta "Rota automática" ativa | A dica "Clique no pin de origem" e, com a origem escolhida, "Agora clique no pin de destino"; o pin de origem fica com o anel âmbar, sem ser selecionado (o drawer não abre) |
+| Calculando | Rota automática ou "Conectar cidades" esperando o worker | Prévia tracejada âmbar (4 px, tracejado 8 6) em linha reta entre os pins e "Calculando a rota…" na dica (na rota), ou "Conectando…" na dica (na malha) |
 | Sem caminho | Rota automática sem caminho por terra (ex.: pin numa ilha) | Toast de erro "Não há caminho por terra entre A e B." com a ação "Criar rota marítima" entre os dois pins; sem a ação, nada é criado |
 
 ## Ações
@@ -47,7 +49,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Ação | Resultado |
 |---|---|
 | "Desenhar estrada" (R) + cliques no mapa | Cada clique (ou toque) adiciona um ponto, com prévia tracejada; arrastar continua fazendo pan. Clicar fora do mapa marca a borda mais próxima. Enter ou duplo clique (duplo toque) termina, com 2 pontos ou mais; com menos, nada muda. Esc apaga o desenho e, sem desenho, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover ou menu aberto, como Camadas, o Esc fecha só ele). Com o foco num botão ou outro controle, o Enter é do controle e não termina o desenho. Trocar de ferramenta descarta o desenho. A curva é suavizada (Catmull-Rom). Clicar num pin à vista põe o ponto na posição dele (sem selecioná-lo), e começar ou terminar num pin liga a ponta ao pin (se o pin sai no meio do desenho, a ponta fica no ponto dela). A estrada criada ("Nova estrada", tipo Estrada) fica selecionada (o pin selecionado deixa de estar), é um passo no Desfazer, e a ferramenta volta para Navegar |
-| "Rota automática" (A) + dois pins | A dica diz "Clique no pin de origem" e depois "Agora clique no pin de destino"; gera a rota mais barata pelo terreno, "Rota de A a B", tipo Estrada, ligada aos dois, com o toast "Rota criada" |
+| "Rota automática" (A) + dois pins | A dica diz "Clique no pin de origem" e depois "Agora clique no pin de destino"; o clique (ou toque) num pin à vista o escolhe, sem selecioná-lo. O segundo pin pede a rota mais barata pelo terreno, que vira a estrada "Rota de A a B", tipo Estrada, ligada aos dois, sem ficar selecionada: um passo no Desfazer, com o toast "Rota criada" e "Desfazer". A ferramenta continua ligada, pronta para a próxima rota. Clicar de novo no pin de origem, ou noutro pin durante o cálculo, não faz nada; clicar no mapa fora dos pins desfaz a escolha da origem. Esc com a origem escolhida (ou calculando) cancela e, sem nada, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover aberto, o Esc é dele). Trocar de ferramenta cancela o cálculo, e o resultado é descartado. Sem caminho por terra, ou se um dos pins sai no meio do cálculo, nada é criado e a dica volta para "Clique no pin de origem" |
 | "Criar rota marítima" (no toast Sem caminho) | Cria uma rota marítima, "Rota marítima de A a B", pela água entre os dois pins |
 | "Conectar cidades" (na dica da Rota automática, com 2 cidades ou mais) | Liga todos os pins do tipo Cidade alcançáveis por terra com a menor malha (árvore mínima pelo custo do terreno), sem repetir pares já ligados por estrada, num passo só do Desfazer; o toast diz quantas estradas foram criadas e quantas cidades ficaram sem caminho por terra |
 | Clicar numa estrada (com Navegar) | Seleciona a estrada (halo âmbar) e abre o drawer da estrada; o pin selecionado deixa de estar. O clique vale até 10 px da linha da estrada, mais largo que o traço; um pin ou um grupo de pins no mesmo ponto tem prioridade. Com "Estradas" desligada em Camadas, ou com outra ferramenta, o clique não seleciona a estrada. Esc ou o botão Fechar tiram a seleção |

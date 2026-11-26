@@ -24,9 +24,13 @@ export type RoadsState = {
   /**
    * Cria a estrada desenhada (AC-F5-04, AC-F5-05): "Nova estrada", tipo Estrada, pelos pontos (0..1
    * no mapa), com as pontas ligadas aos pins `from` e `to` (o vínculo com um pin que já não existe
-   * sai); ela fica selecionada. Com menos de 2 pontos, nada muda (`null`).
+   * sai); ela fica selecionada. Com menos de 2 pontos, nada muda (`null`). A Rota automática
+   * (AC-F5-12) passa o nome ("Rota de A a B") e `select: false`: a rota criada não fica selecionada.
    */
-  addRoad(draft: { points: readonly { u: number; v: number }[]; from?: string; to?: string }): Road | null
+  addRoad(
+    draft: { points: readonly { u: number; v: number }[]; from?: string; to?: string; name?: string },
+    options?: { select?: boolean },
+  ): Road | null
   /** Seleciona a estrada (`null`: nenhuma). */
   select(id: string | null): void
   /**
@@ -86,11 +90,11 @@ export function createRoadsStore(
   const store = createStore<RoadsState>()((set, get) => ({
     roads: pins ? initial.map((r) => withValidLinks(r, ids)) : [...initial],
     selectedId: null,
-    addRoad({ points, from, to }) {
+    addRoad({ points, from, to, name }, { select = true } = {}) {
       if (points.length < 2) return null
       const drawn: Road = {
         id: newId(),
-        name: NEW_ROAD_NAME,
+        name: name?.trim() || NEW_ROAD_NAME,
         kind: 'road',
         points: points.map((p) => ({ u: p.u, v: p.v })),
         ...(from !== undefined ? { from } : {}),
@@ -98,6 +102,10 @@ export function createRoadsStore(
       }
       // Um pin da ponta pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
       const road = pins ? withValidLinks(drawn, new Set(pins.getState().pins.map((p) => p.id))) : drawn
+      if (!select) {
+        set({ roads: [...get().roads, road] })
+        return road
+      }
       set({ roads: [...get().roads, road], selectedId: road.id })
       // Uma seleção só no mapa: o pin selecionado deixa de estar.
       pins?.getState().select(null)

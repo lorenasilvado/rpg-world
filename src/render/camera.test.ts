@@ -103,11 +103,11 @@ describe('deslizamento', () => {
 })
 
 describe('atalhos (AC-F2-04)', () => {
-  it('setas e WASD fazem pan', () => {
+  it('setas e W, S e D fazem pan; o A não (é da Rota automática)', () => {
     expect(key({ key: 'ArrowUp' })).toEqual({ type: 'pan', dx: 0, dy: -1 })
     expect(key({ key: 'ArrowRight' })).toEqual({ type: 'pan', dx: 1, dy: 0 })
     expect(key({ key: 'w', code: 'KeyW' })).toEqual({ type: 'pan', dx: 0, dy: -1 })
-    expect(key({ key: 'a', code: 'KeyA' })).toEqual({ type: 'pan', dx: -1, dy: 0 })
+    expect(key({ key: 'a', code: 'KeyA' })).toBeNull()
     expect(key({ key: 'S', code: 'KeyS' })).toEqual({ type: 'pan', dx: 0, dy: 1 })
     expect(key({ key: 'd', code: 'KeyD' })).toEqual({ type: 'pan', dx: 1, dy: 0 })
   })

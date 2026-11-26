@@ -18,6 +18,11 @@ export type PinsState = {
   selectedId: string | null
   /** O pin sob o mouse. */
   hoveredId: string | null
+  /**
+   * O pin marcado com o anel, sem estar selecionado: a origem da Rota automática (estradas.md,
+   * AC-F5-12). Não vai para o mundo salvo nem para o histórico.
+   */
+  markedId: string | null
   /** O mouse está sobre um grupo de pins (zoom abaixo de 0,8×, AC-F3-14): o cursor é a lupa. */
   groupHovered: boolean
   /** O último pin criado, enquanto continua selecionado. */
@@ -40,6 +45,8 @@ export type PinsState = {
   /** Seleciona o pin (abre o drawer) ou, com `null`, fecha. */
   select(id: string | null): void
   setHovered(id: string | null): void
+  /** Marca o pin com o anel (`null`: nenhum); um pin que não existe não é marcado. */
+  mark(id: string | null): void
   setGroupHovered(hovered: boolean): void
   rename(id: string, name: string): void
   /**
@@ -132,6 +139,7 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
     pins: [...validParents(initial.map(withUniqueTags))],
     selectedId: null,
     hoveredId: null,
+    markedId: null,
     groupHovered: false,
     newPinId: null,
     dragging: null,
@@ -160,6 +168,11 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
     setHovered(id) {
       if (get().hoveredId === id) return
       set({ hoveredId: id })
+    },
+    mark(id) {
+      if (id !== null && !get().pins.some((p) => p.id === id)) return
+      if (get().markedId === id) return
+      set({ markedId: id })
     },
     setGroupHovered(hovered) {
       if (get().groupHovered === hovered) return
@@ -254,6 +267,7 @@ export function createPinsStore(initial: readonly Pin[] = [], { newId = () => cr
         pins: list as Pin[],
         selectedId: keep(s.selectedId),
         hoveredId: keep(s.hoveredId),
+        markedId: keep(s.markedId),
         newPinId: keep(s.newPinId),
         dragging: s.dragging && ids.has(s.dragging.id) ? s.dragging : null,
       })

@@ -6,13 +6,11 @@ import type { CameraStore } from '../../state/cameraStore'
 import type { PinsStore } from '../../state/pinsStore'
 import type { RoadsStore } from '../../state/roadsStore'
 import type { UiStore } from '../../state/uiStore'
-import { CLICK_SLOP_PX, HINT_TOP_PX } from '../map/MeasureTool'
+import { CLICK_SLOP_PX } from '../map/MeasureTool'
+import { ToolHint } from '../map/ToolHint'
 import { clampToWorld, screenToWorld, worldToScreen } from '../map/measure'
 import { createVisiblePins } from '../pins/visiblePins'
 import { addDraftPoint, curvePath, draftToRoad, isDoubleTap, roadHint, type DraftPoint, type Tap } from './drawRoad'
-
-/** Distância mínima da dica às bordas laterais da área do mapa. */
-const HINT_GUTTER_PX = 12
 
 /**
  * Desenhar estrada (estradas.md, AC-F5-04, AC-F5-05). A tecla R (ouvida pelo `MeasureTool`, com as
@@ -27,9 +25,7 @@ const HINT_GUTTER_PX = 12
  *
  * A prévia é um SVG por cima do mapa, sem eventos, que acompanha a câmera: a curva suavizada pelos
  * pontos, com o traço da estrada, os pontos marcados e, com o mouse, a linha tracejada do último ponto
- * até o cursor (ou até o pin sob ele). A dica, no topo da área do mapa, é a região `status`: uma
- * pílula escura com borda âmbar e o ícone da ferramenta, em 16/22 negrito, maior que a da Régua para
- * não passar despercebida; numa área estreita (celular), ela quebra em linhas, a 12 px das bordas.
+ * até o cursor (ou até o pin sob ele). A dica fica no topo da área do mapa (`ToolHint`).
  */
 export function RoadTool({
   ui,
@@ -187,7 +183,6 @@ function RoadLayer({ ui, roads, pins, camera, disabled }: { ui: UiStore; roads: 
   const last = screen[screen.length - 1]
   const tip = last && cursor ? worldToScreen(toWorld(cursor), cam) : null
   const d = curvePath(screen)
-  const hintLeft = cam.origin.x + (cam.view.width * cam.scale) / 2
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[5]" data-testid="road-draw-layer" data-points={draft.length}>
@@ -217,15 +212,7 @@ function RoadLayer({ ui, roads, pins, camera, disabled }: { ui: UiStore; roads: 
           ))}
         </svg>
       )}
-      <div
-        role="status"
-        data-testid="road-draw-status"
-        style={{ left: hintLeft, top: HINT_TOP_PX, maxWidth: Math.max(160, cam.view.width * cam.scale - HINT_GUTTER_PX * 2) }}
-        className="absolute flex w-max -translate-x-1/2 items-center gap-2.5 rounded-[22px] border-2 border-[#D99A3A] bg-[#2B2420] py-3 pr-5 pl-4 text-[16px]/[22px] font-bold text-[#F7F1E3] shadow-lg"
-      >
-        <Route aria-hidden size={20} strokeWidth={2.25} className="shrink-0 text-[#D99A3A]" />
-        <span data-testid="road-draw-hint">{roadHint(draft)}</span>
-      </div>
+      <ToolHint icon={Route} text={roadHint(draft)} cam={cam} testId="road-draw-status" textTestId="road-draw-hint" />
     </div>
   )
 }

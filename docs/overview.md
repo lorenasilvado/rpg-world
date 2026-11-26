@@ -117,7 +117,13 @@ o oceano e os rios numa linha 4-conectada), e o `findRoute.ts` roda o A\* nela, 
 cada rota roda só o A\*. O `routerClient.ts` manda um pedido por vez: uma rota cancelada na fila não
 chega ao worker, e uma cancelada no worker rejeita na hora e tem o resultado descartado; se o worker
 falha, o próximo pedido cria um novo e manda de novo o último campo. A medição fica em
-`/bench.html` ("Testar rotas", `src/bench/routeBench.ts`).
+`/bench.html` ("Testar rotas", `src/bench/routeBench.ts`). No editor, o `src/features/roads/worldRouter.ts`
+cria o worker só na primeira rota pedida e manda a ele cada mapa final (1024²) exibido, sem as
+prévias. A ferramenta Rota automática (`RouteTool.tsx`, tecla A) marca o pin de origem com o anel
+(`markedId` do `pinsStore`, desenhado pela `PinLayer`), pede a rota ao clicar no destino, com a
+prévia tracejada e o cancelamento pelo `AbortSignal` (Esc, trocar de ferramenta), e cria a estrada
+pelo `addRoad` do `roadsStore`, com o nome de `autoRoute.ts`; o `EditorLayout` mostra o toast
+"Rota criada". A dica das ferramentas de estrada é a `ToolHint` (`src/features/map/`).
 
 O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi na área do mapa do
 editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno

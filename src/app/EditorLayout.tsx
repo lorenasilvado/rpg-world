@@ -18,6 +18,8 @@ import { CENTER_PIN_ZOOM, PinDrawer } from '../features/pins/PinDrawer'
 import { PinTool } from '../features/pins/PinTool'
 import { RoadDrawer } from '../features/roads/RoadDrawer'
 import { RoadTool } from '../features/roads/RoadTool'
+import { RouteTool } from '../features/roads/RouteTool'
+import { createWorldRouter, type WorldRouter } from '../features/roads/worldRouter'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
 import { ExportMenu } from '../features/worlds/ExportMenu'
@@ -72,7 +74,9 @@ import { useTheme } from './useTheme'
  * renderer (`cameraStore.ts`). A toolbar de ferramentas (`MapToolbar`) fica no centro da linha, numa
  * segunda linha acima dela ou em pé acima do zoom, conforme a largura (`bottomBarLayout`). A
  * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa, e a
- * Desenhar estrada (`RoadTool`, tecla R), o desenho da estrada (estradas.md).
+ * Desenhar estrada (`RoadTool`, tecla R), o desenho da estrada, e a Rota automática (`RouteTool`,
+ * tecla A), a rota pelo terreno entre dois pins, no worker de rota (`router`), com o toast "Rota
+ * criada" (estradas.md).
  *
  * Os pins (`pins`, pins.md): o renderer os desenha, e o `PinTool` cria (Adicionar pin, tecla P) e
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
@@ -122,6 +126,7 @@ export function EditorLayout({
   onExport,
   onExportImage,
   welcomeTips = false,
+  router: routerProp,
 }: {
   world: WorldStore
   pins: PinsStore
@@ -143,6 +148,8 @@ export function EditorLayout({
   onExportImage?: (options: MapImageOptions) => Promise<void>
   /** Mostra as dicas de boas-vindas se ainda não foram vistas nem puladas (o app liga; os testes, não). */
   welcomeTips?: boolean
+  /** O worker de rota da Rota automática; sem ele, um criado para o mundo (só na primeira rota). */
+  router?: WorldRouter
 }) {
   const { theme, toggle } = useTheme()
   /** O passo das dicas de boas-vindas à vista (`null`: fechadas). */
@@ -246,6 +253,14 @@ export function EditorLayout({
     },
     [pins, history],
   )
+  const [ownRouter] = useState(() => (routerProp ? null : createWorldRouter(world)))
+  const router = routerProp ?? ownRouter!
+  useEffect(() => () => ownRouter?.dispose(), [ownRouter])
+  /** A Rota automática criou uma rota (AC-F5-12): o toast "Rota criada", com "Desfazer". */
+  const routeCreated = useCallback(() => {
+    setDeletedMessage('Rota criada')
+    setDeletedAt(history.version.getState().value)
+  }, [history])
   const deleteRoad = useCallback(
     (id: string) => {
       if (!roads?.getState().removeRoad(id)) return
@@ -466,6 +481,7 @@ export function EditorLayout({
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={anyOpen} onDelete={deletePin} onDeleteRoad={deleteRoad} />
       {roads && <RoadTool ui={ui} roads={roads} pins={pins} camera={camera} disabled={anyOpen} />}
+      {roads && <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={anyOpen} onCreated={routeCreated} />}
 
       <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
       <div

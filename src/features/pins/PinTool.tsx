@@ -21,7 +21,7 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
  * clique (o ponteiro anda até `CLICK_SLOP_PX`; mais que isso é pan) num pin o seleciona, com Navegar
  * ou Adicionar pin. Com Adicionar pin, um clique no mapa fora dos pins cria um pin ali (`addPin`), que
  * já fica selecionado, e a ferramenta volta para Navegar. Com Medir distância, os cliques são da
- * medida; com Desenhar estrada, do desenho (`RoadTool`: o clique num pin liga a ponta a ele). O mouse sobre um pin o marca em `hoveredId` (o renderer o aumenta e mostra o nome).
+ * medida; com Desenhar estrada, do desenho (`RoadTool`: o clique num pin liga a ponta a ele); com Rota automática, da rota (`RouteTool`). O mouse sobre um pin o marca em `hoveredId` (o renderer o aumenta e mostra o nome).
  *
  * Apertar num pin e andar mais que `CLICK_SLOP_PX` o arrasta (`dragTo`), com o ponto onde ele foi
  * pego preso ao ponteiro, e soltar o deixa ali (`endDrag`): a posição fica presa entre 0 e 1. O
@@ -258,9 +258,12 @@ export function PinTool({
   return null
 }
 
-/** Se os cliques nos pins são do `PinTool`: com Medir distância ou Desenhar estrada, são da ferramenta. */
+/**
+ * Se os cliques nos pins são do `PinTool`: com Medir distância, Desenhar estrada ou Rota automática,
+ * são da ferramenta.
+ */
 function clicksPins(tool: MapTool): boolean {
-  return tool !== 'measure' && tool !== 'road'
+  return tool !== 'measure' && tool !== 'road' && tool !== 'route'
 }
 
 /** Se o alvo do teclado está dentro do drawer do pin ou da estrada (`data-pin-drawer`, `data-road-drawer`). */

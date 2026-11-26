@@ -30,7 +30,7 @@ export function MeasureTool({ ui, world, camera, disabled }: { ui: UiStore; worl
     if (disabled) return
     const onKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
-      const tool = key === 'm' ? 'measure' : key === 'v' ? 'nav' : key === 'p' ? 'pin' : key === 'r' ? 'road' : null
+      const tool = key === 'm' ? 'measure' : key === 'v' ? 'nav' : key === 'p' ? 'pin' : key === 'r' ? 'road' : key === 'a' ? 'route' : null
       if (!tool || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return
       if (isFieldTarget(e.target) || inDialog(e.target)) return
       e.preventDefault()

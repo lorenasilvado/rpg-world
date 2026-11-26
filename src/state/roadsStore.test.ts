@@ -69,6 +69,16 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     expect(roads.getState().addRoad({ points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] })).not.toHaveProperty('from')
   })
 
+  it('addRoad com nome e select: false (a Rota automática, AC-F5-12) não seleciona nem tira a seleção do pin', () => {
+    const pins = createPinsStore([pin('a'), pin('b')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    pins.getState().select('a')
+    const created = roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a', to: 'b', name: 'Rota de a a b' }, { select: false })
+    expect(created).toEqual({ id: 'r', name: 'Rota de a a b', kind: 'road', points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a', to: 'b' })
+    expect(roads.getState().selectedId).toBeNull()
+    expect(pins.getState().selectedId).toBe('a')
+  })
+
   it('addRoad não liga a ponta a um pin que saiu no meio do desenho (a ponta fica no ponto dela)', () => {
     const pins = createPinsStore([pin('a'), pin('b')])
     const roads = createRoadsStore([], pins, { newId: () => 'r' })

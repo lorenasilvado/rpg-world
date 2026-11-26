@@ -76,6 +76,19 @@ describe('PinLayer: tipos escondidos e grupos (AC-F3-14, AC-F3-15)', () => {
     layer.destroy()
   })
 
+  it('o pin marcado (a origem da Rota automática, AC-F5-12) tem o anel, como o selecionado', () => {
+    const layer = layerWith()
+    const pins = [at('a', 0.1, 0.1), at('b', 0.5, 0.5)]
+    const ring = (id: string) => (layer as unknown as { views: Map<string, { ring: { visible: boolean } }> }).views.get(id)?.ring.visible
+    layer.sync(state(pins), 0)
+    layer.frame(1, 1, 0, true)
+    expect([ring('a'), ring('b')]).toEqual([false, false])
+    layer.sync({ ...state(pins), markedId: 'b' }, 1)
+    layer.frame(1, 1, 1, true)
+    expect([ring('a'), ring('b')]).toEqual([false, true])
+    layer.destroy()
+  })
+
   it('abaixo de 0,8×, os pins próximos somem num grupo com o contador; acima, voltam', () => {
     const layer = layerWith()
     // A 0,01 de distância (10 unidades): 5 px na escala 0,5.

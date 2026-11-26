@@ -11,9 +11,8 @@ o comportamento atualiza esta spec.
 
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
-> (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
-> que ainda não existem desabilitadas), Camadas (interruptores "Decoração", "Estradas" e um por tipo de pin), Ajuda (modal "Atalhos
-> de teclado"), Medir distância e Desenhar estrada (ver [estradas.md](estradas.md)). Em tela baixa (celular deitado), os painéis são sobrepostos e a
+> (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior, Camadas (interruptores "Decoração", "Estradas" e um por tipo de pin), Ajuda (modal "Atalhos
+> de teclado"), Medir distância, Desenhar estrada e Rota automática (ver [estradas.md](estradas.md)). Em tela baixa (celular deitado), os painéis são sobrepostos e a
 > toolbar fica na linha inferior.
 
 ## Resumo
@@ -40,9 +39,8 @@ barra inferior.
   (a barra tem 360 px e cabe numa tela de 390).
 - Barra de ferramentas inferior (h 56, 309 px): navegar, adicionar pin, desenhar estrada, rota
   automática, um separador, camadas, medir distância. A ferramenta em uso (navegar, ao abrir,
-  adicionar pin, desenhar estrada ou medir distância) fica ativa, em âmbar. Rota automática aparece
-  desabilitada (opacidade .55), até a função existir. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
-  ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
+  adicionar pin, desenhar estrada, rota automática ou medir distância) fica ativa, em âmbar. Hover
+  com o mouse numa ferramenta ou o foco do teclado nela mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - A toolbar se ajusta à largura da linha inferior (a área livre, menos o drawer quando ele está
@@ -71,7 +69,7 @@ barra inferior.
   lugar; sem espaço para todas as linhas (celular, tablet com a toolbar em pé, tela baixa), ele rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
-  pin (P), desenhar estrada (R), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), buscar pins (Ctrl K), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
+  pin (P), desenhar estrada (R), rota automática (A), medir distância (M), mover o mapa (setas / W S D), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), buscar pins (Ctrl K), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
 - Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica
@@ -114,7 +112,7 @@ barra inferior.
 | Ação | Resultado |
 |---|---|
 | Arrastar o mapa (mouse e toque) | Pan, com inércia suave ao soltar |
-| Setas / WASD | Pan |
+| Setas / W, S, D | Pan (o A é da Rota automática) |
 | Roda do mouse | Zoom centrado no cursor |
 | Pinça no touchpad | Zoom |
 | Botões + / − (atalhos + / −) | Zoom |
@@ -130,7 +128,7 @@ barra inferior.
 | Buscar (Ctrl K) | Abre a busca dos pins por nome e tag (ver [pins.md](pins.md)) |
 | Exportar | Abre o menu de exportar: "Arquivo do mundo (.json)" baixa o mundo (ver [mundos.md](mundos.md)); "Imagem (.png)" fica desabilitado |
 | Desenhar estrada (atalho R) | Liga a ferramenta de desenhar estrada (ver [estradas.md](estradas.md)) |
-| Rota automática | Desabilitada: a função ainda não existe |
+| Rota automática (atalho A) | Liga a ferramenta de rota automática entre dois pins (ver [estradas.md](estradas.md)) |
 | Desfazer, refazer (Ctrl+Z, Ctrl+Shift+Z) | Desfazem e refazem as mudanças nos pins e nos parâmetros de geração (ver [mundos.md](mundos.md)) |
 | Adicionar pin (atalho P) | Liga a ferramenta de criar pin (ver [pins.md](pins.md)) |
 | Medir distância (atalho M) | Liga a ferramenta de medir |
@@ -162,7 +160,7 @@ barra inferior.
 - Arrastar (mouse ou um dedo) faz pan e, ao soltar, a câmera continua com inércia e desacelera.
   A roda faz zoom mantendo parado o ponto sob o cursor; a pinça (dois dedos, ou a pinça do touchpad,
   que chega como roda com Ctrl) faz zoom.
-- Teclado: setas e WASD (pela posição da tecla, em qualquer layout) movem a câmera 20% do menor lado
+- Teclado: setas e W, S e D (pela posição da tecla, em qualquer layout) movem a câmera 20% do menor lado
   da área livre por toque; + (ou =) e − aproximam e afastam 1,25× no centro da área livre; 0
   centraliza. Os atalhos deslizam em 350 ms (`cubic-bezier(.4,0,.2,1)`), e toques seguidos somam a
   partir do destino. Não valem com Ctrl, Alt ou Meta (o zoom do navegador), com o foco num campo
@@ -171,8 +169,8 @@ barra inferior.
   textbox, searchbox, combobox, listbox, option, slider, spinbutton, menu, menuitem, radiogroup,
   tablist ou tab: controles que usam as setas ou digitam.
 - Com o foco no minimapa (ele entra na ordem do Tab), as setas são dele: movem a área visível 1/10
-  do mapa, sem deslizar, e o pan das setas da câmera não soma outro passo. WASD continua com a
-  câmera.
+  do mapa, sem deslizar, e o pan das setas da câmera não soma outro passo. W, S e D continuam com a
+  câmera. O A não move a câmera: é o atalho da Rota automática (ver [estradas.md](estradas.md)).
 - A borda do mapa não mostra corte reto quando o fundo aparece (mapa inteiro ou afastado): o
   oceano escurece até a cor do fundo perto dela (ver o desenho do terreno em
   [geracao-terreno.md](geracao-terreno.md)).
@@ -231,7 +229,7 @@ lista e o número não volta a ser usado.
 - AC-F2-01: arrastar o mapa, com mouse ou toque, faz pan, com inércia suave ao soltar
 - AC-F2-02: a roda do mouse faz zoom centrado no cursor
 - AC-F2-03: a pinça faz zoom
-- AC-F2-04: setas e WASD fazem pan, + e − fazem zoom e 0 centraliza o mapa
+- AC-F2-04: setas e W, S e D fazem pan, + e − fazem zoom e 0 centraliza o mapa
 - AC-F2-05: o zoom fica entre 0,4× e 4×, e o mapa não some da tela
 - AC-F2-06: com `prefers-reduced-motion: reduce`, a câmera salta direto, sem deslizar
 - AC-F2-07: com 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
