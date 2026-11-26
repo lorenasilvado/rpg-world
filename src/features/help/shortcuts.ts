@@ -1,12 +1,13 @@
 /**
  * Os atalhos que já funcionam no editor (navegacao.md → Regras; design-system.md → Ícones de
  * interface), na ordem do modal "Atalhos de teclado". Os das ferramentas que ainda não existem
- * (a rota automática) entram aqui junto com elas.
+ * entram aqui junto com elas.
  */
 export const SHORTCUTS: readonly { action: string; keys: string }[] = [
   { action: 'Navegar', keys: 'V' },
   { action: 'Adicionar pin', keys: 'P' },
   { action: 'Desenhar estrada', keys: 'R' },
+  { action: 'Rota automática', keys: 'A' },
   { action: 'Medir distância', keys: 'M' },
   { action: 'Mover o mapa', keys: 'Setas / WASD' },
   { action: 'Zoom', keys: '+ / −' },

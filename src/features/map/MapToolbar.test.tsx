@@ -6,7 +6,7 @@ import { MapToolbar } from './MapToolbar'
 afterEach(cleanup)
 
 describe('Toolbar de ferramentas (AC-F2-10)', () => {
-  it('mostra as seis ferramentas; Navegar fica ativa e as funções que ainda não existem, desabilitadas', () => {
+  it('mostra as seis ferramentas; Navegar fica ativa e todas estão habilitadas', () => {
     render(<MapToolbar ui={createUiStore()} />)
     const toolbar = screen.getByRole('toolbar', { name: 'Ferramentas' })
     const names = Array.from(toolbar.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))
@@ -14,10 +14,7 @@ describe('Toolbar de ferramentas (AC-F2-10)', () => {
     const nav = screen.getByRole('button', { name: 'Navegar' })
     expect(nav.getAttribute('aria-pressed')).toBe('true')
     expect((nav as HTMLButtonElement).disabled).toBe(false)
-    for (const name of ['Rota automática']) {
-      expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
-    }
-    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Camadas', 'Medir distância']) {
+    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Rota automática', 'Camadas', 'Medir distância']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false)
     }
   })

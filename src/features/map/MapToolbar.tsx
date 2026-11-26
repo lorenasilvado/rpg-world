@@ -108,7 +108,7 @@ export function MapToolbar({
         {TOOLS.map((tool) => {
           const Icon = tool.icon
           const isLayers = tool.id === 'layers'
-          const isMapTool = tool.id === 'nav' || tool.id === 'pin' || tool.id === 'road' || tool.id === 'measure'
+          const isMapTool = tool.id === 'nav' || tool.id === 'pin' || tool.id === 'road' || tool.id === 'route' || tool.id === 'measure'
           const on = isLayers ? layersOpen : tool.id === activeTool
           const showTip = tip === tool.id && !(isLayers && layersOpen)
           return (

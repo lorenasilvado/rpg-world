@@ -173,7 +173,8 @@ type PinView = {
 const ALL_TYPES: PinTypeLayers = Object.fromEntries(PIN_TYPES.map((t) => [t.id, true])) as Record<PinType, boolean>
 
 /** O que a camada lê do `pinsStore`. */
-export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' | 'newPinId' | 'dragging'>
+/** `markedId`: o pin com o anel sem estar selecionado (a origem da Rota automática). */
+export type PinLayerState = Pick<PinsState, 'pins' | 'selectedId' | 'hoveredId' | 'newPinId' | 'dragging'> & { markedId?: string | null }
 
 /**
  * Os pins no mapa (pins.md, AC-F3-01 a AC-F3-03): um grupo por pin, na posição (u, v) do mundo, com
@@ -401,7 +402,7 @@ export class PinLayer {
    * `LABELS_PER_FRAME` rótulos novos são criados no quadro.
    */
   frame(scale: number, zoom: number, now: number, reducedMotion: boolean, view: Rect | null = null) {
-    const { selectedId, hoveredId, dragging } = this.state
+    const { selectedId, hoveredId, dragging, markedId = null } = this.state
     for (const [id, { view, at }] of this.leaving) {
       if (reducedMotion || now - at >= PIN_SHRINK_MS) {
         this.dropView(view)
@@ -446,7 +447,7 @@ export class PinLayer {
       v.body.alpha = drop.alpha * (dragged ? PIN_DRAG_ALPHA : 1)
       v.mark.visible = dragged
       v.shadow.visible = dragged
-      v.ring.visible = selected
+      v.ring.visible = selected || id === markedId
       v.pulse.visible = selected && !reducedMotion
       if (v.pulse.visible) {
         const p = pulseFrame(now - this.selectedAt)

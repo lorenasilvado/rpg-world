@@ -168,6 +168,52 @@ test('Desenhar estrada (R): de um pin a outro, com a prévia; a estrada fica lig
   await expect(map).toHaveAttribute('data-roads', '4')
 })
 
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`Rota automática (A): origem e destino criam "Rota de Alda a Brena", ligada, no Desfazer; Esc cancela (AC-F5-12, ${size.width})`, async ({ page }) => {
+    await page.setViewportSize(size)
+    const { map, at } = await importAndOpen(page)
+    const toolbar = page.getByRole('toolbar', { name: 'Ferramentas' })
+    await toolbar.getByRole('button', { name: 'Rota automática' }).click()
+    await expect(map).toHaveAttribute('data-tool', 'route')
+    const hint = page.getByTestId('route-hint')
+    const layer = page.getByTestId('route-layer')
+    await expect(hint).toHaveText('Clique no pin de origem')
+
+    const alda = at(0.35, 0.45, 10)
+    const brena = at(0.55, 0.5, 10)
+    await page.mouse.click(alda.x, alda.y)
+    await expect(hint).toHaveText('Agora clique no pin de destino')
+    await expect(layer).toHaveAttribute('data-from', 'Alda')
+    // O clique no pin é da rota: o pin não fica selecionado.
+    await expect(map).not.toHaveAttribute('data-pin-selected', 'Alda')
+    // Esc com a origem marcada cancela, e a ferramenta continua.
+    await page.keyboard.press('Escape')
+    await expect(hint).toHaveText('Clique no pin de origem')
+    await expect(layer).not.toHaveAttribute('data-from', /.+/)
+
+    await page.mouse.click(alda.x, alda.y)
+    await page.mouse.click(brena.x, brena.y)
+    await expect(map).toHaveAttribute('data-roads', '4', { timeout: 15_000 })
+    await expect(page.getByTestId('pin-deleted-toast')).toContainText('Rota criada')
+    await expect(map).toHaveAttribute('data-tool', 'route')
+    await expect(hint).toHaveText('Clique no pin de origem')
+    await expect.poll(async () => savedRoad(page, 'Rota de Alda a Brena')).toMatchObject({ kind: 'road', from: 'Alda', to: 'Brena' })
+    expect(((await savedRoad(page, 'Rota de Alda a Brena'))?.points.length ?? 0) >= 2).toBe(true)
+
+    // Um passo no Desfazer.
+    await page.keyboard.press('Control+z')
+    await expect(map).toHaveAttribute('data-roads', '3')
+    await expect.poll(async () => savedRoad(page, 'Rota de Alda a Brena')).toBeUndefined()
+
+    // Sem nada marcado, Esc volta para Navegar.
+    await page.keyboard.press('Escape')
+    await expect(map).toHaveAttribute('data-tool', 'nav')
+  })
+}
+
 test.describe('com o toque', () => {
   test.use({ hasTouch: true, isMobile: true })
 

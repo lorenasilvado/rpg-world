@@ -11,9 +11,8 @@ o comportamento atualiza esta spec.
 
 > Implementado: a câmera (pan, inércia, zoom no cursor, pinça, teclado, limites e movimento
 > reduzido), a camada de decoração, com culling e nível de detalhe, o minimapa, o controle de zoom
-> (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior (com as funções
-> que ainda não existem desabilitadas), Camadas (interruptores "Decoração", "Estradas" e um por tipo de pin), Ajuda (modal "Atalhos
-> de teclado"), Medir distância e Desenhar estrada (ver [estradas.md](estradas.md)). Em tela baixa (celular deitado), os painéis são sobrepostos e a
+> (escala, porcentagem, −, + e centralizar), a barra de ações e a toolbar inferior, Camadas (interruptores "Decoração", "Estradas" e um por tipo de pin), Ajuda (modal "Atalhos
+> de teclado"), Medir distância, Desenhar estrada e Rota automática (ver [estradas.md](estradas.md)). Em tela baixa (celular deitado), os painéis são sobrepostos e a
 > toolbar fica na linha inferior.
 
 ## Resumo
@@ -40,9 +39,8 @@ barra inferior.
   (a barra tem 360 px e cabe numa tela de 390).
 - Barra de ferramentas inferior (h 56, 309 px): navegar, adicionar pin, desenhar estrada, rota
   automática, um separador, camadas, medir distância. A ferramenta em uso (navegar, ao abrir,
-  adicionar pin, desenhar estrada ou medir distância) fica ativa, em âmbar. Rota automática aparece
-  desabilitada (opacidade .55), até a função existir. Hover com o mouse numa ferramenta (mesmo desabilitada) ou o foco do teclado numa
-  ferramenta habilitada (as desabilitadas não recebem foco) mostra o tooltip com o nome e o atalho.
+  adicionar pin, desenhar estrada, rota automática ou medir distância) fica ativa, em âmbar. Hover
+  com o mouse numa ferramenta ou o foco do teclado nela mostra o tooltip com o nome e o atalho.
   Ícones e atalhos em
   [design-system.md](../design/design-system.md#ícones-de-interface).
 - A toolbar se ajusta à largura da linha inferior (a área livre, menos o drawer quando ele está
@@ -71,7 +69,7 @@ barra inferior.
   lugar; sem espaço para todas as linhas (celular, tablet com a toolbar em pé, tela baixa), ele rola. O popover fecha por Camadas de novo, Esc (o foco volta a Camadas)
   ou um clique fora dele (inclusive no mapa).
 - Ajuda (ou a tecla ?) abre o modal "Atalhos de teclado", com os atalhos que já funcionam: navegar (V), adicionar
-  pin (P), desenhar estrada (R), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), buscar pins (Ctrl K), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
+  pin (P), desenhar estrada (R), rota automática (A), medir distância (M), mover o mapa (setas / WASD), zoom (+ / −), centralizar mapa (0), excluir pin (Delete / Backspace), buscar pins (Ctrl K), desfazer (Ctrl Z), refazer (Ctrl Shift Z), recolher painel ([), cancelar / fechar
   (Esc) e atalhos (?). Duas colunas a partir de 640 px. Fecha pelo X, Esc ou clique fora, e o foco
   volta para onde estava ao abrir.
 - Medir distância (ou a tecla M): com a ferramenta ativa, o cursor sobre o mapa é a cruz, e uma dica
@@ -130,7 +128,7 @@ barra inferior.
 | Buscar (Ctrl K) | Abre a busca dos pins por nome e tag (ver [pins.md](pins.md)) |
 | Exportar | Abre o menu de exportar: "Arquivo do mundo (.json)" baixa o mundo (ver [mundos.md](mundos.md)); "Imagem (.png)" fica desabilitado |
 | Desenhar estrada (atalho R) | Liga a ferramenta de desenhar estrada (ver [estradas.md](estradas.md)) |
-| Rota automática | Desabilitada: a função ainda não existe |
+| Rota automática (atalho A) | Liga a ferramenta de rota automática entre dois pins (ver [estradas.md](estradas.md)) |
 | Desfazer, refazer (Ctrl+Z, Ctrl+Shift+Z) | Desfazem e refazem as mudanças nos pins e nos parâmetros de geração (ver [mundos.md](mundos.md)) |
 | Adicionar pin (atalho P) | Liga a ferramenta de criar pin (ver [pins.md](pins.md)) |
 | Medir distância (atalho M) | Liga a ferramenta de medir |
