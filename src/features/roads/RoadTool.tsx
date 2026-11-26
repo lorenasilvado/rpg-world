@@ -49,6 +49,17 @@ function mapUnder(target: EventTarget | null): HTMLElement | null {
   return (target as Element).closest<HTMLElement>('[data-testid="map"]')
 }
 
+/** Um popover ou menu aberto (Camadas, Exportar…): o botão que o abriu tem `aria-haspopup` e `aria-expanded`. */
+function popupOpen(): boolean {
+  return document.querySelector('[aria-haspopup][aria-expanded="true"]') !== null
+}
+
+/** O alvo do teclado é um controle (botão, link, interruptor…) fora do mapa: o Enter é dele. */
+function onControl(target: EventTarget | null): boolean {
+  if (!(target instanceof Element) || target === document.body || target === document.documentElement) return false
+  return mapUnder(target) === null
+}
+
 /** Ponto do mundo (0–1024) de um ponto 0..1 do mapa. */
 const toWorld = (p: { u: number; v: number }) => ({ x: p.u * WORLD_SIZE, y: p.v * WORLD_SIZE })
 
@@ -74,16 +85,17 @@ function RoadLayer({ ui, roads, pins, camera, disabled }: { ui: UiStore; roads: 
       return true
     }
     const keyAllowed = (e: KeyboardEvent) => !e.defaultPrevented && !isFieldTarget(e.target) && !inDialog(e.target)
-    // Esc com desenho e Enter: na captura, antes das outras teclas (o Esc do pin tiraria a seleção, e o
-    // Enter num botão da toolbar o apertaria).
+    // Esc com desenho e Enter: na captura, antes das outras teclas (o Esc do pin tiraria a seleção).
+    // Com um popover ou menu aberto, o Esc é dele (fecha só ele); o Enter só termina com o foco fora
+    // de um controle (no mapa ou em lugar nenhum): num botão focado, ele aperta o botão.
     const onKeyCapture = (e: KeyboardEvent) => {
       if (!keyAllowed(e) || e.ctrlKey || e.altKey || e.metaKey) return
-      if (e.key === 'Escape' && draftRef.current.length > 0) {
+      if (e.key === 'Escape' && draftRef.current.length > 0 && !popupOpen()) {
         e.preventDefault()
         e.stopPropagation()
         draftRef.current = []
         setDraft([])
-      } else if (e.key === 'Enter' && draftRef.current.length >= 2) {
+      } else if (e.key === 'Enter' && draftRef.current.length >= 2 && !onControl(e.target)) {
         e.preventDefault()
         e.stopPropagation()
         finish()

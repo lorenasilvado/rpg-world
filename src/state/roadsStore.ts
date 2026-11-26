@@ -21,8 +21,8 @@ export type RoadsState = {
   selectedId: string | null
   /**
    * Cria a estrada desenhada (AC-F5-04, AC-F5-05): "Nova estrada", tipo Estrada, pelos pontos (0..1
-   * no mapa), com as pontas ligadas aos pins `from` e `to`; ela fica selecionada. Com menos de 2
-   * pontos, nada muda (`null`).
+   * no mapa), com as pontas ligadas aos pins `from` e `to` (o vínculo com um pin que já não existe
+   * sai); ela fica selecionada. Com menos de 2 pontos, nada muda (`null`).
    */
   addRoad(draft: { points: readonly { u: number; v: number }[]; from?: string; to?: string }): Road | null
   /** Seleciona a estrada (`null`: nenhuma). */
@@ -73,7 +73,7 @@ export function createRoadsStore(
     selectedId: null,
     addRoad({ points, from, to }) {
       if (points.length < 2) return null
-      const road: Road = {
+      const drawn: Road = {
         id: newId(),
         name: NEW_ROAD_NAME,
         kind: 'road',
@@ -81,6 +81,8 @@ export function createRoadsStore(
         ...(from !== undefined ? { from } : {}),
         ...(to !== undefined ? { to } : {}),
       }
+      // Um pin da ponta pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
+      const road = pins ? withValidLinks(drawn, new Set(pins.getState().pins.map((p) => p.id))) : drawn
       set({ roads: [...get().roads, road], selectedId: road.id })
       // Uma seleção só no mapa: o pin selecionado deixa de estar.
       pins?.getState().select(null)

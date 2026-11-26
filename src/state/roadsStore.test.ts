@@ -69,6 +69,15 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     expect(roads.getState().addRoad({ points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] })).not.toHaveProperty('from')
   })
 
+  it('addRoad não liga a ponta a um pin que saiu no meio do desenho (a ponta fica no ponto dela)', () => {
+    const pins = createPinsStore([pin('a'), pin('b')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    pins.getState().removePin('b')
+    const created = roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a', to: 'b' })
+    expect(created).toEqual({ id: 'r', name: NEW_ROAD_NAME, kind: 'road', points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a' })
+    expect(roads.getState().roads).toEqual([created])
+  })
+
   it('a estrada que sai da lista deixa de estar selecionada', () => {
     const pins = createPinsStore([pin('a')])
     const roads = createRoadsStore([], pins, { newId: () => 'r' })
