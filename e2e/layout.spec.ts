@@ -47,7 +47,13 @@ test.describe('Layout vazio do editor', () => {
     await page.getByRole('button', { name: 'Abrir detalhes' }).click()
     const drawer = page.getByTestId('drawer')
     await expect(drawer).toBeVisible()
-    await expect.poll(async () => (await drawer.boundingBox())?.width).toBe(390)
+    // Com a largura da sidebar (320 px), encostado à direita: uma faixa do mapa fica à vista (#258).
+    await expect
+      .poll(async () => {
+        const box = await drawer.boundingBox()
+        return box && [box.x, box.width]
+      })
+      .toEqual([70, 320])
     await page.getByRole('button', { name: 'Fechar detalhes' }).click()
     await expect(drawer).toBeHidden()
   })

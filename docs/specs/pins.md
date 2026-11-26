@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-25
+updated: 2026-11-26
 ---
 
 # F3 · Pins e drawer
@@ -116,7 +116,7 @@ do banco.
 |---|---|---|
 | Nenhum selecionado | Padrão do editor | Ferramenta Navegar ativa; o drawer fica fora da tela (a partir de 768 px, o mapa, a barra superior, a linha inferior e os toasts vão até a borda direita; abaixo, o painel sobreposto fechado) |
 | Pin novo | Clique no mapa com Adicionar pin | O pin cai e quica no lugar (460 ms); fica selecionado, e o drawer abre com o nome "Novo pin" em edição (o campo com o foco e o texto selecionado) |
-| Selecionado | Clique num pin | Drawer aberto (a partir de 768 px, ele entra deslizando pela direita em 200 ms, e fechá-lo, por Esc ou pelo botão fechar, o leva de volta; abaixo de 768 px, sobreposto, com os campos de texto em 16 px, para o iOS não aproximar a página ao focar um deles); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (com o drawer aberto, o mapa pode ir para a esquerda até a borda direita dele chegar à do drawer: um pin perto da borda direita, mesmo no zoom 1×, sai de baixo do drawer) |
+| Selecionado | Clique num pin | Drawer aberto (a partir de 768 px, ele entra deslizando pela direita em 200 ms, e fechá-lo, por Esc ou pelo botão fechar, o leva de volta; abaixo de 768 px, sobreposto, com a largura da sidebar (320 px, uma faixa do mapa à vista ao lado; tocar nela fecha o drawer) e os campos de texto em 16 px, para o iOS não aproximar a página ao focar um deles); o pin fica 1,1× maior e por cima dos outros, com rótulo com o nome, anel âmbar (elipse 40 × 16 no chão) e pulsação (1,6 s); a câmera desliza (350 ms) até o pin ficar no centro da área livre entre os dois painéis, até onde os limites de pan deixam (com o drawer aberto, o mapa pode ir para a esquerda até a borda direita dele chegar à do drawer: um pin perto da borda direita, mesmo no zoom 1×, sai de baixo do drawer) |
 | Hover | Mouse sobre o pin | `scale(1.1)` + nome; cursor de mãozinha |
 | Movimento reduzido | `prefers-reduced-motion: reduce` | Sem quique nem pulsação; a câmera salta direto para o pin |
 | Arrastando | Arrastar um pin | Opacidade .6, sobe 14 px, sombra do desenho 12 px abaixo dele (`drop-shadow(0 12px 8px rgba(43,36,32,.4))`), marca tracejada no chão (elipse 40 × 16); fica por cima dos outros, sem rótulo, e o cursor é a mão fechada |
