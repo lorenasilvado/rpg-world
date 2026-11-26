@@ -1,7 +1,7 @@
 ---
 feature: F5
 area: area:estradas
-updated: 2026-11-25
+updated: 2026-11-26
 ---
 
 # F5 · Estradas e rotas
@@ -11,9 +11,9 @@ o comportamento atualiza esta spec.
 
 > Implementado: o modelo (`Road`, com nome), as estradas salvas com o mundo, no Desfazer e
 > Refazer, no JSON e no PNG; o desenho no mapa (estrada, trilha e rota marítima, na curva
-> suavizada, com a ponta ligada acompanhando o pin) e o interruptor "Estradas" em Camadas. Hoje as
-> estradas só entram por um arquivo .json importado: Desenhar estrada e Rota automática aparecem
-> desabilitadas na toolbar, e não há seleção nem drawer da estrada. O resto vem do PRD (RF-5,
+> suavizada, com a ponta ligada acompanhando o pin), o interruptor "Estradas" em Camadas e Desenhar
+> estrada (R). A estrada desenhada fica selecionada, mas a seleção ainda não aparece no mapa: não há
+> halo, clique numa estrada nem drawer da estrada. Rota automática aparece desabilitada na toolbar. O resto vem do PRD (RF-5,
 > desejável), do protótipo do editor e das decisões do [plano do M3](../milestones/m3.md).
 
 ## Resumo
@@ -34,7 +34,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 
 | Estado | Quando acontece | O que o usuário vê |
 |---|---|---|
-| Desenhando | Ferramenta "Desenhar estrada" ativa | Prévia tracejada |
+| Desenhando | Ferramenta "Desenhar estrada" ativa | Cursor em cruz; a dica "Clique no mapa ou num pin para começar a estrada" e, depois do primeiro ponto, "Clique para adicionar pontos · Enter ou duplo clique termina · Esc cancela"; a curva pelos pontos marcados, com o traço da estrada, os pontos (círculos claros com borda escura) e, com o mouse, a linha tracejada do último ponto até o cursor |
 | Selecionada | Clique numa estrada | Halo âmbar; drawer da estrada aberto |
 | Vazio | Mundo sem estradas | Nada no mapa; a aba Conexões do pin diz "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)." |
 | Calculando | Rota automática ou "Conectar cidades" esperando o worker | Prévia tracejada âmbar em linha reta entre os pins (na rota) ou "Conectando…" na dica (na malha) |
@@ -44,7 +44,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 
 | Ação | Resultado |
 |---|---|
-| "Desenhar estrada" (R) + cliques no mapa | Cada clique adiciona um ponto, com prévia tracejada; Enter ou duplo clique termina (com 2 pontos ou mais), Esc cancela. A curva é suavizada (Catmull-Rom). Começar ou terminar num pin liga a ponta ao pin. A estrada criada ("Nova estrada", tipo Estrada) fica selecionada |
+| "Desenhar estrada" (R) + cliques no mapa | Cada clique (ou toque) adiciona um ponto, com prévia tracejada; arrastar continua fazendo pan. Clicar fora do mapa marca a borda mais próxima. Enter ou duplo clique (duplo toque) termina, com 2 pontos ou mais; com menos, nada muda. Esc apaga o desenho e, sem desenho, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover ou menu aberto, como Camadas, o Esc fecha só ele). Com o foco num botão ou outro controle, o Enter é do controle e não termina o desenho. Trocar de ferramenta descarta o desenho. A curva é suavizada (Catmull-Rom). Clicar num pin à vista põe o ponto na posição dele (sem selecioná-lo), e começar ou terminar num pin liga a ponta ao pin (se o pin sai no meio do desenho, a ponta fica no ponto dela). A estrada criada ("Nova estrada", tipo Estrada) fica selecionada (o pin selecionado deixa de estar), é um passo no Desfazer, e a ferramenta volta para Navegar |
 | "Rota automática" (A) + dois pins | A dica diz "Clique no pin de origem" e depois "Agora clique no pin de destino"; gera a rota mais barata pelo terreno, "Rota de A a B", tipo Estrada, ligada aos dois, com o toast "Rota criada" |
 | "Criar rota marítima" (no toast Sem caminho) | Cria uma rota marítima, "Rota marítima de A a B", pela água entre os dois pins |
 | "Conectar cidades" (na dica da Rota automática, com 2 cidades ou mais) | Liga todos os pins do tipo Cidade alcançáveis por terra com a menor malha (árvore mínima pelo custo do terreno), sem repetir pares já ligados por estrada, num passo só do Desfazer; o toast diz quantas estradas foram criadas e quantas cidades ficaram sem caminho por terra |

@@ -149,7 +149,7 @@ describe('Barras do editor e Ajuda', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ajuda' }))
     const dialog = screen.getByRole('dialog', { name: 'Atalhos de teclado' })
     const rows = Array.from(dialog.querySelectorAll('dt')).map((dt) => `${dt.textContent} ${dt.nextElementSibling?.textContent}`)
-    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Buscar pins Ctrl K', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
+    expect(rows).toEqual(['Navegar V', 'Adicionar pin P', 'Desenhar estrada R', 'Medir distância M', 'Mover o mapa Setas / WASD', 'Zoom + / −', 'Centralizar mapa 0', 'Excluir pin Delete / Backspace', 'Buscar pins Ctrl K', 'Desfazer Ctrl Z', 'Refazer Ctrl Shift Z', 'Recolher painel [', 'Cancelar / fechar Esc', 'Atalhos ?'])
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(screen.queryByRole('dialog', { name: 'Atalhos de teclado' })).toBeNull()
   })

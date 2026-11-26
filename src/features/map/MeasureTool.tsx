@@ -13,7 +13,7 @@ export const HINT_TOP_PX = 84
 
 /**
  * Medir distância (navegacao.md, AC-F2-13). A tecla M (ou a ferramenta da toolbar) liga a ferramenta,
- * e a tecla V volta para Navegar (a tecla P, a ferramenta Adicionar pin, é ouvida aqui também), com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco num campo, dentro de um
+ * e a tecla V volta para Navegar (as teclas P, Adicionar pin, e R, Desenhar estrada, são ouvidas aqui também), com as mesmas exceções dos atalhos da câmera (Ctrl, Alt ou Meta, foco num campo, dentro de um
  * modal, `disabled`: painel sobreposto aberto no celular). Com ela ligada, dois cliques no mapa
  * marcam as pontas, e a distância em km aparece no meio da linha; um terceiro clique recomeça.
  * Arrastar continua fazendo pan (só conta como clique quem anda até `CLICK_SLOP_PX`). Esc apaga os
@@ -30,7 +30,7 @@ export function MeasureTool({ ui, world, camera, disabled }: { ui: UiStore; worl
     if (disabled) return
     const onKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
-      const tool = key === 'm' ? 'measure' : key === 'v' ? 'nav' : key === 'p' ? 'pin' : null
+      const tool = key === 'm' ? 'measure' : key === 'v' ? 'nav' : key === 'p' ? 'pin' : key === 'r' ? 'road' : null
       if (!tool || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return
       if (isFieldTarget(e.target) || inDialog(e.target)) return
       e.preventDefault()

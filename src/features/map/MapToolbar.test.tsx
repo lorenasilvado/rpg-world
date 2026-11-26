@@ -14,10 +14,10 @@ describe('Toolbar de ferramentas (AC-F2-10)', () => {
     const nav = screen.getByRole('button', { name: 'Navegar' })
     expect(nav.getAttribute('aria-pressed')).toBe('true')
     expect((nav as HTMLButtonElement).disabled).toBe(false)
-    for (const name of ['Desenhar estrada', 'Rota automática']) {
+    for (const name of ['Rota automática']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true)
     }
-    for (const name of ['Adicionar pin', 'Camadas', 'Medir distância']) {
+    for (const name of ['Adicionar pin', 'Desenhar estrada', 'Camadas', 'Medir distância']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(false)
     }
   })

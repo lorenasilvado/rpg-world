@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Pin, Road } from '../persistence/types'
 import { createPinsStore } from './pinsStore'
-import { createRoadsStore, roadsWithPins } from './roadsStore'
+import { NEW_ROAD_NAME, createRoadsStore, roadsWithPins } from './roadsStore'
 
 const pin = (id: string): Pin => ({ id, type: 'cidade', name: id, pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin', key: 'cidade' }, description: '', tags: [], fields: {} })
 const road = (id: string, from?: string, to?: string): Road => ({
@@ -46,5 +46,49 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     const list = [road('r', 'a')]
     expect(roadsWithPins(list, [pin('a')])).toBe(list)
     expect(roadsWithPins(list, [])).toEqual([])
+  })
+
+  it('addRoad cria "Nova estrada", tipo Estrada, ligada aos pins, e a deixa selecionada (AC-F5-04, AC-F5-05)', () => {
+    const pins = createPinsStore([pin('a'), pin('b')])
+    let n = 0
+    const roads = createRoadsStore([], pins, { newId: () => 'r' + ++n })
+    pins.getState().select('a')
+    expect(roads.getState().addRoad({ points: [{ u: 0.1, v: 0.1 }] })).toBeNull()
+    expect(roads.getState().roads).toEqual([])
+    const created = roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.2, v: 0.4 }], from: 'a', to: 'b' })
+    expect(created).toEqual({ id: 'r1', name: NEW_ROAD_NAME, kind: 'road', points: [{ u: 0.5, v: 0.5 }, { u: 0.2, v: 0.4 }], from: 'a', to: 'b' })
+    expect(roads.getState().roads).toEqual([created])
+    expect(roads.getState().selectedId).toBe('r1')
+    // Uma seleção só: o pin deixa de estar selecionado, e selecionar um pin tira a da estrada.
+    expect(pins.getState().selectedId).toBeNull()
+    pins.getState().select('b')
+    expect(roads.getState().selectedId).toBeNull()
+    roads.getState().select('r1')
+    expect(pins.getState().selectedId).toBeNull()
+    // Sem pin nas pontas, a estrada não tem from nem to.
+    expect(roads.getState().addRoad({ points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] })).not.toHaveProperty('from')
+  })
+
+  it('addRoad não liga a ponta a um pin que saiu no meio do desenho (a ponta fica no ponto dela)', () => {
+    const pins = createPinsStore([pin('a'), pin('b')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    pins.getState().removePin('b')
+    const created = roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a', to: 'b' })
+    expect(created).toEqual({ id: 'r', name: NEW_ROAD_NAME, kind: 'road', points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a' })
+    expect(roads.getState().roads).toEqual([created])
+  })
+
+  it('a estrada que sai da lista deixa de estar selecionada', () => {
+    const pins = createPinsStore([pin('a')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a' })
+    roads.getState().replaceRoads([...roads.getState().roads])
+    expect(roads.getState().selectedId).toBe('r')
+    pins.getState().removePin('a')
+    expect(roads.getState().roads).toEqual([])
+    expect(roads.getState().selectedId).toBeNull()
+    roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }] })
+    roads.getState().replaceRoads([])
+    expect(roads.getState().selectedId).toBeNull()
   })
 })
