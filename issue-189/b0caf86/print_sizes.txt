@@ -1,0 +1,4 @@
+commit: b0caf868251a5aae39c26fdf2c51ec8f7d24062a
+ac-1-esc-no-nome-390.png  390x844  8e750fd190a9adebe48a237ab8dde1f1f55344c8a4a3a7d744dc67be7453d7b4
+ac-1-esc-no-nome-foco-no-mapa-1280.png  1280x800  33ad91460b9f3720951f4273734aa3a6989d6e19a0db82d68f24a5a4cc98aef3
+ac-1-fechar-foco-no-mapa-1280.png  1280x800  d43d8fc3c9aad6362e93ecca9366fd7fee5f3fedd187d7bd85a36d90885db342
