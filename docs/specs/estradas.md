@@ -59,6 +59,8 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 - Tipos de via com estilos distintos: estrada, trilha, rota marítima. Os traços têm a largura e o
   tracejado do design system em px na tela, em qualquer zoom; no PNG, na escala da imagem.
 - A curva passa por todos os pontos da estrada (Catmull-Rom).
+- Onde duas estradas se cruzam, o contorno de uma não corta o traço da outra: os contornos de
+  todas ficam por baixo dos traços de cima, no mapa e no PNG.
 - Uma estrada sem nome num arquivo editado à mão é importada como "Estrada". Ao abrir o mundo, a
   ponta ligada a um pin que não existe perde o vínculo e fica no ponto dela.
 - A rota automática nunca cruza água (exceto rota marítima) e evita montanhas quando há desvio.

@@ -3,7 +3,7 @@ import type { Pin, Road } from '../persistence/types'
 import { pinType, type PinType } from '../state/pinTypes'
 import { WORLD_SIZE } from './camera'
 import { drawOrder } from './layers/pinMath'
-import { ROAD_STROKES, cssColor, curveSegments, roadPoints } from './layers/roadMath'
+import { cssColor, curveSegments, roadPoints, strokeOrder, type XY } from './layers/roadMath'
 import { DECOR_UNIT, INK_BOXES, INK_PX, INK_SHEET, decorVariant, drawDecorSheet, inkAnchor, inkFrame, type Ink } from './style/decorInk'
 import { PIN_SIZE_PX, PIN_VIEWBOX, drawPin, type PinImage, type PinInk } from './style/pinShapes'
 
@@ -89,25 +89,30 @@ function drawDecor(ctx: MapImageInk, icons: Decor, sheet: CanvasImageSource, sca
   }
 }
 
-/** As estradas, na curva do editor, com as larguras e os tracejados na escala da imagem. */
+/**
+ * As estradas, na curva do editor, com as larguras e os tracejados na escala da imagem; os contornos
+ * de todas antes dos traços de cima, como no editor (`strokeOrder`).
+ */
 function drawRoads(ctx: MapImageInk, roads: NonNullable<MapImageInput['roads']>, scale: number) {
   const size = WORLD_SIZE * scale
   const byId = new Map(roads.pins.map((p) => [p.id, p.pos]))
   ctx.save()
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
+  const curves = new Map<(typeof roads.list)[number], XY[]>()
   for (const road of roads.list) {
     const points = roadPoints(road, (id) => byId.get(id)).map((p) => ({ x: p.u * size, y: p.v * size }))
-    if (points.length < 2) continue
-    for (const stroke of ROAD_STROKES[road.kind] ?? ROAD_STROKES.road) {
-      ctx.beginPath()
-      ctx.moveTo(points[0].x, points[0].y)
-      for (const seg of curveSegments(points)) ctx.bezierCurveTo(seg.c1.x, seg.c1.y, seg.c2.x, seg.c2.y, seg.to.x, seg.to.y)
-      ctx.setLineDash(stroke.dash ? [stroke.dash[0] * scale, stroke.dash[1] * scale] : [])
-      ctx.strokeStyle = cssColor(stroke.color)
-      ctx.lineWidth = stroke.width * scale
-      ctx.stroke()
-    }
+    if (points.length >= 2) curves.set(road, points)
+  }
+  for (const { road, stroke } of strokeOrder([...curves.keys()])) {
+    const points = curves.get(road)!
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    for (const seg of curveSegments(points)) ctx.bezierCurveTo(seg.c1.x, seg.c1.y, seg.c2.x, seg.c2.y, seg.to.x, seg.to.y)
+    ctx.setLineDash(stroke.dash ? [stroke.dash[0] * scale, stroke.dash[1] * scale] : [])
+    ctx.strokeStyle = cssColor(stroke.color)
+    ctx.lineWidth = stroke.width * scale
+    ctx.stroke()
   }
   ctx.restore()
 }

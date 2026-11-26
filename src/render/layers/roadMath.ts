@@ -30,6 +30,21 @@ export const ROAD_STROKES: Record<RoadKind, readonly RoadStroke[]> = {
   sea: [{ color: 0xffffff, width: 2.5, dash: [10, 8] }],
 }
 
+/**
+ * A ordem dos traços de um conjunto de estradas: primeiro o contorno de todas (os traços de baixo,
+ * como o creme da estrada), depois o traço de cima de cada uma, na ordem das estradas. Assim, onde
+ * duas estradas se cruzam, o contorno de uma não corta o traço da outra.
+ */
+export function strokeOrder<T extends { kind: RoadKind }>(roads: readonly T[]): { road: T; stroke: RoadStroke }[] {
+  const casing: { road: T; stroke: RoadStroke }[] = []
+  const top: { road: T; stroke: RoadStroke }[] = []
+  for (const road of roads) {
+    const strokes = ROAD_STROKES[road.kind]
+    for (let i = 0; i < strokes.length; i++) (i < strokes.length - 1 ? casing : top).push({ road, stroke: strokes[i] })
+  }
+  return [...casing, ...top]
+}
+
 /** A cor do traço como no CSS (`#7a5230`), para o canvas 2D. */
 export function cssColor(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`

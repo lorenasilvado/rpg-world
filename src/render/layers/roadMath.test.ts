@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROAD_STROKES, cssColor, curveSegments, dashPolyline, roadPoints, sampleCurve, type XY } from './roadMath'
+import { ROAD_STROKES, cssColor, curveSegments, dashPolyline, roadPoints, sampleCurve, strokeOrder, type XY } from './roadMath'
 
 const len = (line: readonly XY[]) => line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - line[i].x, p.y - line[i].y), 0)
 
@@ -68,5 +68,10 @@ describe('estradas: curva e traços (AC-F5-01)', () => {
     expect(dashes[1]).toContainEqual({ x: 25, y: 0 })
     expect(dashes[1].at(-1)).toEqual({ x: 25, y: 3 })
     expect(dashPolyline([{ x: 0, y: 0 }], 1, 7)).toEqual([])
+  })
+
+  it('nos cruzamentos, os contornos de todas as estradas vão antes dos traços de cima', () => {
+    const order = strokeOrder([{ kind: 'road' as const }, { kind: 'trail' as const }, { kind: 'road' as const }])
+    expect(order.map(({ stroke }) => cssColor(stroke.color) + '/' + stroke.width)).toEqual(['#f5eacb/7', '#f5eacb/7', '#7a5230/3.5', '#7a5230/3.2', '#7a5230/3.5'])
   })
 })

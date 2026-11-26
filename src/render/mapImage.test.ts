@@ -149,4 +149,13 @@ describe('PNG do mapa (AC-F4-11)', () => {
     drawMapImage(ctx, { scale: 1, terrainRgba: rgba(1024), decor: null, pins: null, roads: null }, imageData)
     expect(of('bezierCurveTo')).toHaveLength(0)
   })
+
+  it('duas estradas que se cruzam: os dois contornos antes dos dois traços (o creme não corta o marrom)', () => {
+    const { ctx, of } = fakeCtx()
+    const a: Road = { id: 'a', name: 'A', kind: 'road', points: [{ u: 0.1, v: 0.5 }, { u: 0.9, v: 0.5 }] }
+    const b: Road = { id: 'b', name: 'B', kind: 'road', points: [{ u: 0.5, v: 0.1 }, { u: 0.5, v: 0.9 }] }
+    drawMapImage(ctx, { scale: 1, terrainRgba: rgba(1024), decor: null, pins: null, roads: { list: [a, b], pins: [] } }, imageData)
+    expect(of('stroke').map((c) => c.strokeStyle)).toEqual(['#f5eacb', '#f5eacb', '#7a5230', '#7a5230'])
+  })
 })
+
