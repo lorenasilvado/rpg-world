@@ -300,6 +300,10 @@ export async function createMapRenderer(
     camera.resize(w, h)
   }
   app.renderer.on('resize', onResize)
+  // O `resizeTo` do Pixi só mede o host no `resize` da janela; ao girar o iPhone, ele pode chegar
+  // antes de o layout assentar. O observer mede de novo quando o host muda de tamanho.
+  const hostObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => app.resize())
+  hostObserver?.observe(host)
 
   return {
     refit: () => camera.resize(app.screen.width, app.screen.height),
@@ -320,6 +324,7 @@ export async function createMapRenderer(
       unsubscribeRoads()
       app.ticker.remove(onBlurTick)
       app.renderer.off('resize', onResize)
+      hostObserver?.disconnect()
       camera.destroy()
       terrain.destroy()
       decor?.destroy()
