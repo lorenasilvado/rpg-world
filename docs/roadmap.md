@@ -160,7 +160,7 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 61 | #248 | [feat] Selecionar estrada e drawer da estrada | done | specs/estradas.md | #265 |
 | 62 | #189 | [chore] Devolver o foco ao fechar o drawer do pin | done | specs/pins.md | #269 |
 | 63 | #268 | [bug] No iPhone, o drawer desloca o mapa e focar um campo em paisagem dá zoom que não volta | done | specs/geracao-terreno.md | #273 |
-| 64 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | done | specs/estradas.md | |
+| 64 | #249 | [feat] Núcleo: rota pelo terreno (A* no worker) | done | specs/estradas.md | #276 |
 | 65 | #250 | [feat] Ferramenta Rota automática (A) | todo | specs/estradas.md | |
 | 66 | #251 | [feat] Sem caminho por terra e rota marítima | todo | specs/estradas.md | |
 | 67 | #252 | [feat] Conectar cidades | todo | specs/estradas.md | |
