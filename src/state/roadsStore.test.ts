@@ -79,6 +79,13 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     expect(pins.getState().selectedId).toBe('a')
   })
 
+  it('addRoad com kind: sea cria a rota marítima (AC-F5-13)', () => {
+    const pins = createPinsStore([pin('a'), pin('b')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    const created = roads.getState().addRoad({ points: [{ u: 0.5, v: 0.5 }, { u: 0.9, v: 0.9 }], from: 'a', to: 'b', name: 'Rota marítima de a a b', kind: 'sea' }, { select: false })
+    expect(created).toMatchObject({ name: 'Rota marítima de a a b', kind: 'sea', from: 'a', to: 'b' })
+  })
+
   it('addRoad não liga a ponta a um pin que saiu no meio do desenho (a ponta fica no ponto dela)', () => {
     const pins = createPinsStore([pin('a'), pin('b')])
     const roads = createRoadsStore([], pins, { newId: () => 'r' })

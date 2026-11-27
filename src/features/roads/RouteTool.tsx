@@ -27,7 +27,8 @@ import type { WorldRouter } from './worldRouter'
  * durante o cálculo não fazem nada. Esc com a origem marcada (ou calculando) cancela tudo e, sem
  * nada, volta para Navegar; trocar de ferramenta cancela o cálculo, e o resultado é descartado. Sem
  * caminho por terra (`route: null`) ou com o worker em falha, nada é criado e a ferramenta volta ao
- * primeiro passo. As teclas seguem as exceções dos atalhos do mapa (foco num campo, dentro de um
+ * primeiro passo; sem caminho por terra, `onNoPath` recebe os dois pins (o toast Sem caminho, com
+ * "Criar rota marítima", AC-F5-13). As teclas seguem as exceções dos atalhos do mapa (foco num campo, dentro de um
  * modal, um popover aberto), e nada vale com `disabled` (painel sobreposto aberto no celular).
  */
 export function RouteTool({
@@ -38,6 +39,7 @@ export function RouteTool({
   router,
   disabled,
   onCreated,
+  onNoPath,
 }: {
   ui: UiStore
   roads: RoadsStore
@@ -47,10 +49,21 @@ export function RouteTool({
   disabled: boolean
   /** A rota foi criada: quem o recebe mostra o toast "Rota criada". */
   onCreated?: (road: Road) => void
+  /** Não há caminho por terra entre os pins `from` e `to` (ids): o toast Sem caminho (AC-F5-13). */
+  onNoPath?: (from: string, to: string) => void
 }) {
   const active = useStore(ui, (s) => s.tool === 'route')
   return active ? (
-    <RouteLayer ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={disabled} onCreated={onCreated} />
+    <RouteLayer
+      ui={ui}
+      roads={roads}
+      pins={pins}
+      camera={camera}
+      router={router}
+      disabled={disabled}
+      onCreated={onCreated}
+      onNoPath={onNoPath}
+    />
   ) : null
 }
 
@@ -76,6 +89,7 @@ function RouteLayer({
   router,
   disabled,
   onCreated,
+  onNoPath,
 }: {
   ui: UiStore
   roads: RoadsStore
@@ -84,6 +98,7 @@ function RouteLayer({
   router: WorldRouter
   disabled: boolean
   onCreated?: (road: Road) => void
+  onNoPath?: (from: string, to: string) => void
 }) {
   const fromId = useStore(pins, (s) => s.markedId)
   const pinList = useStore(pins, (s) => s.pins)
@@ -96,6 +111,10 @@ function RouteLayer({
   useEffect(() => {
     onCreatedRef.current = onCreated
   }, [onCreated])
+  const onNoPathRef = useRef(onNoPath)
+  useEffect(() => {
+    onNoPathRef.current = onNoPath
+  }, [onNoPath])
   const cam = useStore(camera)
 
   // Sair da ferramenta cancela o cálculo e tira o anel da origem.
@@ -134,7 +153,11 @@ function RouteLayer({
           const now = pins.getState().pins
           const A = now.find((p) => p.id === from)
           const B = now.find((p) => p.id === to)
-          if (!res.route || !A || !B) return
+          if (!A || !B) return
+          if (!res.route) {
+            onNoPathRef.current?.(from, to)
+            return
+          }
           const road = roads.getState().addRoad(
             { points: res.route.points, from, to, name: routeName(A.name, B.name) },
             { select: false },

@@ -19,6 +19,9 @@ import { PinTool } from '../features/pins/PinTool'
 import { RoadDrawer } from '../features/roads/RoadDrawer'
 import { RoadTool } from '../features/roads/RoadTool'
 import { RouteTool } from '../features/roads/RouteTool'
+import { NoPathToast } from '../features/roads/NoPathToast'
+import { noPathMessage } from '../features/roads/autoRoute'
+import { useNoPath } from '../features/roads/useNoPath'
 import { createWorldRouter, type WorldRouter } from '../features/roads/worldRouter'
 import { SearchDialog } from '../features/search/SearchDialog'
 import { GenerateSidebar } from '../features/sidebar/GenerateSidebar'
@@ -76,7 +79,8 @@ import { useTheme } from './useTheme'
  * ferramenta Medir distância (`MeasureTool`, tecla M) desenha a medida por cima do mapa, e a
  * Desenhar estrada (`RoadTool`, tecla R), o desenho da estrada, e a Rota automática (`RouteTool`,
  * tecla A), a rota pelo terreno entre dois pins, no worker de rota (`router`), com o toast "Rota
- * criada" (estradas.md).
+ * criada" (estradas.md). Sem caminho por terra, o toast Sem caminho (`NoPathToast`, AC-F5-13)
+ * oferece "Criar rota marítima", e fica acima dos outros toasts à vista.
  *
  * Os pins (`pins`, pins.md): o renderer os desenha, e o `PinTool` cria (Adicionar pin, tecla P) e
  * seleciona pelo clique. O drawer mostra o pin selecionado (`PinDrawer`); abaixo de 768 px, selecionar
@@ -261,6 +265,13 @@ export function EditorLayout({
     setDeletedMessage('Rota criada')
     setDeletedAt(history.version.getState().value)
   }, [history])
+  /** O toast Sem caminho da Rota automática, com "Criar rota marítima" (AC-F5-13). */
+  const { noPath, open: routeNoPath, close: closeNoPath, createSea: createSeaRoute } = useNoPath({
+    pins,
+    roads,
+    router,
+    onCreated: routeCreated,
+  })
   const deleteRoad = useCallback(
     (id: string) => {
       if (!roads?.getState().removeRoad(id)) return
@@ -327,10 +338,15 @@ export function EditorLayout({
     undoButton.current?.focus()
   }, [canUndo, deletedAt])
 
-  // Outra mudança no histórico (passo novo, desfeito ou refeito) fecha o toast "Pin excluído".
+  // Outra mudança no histórico (passo novo, desfeito ou refeito) fecha o toast "Pin excluído" e o
+  // toast Sem caminho (os pins podem ter mudado).
   useEffect(
-    () => history.version.subscribe(({ value }) => setDeletedAt((at) => (at !== null && at !== value ? null : at))),
-    [history],
+    () =>
+      history.version.subscribe(({ value }) => {
+        setDeletedAt((at) => (at !== null && at !== value ? null : at))
+        closeNoPath()
+      }),
+    [history, closeNoPath],
   )
 
   useEffect(() => {
@@ -481,7 +497,7 @@ export function EditorLayout({
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={anyOpen} onDelete={deletePin} onDeleteRoad={deleteRoad} />
       {roads && <RoadTool ui={ui} roads={roads} pins={pins} camera={camera} disabled={anyOpen} />}
-      {roads && <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={anyOpen} onCreated={routeCreated} />}
+      {roads && <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={anyOpen} onCreated={routeCreated} onNoPath={routeNoPath} />}
 
       <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
       <div
@@ -546,6 +562,22 @@ export function EditorLayout({
           bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0) + (deletedAt !== null ? TOAST_HEIGHT + BAR_GAP : 0)}
           right={layout.toastRight}
         />
+        {noPath && (
+          <NoPathToast
+            message={noPathMessage(noPath.fromName, noPath.toName, { sea: noPath.sea === 'none' })}
+            onCreateSea={noPath.sea === 'none' ? undefined : createSeaRoute}
+            busy={noPath.sea === 'calculating'}
+            onClose={closeNoPath}
+            beside={layout.toastBeside}
+            bottom={
+              layout.toastBottom +
+              (errorToast ? TOAST_HEIGHT + BAR_GAP : 0) +
+              (deletedAt !== null ? TOAST_HEIGHT + BAR_GAP : 0) +
+              (onWater !== null ? TOAST_HEIGHT + BAR_GAP : 0)
+            }
+            right={layout.toastRight}
+          />
+        )}
       </div>
 
       {/* Tela baixa sem lugar na linha (AC-F2-15): o minimapa fica no canto superior esquerdo. */}
