@@ -1,0 +1,3 @@
+Suíte inteira (npx playwright test), commit 200e467daffd18b01651585687290c2cd336fda9:
+[213/235] [pages] › e2e\pages.spec.ts:37:1 › a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-05)
+  235 passed (10.0m)
