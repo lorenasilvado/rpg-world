@@ -76,7 +76,8 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
   foco pelo Tab). Clicar num deles o seleciona, e a ficha dele abre na aba Conexões, com o foco na
   aba (selecionado de outro jeito, o pin abre na Descrição). Depois, "Estradas": as estradas ligadas
   ao pin, com o número de linhas entre parênteses quando há alguma, uma linha por vizinho na estrada
-  (o nome do vizinho, ou "Ponto no mapa", e "estrada · tipo · comprimento"); clicar seleciona o
+  (o nome do vizinho, ou "Ponto no mapa", e "estrada · tipo · comprimento", a extensão da estrada inteira, não a distância até o
+  vizinho); clicar seleciona o
   vizinho, ou a estrada, sem pin daquele lado (ver [estradas.md](estradas.md), AC-F5-15). Sem
   estradas, "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)."
 
