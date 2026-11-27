@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useEffect } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Pin } from '../../persistence/types'
 import { createPinsStore, type PinsStore } from '../../state/pinsStore'
@@ -44,16 +45,16 @@ function Harness({
   roads,
   router,
   onCreated,
-  api,
+  onOpen,
 }: {
   pins: PinsStore
   roads: RoadsStore
   router: WorldRouter
   onCreated: () => void
-  api: { open?: (from: string, to: string) => void }
+  onOpen: (open: (from: string, to: string) => void) => void
 }) {
   const { noPath, open, close, createSea } = useNoPath({ pins, roads, router, onCreated })
-  api.open = open
+  useEffect(() => onOpen(open), [onOpen, open])
   return noPath ? (
     <NoPathToast
       message={noPathMessage(noPath.fromName, noPath.toName, { sea: noPath.sea === 'none' })}
@@ -70,9 +71,9 @@ function setup() {
   const roads = createRoadsStore([], pins, { newId: () => `r${++n}` })
   const { router, calls } = fakeRouter()
   const onCreated = vi.fn()
-  const api: { open?: (from: string, to: string) => void } = {}
-  render(<Harness pins={pins} roads={roads} router={router} onCreated={onCreated} api={api} />)
-  act(() => api.open!('a', 'b'))
+  let open: ((from: string, to: string) => void) | undefined
+  render(<Harness pins={pins} roads={roads} router={router} onCreated={onCreated} onOpen={(fn) => (open = fn)} />)
+  act(() => open!('a', 'b'))
   return { pins, roads, calls, onCreated }
 }
 
