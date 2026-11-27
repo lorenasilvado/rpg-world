@@ -22,6 +22,12 @@ export const TESS_PX = 16
  * Durante o zoom, quanto a escala pode se afastar da do último desenho (fator) antes de redesenhar.
  * Até lá, os traços escalam com o mapa (no máximo 12% mais largos ou mais finos); no quadro em que a
  * escala para, a camada redesenha com as larguras exatas (AC-F5-16).
+ *
+ * "Parou" é a escala igual por um quadro: na roda do mouse, a escala fica parada entre um entalhe e
+ * outro, e as estradas à vista são redesenhadas a cada entalhe, no meio do gesto. É de propósito:
+ * cada entalhe muda o zoom em uns 19%, mais que a folga, então ele redesenharia de qualquer jeito, e
+ * esperar mais quadros só deixaria o traço com a largura errada entre os entalhes. A folga vale para
+ * a pinça e o Ctrl+roda do touchpad, que mudam a escala de pouco em pouco a cada quadro.
  */
 export const ZOOM_DRIFT = 1.12
 

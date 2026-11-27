@@ -125,6 +125,20 @@ describe('RoadLayer: desempenho com muitas estradas (AC-F5-16)', () => {
     layer.destroy()
   })
 
+  it('na roda do mouse, redesenha a cada entalhe: o passo passa da folga, e a escala para entre um e outro', () => {
+    const layer = new RoadLayer()
+    layer.sync([road('a')], NO_PINS)
+    layer.frame(1)
+    // Um entalhe muda o zoom em uns 19%, e a escala fica igual até o próximo.
+    let scale = 1
+    for (let notch = 0; notch < 3; notch++) {
+      scale *= 1.19
+      expect(strokes(layer, scale).length, `entalhe ${notch + 1}`).toBeGreaterThan(0)
+      expect(strokes(layer, scale), `entre o entalhe ${notch + 1} e o próximo`).toEqual([])
+    }
+    layer.destroy()
+  })
+
   it('a estrada ou o pin que muda redesenha no quadro seguinte, mesmo no meio do zoom', () => {
     const layer = new RoadLayer()
     layer.sync([road('a')], NO_PINS)
