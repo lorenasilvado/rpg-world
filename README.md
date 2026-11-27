@@ -1,6 +1,49 @@
-# <Nome do projeto>
+# RPG World Builder
 
-<Uma frase sobre o projeto.> Documentação completa em [docs/](docs/README.md).
+Aplicação web para mestres de RPG e worldbuilders gerarem, a partir de uma seed, um mapa cartoon
+de um mundo fictício e marcarem nele cidades, NPCs e locais, com anotações em cada pin e estradas
+entre eles. Roda no navegador e salva os mundos localmente. Documentação completa em
+[docs/](docs/README.md).
+
+**No ar:** <https://lorenasilvado.github.io/rpg-world/> (GitHub Pages, publicado a cada merge na
+`main`).
+
+## O que o app faz
+
+| ID | Feature | Spec |
+|---|---|---|
+| F1 | Geração de terreno determinística por seed, com sliders de bioma, rios e lagos | [geracao-terreno.md](docs/specs/geracao-terreno.md) |
+| F2 | Pan, zoom no cursor, pinça e medir distância | [navegacao.md](docs/specs/navegacao.md) |
+| F3 | Pins com ícones ou imagens próprias, editados num drawer lateral, com Desfazer | [pins.md](docs/specs/pins.md) |
+| F4 | Mundos salvos no navegador (IndexedDB), exportação e importação em JSON | [mundos.md](docs/specs/mundos.md) |
+| F5 | Estradas desenhadas à mão, rota automática pelo terreno, rota marítima e "Conectar cidades" | [estradas.md](docs/specs/estradas.md) |
+
+Visão e escopo no [PRD](docs/prd.md); o andamento no [roadmap](docs/roadmap.md). M0 a M2 estão
+encerrados (a v1 é o M2); as tasks do M3 (Estradas e rotas) estão todas feitas, falta o
+fechamento do milestone.
+
+## Rodando localmente
+
+Pré-requisito: o Node do `.nvmrc` (o mesmo do CI).
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+```
+
+| Comando | O que faz |
+|---|---|
+| `npm run lint` | oxlint |
+| `npm run typecheck` | `tsc -b` (TypeScript strict) |
+| `npm test` | Vitest (jsdom) |
+| `npm run e2e` | Playwright em `e2e/` (antes, uma vez: `npx playwright install firefox webkit`) |
+| `npm run build` | Build de produção em `dist/`, com o caminho base `/rpg-world/` do Pages |
+| `npm run preview` | Serve o `dist/` em `http://localhost:4173/rpg-world/` |
+
+Stack: Vite, React 19, TypeScript, Tailwind + Radix, Zustand (+ zundo), PixiJS v8 com
+pixi-viewport, simplex-noise num Web Worker via Comlink, TipTap e Dexie
+([ADR 0001](docs/adr/0001-stack-da-v1.md)). Estrutura do código, projetos do Playwright e
+detalhes de cada comando em [`docs/overview.md`](docs/overview.md).
 
 ## Como este repositório funciona
 
@@ -70,34 +113,6 @@ Fluxo: `/preparar` → merge → `/planejar` (visão geral) → merge → `/plan
    issue do milestone, o `/fechar` confere o critério de saída, fecha o milestone e, no M0, pergunta
    o go/no-go; aí vem o `/planejar M<n+1>`, cujo PR registra o encerramento (doc `encerrado` e, no
    M0, o ADR do go/no-go).
-
----
-
-## Começando um projeto a partir deste template
-
-```bash
-gh repo create meu-projeto --template murilinhoPs/docs-lite-template --private --clone
-cd meu-projeto
-gh auth refresh -s project
-./scripts/bootstrap.sh
-```
-
-Depois do bootstrap, rode `/preparar` no Claude Code (veja "Preparando o projeto") e, com o PR de
-preparo mergeado, `/planejar` (visão geral) e `/planejar M0`.
-
-O `bootstrap.sh` roda **só localmente**, com o `gh` do usuário logado: ele usa GraphQL
-(`gh project`, `gh label`, `gh repo edit`), que as sessões do Claude Code na nuvem não têm.
-
-Ele cria o que o template não copia: o milestone `M0 — Fundação e spike` (os outros nascem no
-`/planejar M<n>`), labels (`type:*`, `prio:*` e as `area:*` da
-tabela Features do `prd.md`), board no Projects (cópia do projeto modelo, com os campos Etapa e
-Ordem e as visões; número salvo em `scripts/board.conf`), a issue `[chore] Setup do projeto` com a
-linha dela no roadmap, branch `pr-assets`, worktree de prints, squash com título e corpo do PR e o
-ruleset da `main`. Pode rodar de novo: ele pula o que já existe (rode de novo depois de preencher
-a tabela Features, para criar as `area:*`).
-
-O board é uma cópia do projeto modelo `murilinhoPs/2` (veja "Board → Projeto modelo"). Para não
-usar board: `./scripts/bootstrap.sh --sem-board` (veja "Board → Sem board").
 
 ## Board
 
@@ -230,26 +245,7 @@ Na coluna Sintoma, o texto entre crases é a mensagem que o script, o check ou o
 | card no lugar errado | alguém arrastou à mão, ou o roadmap está diferente | `./scripts/sync-board.sh`; se continuar, corrigir o roadmap |
 | `ci` sempre verde: `configure os testes da stack em .github/workflows/ci.yml` | o `ci.yml` ainda é o placeholder | preencher lint e testes da stack (AC da issue de setup) |
 
-## Checklist do projeto novo
-
-- [ ] Rodar `./scripts/bootstrap.sh` localmente (não funciona numa sessão na nuvem)
-- [ ] Commit de `scripts/board.conf` e `docs/roadmap.md` (issue de setup) gerados pelo bootstrap,
-      numa branch + PR (a `main` fica protegida); no PR, rode `./scripts/open-pr.sh --update <pr>`
-      para o `pr-gate` passar
-- [ ] Conferir em Settings → Rules o ruleset `main protegida` com os checks obrigatórios `ci` e
-      `pr-gate` (strict); repo privado no plano Free não tem rulesets
-- [ ] Na issue de setup, trocar o placeholder do `.github/workflows/ci.yml` pelo lint e testes da stack
-- [ ] Conferir o board: o bootstrap copia o projeto modelo
-      [murilinhoPs/projects/2](https://github.com/users/murilinhoPs/projects/2) com as visões
-      **Board** (por Etapa), **Backlog** (tabela por Ordem) e **Roadmap** (por Milestone).
-      Se a cópia falhar, ele cria um board vazio e as visões ficam para fazer à mão
-- [ ] Trocar o título e a frase deste README
-- [ ] Rodar `/preparar` (com o material que você já tem em `_import/`, se houver) até o
-      `docs/preparo.md` chegar em `fase: pronto`, e fazer o merge do PR de preparo
-- [ ] Rodar `./scripts/bootstrap.sh` de novo para criar as labels `area:*` da tabela Features
-- [ ] Planejar: `/planejar` (visão geral dos milestones) e, depois do merge, `/planejar M0`
-- [ ] Ajustar `docs/qa/print-rules.md` para a plataforma
-- [ ] Apagar `scripts/publish-template.sh` (só serve para o template)
+## Issue "fila" e testes dos scripts
 
 Issue "fila" (opcional): uma issue `type:chore` que lista o trabalho que depende de algo que você
 não tem à mão (ex.: Mac para testar iOS). Quando um AC ou print não puder ser feito por isso, o PR
