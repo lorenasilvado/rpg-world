@@ -1,0 +1,10 @@
+commit: b6ef95d2523cae94f3b5a97725f4edb0ce5019ff
+ac-f5-16-300-estradas-de-perto.png  1280x800  f8c23821a2bf39ae1a5c8458a478cd390597140d5b93962ffaf3f701896af84f
+ac-f5-16-300-estradas-depois-do-pan.png  1280x800  b15bd2a081de63eb94525de8a28e9930245513f40cd90d1b0977f6b3da25aeae
+ac-f5-16-300-estradas-longe.png  1280x800  6993f1ea29b4345435c8d84416ba5509eb24b13affc9cef63920ed4b00c03937
+ac-f5-16-300-estradas-zoom-1x.png  1280x800  dbdde8f3db4e8296e3c1bfd66e4a1163ee04f2d8ebbfb1b9a01faeba09aa722f
+fluxo-m3-conectar-cidades.png  1280x800  e3d774bc76bfa5e33288820a62529d24cab587b767c3f3eaeb9e121096b42c31
+fluxo-m3-copia-reimportada.png  1280x800  04b0dccee5682d07abd61c112b48feddfa93e702bc2948b1bf1038ce02c980fe
+fluxo-m3-drawer-da-estrada-editada.png  1280x800  49d6ff4b64125ec98628de8dbac25eb7da60168aa755b42a6c3f25c603cfd512
+fluxo-m3-recarregado-conexoes-da-serra.png  1280x800  0065c12783690118af7f8ef023ad1c4289b9836f83a462da82a20096c3d3ee06
+fluxo-m3-sem-caminho-por-terra.png  1280x800  e97aa5ac4a4b4b5acf962f843ce9c33828add9a869ffbb6062653cb4438e18b9
