@@ -17,3 +17,16 @@ export function routeHint(step: RouteStep): string {
 export function routeName(from: string, to: string): string {
   return `Rota de ${from} a ${to}`
 }
+
+/** O nome da rota marítima criada pelo toast Sem caminho (AC-F5-13). */
+export function seaRouteName(from: string, to: string): string {
+  return `Rota marítima de ${from} a ${to}`
+}
+
+/**
+ * O texto do toast Sem caminho (AC-F5-13): sem caminho por terra, ou (`sea: true`) nem pela água,
+ * como entre dois lagos.
+ */
+export function noPathMessage(from: string, to: string, { sea = false }: { sea?: boolean } = {}): string {
+  return sea ? `Não há caminho entre ${from} e ${to}.` : `Não há caminho por terra entre ${from} e ${to}.`
+}

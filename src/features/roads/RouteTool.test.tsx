@@ -63,6 +63,7 @@ function setup({ disabled = false } = {}) {
   camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
   const { router, calls } = fakeRouter()
   const onCreated = vi.fn()
+  const onNoPath = vi.fn()
   render(
     <div>
       <main data-testid="map">
@@ -72,10 +73,10 @@ function setup({ disabled = false } = {}) {
       <MapToolbar ui={ui} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={disabled} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={disabled} />
-      <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={disabled} onCreated={onCreated} />
+      <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={disabled} onCreated={onCreated} onNoPath={onNoPath} />
     </div>,
   )
-  return { ui, pins, roads, history, calls, onCreated }
+  return { ui, pins, roads, history, calls, onCreated, onNoPath }
 }
 
 const canvas = () => screen.getByTestId('canvas')
@@ -208,13 +209,15 @@ describe('Rota automática (AC-F5-12)', () => {
   })
 
   it('sem caminho por terra, ou com um pin excluído no meio do cálculo, nada é criado', async () => {
-    const { ui, pins, roads, calls, onCreated } = setup()
+    const { ui, pins, roads, calls, onCreated, onNoPath } = setup()
     act(() => ui.getState().setTool('route'))
     clickA()
     clickB()
     await answer(calls[0], null)
     expect(roads.getState().roads).toEqual([])
     expect(hint()).toBe('Clique no pin de origem')
+    // Sem caminho por terra: o toast Sem caminho recebe os dois pins (AC-F5-13).
+    expect(onNoPath).toHaveBeenCalledExactlyOnceWith('a', 'b')
     clickA()
     clickB()
     act(() => {
@@ -223,6 +226,7 @@ describe('Rota automática (AC-F5-12)', () => {
     await answer(calls[1], ROUTE)
     expect(roads.getState().roads).toEqual([])
     expect(onCreated).not.toHaveBeenCalled()
+    expect(onNoPath).toHaveBeenCalledTimes(1)
   })
 
   it('com o worker em falha, nada é criado e a ferramenta volta ao primeiro passo', async () => {

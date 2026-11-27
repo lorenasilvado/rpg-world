@@ -115,14 +115,14 @@ async function savedRoad(page: Page, name: string) {
   return (await readRoads(page)).find((r) => r.name === name) as { from?: string; to?: string; kind: string; points: { u: number; v: number; pin?: string }[] } | undefined
 }
 
-async function importAndOpen(page: Page) {
+async function importAndOpen(page: Page, file: object = FILE) {
   await page.goto('/')
   await expect(page.getByTestId('world-list')).not.toHaveAttribute('data-state', 'loading')
-  await page.getByTestId('import-input').setInputFiles({ name: 'estradas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(FILE)) })
+  await page.getByTestId('import-input').setInputFiles({ name: 'estradas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) })
   await expect(page.getByTestId('world-count')).toHaveText('1 mundo')
   await openWorld(page)
   const map = page.getByTestId('map')
-  await expect(map).toHaveAttribute('data-roads', '3')
+  await expect(map).toHaveAttribute('data-roads', String((file as typeof FILE).world.roads.length))
   const [x, y, width, height] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
   // O ponto do mapa (u, v) na página; `lift`: px acima, para cair no desenho do pin (a âncora é a base).
   return { map, at: (u: number, v: number, lift = 0) => ({ x: x + u * width, y: y + v * height - lift }) }
@@ -246,6 +246,54 @@ for (const size of [
     // Sem nada marcado, Esc volta para Navegar.
     await page.keyboard.press('Escape')
     await expect(map).toHaveAttribute('data-tool', 'nav')
+  })
+}
+
+// Na seed "rotas" (com os parâmetros padrão), o pin Ilha fica numa ilha a sudeste, sem caminho por
+// terra até o Porto, na costa do continente; pela água há caminho.
+const ISLAND_FILE = {
+  ...FILE,
+  world: { ...FILE.world, seed: 'rotas', pins: [pin('Porto', 0.752, 0.697), pin('Ilha', 0.842, 0.807)], roads: [] },
+}
+
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`Rota automática sem caminho por terra: o toast oferece "Criar rota marítima", que cria a rota pela água, no Desfazer (AC-F5-13, ${size.width})`, async ({ page }) => {
+    await page.setViewportSize(size)
+    const { map, at } = await importAndOpen(page, ISLAND_FILE)
+    await page.keyboard.press('a')
+    await expect(map).toHaveAttribute('data-tool', 'route')
+    const porto = at(0.752, 0.697, 10)
+    const ilha = at(0.842, 0.807, 10)
+    await page.mouse.click(porto.x, porto.y)
+    await expect(page.getByTestId('route-hint')).toHaveText('Agora clique no pin de destino')
+    await page.mouse.click(ilha.x, ilha.y)
+
+    const toast = page.getByTestId('no-path-toast')
+    await expect(toast).toContainText('Não há caminho por terra entre Porto e Ilha.', { timeout: 15_000 })
+    await expect(map).toHaveAttribute('data-roads', '0')
+    await expect(page.getByTestId('route-hint')).toHaveText('Clique no pin de origem')
+
+    await toast.getByRole('button', { name: 'Criar rota marítima' }).click()
+    await expect(map).toHaveAttribute('data-roads', '1', { timeout: 15_000 })
+    await expect(toast).toBeHidden()
+    await expect(page.getByTestId('pin-deleted-toast')).toContainText('Rota criada')
+    await expect.poll(async () => savedRoad(page, 'Rota marítima de Porto a Ilha')).toMatchObject({ kind: 'sea', from: 'Porto', to: 'Ilha' })
+
+    // Um passo no Desfazer.
+    await page.keyboard.press('Control+z')
+    await expect(map).toHaveAttribute('data-roads', '0')
+    await expect.poll(async () => savedRoad(page, 'Rota marítima de Porto a Ilha')).toBeUndefined()
+
+    // O Fechar tira o toast, sem criar nada.
+    await page.mouse.click(porto.x, porto.y)
+    await page.mouse.click(ilha.x, ilha.y)
+    await expect(toast).toBeVisible({ timeout: 15_000 })
+    await toast.getByRole('button', { name: 'Fechar' }).click()
+    await expect(toast).toBeHidden()
+    await expect(map).toHaveAttribute('data-roads', '0')
   })
 }
 
