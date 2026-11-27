@@ -1,7 +1,7 @@
 ---
 feature: F1
 area: area:geracao
-updated: 2026-11-25
+updated: 2026-11-27
 ---
 
 # F1 · Geração de terreno e sidebar
@@ -360,6 +360,12 @@ lista e o número não volta a ser usado.
 - AC-F1-29: a água abaixo do nível do mar sem ligação com a borda do mapa é lago, não oceano, e nenhuma margem de lago tem praia, com qualquer valor do slider Praias
 - AC-F1-30: quando o mapa regerado deixa pins sobre a água, aparece o toast "N pins ficaram sobre a água" com a ação "Mostrar", que centraliza a câmera no primeiro deles; nenhum pin é movido
 - AC-F1-31: no primeiro acesso ao editor, as dicas de boas-vindas apresentam os sliders, a toolbar e o adicionar pin; podem ser puladas e não voltam depois de vistas ou puladas
+- AC-F1-32: com o cartão das dicas de boas-vindas à vista e o foco nele, Esc faz o mesmo que "Pular" (fecha e grava que as dicas foram vistas), sem mudar a ferramenta nem fechar painéis
+- AC-F1-33: o campo gelado tem tons próprios, diferentes dos três tons da neve de montanha; com Neve em 0, o mapa não mostra o branco da neve
+- AC-F1-34: com os parâmetros padrão, o pontilhado de areia se vê nas praias no zoom 1×
+
+> Planejados no [M4](../milestones/m4.md), ainda não implementados: AC-F1-32, AC-F1-33, AC-F1-34.
+> A issue que implementa cada um atualiza as seções acima.
 
 ## Pendências
 

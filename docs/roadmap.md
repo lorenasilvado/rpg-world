@@ -87,10 +87,9 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
   cobertos por E2E; a suíte inteira passa no CI sem teste pulado por instabilidade, e a lacuna do
   Firefox sem WebGL2 fica resolvida ou registrada; reabrir um mundo usa o `generatorVersion`
   salvo; cada follow-up escolhido no plano do M4 termina fechado ou registrado como fora.
-- **Depende de / decisões abertas:** fim do M3. O tamanho máximo do mapa e o idioma da interface
-  continuam em aberto e ficam fora do M4.
-  > Pendente: quantas versões antigas do gerador manter, e por quanto tempo (spec de mundos). Isso
-  > define o alcance da #172.
+- **Depende de / decisões abertas:** fim do M3. A mira do teclado, o `generatorVersion` (só a
+  versão atual, com aviso) e as regras de Camadas decididos no [plano do M4](milestones/m4.md). O
+  tamanho máximo do mapa e o idioma da interface continuam em aberto e ficam fora do M4.
 - **Tamanho:** M
 
 Fora dos milestones: a preparação 3D (Fase 10 do material), porque o planeta 3D é Won't na v1. O
@@ -190,3 +189,39 @@ está no M4.
 | 70 | #253 | [feat] Estradas na aba Conexões do pin | done | specs/estradas.md | #296 |
 | 71 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | done | specs/estradas.md | #299 |
 | 72 | #300 | [bug] O teste do bench.html (AC-M0-05) estoura o tempo na suíte inteira e o projeto desempenho não roda | done | — | #303 |
+
+### M4 — Polimento e dívidas
+
+| Ordem | Issue | Título | Status | Spec | PR |
+|---|---|---|---|---|---|
+| 73 | #307 | [feat] Mira do teclado no mapa e seleção em Navegar | todo | specs/navegacao.md | |
+| 74 | #147 | [chore] Medir distância só com o teclado | todo | specs/navegacao.md | |
+| 75 | #308 | [feat] Adicionar pin pela mira do teclado | todo | specs/pins.md | |
+| 76 | #309 | [feat] Desenhar estrada e Rota automática pela mira do teclado | todo | specs/estradas.md | |
+| 77 | #230 | [chore] Foco depois do Desfazer do toast "Pin excluído" | todo | specs/pins.md | |
+| 78 | #270 | [chore] Esc em qualquer controle do drawer do pin leva o foco ao mapa | todo | specs/pins.md | |
+| 79 | #271 | [chore] Devolver o foco ao fechar o drawer da estrada | todo | specs/estradas.md | |
+| 80 | #222 | [chore] Ctrl K com um modal ou painel sobreposto aberto não vai para o navegador | todo | specs/pins.md | |
+| 81 | #223 | [chore] Busca: o leitor de tela anuncia as mensagens e o número de resultados | todo | specs/pins.md | |
+| 82 | #173 | [chore] Setas no menu do "Erro ao salvar" | todo | specs/mundos.md | |
+| 83 | #238 | [chore] Dicas de boas-vindas: fechar o cartão com Esc | todo | specs/geracao-terreno.md | |
+| 84 | #172 | [chore] Usar o generatorVersion salvo ao reabrir um mundo | todo | specs/mundos.md | |
+| 85 | #171 | [chore] Indicador de salvamento mostra "Salvo" antes da primeira gravação | todo | specs/mundos.md | |
+| 86 | #226 | [chore] Importar: recusar imagem cujo tipo não é image/* | todo | specs/mundos.md | |
+| 87 | #218 | [chore] Pin novo de tipo escondido em Camadas some ao sair da seleção | todo | specs/pins.md | |
+| 88 | #262 | [chore] Desenhar estrada com a camada Estradas desligada: religar a camada ou avisar | todo | specs/estradas.md | |
+| 89 | #266 | [chore] Estrada selecionada com "Estradas" desligada em Camadas | todo | specs/estradas.md | |
+| 90 | #301 | [chore] Estrada selecionada fica atrás do drawer da estrada | todo | specs/estradas.md | |
+| 91 | #152 | [chore] Testes do gerador estouram 5 s com a suíte inteira | todo | specs/geracao-terreno.md | |
+| 92 | #195 | [chore] E2E: tempo esgotado no primeiro mapa com 6 workers (sidebar.spec) | todo | specs/geracao-terreno.md | |
+| 93 | #180 | [chore] E2E: evitar a recarga do gotoEditor e os timeouts sob carga | todo | — | |
+| 94 | #219 | [chore] E2E do drawer clica na cópia enquanto a câmera ainda desliza (instável) | todo | specs/pins.md | |
+| 95 | #240 | [chore] Estabilizar o E2E da pulsação do pin (movimento reduzido) | todo | specs/pins.md | |
+| 96 | #143 | [chore] Firefox sem WebGL2 no CI: resolver ou registrar a lacuna | todo | specs/geracao-terreno.md | |
+| 97 | #190 | [chore] Rótulos de pins vizinhos se sobrepõem a partir de 1,5× | todo | specs/pins.md | |
+| 98 | #73 | [chore] Tons próprios para o campo gelado | todo | specs/geracao-terreno.md | |
+| 99 | #117 | [chore] Densidade do pontilhado de areia nas praias | todo | specs/geracao-terreno.md | |
+| 100 | #118 | [chore] Tufinho da floresta sem cobrir a copa da árvore redonda | todo | specs/geracao-terreno.md | |
+| 101 | #267 | [chore] Contraste do halo da estrada no tema escuro | todo | specs/estradas.md | |
+| 102 | #235 | [chore] Tela baixa e estreita: toolbar e zoom sem se cobrir (< 585 px) | todo | specs/navegacao.md | |
+| 103 | #310 | [chore] E2E dos fluxos só com teclado e medição de saída do M4 | todo | specs/navegacao.md | |

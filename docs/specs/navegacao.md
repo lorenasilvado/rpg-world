@@ -1,7 +1,7 @@
 ---
 feature: F2
 area: area:mapa
-updated: 2026-11-26
+updated: 2026-11-27
 ---
 
 # F2 · Câmera e navegação
@@ -241,6 +241,12 @@ lista e o número não volta a ser usado.
 - AC-F2-13: Medir distância (M) mostra a distância em km entre dois pontos clicados
 - AC-F2-14: em tela baixa (altura menor que 500 px, como o celular deitado), a sidebar e o drawer são painéis sobrepostos, como abaixo de 768 px, mesmo com 768 px ou mais de largura, e todas as seções da sidebar (com os sliders) são alcançáveis
 - AC-F2-15: em tela baixa, a toolbar fica deitada na própria linha inferior, nunca numa segunda linha nem em pé, e não cobre o meio do mapa; o minimapa começa recolhido (sem mudar a preferência de aberto ou recolhido das telas altas) e, se a linha não comporta o minimapa, a toolbar e o zoom (ex.: 667×375), fica no canto superior esquerdo; um toque num pin no centro do mapa o seleciona
+- AC-F2-16: com o foco no mapa, uma mira aparece no centro da área livre (entre os painéis) e some quando o foco sai; as setas movem o mapa sob ela e, em Navegar, Espaço ou Enter selecionam o pin ou a estrada sob a mira, como um clique no centro
+- AC-F2-17: em Medir distância, Espaço ou Enter marcam uma ponta da medida no ponto da mira, e a segunda ponta mostra a distância, como os dois cliques (AC-F2-13)
+- AC-F2-18: em tela baixa com menos de 585 px de largura, o controle de zoom fica compacto (−, + e centralizar, sem a escala e a porcentagem), e a toolbar e o zoom não se cobrem
+
+> Planejados no [M4](../milestones/m4.md), ainda não implementados: AC-F2-16, AC-F2-17, AC-F2-18.
+> A issue que implementa cada um atualiza as seções acima.
 
 ## Pendências
 

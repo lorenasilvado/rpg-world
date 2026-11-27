@@ -131,6 +131,15 @@ lista e o número não volta a ser usado.
 - AC-F5-15: a aba Conexões do pin lista as estradas ligadas a ele (os pins vizinhos na estrada, o tipo e o comprimento), e clicar numa seleciona o pin vizinho; sem estradas, "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)."
 - AC-F5-16: com 500 pins, 300 estradas e 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
 - AC-F5-17: em Desenhar estrada, clicar num pin no meio do desenho liga o pin à estrada; o ponto dele acompanha o pin arrastado, "Liga" no drawer lista os pins ligados na ordem da estrada, e excluir um pin do meio deixa a estrada com o ponto solto no mapa (Desfazer devolve o vínculo)
+- AC-F5-18: em Desenhar estrada, com o foco no mapa, Espaço adiciona um ponto na mira (sobre um pin, liga o pin, como o clique); Enter termina e Esc cancela, como hoje
+- AC-F5-19: em Rota automática, com o foco no mapa, Espaço ou Enter escolhem o pin sob a mira como origem e depois como destino, com a dica guiando cada passo
+- AC-F5-20: a partir de 768 px, fechar o drawer da estrada pelo botão "Fechar" ou pelo Esc leva o foco ao mapa
+- AC-F5-21: criar uma estrada com "Estradas" desligada em Camadas liga a camada de novo, e a estrada criada fica à vista
+- AC-F5-22: desligar "Estradas" em Camadas com uma estrada selecionada tira a seleção e fecha o drawer da estrada
+- AC-F5-23: ao selecionar uma estrada, se ela não está à vista na área livre ao lado do drawer, a câmera desliza até ela, como ao selecionar um pin
+
+> Planejados no [M4](../milestones/m4.md), ainda não implementados: AC-F5-18, AC-F5-19, AC-F5-20, AC-F5-21, AC-F5-22, AC-F5-23.
+> A issue que implementa cada um atualiza as seções acima.
 
 ## Pendências
 
