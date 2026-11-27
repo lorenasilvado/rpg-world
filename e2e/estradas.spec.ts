@@ -112,7 +112,7 @@ for (const size of [
 // Desenhar estrada (#247, AC-F5-04, AC-F5-05): de Alda a Brena, passando por um ponto do mapa; a
 // estrada nova entra no mundo ligada aos dois pins, e Desfazer a tira. No celular, com o toque.
 async function savedRoad(page: Page, name: string) {
-  return (await readRoads(page)).find((r) => r.name === name) as { from?: string; to?: string; kind: string; points: unknown[] } | undefined
+  return (await readRoads(page)).find((r) => r.name === name) as { from?: string; to?: string; kind: string; points: { u: number; v: number; pin?: string }[] } | undefined
 }
 
 async function importAndOpen(page: Page) {
@@ -166,6 +166,41 @@ test('Desenhar estrada (R): de um pin a outro, com a prévia; a estrada fica lig
   await expect.poll(async () => savedRoad(page, 'Nova estrada')).toBeUndefined()
   await page.keyboard.press('Control+Shift+z')
   await expect(map).toHaveAttribute('data-roads', '4')
+})
+
+// Pins do meio (#285, AC-F5-17): de Alda, passando por Brena, até um ponto solto; Brena fica ligada
+// ao ponto dela, "Liga" mostra os dois na ordem, e excluir Brena deixa a estrada com o ponto solto.
+test('Desenhar estrada: o pin clicado no meio fica ligado; excluí-lo deixa o ponto solto e Desfazer devolve (AC-F5-17, 1440)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { map, at } = await importAndOpen(page)
+  await page.keyboard.press('r')
+  const alda = at(0.35, 0.45, 10)
+  const brena = at(0.55, 0.5, 10)
+  const solto = at(0.6, 0.7)
+  await page.mouse.click(alda.x, alda.y)
+  await page.mouse.click(brena.x, brena.y)
+  await page.mouse.click(solto.x, solto.y)
+  await page.keyboard.press('Enter')
+  await expect(map).toHaveAttribute('data-roads', '4')
+  await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points.length).toBe(3)
+  const road = (await savedRoad(page, 'Nova estrada'))!
+  expect(road.from).toBe('Alda')
+  expect(road.to).toBeUndefined()
+  expect(road.points[1]).toEqual({ u: 0.55, v: 0.5, pin: 'Brena' })
+
+  // "Liga" no drawer: os pins ligados, na ordem da estrada.
+  await expect(page.getByTestId('road-drawer')).toBeVisible()
+  await expect(page.getByTestId('road-ends').getByRole('button')).toHaveText([/Alda/, /Brena/])
+
+  // Excluir Brena tira as estradas com a ponta nela (Estrada Real, a rota marítima), e a nova fica.
+  await page.mouse.click(brena.x, brena.y)
+  await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+  await page.keyboard.press('Delete')
+  await expect(map).toHaveAttribute('data-roads', '2')
+  await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points[1]).toEqual({ u: 0.55, v: 0.5 })
+  await page.keyboard.press('Control+z')
+  await expect(map).toHaveAttribute('data-roads', '4')
+  await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points[1]).toEqual({ u: 0.55, v: 0.5, pin: 'Brena' })
 })
 
 for (const size of [
@@ -233,6 +268,39 @@ test.describe('com o toque', () => {
     await expect(map).toHaveAttribute('data-roads', '4')
     await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points.length).toBe(3)
     expect(await savedRoad(page, 'Nova estrada')).toMatchObject({ from: 'Alda', to: 'Brena' })
+  })
+
+  // Pins do meio no celular (#285, AC-F5-17): o toque num pin no meio do desenho o liga; o "Liga" do
+  // painel sobreposto mostra os dois, e excluir Brena (pelo drawer dela) deixa o ponto solto.
+  test('Desenhar estrada no celular: o pin tocado no meio fica ligado; excluí-lo deixa o ponto solto (AC-F5-17, 390)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const { map, at } = await importAndOpen(page)
+    await page.getByRole('button', { name: 'Desenhar estrada' }).tap()
+    const alda = at(0.35, 0.45, 10)
+    const brena = at(0.55, 0.5, 10)
+    const solto = at(0.6, 0.7)
+    await page.touchscreen.tap(alda.x, alda.y)
+    await page.touchscreen.tap(brena.x, brena.y)
+    await expect(page.getByTestId('road-draw-layer')).toHaveAttribute('data-points', '2')
+    await page.touchscreen.tap(solto.x, solto.y)
+    await page.touchscreen.tap(solto.x, solto.y)
+    await expect(map).toHaveAttribute('data-roads', '4')
+    await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points[1]).toEqual({ u: 0.55, v: 0.5, pin: 'Brena' })
+
+    await expect(page.getByTestId('drawer')).toHaveAttribute('data-open', 'true')
+    await expect(page.getByTestId('drawer')).toBeInViewport({ ratio: 1 })
+    const ends = page.getByTestId('road-ends').getByRole('button')
+    await expect(ends).toHaveText([/Alda/, /Brena/])
+
+    // Brena no "Liga" abre a ficha dela; Excluir tira as estradas com a ponta nela, e a nova fica.
+    await ends.nth(1).tap()
+    await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+    await page.getByTestId('drawer').getByRole('button', { name: 'Excluir', exact: true }).tap()
+    await expect(map).toHaveAttribute('data-roads', '2')
+    await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points[1]).toEqual({ u: 0.55, v: 0.5 })
+    await page.getByRole('button', { name: 'Desfazer' }).first().tap()
+    await expect(map).toHaveAttribute('data-roads', '4')
+    await expect.poll(async () => (await savedRoad(page, 'Nova estrada'))?.points[1]).toEqual({ u: 0.55, v: 0.5, pin: 'Brena' })
   })
 
   // A dica da estrada (#279) é maior, mas cabe na tela do celular: quebra em linhas, a 12 px das bordas.

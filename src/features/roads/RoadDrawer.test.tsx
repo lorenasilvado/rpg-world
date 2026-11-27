@@ -157,6 +157,18 @@ describe('Editar estrada (AC-F5-07)', () => {
   })
 })
 
+describe('Pins do meio em "Liga" (AC-F5-17)', () => {
+  it('lista os pins ligados na ordem da estrada: o do meio e depois a ponta', () => {
+    const { roads } = setup()
+    const road: Road = { id: 'r3', name: 'Volta', kind: 'road', points: [{ u: 0.1, v: 0.1 }, { u: 0.5, v: 0.5, pin: 'Brena' }, { u: 0.25, v: 0.5 }], to: 'Alda' }
+    act(() => {
+      roads.getState().replaceRoads([...roads.getState().roads, road])
+      roads.getState().select('r3')
+    })
+    expect(within(screen.getByTestId('road-ends')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Brena', 'Alda'])
+  })
+})
+
 describe('Excluir estrada (AC-F5-08)', () => {
   it('o botão do drawer e Delete pedem a exclusão da estrada selecionada', () => {
     const onDelete = vi.fn()

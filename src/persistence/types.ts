@@ -40,12 +40,18 @@ export type Pin = {
 /** Os tipos de via (estradas.md): estrada, trilha e rota marítima. */
 export type RoadKind = 'road' | 'trail' | 'sea'
 
+/** Um ponto do traçado, 0..1 no mapa; `pin`: o pin do meio ligado ao ponto (ele fica na posição do pin). */
+export type RoadPoint = { u: number; v: number; pin?: string }
+
 export type Road = {
   id: string
   name: string
   kind: RoadKind
-  /** Os pontos do traçado, 0..1 no mapa; a curva suavizada passa por eles. */
-  points: { u: number; v: number }[]
+  /**
+   * Os pontos do traçado; a curva suavizada passa por eles. Um ponto do meio pode estar ligado a um
+   * pin (`pin`); as pontas usam `from` e `to`.
+   */
+  points: RoadPoint[]
   /** O pin ligado à primeira ponta: ela fica na posição dele. */
   from?: string
   /** O pin ligado à última ponta. */

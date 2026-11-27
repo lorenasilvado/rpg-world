@@ -335,6 +335,18 @@ describe('histórico com as estradas (AC-F5-02, AC-F5-08)', () => {
     expect(history.temporal.getState().pastStates).toHaveLength(1)
   })
 
+  it('excluir um pin do meio é um passo; Desfazer devolve o pin e o vínculo (AC-F5-17)', () => {
+    const { pins, roads, history } = setupRoads()
+    const created = roads.getState().addRoad({ points: [{ u: 0.1, v: 0.1 }, { u: 0.2, v: 0.3, pin: 'b' }, { u: 0.9, v: 0.9 }], from: 'a' })!
+    const steps = history.temporal.getState().pastStates.length
+    pins.getState().removePin('b')
+    expect(history.temporal.getState().pastStates).toHaveLength(steps + 1)
+    expect(roads.getState().roads.find((r) => r.id === created.id)?.points[1]).toEqual({ u: 0.2, v: 0.3 })
+    history.undo()
+    expect(pins.getState().pins.map((p) => p.id)).toContain('b')
+    expect(roads.getState().roads.find((r) => r.id === created.id)).toEqual(created)
+  })
+
   it('a estrada desenhada é um passo; Desfazer a tira (e a seleção), Refazer a devolve (AC-F5-04)', () => {
     const { pins, roads, history } = setupRoads()
     pins.getState().select('a')

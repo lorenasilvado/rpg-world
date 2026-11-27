@@ -168,7 +168,8 @@ o resultado fica guardado até a escala, os pins, as camadas ou a seleção muda
 cobre o grupo, o clique nele e os interruptores dos tipos.
 
 As estradas ficam no `src/state/roadsStore.ts` (Zustand vanilla, um por mundo aberto), que ouve o
-`pinsStore`: excluir um pin tira as estradas ligadas a ele (`from`/`to`) na mesma mudança. O
+`pinsStore`: excluir um pin tira as estradas com a ponta nele (`from`/`to`) na mesma mudança, e na
+estrada ligada a ele só no meio (o `pin` de um ponto) o ponto fica solto onde o pin estava. O
 renderer as desenha na `layers/RoadLayer.ts` (um `Graphics` entre o grupo borrado e os pins,
 redesenhado quando as estradas, os pins ou a escala mudam: os traços têm px fixos na tela), com a
 curva, os traços e a ponta que segue o pin em `layers/roadMath.ts`, TS puro, testado no Vitest, que
@@ -452,7 +453,8 @@ type Pin = {
 };
 
 type Road = { id: string; name: string; kind: 'road' | 'trail' | 'sea'; // name: "Estrada" se faltar no JSON
-  points: { u: number; v: number }[]; from?: string; to?: string }; // from/to: pins das pontas
+  points: { u: number; v: number; pin?: string }[]; // pin: o pin do meio ligado ao ponto
+  from?: string; to?: string };                       // from/to: pins das pontas
 
 // Saída do worker (não é salva; é regerada)
 type WorldField = { width: number; height: number;

@@ -154,6 +154,13 @@ describe('exportar e importar o mundo (AC-F4-09)', () => {
     expect(parsed.world.roads).toEqual([...roads, { id: 'r4', name: 'Estrada', kind: 'road', points: [{ u: 0, v: 0 }, { u: 1, v: 1 }] }])
   })
 
+  it('o pin do meio de uma estrada vai no arquivo e volta igual (AC-F5-17)', () => {
+    const road = { id: 'r', name: 'R', kind: 'road', points: [{ u: 0.1, v: 0.1 }, { u: 0.3, v: 0.3, pin: 'c' }, { u: 0.5, v: 0.5 }], from: 'a' }
+    const parsed = parseWorldFile(raw({}, { roads: [road] }))
+    if (!parsed.ok) throw new Error(parsed.reason)
+    expect(parsed.world.roads).toEqual([road])
+  })
+
   it('um arquivo editado à mão sem nome, pins nem estradas ganha os padrões', () => {
     const parsed = parseWorldFile(raw({}, { name: undefined, sizeKm: undefined }))
     if (!parsed.ok) throw new Error(parsed.reason)

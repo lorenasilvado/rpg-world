@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Pin, Road, RoadKind } from '../persistence/types'
+import type { UV } from '../render/layers/roadMath'
 import type { PinsStore } from './pinsStore'
 
 /**
@@ -7,9 +8,11 @@ import type { PinsStore } from './pinsStore'
  * store "vanilla" do Zustand, como o `pinsStore`: o renderer desenha as estradas, o salvamento
  * automático grava a lista quando ela muda, e o desfazer é do histórico do mundo (`history.ts`).
  *
- * O store ouve os pins do mundo: excluir um pin exclui as estradas ligadas a ele (`from` ou `to`),
- * na mesma mudança dos pins, e o histórico guarda as duas num passo só (o Desfazer devolve tudo).
- * Ao abrir, um vínculo com um pin que não existe sai (a estrada fica, com a ponta no ponto dela).
+ * O store ouve os pins do mundo: excluir um pin exclui as estradas ligadas a ele numa ponta (`from`
+ * ou `to`), e a ligada a ele só no meio (o `pin` de um ponto, AC-F5-17) fica, com o ponto solto onde
+ * o pin estava, na mesma mudança dos pins; o histórico guarda as duas num passo só (o Desfazer
+ * devolve tudo). Ao abrir, um vínculo com um pin que não existe sai (a estrada fica, com o ponto
+ * onde está).
  *
  * O drawer da estrada muda o nome e o tipo (`updateRoad`, AC-F5-07) e exclui (`removeRoad`, AC-F5-08).
  *
@@ -23,12 +26,12 @@ export type RoadsState = {
   selectedId: string | null
   /**
    * Cria a estrada desenhada (AC-F5-04, AC-F5-05): "Nova estrada", tipo Estrada, pelos pontos (0..1
-   * no mapa), com as pontas ligadas aos pins `from` e `to` (o vínculo com um pin que já não existe
-   * sai); ela fica selecionada. Com menos de 2 pontos, nada muda (`null`). A Rota automática
+   * no mapa; um do meio pode vir ligado a um pin, AC-F5-17), com as pontas ligadas aos pins `from` e
+   * `to` (o vínculo com um pin que já não existe sai); ela fica selecionada. Com menos de 2 pontos, nada muda (`null`). A Rota automática
    * (AC-F5-12) passa o nome ("Rota de A a B") e `select: false`: a rota criada não fica selecionada.
    */
   addRoad(
-    draft: { points: readonly { u: number; v: number }[]; from?: string; to?: string; name?: string },
+    draft: { points: readonly Road['points'][number][]; from?: string; to?: string; name?: string },
     options?: { select?: boolean },
   ): Road | null
   /** Seleciona a estrada (`null`: nenhuma). */
@@ -60,20 +63,58 @@ export const DEFAULT_ROAD_NAME = 'Estrada'
 /** O nome da estrada desenhada à mão (estradas.md → Ações). */
 export const NEW_ROAD_NAME = 'Nova estrada'
 
-/** A estrada sem os vínculos com pins que não estão em `ids`; sem nenhum, o mesmo objeto. */
-function withValidLinks(road: Road, ids: ReadonlySet<string>): Road {
-  const from = road.from !== undefined && !ids.has(road.from)
-  const to = road.to !== undefined && !ids.has(road.to)
-  if (!from && !to) return road
-  const { from: f, to: t, ...rest } = road
-  return { ...rest, ...(from ? {} : { from: f }), ...(to ? {} : { to: t }) }
+/**
+ * Os pontos sem o vínculo com um pin do meio que não está em `ids`; o ponto fica em `lastPos` do pin
+ * (onde ele estava), ou onde está. Sem nenhum, o mesmo array.
+ */
+function pointsWithValidPins(points: Road['points'], ids: ReadonlySet<string>, lastPos?: (id: string) => UV | undefined): Road['points'] {
+  if (!points.some((p) => p.pin !== undefined && !ids.has(p.pin))) return points
+  return points.map((p) => {
+    if (p.pin === undefined || ids.has(p.pin)) return p
+    const at = lastPos?.(p.pin) ?? p
+    return { u: at.u, v: at.v }
+  })
 }
 
-/** As estradas sem as ligadas a um pin que não está em `pins` (o pin foi excluído). */
-export function roadsWithPins(roads: readonly Road[], pins: readonly Pin[]): readonly Road[] {
+/** A estrada sem os vínculos com pins que não estão em `ids`; sem nenhum, o mesmo objeto. */
+function withValidLinks(road: Road, ids: ReadonlySet<string>, lastPos?: (id: string) => UV | undefined): Road {
+  const from = road.from !== undefined && !ids.has(road.from)
+  const to = road.to !== undefined && !ids.has(road.to)
+  const points = pointsWithValidPins(road.points, ids, lastPos)
+  if (!from && !to && points === road.points) return road
+  const { from: f, to: t, ...rest } = road
+  return { ...rest, points, ...(from ? {} : { from: f }), ...(to ? {} : { to: t }) }
+}
+
+/**
+ * As estradas depois que saem pins (excluídos): sai a estrada com uma ponta ligada a um pin que não
+ * está em `pins`; a ligada a ele só no meio fica, com o ponto solto onde o pin estava (`prev`, os
+ * pins de antes; AC-F5-17). Nada muda: a mesma lista.
+ */
+export function roadsWithPins(roads: readonly Road[], pins: readonly Pin[], prev: readonly Pin[] = []): readonly Road[] {
   const ids = new Set(pins.map((p) => p.id))
-  const kept = roads.filter((r) => (r.from === undefined || ids.has(r.from)) && (r.to === undefined || ids.has(r.to)))
-  return kept.length === roads.length ? roads : kept
+  const before = new Map(prev.map((p) => [p.id, p.pos]))
+  let changed = false
+  const kept: Road[] = []
+  for (const r of roads) {
+    if ((r.from !== undefined && !ids.has(r.from)) || (r.to !== undefined && !ids.has(r.to))) {
+      changed = true
+      continue
+    }
+    const next = withValidLinks(r, ids, (id) => before.get(id))
+    if (next !== r) changed = true
+    kept.push(next)
+  }
+  return changed ? kept : roads
+}
+
+/**
+ * Os pins ligados à estrada, na ordem dela (o "Liga" do drawer, AC-F5-17): a ponta `from`, os pins
+ * do meio e a ponta `to`, cada um uma vez.
+ */
+export function linkedPins(road: Pick<Road, 'points' | 'from' | 'to'>): string[] {
+  const ids = [road.from, ...road.points.map((p) => p.pin), road.to].filter((id): id is string => id !== undefined)
+  return [...new Set(ids)]
 }
 
 /** A seleção, se a estrada ainda está na lista. */
@@ -96,11 +137,11 @@ export function createRoadsStore(
         id: newId(),
         name: name?.trim() || NEW_ROAD_NAME,
         kind: 'road',
-        points: points.map((p) => ({ u: p.u, v: p.v })),
+        points: points.map((p) => (p.pin !== undefined ? { u: p.u, v: p.v, pin: p.pin } : { u: p.u, v: p.v })),
         ...(from !== undefined ? { from } : {}),
         ...(to !== undefined ? { to } : {}),
       }
-      // Um pin da ponta pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
+      // Um pin ligado pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
       const road = pins ? withValidLinks(drawn, new Set(pins.getState().pins.map((p) => p.id))) : drawn
       if (!select) {
         set({ roads: [...get().roads, road] })
@@ -154,7 +195,7 @@ export function createRoadsStore(
       }
       if (state.pins === prev.pins) return
       const { roads, selectedId } = store.getState()
-      const kept = roadsWithPins(roads, state.pins)
+      const kept = roadsWithPins(roads, state.pins, prev.pins)
       if (kept !== roads) store.setState({ roads: kept as Road[], selectedId: keepSelected(selectedId, kept) })
     }) ?? (() => {})
   return store

@@ -6,7 +6,7 @@ import { roadLengthKm } from '../../render/layers/roadMath'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import { pinType } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
-import type { RoadsStore } from '../../state/roadsStore'
+import { linkedPins, type RoadsStore } from '../../state/roadsStore'
 import type { WorldStore } from '../../state/worldStore'
 import { formatKm } from '../map/measure'
 import { PinIcon } from '../pins/PinIcon'
@@ -70,7 +70,9 @@ function RoadCard({
   const allPins = useStore(pins, (s) => s.pins)
   const sizeKm = useStore(world, (s) => s.sizeKm)
   const byId = new Map(allPins.map((p) => [p.id, p]))
-  const ends = [road.from, road.to].map((id) => (id === undefined ? undefined : byId.get(id))).filter((p): p is Pin => p !== undefined)
+  const ends = linkedPins(road)
+    .map((id) => byId.get(id))
+    .filter((p): p is Pin => p !== undefined)
   const km = roadLengthKm(road, (id) => byId.get(id)?.pos, sizeKm)
   const close = () => roads.getState().select(null)
 

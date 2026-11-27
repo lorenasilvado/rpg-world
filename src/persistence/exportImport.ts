@@ -69,7 +69,8 @@ const roadSchema = z.object({
   // Um arquivo editado à mão pode vir sem o nome.
   name: z.string().default(DEFAULT_ROAD_NAME),
   kind: z.enum(['road', 'trail', 'sea']),
-  points: z.array(point),
+  // O pin do meio ligado ao ponto (AC-F5-17); arquivos antigos não têm.
+  points: z.array(z.object({ u: unit, v: unit, pin: z.string().optional() })),
   from: z.string().optional(),
   to: z.string().optional(),
 })

@@ -13,7 +13,7 @@ o comportamento atualiza esta spec.
 > Refazer, no JSON e no PNG; o desenho no mapa (estrada, trilha e rota marítima, na curva
 > suavizada, com a ponta ligada acompanhando o pin), o interruptor "Estradas" em Camadas, Desenhar
 > estrada (R), o clique numa estrada (com o halo âmbar) e o drawer da estrada (nome, tipo de via,
-> extensão, "Liga" e Excluir), o núcleo da rota pelo terreno (o A\* no worker de rota, com a
+> extensão, "Liga" e Excluir), os pins do meio ligados à estrada desenhada, o núcleo da rota pelo terreno (o A\* no worker de rota, com a
 > medição em `/bench.html`) e a Rota automática (A) entre dois pins. Ainda não existem o toast Sem
 > caminho (com "Criar rota marítima") nem "Conectar cidades", e a aba Conexões do pin ainda não
 > lista as estradas. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
@@ -30,7 +30,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Rota ou tela | O que mostra | Referência |
 |---|---|---|
 | E1 · Editor | Estradas (contínua) e trilhas (pontilhada) no mapa; ferramentas "Desenhar estrada" e "Rota automática" na toolbar | `../assets/design/editor-claro.png`, `../assets/design/editor-escuro.png` |
-| Drawer da estrada | No lugar do drawer do pin (400 px; abaixo de 768 px ou em tela baixa, painel sobreposto): o cabeçalho "Estrada", o nome editável, "Tipo de via" num seletor segmentado (Estrada, Trilha, Rota marítima), "Liga" com os pins das pontas (cada um um botão; sem pin ligado, "Nenhum pin: as pontas ficam soltas no mapa."), "Extensão aproximada: N km" e, no rodapé, "Excluir estrada" | Sem mockup: segue o design system e o protótipo do editor |
+| Drawer da estrada | No lugar do drawer do pin (400 px; abaixo de 768 px ou em tela baixa, painel sobreposto): o cabeçalho "Estrada", o nome editável, "Tipo de via" num seletor segmentado (Estrada, Trilha, Rota marítima), "Liga" com os pins ligados, na ordem da estrada (as pontas e os do meio, cada um um botão; sem pin ligado, "Nenhum pin: as pontas ficam soltas no mapa."), "Extensão aproximada: N km" e, no rodapé, "Excluir estrada" | Sem mockup: segue o design system e o protótipo do editor |
 | Aba Conexões do pin | As estradas ligadas ao pin (o outro pin, o tipo e o comprimento) | Ver [pins.md](pins.md) |
 
 ## Estados
@@ -48,13 +48,14 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 
 | Ação | Resultado |
 |---|---|
-| "Desenhar estrada" (R) + cliques no mapa | Cada clique (ou toque) adiciona um ponto, com prévia tracejada; arrastar continua fazendo pan. Clicar fora do mapa marca a borda mais próxima. Enter ou duplo clique (duplo toque) termina, com 2 pontos ou mais; com menos, nada muda. Esc apaga o desenho e, sem desenho, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover ou menu aberto, como Camadas, o Esc fecha só ele). Com o foco num botão ou outro controle, o Enter é do controle e não termina o desenho. Trocar de ferramenta descarta o desenho. A curva é suavizada (Catmull-Rom). Clicar num pin à vista põe o ponto na posição dele (sem selecioná-lo), e começar ou terminar num pin liga a ponta ao pin (se o pin sai no meio do desenho, a ponta fica no ponto dela). A estrada criada ("Nova estrada", tipo Estrada) fica selecionada (o pin selecionado deixa de estar), é um passo no Desfazer, e a ferramenta volta para Navegar |
+| "Desenhar estrada" (R) + cliques no mapa | Cada clique (ou toque) adiciona um ponto, com prévia tracejada; arrastar continua fazendo pan. Clicar fora do mapa marca a borda mais próxima. Enter ou duplo clique (duplo toque) termina, com 2 pontos ou mais; com menos, nada muda. Esc apaga o desenho e, sem desenho, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover ou menu aberto, como Camadas, o Esc fecha só ele). Com o foco num botão ou outro controle, o Enter é do controle e não termina o desenho. Trocar de ferramenta descarta o desenho. A curva é suavizada (Catmull-Rom). Clicar num pin à vista põe o ponto na posição dele (sem selecioná-lo) e liga o pin à estrada: começar ou terminar num pin liga a ponta, e clicar num pin no meio do desenho liga aquele ponto (passar perto sem clicar não liga; se o pin sai no meio do desenho, o ponto fica onde estava). A estrada criada ("Nova estrada", tipo Estrada) fica selecionada (o pin selecionado deixa de estar), é um passo no Desfazer, e a ferramenta volta para Navegar |
 | "Rota automática" (A) + dois pins | A dica diz "Clique no pin de origem" e depois "Agora clique no pin de destino"; o clique (ou toque) num pin à vista o escolhe, sem selecioná-lo. O segundo pin pede a rota mais barata pelo terreno, que vira a estrada "Rota de A a B", tipo Estrada, ligada aos dois, sem ficar selecionada: um passo no Desfazer, com o toast "Rota criada" e "Desfazer". A ferramenta continua ligada, pronta para a próxima rota. Clicar de novo no pin de origem, ou noutro pin durante o cálculo, não faz nada; clicar no mapa fora dos pins desfaz a escolha da origem. Esc com a origem escolhida (ou calculando) cancela e, sem nada, volta para Navegar (com um pin selecionado, o primeiro Esc tira a seleção; com um popover aberto, o Esc é dele). Trocar de ferramenta cancela o cálculo, e o resultado é descartado. Sem caminho por terra, ou se um dos pins sai no meio do cálculo, nada é criado e a dica volta para "Clique no pin de origem" |
 | "Criar rota marítima" (no toast Sem caminho) | Cria uma rota marítima, "Rota marítima de A a B", pela água entre os dois pins |
 | "Conectar cidades" (na dica da Rota automática, com 2 cidades ou mais) | Liga todos os pins do tipo Cidade alcançáveis por terra com a menor malha (árvore mínima pelo custo do terreno), sem repetir pares já ligados por estrada, num passo só do Desfazer; o toast diz quantas estradas foram criadas e quantas cidades ficaram sem caminho por terra |
 | Clicar numa estrada (com Navegar) | Seleciona a estrada (halo âmbar) e abre o drawer da estrada; o pin selecionado deixa de estar. O clique vale até 10 px da linha da estrada, mais largo que o traço; um pin ou um grupo de pins no mesmo ponto tem prioridade. Com "Estradas" desligada em Camadas, ou com outra ferramenta, o clique não seleciona a estrada. Esc ou o botão Fechar tiram a seleção |
 | Mudar o nome ou o tipo de via no drawer | Muda a estrada no mapa; cada mudança é um passo no Desfazer, e as teclas seguidas no nome são um passo só (sair do campo encerra o passo). Um nome vazio não fica: ao sair do campo, volta o último nome. Enter sai do campo; Esc, nele, fecha o drawer |
 | Clicar num pin em "Liga" | Seleciona o pin (o drawer mostra a ficha dele) |
+| Excluir um pin ligado à estrada | Com o pin numa ponta, a estrada sai junto; com o pin só no meio, a estrada fica, com o ponto solto no mapa onde o pin estava. Desfazer devolve o pin, a estrada e o vínculo |
 | Excluir no drawer, ou Delete (ou Backspace) com a estrada selecionada | Remove a estrada na hora, com o toast "Estrada excluída" e "Desfazer". A tecla segue as exceções da tecla do pin: não vale com o foco num campo, num modal, dentro do drawer, com Ctrl, Alt ou Meta, nem com o painel sobreposto aberto |
 | Interruptor "Estradas" em Camadas | Mostra ou esconde as estradas |
 
@@ -66,7 +67,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 - Onde duas estradas se cruzam, o contorno de uma não corta o traço da outra: os contornos de
   todas ficam por baixo dos traços de cima, no mapa e no PNG.
 - Uma estrada sem nome num arquivo editado à mão é importada como "Estrada". Ao abrir o mundo, a
-  ponta ligada a um pin que não existe perde o vínculo e fica no ponto dela.
+  ponta ou o ponto do meio ligado a um pin que não existe perde o vínculo e fica no ponto dele.
 - A rota automática nunca cruza água (exceto rota marítima) e evita montanhas quando há desvio.
 - A rota pelo terreno roda num worker, numa grade de 256² (com a curva suavizada depois). O custo
   vem do bioma e da inclinação: planícies são baratas, floresta e colina custam mais, montanha
@@ -84,9 +85,12 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
   estrada passa por cima do rio, sem traço próprio de ponte.
 - A rota marítima usa a mesma busca só pela água (a terra só vale perto de cada pin, até 6 células
   da grade em cada eixo).
-- A ponta de uma estrada ligada a um pin acompanha o pin quando ele é arrastado; o meio do
-  traçado não é recalculado. Excluir um pin exclui as estradas ligadas a ele; Desfazer devolve tudo.
-- O comprimento da estrada é o da curva suavizada (com as pontas nos pins ligados), no tamanho do
+- A ponta ou o ponto do meio de uma estrada ligado a um pin acompanha o pin quando ele é
+  arrastado; o resto do traçado não é recalculado. Excluir um pin exclui as estradas com uma ponta
+  ligada a ele; a estrada ligada a ele só no meio fica, com o ponto solto onde o pin estava.
+  Desfazer devolve tudo (o pin, as estradas e o vínculo).
+- A Rota automática liga só a origem e o destino, mesmo passando por cima de outro pin.
+- O comprimento da estrada é o da curva suavizada (com os pontos ligados nos pins), no tamanho do
   mundo em km, com o arredondamento da barra de escala (de 10 km para cima, inteiro).
 - Uma seleção só no mapa: selecionar uma estrada tira a do pin, e selecionar um pin tira a da estrada.
 - As estradas ficam acima do terreno e da decoração e abaixo dos pins, e não ficam borradas

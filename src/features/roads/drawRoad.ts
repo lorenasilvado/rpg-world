@@ -1,3 +1,4 @@
+import type { RoadPoint } from '../../persistence/types'
 import { curveSegments, type XY } from '../../render/layers/roadMath'
 
 /**
@@ -9,8 +10,8 @@ import { curveSegments, type XY } from '../../render/layers/roadMath'
 /** Um ponto do desenho, 0..1 no mapa; `pin`: o ponto é o de um pin clicado. */
 export type DraftPoint = { u: number; v: number; pin?: string }
 
-/** A estrada que o desenho dá: os pontos e os pins ligados às pontas. */
-export type RoadDraft = { points: { u: number; v: number }[]; from?: string; to?: string }
+/** A estrada que o desenho dá: os pontos (os do meio com o pin ligado) e os pins ligados às pontas. */
+export type RoadDraft = { points: RoadPoint[]; from?: string; to?: string }
 
 /** Até quantos ms entre dois cliques eles são um duplo clique. */
 export const DOUBLE_CLICK_MS = 400
@@ -35,13 +36,16 @@ export function addDraftPoint(draft: readonly DraftPoint[], p: DraftPoint): Draf
   return [...draft, p]
 }
 
-/** A estrada do desenho, com 2 pontos ou mais: a ponta num pin fica ligada a ele. Menos: `null`. */
+/**
+ * A estrada do desenho, com 2 pontos ou mais: a ponta num pin fica ligada a ele (`from`, `to`), e
+ * um ponto do meio num pin também (`pin` do ponto, AC-F5-17). Menos: `null`.
+ */
 export function draftToRoad(draft: readonly DraftPoint[]): RoadDraft | null {
   if (draft.length < 2) return null
   const first = draft[0].pin
   const last = draft[draft.length - 1].pin
   return {
-    points: draft.map((p) => ({ u: p.u, v: p.v })),
+    points: draft.map((p, i) => (p.pin !== undefined && i > 0 && i < draft.length - 1 ? { u: p.u, v: p.v, pin: p.pin } : { u: p.u, v: p.v })),
     ...(first !== undefined ? { from: first } : {}),
     ...(last !== undefined ? { to: last } : {}),
   }
