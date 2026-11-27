@@ -586,3 +586,47 @@ test('a aba Conexões lista as estradas do pin; clicar abre o vizinho ou a estra
   await expect(map).toHaveAttribute('data-pin-selected', '')
   await expect(page.getByTestId('road-length')).toHaveText(`Extensão aproximada: ${km}`)
 })
+
+// A aba Conexões no painel sobreposto (AC-F5-15, 390×844): as linhas cabem nos 320 px, o vizinho
+// abre na mesma aba, e "Ponto no mapa" troca o drawer do pin pelo da estrada, com o painel aberto.
+test.describe('no celular (390×844): estradas na aba Conexões', () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+  test('as linhas cabem no painel; tocar abre o vizinho ou a estrada (AC-F5-15, 390)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const { map, at } = await importAndOpen(page)
+    const brena = at(0.55, 0.5, 10)
+    await page.touchscreen.tap(brena.x, brena.y)
+    await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+    const panel = page.getByTestId('drawer')
+    await expect(panel).toHaveAttribute('data-open', 'true')
+    await expect(panel).toBeInViewport({ ratio: 1 })
+    await panel.getByRole('tab', { name: 'Conexões' }).tap()
+    const roads = panel.getByRole('region', { name: 'Estradas (2)' }).getByRole('button')
+    await expect(roads).toHaveText([/^AldaEstrada Real · Estrada · \d+ km$/, /^Ponto no mapaEstrada · Rota marítima · \d+ km$/])
+    // Cada linha dentro da tela, e nem o nome do vizinho nem a linha de baixo cortados.
+    const fit = await roads.evaluateAll((buttons) =>
+      buttons.map((b) => {
+        const box = b.getBoundingClientRect()
+        const cut = [...b.querySelectorAll('span.truncate')].some((s) => s.scrollWidth > s.clientWidth)
+        return { inside: box.left >= 0 && box.right <= window.innerWidth, cut }
+      }),
+    )
+    expect(fit).toEqual([
+      { inside: true, cut: false },
+      { inside: true, cut: false },
+    ])
+
+    await roads.first().tap()
+    await expect(map).toHaveAttribute('data-pin-selected', 'Alda')
+    await expect(panel.getByRole('tab', { name: 'Conexões' })).toHaveAttribute('aria-selected', 'true')
+    await panel.getByRole('region', { name: 'Estradas (1)' }).getByRole('button').tap()
+    await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+
+    await panel.getByRole('region', { name: 'Estradas (2)' }).getByRole('button', { name: /^Ponto no mapa/ }).tap()
+    await expect(map).toHaveAttribute('data-road-selected', 'r3')
+    await expect(map).toHaveAttribute('data-pin-selected', '')
+    await expect(panel).toHaveAttribute('data-open', 'true')
+    await expect(page.getByTestId('road-drawer')).toBeVisible()
+  })
+})
