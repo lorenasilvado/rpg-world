@@ -172,7 +172,7 @@ export async function createMapRenderer(
     if (host.dataset.mapRect !== value) host.dataset.mapRect = value
     const z = zoom.toFixed(3)
     if (host.dataset.zoom !== z) host.dataset.zoom = z
-    roadLayer.frame(t.scale)
+    roadLayer.frame(t.scale, view)
     const roadsOn = roadLayer.view.visible ? 'on' : 'off'
     if (host.dataset.roadLayer !== roadsOn) host.dataset.roadLayer = roadsOn
     const roadCount = String(roadLayer.view.visible ? roadLayer.count : 0)

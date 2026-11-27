@@ -292,16 +292,17 @@ custo na GPU ou no driver. O
 `e2e/sprites.spec.ts` confere a cena, a câmera e o relatório, mas não o fps: o Chrome do CI não
 usa a GPU.
 
-O AC-F2-07 e o AC-F3-17 são medidos no editor, com o app completo, pelo `e2e/fps.spec.ts`, no mesmo projeto do
+O AC-F2-07, o AC-F3-17 e o AC-F5-16 são medidos no editor, com o app completo, pelo `e2e/fps.spec.ts`, no mesmo projeto do
 `desempenho.spec.ts` (sozinho e por último). O editor não passa de uns 3.600 ícones, então o
 teste serve o `src/core/decor/decor.ts` com uma distância mínima menor (`DECOR_SPACING` de 0,005)
 e o limite `MAX_DECOR` corta em 5.000. Durante 30 s ele faz roda, Ctrl+roda, pinça de dois dedos
 e arrasto, do zoom 0,4× ao 4×, e guarda o instante de cada quadro; a média e o mínimo saem da
-mesma conta da página de sprites. São dois casos, um depois do outro: só a decoração (AC-F2-07) e
-a decoração com 500 pins numa grade de 25 × 20 sobre o mapa (AC-F3-17); com os pins, cada arrasto
+mesma conta da página de sprites. São três casos, um depois do outro: só a decoração (AC-F2-07),
+a decoração com 500 pins numa grade de 25 × 20 sobre o mapa (AC-F3-17) e, por cima, 300 estradas
+entre pins vizinhos da grade, dos 3 tipos de via (AC-F5-16); com os pins, cada arrasto
 começa num ponto sem pin nem grupo embaixo, para ser pan (sem ponto livre, o arrasto é pulado e
 contado, e a medição falha se mais de 1 em 4 arrastos for pulado). A máquina, a GPU, a tela e os números vão
-para as anotações e para os anexos `fps-AC-F2-07.json` e `fps-AC-F3-17.json`, e a medição é
+para as anotações e para os anexos `fps-<AC>.json`, e a medição é
 registrada no PR. As metas só são conferidas fora do CI;
 fora dele, um renderer por software faz o teste falhar. Para medir com a janela à vista:
 `npx playwright test e2e/fps.spec.ts --project=desempenho --no-deps --headed`.
@@ -322,6 +323,11 @@ WebGL2, com o log `[fluxos-m2]`) no `e2e/fluxos-m2.spec.ts`: criar um mundo pelo
 marcar 3 pins com nome, descrição e tag, editar um, arrastar outro, excluir e desfazer, recarregar
 a página, exportar o mundo em JSON pela Lista de mundos e reimportá-lo, conferindo o banco a cada
 passo.
+
+Os fluxos de estradas do M3 rodam do mesmo jeito (log `[fluxos-m3]`) no `e2e/fluxos-m3.spec.ts`,
+num mundo importado com 5 cidades na seed "rotas": Rota automática, a rota marítima pelo toast de
+sem caminho, "Conectar cidades" (com Desfazer e Refazer), uma estrada desenhada com R, renomeada,
+trocada de tipo, excluída e desfeita pelo drawer, recarregar a página, exportar e reimportar.
 
 O CI (`.github/workflows/ci.yml`) roda lint, tipos, testes, build e E2E em todo PR que não é só de
 docs; antes do E2E, instala o Firefox e o WebKit do Playwright.
