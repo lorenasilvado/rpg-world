@@ -1,7 +1,7 @@
 ---
 feature: F4
 area: area:mundos
-updated: 2026-11-26
+updated: 2026-11-27
 ---
 
 # F4 · Mundos e persistência
@@ -189,10 +189,14 @@ lista e o número não volta a ser usado.
 - AC-F4-10: importar um arquivo inválido mostra o modal "Importar mundo" com o motivo e o passo para corrigir, e outro arquivo pode ser solto ou escolhido sem fechar o modal
 - AC-F4-11: Exportar › Imagem (.png) baixa o mapa em 1×, 2× ou 4× (com o terreno regerado na resolução maior), com ou sem pins e rótulos
 - AC-F4-12: sem WebGL2, a Lista de mundos funciona (menu "⋯", importar, excluir), e abrir um mundo mostra o aviso no lugar do editor
+- AC-F4-13: só a versão atual do gerador é mantida; ao reabrir um mundo salvo com outro `generatorVersion`, o mapa é gerado com a versão atual e um aviso diz "Este mundo foi criado com outra versão do gerador. O terreno pode ter mudado."; o `generatorVersion` salvo só muda na primeira edição do mundo, e até lá o aviso volta a cada abertura
+- AC-F4-14: o indicador de salvamento só aparece depois da primeira gravação do mundo; antes dela não mostra "Salvo"
+- AC-F4-15: a importação recusa como "não é um mundo" o arquivo com uma imagem cujo tipo não começa com `image/`
+- AC-F4-16: no menu do "Erro ao salvar", as setas ↑ e ↓, Home e End andam entre os itens habilitados
+
+> Planejados no [M4](../milestones/m4.md), ainda não implementados: AC-F4-13, AC-F4-14, AC-F4-15, AC-F4-16.
+> A issue que implementa cada um atualiza as seções acima.
 
 ## Pendências
 
 O modal "Exportar imagem" não tem mockup: segue o [design system](../design/design-system.md), e os prints são revistos no PR.
-
-> Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
-> mantidas ([overview.md](../overview.md)).

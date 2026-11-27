@@ -474,8 +474,8 @@ type WorldField = { width: number; height: number;
   decor: { u: Float32Array; v: Float32Array; kind: Uint8Array } }; // ícones, de cima para baixo
 ```
 
-> Pendente: por quanto tempo e quantas versões antigas do gerador (`generatorVersion`) serão
-> mantidas?
+Só a versão atual do gerador é mantida: um mundo salvo com outro `generatorVersion` abre com a
+versão atual e um aviso (AC-F4-13, no [plano do M4](milestones/m4.md)).
 
 ## Projeto de referência: RPG-land
 

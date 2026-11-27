@@ -205,6 +205,15 @@ lista e o número não volta a ser usado.
 - AC-F3-17: com 500 pins e 5.000 ícones decorativos, pan e zoom ficam em 60 fps de média e pelo menos 55 fps de mínimo
 - AC-F3-18: abaixo de 768 px, o drawer é um painel sobreposto, e a ficha do pin pode ser consultada no celular (390 px)
 - AC-F3-19: a partir de 768 px, sem pin selecionado, o drawer fica fora da tela, e o mapa, a barra superior, a linha inferior (minimapa, toolbar e zoom) e os toasts usam a largura até a borda direita (12 px dela); selecionar um pin traz o drawer deslizando (200 ms), e fechá-lo o leva de volta
+- AC-F3-20: em Adicionar pin, com o foco no mapa, Espaço ou Enter criam o pin no ponto da mira, como o clique (AC-F3-01); sobre um pin, o selecionam
+- AC-F3-21: a partir de 768 px, fechar o drawer do pin pelo Esc com o foco em qualquer controle dele, ou usar o Desfazer do toast "Pin excluído", leva o foco ao mapa, nunca ao `<body>`
+- AC-F3-22: com um modal ou um painel sobreposto aberto, Ctrl K não abre a busca e não vai para o navegador: o foco fica onde está
+- AC-F3-23: na busca, a região de status existe desde que o modal abre, e o leitor de tela anuncia as mensagens e o número de pins achados ao digitar
+- AC-F3-24: criar um pin de um tipo desligado em Camadas liga esse tipo de novo, e o pin continua à vista depois de sair da seleção
+- AC-F3-25: a partir do zoom 1,5×, quando os rótulos de dois pins se sobrepõem, o do pin mais acima no mapa (mais ao fundo) some; o rótulo do pin em hover e o do selecionado aparecem sempre
+
+> Planejados no [M4](../milestones/m4.md), ainda não implementados: AC-F3-20, AC-F3-21, AC-F3-22, AC-F3-23, AC-F3-24, AC-F3-25.
+> A issue que implementa cada um atualiza as seções acima.
 
 ## Pendências
 
