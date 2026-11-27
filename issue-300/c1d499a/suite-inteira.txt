@@ -1,0 +1,9 @@
+Suíte inteira (npx playwright test), duas rodadas seguidas no commit c1d499a9aae7d6c73e8b2722f07735ee43ac793e:
+Rodada 1:
+  1) [desempenho] › e2e\desempenho.spec.ts:15:1 › a geração no worker atinge as metas, a prévia atualiza no arrasto e a UI responde (AC-F1-09 a 11) 
+    Expected: <= 1500
+    Received:    1523.1
+  1 failed
+  234 passed (10.3m)
+Rodada 2:
+  235 passed (10.2m)
