@@ -555,3 +555,34 @@ for (const size of [
     })
   })
 }
+
+// Estradas na aba Conexões (#253, AC-F5-15): Brena tem a Estrada Real (até Alda) e a rota marítima
+// até um ponto solto; clicar em Alda abre a ficha dela na mesma aba, e o ponto no mapa abre a estrada.
+test('a aba Conexões lista as estradas do pin; clicar abre o vizinho ou a estrada (AC-F5-15, 1440)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { map, at } = await importAndOpen(page)
+  const brena = at(0.55, 0.5, 10)
+  await page.mouse.click(brena.x, brena.y)
+  await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+  const drawer = page.getByTestId('pin-drawer')
+  await drawer.getByRole('tab', { name: 'Conexões' }).click()
+  const roads = drawer.getByRole('region', { name: 'Estradas (2)' }).getByRole('button')
+  await expect(roads).toHaveText([/^AldaEstrada Real · Estrada · \d+ km$/, /^Ponto no mapaEstrada · Rota marítima · \d+ km$/])
+
+  // O vizinho: a ficha de Alda abre em Conexões, com a Estrada Real até Brena.
+  await roads.first().click()
+  await expect(map).toHaveAttribute('data-pin-selected', 'Alda')
+  await expect(drawer.getByRole('tab', { name: 'Conexões' })).toHaveAttribute('aria-selected', 'true')
+  const back = drawer.getByRole('region', { name: 'Estradas (1)' }).getByRole('button')
+  await expect(back).toHaveText([/^BrenaEstrada Real · Estrada · \d+ km$/])
+  await back.click()
+  await expect(map).toHaveAttribute('data-pin-selected', 'Brena')
+
+  // O ponto no mapa: seleciona a rota marítima, com o mesmo comprimento no drawer da estrada.
+  const sea = drawer.getByRole('region', { name: 'Estradas (2)' }).getByRole('button', { name: /^Ponto no mapa/ })
+  const km = ((await sea.textContent()) ?? '').split(' · ').at(-1)
+  await sea.click()
+  await expect(map).toHaveAttribute('data-road-selected', 'r3')
+  await expect(map).toHaveAttribute('data-pin-selected', '')
+  await expect(page.getByTestId('road-length')).toHaveText(`Extensão aproximada: ${km}`)
+})

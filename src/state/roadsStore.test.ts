@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Pin, Road } from '../persistence/types'
 import { createPinsStore } from './pinsStore'
-import { NEW_ROAD_NAME, createRoadsStore, linkedPins, roadsWithPins } from './roadsStore'
+import { NEW_ROAD_NAME, createRoadsStore, linkedPins, roadConnections, roadsWithPins } from './roadsStore'
 
 const pin = (id: string): Pin => ({ id, type: 'cidade', name: id, pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin', key: 'cidade' }, description: '', tags: [], fields: {} })
 const road = (id: string, from?: string, to?: string): Road => ({
@@ -216,5 +216,47 @@ describe('pins do meio da estrada (AC-F5-17)', () => {
     expect(linkedPins({ ...meio('r'), to: 'b' })).toEqual(['a', 'c', 'd', 'b'])
     expect(linkedPins({ ...meio('r'), to: 'a' })).toEqual(['a', 'c', 'd'])
     expect(linkedPins(road('r'))).toEqual([])
+  })
+})
+
+describe('roadConnections (AC-F5-15)', () => {
+  const mk = (id: string, points: Road['points'], from?: string, to?: string): Road => ({ id, name: id, kind: 'road', points, ...(from ? { from } : {}), ...(to ? { to } : {}) })
+  const pts = (n: number, middle: Record<number, string> = {}): Road['points'] =>
+    Array.from({ length: n }, (_, i) => (middle[i] ? { u: i / 10, v: 0, pin: middle[i] } : { u: i / 10, v: 0 }))
+  const view = (list: ReturnType<typeof roadConnections>) => list.map((c) => [c.road.id, c.neighbor ?? null])
+
+  it('o pin numa ponta tem o pin da outra ponta como vizinho', () => {
+    const roads = [mk('r1', pts(2), 'a', 'b'), mk('r2', pts(2), 'c', 'd')]
+    expect(view(roadConnections(roads, 'a'))).toEqual([['r1', 'b']])
+    expect(view(roadConnections(roads, 'b'))).toEqual([['r1', 'a']])
+    expect(roadConnections(roads, 'x')).toEqual([])
+  })
+
+  it('o pin do meio mostra o anterior e o seguinte; a ponta sem pin é o ponto no mapa', () => {
+    const roads = [mk('r1', pts(4, { 1: 'b', 2: 'c' }), 'a')]
+    expect(view(roadConnections(roads, 'b'))).toEqual([
+      ['r1', 'a'],
+      ['r1', 'c'],
+    ])
+    expect(view(roadConnections(roads, 'c'))).toEqual([
+      ['r1', 'b'],
+      ['r1', null],
+    ])
+    expect(view(roadConnections(roads, 'a'))).toEqual([['r1', 'b']])
+  })
+
+  it('a estrada sem pin nas pontas dá dois pontos no mapa ao pin do meio', () => {
+    expect(view(roadConnections([mk('r1', pts(3, { 1: 'b' }))], 'b'))).toEqual([
+      ['r1', null],
+      ['r1', null],
+    ])
+  })
+
+  it('o mesmo vizinho na mesma estrada entra uma vez, e o próprio pin nunca é vizinho', () => {
+    // De A a A passando por B (um laço): A vê B uma vez; B vê A uma vez.
+    const loop = mk('r1', pts(3, { 1: 'b' }), 'a', 'a')
+    expect(view(roadConnections([loop], 'a'))).toEqual([['r1', 'b']])
+    expect(view(roadConnections([loop], 'b'))).toEqual([['r1', 'a']])
+    expect(view(roadConnections([mk('r2', pts(3, { 1: 'a' }), 'a', 'b')], 'a'))).toEqual([['r2', 'b']])
   })
 })

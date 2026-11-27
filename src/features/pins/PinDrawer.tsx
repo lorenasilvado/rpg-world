@@ -8,6 +8,7 @@ import type { CameraStore } from '../../state/cameraStore'
 import { createPinImages, pinImageId, type PinImages } from '../../state/pinImages'
 import { pinType, pinTypeLabel } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
+import { NO_ROADS_STORE, roadConnections, type RoadsStore } from '../../state/roadsStore'
 import type { WorldStore } from '../../state/worldStore'
 import { DescriptionEditor } from './DescriptionEditor'
 import { PinConnections } from './PinConnections'
@@ -38,7 +39,7 @@ type TabId = (typeof TABS)[number]['id']
  * - O cabeçalho: o ícone do tipo (o Personalizado com a imagem enviada no círculo), o nome, editável, a etiqueta do tipo, na cor dele, e a linha do
  *   lugar, com o bioma sob o pin (do campo exibido) e as coordenadas (`place.ts`).
  * - As abas Descrição (a descrição em texto rico e as tags), Detalhes (tipo, ícone e campos livres,
- *   `PinDetails`) e Conexões (o pin pai e os filhos, `PinConnections`). Abrir um pin pela aba
+ *   `PinDetails`) e Conexões (o pin pai, os filhos e as estradas, `PinConnections`). Abrir um pin pela aba
  *   Conexões abre a ficha dele na mesma aba, com o foco nela.
  * - O rodapé fixo: Centralizar (a câmera desliza até o pin, aproximando até `CENTER_PIN_ZOOM`),
  *   Duplicar (a cópia ao lado, selecionada) e Excluir (`onDelete`, com o toast "Pin excluído").
@@ -53,6 +54,7 @@ type TabId = (typeof TABS)[number]['id']
  */
 export function PinDrawer({
   pins,
+  roads,
   images: imagesProp,
   world,
   camera,
@@ -62,6 +64,8 @@ export function PinDrawer({
   resizeImage,
 }: {
   pins: PinsStore
+  /** As estradas do mundo (a aba Conexões as lista); sem ele (testes), nenhuma. */
+  roads?: RoadsStore
   /** As imagens enviadas do mundo; sem ele (testes), um conjunto só na memória. */
   images?: PinImages
   world: WorldStore
@@ -89,6 +93,7 @@ export function PinDrawer({
       key={selected.id}
       pin={selected}
       pins={pins}
+      roads={roads}
       images={images}
       resizeImage={resizeImage}
       world={world}
@@ -112,6 +117,7 @@ export function PinDrawer({
 function PinCard({
   pin,
   pins,
+  roads,
   images,
   resizeImage,
   world,
@@ -128,6 +134,7 @@ function PinCard({
 }: {
   pin: Pin
   pins: PinsStore
+  roads: RoadsStore | undefined
   images: PinImages
   resizeImage?: (file: Blob) => Promise<Blob>
   world: WorldStore
@@ -156,7 +163,8 @@ function PinCard({
   const [tab, setTab] = useState<TabId>(openedFromConnections ? 'conexoes' : 'descricao')
   const tabsId = useId()
   const tablist = useRef<HTMLDivElement>(null)
-  const hasConnections = allPins.some((p) => p.id === pin.parentId || p.parentId === pin.id)
+  const hasRoads = useStore(roads ?? NO_ROADS_STORE, (s) => roadConnections(s.roads, pin.id).length > 0)
+  const hasConnections = hasRoads || allPins.some((p) => p.id === pin.parentId || p.parentId === pin.id)
   useEffect(() => {
     if (!openedFromConnections) return
     tablist.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()
@@ -271,7 +279,7 @@ function PinCard({
             id={`${tabsId}-${t.id}-painel`}
             aria-labelledby={`${tabsId}-${t.id}`}
             hidden={tab !== t.id}
-            // Sem nada focável dentro (Conexões sem pai nem filhos), o painel recebe o foco pelo Tab,
+            // Sem nada focável dentro (Conexões sem pai, filhos nem estradas), o painel recebe o foco pelo Tab,
             // como pede o padrão de abas.
             tabIndex={t.id === 'conexoes' && !hasConnections ? 0 : undefined}
             className="px-5 pt-4 pb-6 focus-visible:rounded-control focus-visible:shadow-[0_0_0_2px_var(--amber)] focus-visible:outline-none"
@@ -291,7 +299,7 @@ function PinCard({
               </div>
             )}
             {t.id === 'detalhes' && tab === 'detalhes' && <PinDetails pin={pin} pins={pins} images={images} resize={resizeImage} />}
-            {t.id === 'conexoes' && tab === 'conexoes' && <PinConnections pin={pin} pins={pins} images={images} onOpen={onOpenConnection} />}
+            {t.id === 'conexoes' && tab === 'conexoes' && <PinConnections pin={pin} pins={pins} roads={roads} world={world} images={images} onOpen={onOpenConnection} />}
           </div>
         ))}
       </div>

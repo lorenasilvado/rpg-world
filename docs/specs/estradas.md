@@ -1,7 +1,7 @@
 ---
 feature: F5
 area: area:estradas
-updated: 2026-11-26
+updated: 2026-11-27
 ---
 
 # F5 · Estradas e rotas
@@ -15,7 +15,7 @@ o comportamento atualiza esta spec.
 > estrada (R), o clique numa estrada (com o halo âmbar) e o drawer da estrada (nome, tipo de via,
 > extensão, "Liga" e Excluir), os pins do meio ligados à estrada desenhada, o núcleo da rota pelo terreno (o A\* no worker de rota, com a
 > medição em `/bench.html`), a Rota automática (A) entre dois pins, o toast Sem caminho (com
-> "Criar rota marítima") e "Conectar cidades". A aba Conexões do pin ainda não lista as estradas. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
+> "Criar rota marítima") e "Conectar cidades" e as estradas na aba Conexões do pin. O resto vem do PRD (RF-5, desejável), do protótipo do editor e
 > das decisões do [plano do M3](../milestones/m3.md).
 
 ## Resumo
@@ -30,7 +30,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 |---|---|---|
 | E1 · Editor | Estradas (contínua) e trilhas (pontilhada) no mapa; ferramentas "Desenhar estrada" e "Rota automática" na toolbar | `../assets/design/editor-claro.png`, `../assets/design/editor-escuro.png` |
 | Drawer da estrada | No lugar do drawer do pin (400 px; abaixo de 768 px ou em tela baixa, painel sobreposto): o cabeçalho "Estrada", o nome editável, "Tipo de via" num seletor segmentado (Estrada, Trilha, Rota marítima), "Liga" com os pins ligados, na ordem da estrada (as pontas e os do meio, cada um um botão; sem pin ligado, "Nenhum pin: as pontas ficam soltas no mapa."), "Extensão aproximada: N km" e, no rodapé, "Excluir estrada" | Sem mockup: segue o design system e o protótipo do editor |
-| Aba Conexões do pin | As estradas ligadas ao pin (o outro pin, o tipo e o comprimento) | Ver [pins.md](pins.md) |
+| Aba Conexões do pin | A seção "Estradas", com o número delas entre parênteses quando há alguma: uma linha por vizinho do pin em cada estrada (o pin numa ponta tem o seguinte; o do meio, o anterior e o seguinte), com o ícone de estrada, o nome do vizinho ("Ponto no mapa", sem pin daquele lado), "nome da estrada · tipo · comprimento" e a seta | Ver [pins.md](pins.md); segue o protótipo do editor |
 
 ## Estados
 
@@ -54,6 +54,7 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 | Clicar numa estrada (com Navegar) | Seleciona a estrada (halo âmbar) e abre o drawer da estrada; o pin selecionado deixa de estar. O clique vale até 10 px da linha da estrada, mais largo que o traço; um pin ou um grupo de pins no mesmo ponto tem prioridade. Com "Estradas" desligada em Camadas, ou com outra ferramenta, o clique não seleciona a estrada. Esc ou o botão Fechar tiram a seleção |
 | Mudar o nome ou o tipo de via no drawer | Muda a estrada no mapa; cada mudança é um passo no Desfazer, e as teclas seguidas no nome são um passo só (sair do campo encerra o passo). Um nome vazio não fica: ao sair do campo, volta o último nome. Enter sai do campo; Esc, nele, fecha o drawer |
 | Clicar num pin em "Liga" | Seleciona o pin (o drawer mostra a ficha dele) |
+| Clicar numa estrada na aba Conexões do pin | Com um pin vizinho, seleciona-o, e a ficha dele abre na aba Conexões (como o pai e os filhos); com "Ponto no mapa", seleciona a estrada (o drawer da estrada; o pin deixa de estar selecionado) |
 | Excluir um pin ligado à estrada | Com o pin numa ponta, a estrada sai junto; com o pin só no meio, a estrada fica, com o ponto solto no mapa onde o pin estava. Desfazer devolve o pin, a estrada e o vínculo |
 | Excluir no drawer, ou Delete (ou Backspace) com a estrada selecionada | Remove a estrada na hora, com o toast "Estrada excluída" e "Desfazer". A tecla segue as exceções da tecla do pin: não vale com o foco num campo, num modal, dentro do drawer, com Ctrl, Alt ou Meta, nem com o painel sobreposto aberto |
 | Interruptor "Estradas" em Camadas | Mostra ou esconde as estradas |

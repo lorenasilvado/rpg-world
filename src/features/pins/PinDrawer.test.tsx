@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BIOME, type CoreField } from '../../core'
-import type { Pin } from '../../persistence/types'
+import type { Pin, Road } from '../../persistence/types'
 import { createCameraStore } from '../../state/cameraStore'
 import { createPinsStore } from '../../state/pinsStore'
+import { createRoadsStore } from '../../state/roadsStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
 import { CENTER_PIN_ZOOM, PinDrawer } from './PinDrawer'
 
@@ -23,10 +24,12 @@ const pin = (id: string, patch: Partial<Pin> = {}): Pin => ({
   ...patch,
 })
 
-function setup(list: Pin[] = [pin('Valdora', { tags: ['capital', 'porto'] }), pin('Brumado', { tags: ['militar', 'porto'] })]) {
+function setup(list: Pin[] = [pin('Valdora', { tags: ['capital', 'porto'] }), pin('Brumado', { tags: ['militar', 'porto'] })], roadList: Road[] = []) {
   let n = 0
   const pins = createPinsStore(list, { newId: () => `c${++n}` })
+  const roads = createRoadsStore(roadList, pins)
   const world = createWorldStore(idleGenerator)
+  world.setState({ sizeKm: 1000 })
   // Campo 2 × 2: o quadrante de cima à direita é Colina.
   const field = { width: 2, height: 2, biome: new Uint8Array([BIOME.deepOcean, BIOME.hill, BIOME.forest, BIOME.desert]) }
   world.setState({ field: field as unknown as CoreField })
@@ -36,9 +39,9 @@ function setup(list: Pin[] = [pin('Valdora', { tags: ['capital', 'porto'] }), pi
   camera.getState().update({ zoom: 1, scale: 0.5, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
   const onDelete = vi.fn()
   const onCentered = vi.fn()
-  render(<PinDrawer pins={pins} world={world} camera={camera} onDelete={onDelete} onCentered={onCentered} />)
+  render(<PinDrawer pins={pins} roads={roads} world={world} camera={camera} onDelete={onDelete} onCentered={onCentered} />)
   act(() => pins.getState().select(list[0].id))
-  return { pins, focusOn, onDelete, onCentered }
+  return { pins, roads, focusOn, onDelete, onCentered }
 }
 
 describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
@@ -58,12 +61,13 @@ describe('drawer do pin: cabeçalho (AC-F3-06)', () => {
     expect(hint?.textContent).toBe('Em breve')
   })
 
-  it('Conexões sem pai nem filhos diz isso, num painel focável; Descrição e Detalhes têm o que focar', () => {
+  it('Conexões sem pai, filhos nem estradas diz isso, num painel focável; Descrição e Detalhes têm o que focar', () => {
     setup()
     fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
     const panel = screen.getByRole('tabpanel', { name: 'Conexões' })
     expect(panel.getAttribute('tabindex')).toBe('0')
-    expect(panel.textContent).toBe('Pin paiSem pin pai. Escolha um na aba Detalhes.Pins filhosNenhum pin pertence a este.')
+    expect(panel.textContent).toBe('Pin paiSem pin pai. Escolha um na aba Detalhes.Pins filhosNenhum pin pertence a este.' +
+        'EstradasNenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A).')
     for (const name of ['Descrição', 'Detalhes']) {
       fireEvent.click(screen.getByRole('tab', { name }))
       expect(screen.getByRole('tabpanel', { name }).hasAttribute('tabindex')).toBe(false)
@@ -212,5 +216,66 @@ describe('drawer do pin: aba Conexões (AC-F3-13)', () => {
     expect(screen.getByRole('tab', { name: 'Descrição' }).getAttribute('aria-selected')).toBe('true')
     act(() => pins.getState().select('Reino'))
     expect(screen.getByRole('tab', { name: 'Descrição' }).getAttribute('aria-selected')).toBe('true')
+  })
+})
+
+describe('drawer do pin: estradas na aba Conexões (AC-F5-15)', () => {
+  // Na linha v = 0,5: Oeste (0) — Centro (0,25) — Leste (0,5), num mundo de 1.000 km.
+  const places = () => [
+    pin('Centro', { pos: { u: 0.25, v: 0.5 } }),
+    pin('Oeste', { pos: { u: 0, v: 0.5 } }),
+    pin('Leste', { pos: { u: 0.5, v: 0.5 } }),
+  ]
+  const line = (...us: number[]) => us.map((u) => ({ u, v: 0.5 }))
+  const roads = (): Road[] => [
+    // Oeste — Centro (no meio) — Leste: o Centro vê os dois lados.
+    { id: 'r1', name: 'Estrada Real', kind: 'road', points: [...line(0), { u: 0.25, v: 0.5, pin: 'Centro' }, ...line(0.5)], from: 'Oeste', to: 'Leste' },
+    // Do Centro a um ponto solto no mapa.
+    { id: 'r2', name: 'Trilha do Vale', kind: 'trail', points: line(0.25, 0.35), from: 'Centro' },
+  ]
+  const open = () => {
+    fireEvent.click(screen.getByRole('tab', { name: 'Conexões' }))
+    return screen.getByRole('region', { name: /^Estradas/ })
+  }
+
+  it('lista os vizinhos em cada estrada, com o nome da estrada, o tipo e o comprimento', () => {
+    setup(places(), roads())
+    open()
+    const section = screen.getByRole('region', { name: 'Estradas (3)' })
+    expect(within(section).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'OesteEstrada Real · Estrada · 500 km',
+      'LesteEstrada Real · Estrada · 500 km',
+      'Ponto no mapaTrilha do Vale · Trilha · 100 km',
+    ])
+    expect(screen.getByRole('tabpanel', { name: 'Conexões' }).hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('clicar no vizinho o seleciona e abre a ficha dele em Conexões, que mostra o outro lado', () => {
+    const { pins } = setup(places(), roads())
+    fireEvent.click(within(open()).getByRole('button', { name: /^Leste/ }))
+    expect(pins.getState().selectedId).toBe('Leste')
+    expect(screen.getByRole('tab', { name: 'Conexões' }).getAttribute('aria-selected')).toBe('true')
+    expect(within(screen.getByRole('region', { name: /^Estradas/ })).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'CentroEstrada Real · Estrada · 500 km',
+    ])
+  })
+
+  it('clicar no ponto no mapa seleciona a estrada (e o pin deixa de estar)', () => {
+    const { pins, roads: store } = setup(places(), roads())
+    fireEvent.click(within(open()).getByRole('button', { name: /^Ponto no mapa/ }))
+    expect(store.getState().selectedId).toBe('r2')
+    expect(pins.getState().selectedId).toBeNull()
+  })
+
+  it('acompanha as estradas: excluir a estrada a tira da lista, e sem nenhuma vem o convite', () => {
+    const { roads: store } = setup(places(), roads())
+    open()
+    act(() => store.getState().removeRoad('r1'))
+    expect(screen.getByRole('region', { name: 'Estradas (1)' })).toBeTruthy()
+    act(() => store.getState().removeRoad('r2'))
+    expect(screen.getByRole('region', { name: 'Estradas' }).textContent).toBe(
+      'EstradasNenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A).',
+    )
+    expect(screen.getByRole('tabpanel', { name: 'Conexões' }).getAttribute('tabindex')).toBe('0')
   })
 })
