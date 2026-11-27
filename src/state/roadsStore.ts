@@ -216,3 +216,47 @@ export function createRoadsStore(
     }) ?? (() => {})
   return store
 }
+
+/** Sem o store das estradas (testes do drawer do pin), nenhuma estrada. */
+export const NO_ROADS_STORE = createStore<{ roads: readonly Road[] }>()(() => ({ roads: [] }))
+
+/** O nome de cada tipo de via, como no seletor do drawer da estrada. */
+export const ROAD_KIND_LABELS: Readonly<Record<Road['kind'], string>> = {
+  road: 'Estrada',
+  trail: 'Trilha',
+  sea: 'Rota marítima',
+}
+
+/**
+ * Uma estrada ligada ao pin, vista de um lado dele (a aba Conexões, AC-F5-15): `neighbor`, o pin
+ * seguinte (ou anterior) na estrada; sem pin daquele lado, `undefined` (a ponta solta, "Ponto no mapa").
+ */
+export type RoadConnection = { road: Road; neighbor: string | undefined }
+
+/**
+ * As estradas ligadas ao pin, na ordem da lista de estradas, uma entrada por vizinho: as paradas da
+ * estrada são a ponta `from` (ou a ponta solta), os pins do meio e a ponta `to` (ou a solta); o pin
+ * numa ponta tem o vizinho seguinte, e o do meio, o anterior e o seguinte. O mesmo vizinho na mesma
+ * estrada entra uma vez; o próprio pin nunca é vizinho dele.
+ */
+export function roadConnections(roads: readonly Road[], pinId: string): RoadConnection[] {
+  const out: RoadConnection[] = []
+  for (const road of roads) {
+    const middle = road.points.slice(1, -1).flatMap((p) => (p.pin === undefined ? [] : [p.pin]))
+    const stops: (string | undefined)[] = [road.from, ...middle, road.to]
+    const seen = new Set<string>()
+    stops.forEach((stop, i) => {
+      if (stop !== pinId) return
+      for (const j of [i - 1, i + 1]) {
+        if (j < 0 || j >= stops.length) continue
+        const neighbor = stops[j]
+        if (neighbor === pinId) continue
+        const key = neighbor ?? (j === 0 ? '<inicio>' : '<fim>')
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ road, neighbor })
+      }
+    })
+  }
+  return out
+}

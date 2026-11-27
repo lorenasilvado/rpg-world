@@ -1,7 +1,7 @@
 ---
 feature: F3
 area: area:pins
-updated: 2026-11-26
+updated: 2026-11-27
 ---
 
 # F3 · Pins e drawer
@@ -72,9 +72,14 @@ campos livres. Aparência dos pins em [design-system.md](../design/design-system
     anterior. Para o leitor de tela, as chaves são "Nome do campo 1", "Nome do campo 2"… O valor tem até 200 caracteres e muda a cada tecla.
 - Aba Conexões: "Pin pai", com o pai, e "Pins filhos", com os filhos na ordem em que foram
   criados e o número deles entre parênteses quando há algum (ex.: "Pins filhos (2)"); cada um é um botão com o ícone, o nome e o tipo. Sem pai, "Sem pin pai. Escolha um na aba
-  Detalhes."; sem filhos, "Nenhum pin pertence a este." (sem nenhum dos dois, o painel recebe o
+  Detalhes."; sem filhos, "Nenhum pin pertence a este." (sem pai, filhos nem estradas, o painel recebe o
   foco pelo Tab). Clicar num deles o seleciona, e a ficha dele abre na aba Conexões, com o foco na
-  aba (selecionado de outro jeito, o pin abre na Descrição). As estradas ligadas ao pin entram com F5.
+  aba (selecionado de outro jeito, o pin abre na Descrição). Depois, "Estradas": as estradas ligadas
+  ao pin, com o número de linhas entre parênteses quando há alguma, uma linha por vizinho na estrada
+  (o nome do vizinho, ou "Ponto no mapa", e "estrada · tipo · comprimento", a extensão da estrada inteira, não a distância até o
+  vizinho); clicar seleciona o
+  vizinho, ou a estrada, sem pin daquele lado (ver [estradas.md](estradas.md), AC-F5-15). Sem
+  estradas, "Nenhuma estrada liga este pin. Use Desenhar estrada (R) ou Rota automática (A)."
 
 ### Buscar
 

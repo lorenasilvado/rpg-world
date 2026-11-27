@@ -766,6 +766,7 @@ export function EditorLayout({
         </div>
         <PinDrawer
           pins={pins}
+          roads={roads}
           images={images}
           world={world}
           camera={camera}

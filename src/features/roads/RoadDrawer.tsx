@@ -6,17 +6,13 @@ import { roadLengthKm } from '../../render/layers/roadMath'
 import { pinImageId, type PinImages } from '../../state/pinImages'
 import { pinType } from '../../state/pinTypes'
 import type { PinsStore } from '../../state/pinsStore'
-import { linkedPins, type RoadsStore } from '../../state/roadsStore'
+import { ROAD_KIND_LABELS, linkedPins, type RoadsStore } from '../../state/roadsStore'
 import type { WorldStore } from '../../state/worldStore'
 import { formatKm } from '../map/measure'
 import { PinIcon } from '../pins/PinIcon'
 
-/** Os tipos de via, na ordem do seletor (estradas.md → Drawer da estrada). */
-const ROAD_KINDS: readonly { id: RoadKind; label: string }[] = [
-  { id: 'road', label: 'Estrada' },
-  { id: 'trail', label: 'Trilha' },
-  { id: 'sea', label: 'Rota marítima' },
-]
+/** Os tipos de via, na ordem do seletor (estradas.md → Drawer da estrada); os nomes vêm de `ROAD_KIND_LABELS`. */
+const ROAD_KINDS: readonly { id: RoadKind; label: string }[] = (['road', 'trail', 'sea'] as const).map((id) => ({ id, label: ROAD_KIND_LABELS[id] }))
 
 /**
  * O drawer da estrada selecionada (estradas.md → Drawer da estrada, AC-F5-06 a AC-F5-08), no mesmo
