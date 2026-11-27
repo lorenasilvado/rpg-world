@@ -20,6 +20,7 @@ import { RoadDrawer } from '../features/roads/RoadDrawer'
 import { RoadTool } from '../features/roads/RoadTool'
 import { RouteTool } from '../features/roads/RouteTool'
 import { NoPathToast } from '../features/roads/NoPathToast'
+import { connectMessage } from '../features/roads/cityNetwork'
 import { noPathMessage } from '../features/roads/autoRoute'
 import { useNoPath } from '../features/roads/useNoPath'
 import { createWorldRouter, type WorldRouter } from '../features/roads/worldRouter'
@@ -248,11 +249,14 @@ export function EditorLayout({
    */
   const [deletedAt, setDeletedAt] = useState<number | null>(null)
   const [deletedMessage, setDeletedMessage] = useState('Pin excluído')
+  /** O toast tem "Desfazer" ("Conectar cidades" sem estrada nova não tem). */
+  const [deletedUndo, setDeletedUndo] = useState(true)
   const closeDeleted = useCallback(() => setDeletedAt(null), [])
   const deletePin = useCallback(
     (id: string) => {
       if (!pins.getState().removePin(id)) return
       setDeletedMessage('Pin excluído')
+      setDeletedUndo(true)
       setDeletedAt(history.version.getState().value)
     },
     [pins, history],
@@ -263,8 +267,21 @@ export function EditorLayout({
   /** A Rota automática criou uma rota (AC-F5-12): o toast "Rota criada", com "Desfazer". */
   const routeCreated = useCallback(() => {
     setDeletedMessage('Rota criada')
+    setDeletedUndo(true)
     setDeletedAt(history.version.getState().value)
   }, [history])
+  /**
+   * "Conectar cidades" terminou (AC-F5-14): o toast com as estradas criadas e as cidades sem caminho
+   * por terra, com "Desfazer" se alguma foi criada.
+   */
+  const citiesConnected = useCallback(
+    (created: number, isolated: number) => {
+      setDeletedMessage(connectMessage(created, isolated))
+      setDeletedUndo(created > 0)
+      setDeletedAt(history.version.getState().value)
+    },
+    [history],
+  )
   /** O toast Sem caminho da Rota automática, com "Criar rota marítima" (AC-F5-13). */
   const { noPath, open: routeNoPath, close: closeNoPath, createSea: createSeaRoute } = useNoPath({
     pins,
@@ -276,6 +293,7 @@ export function EditorLayout({
     (id: string) => {
       if (!roads?.getState().removeRoad(id)) return
       setDeletedMessage('Estrada excluída')
+      setDeletedUndo(true)
       setDeletedAt(history.version.getState().value)
     },
     [roads, history],
@@ -497,7 +515,7 @@ export function EditorLayout({
       <MeasureTool ui={ui} world={world} camera={camera} disabled={anyOpen} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={anyOpen} onDelete={deletePin} onDeleteRoad={deleteRoad} />
       {roads && <RoadTool ui={ui} roads={roads} pins={pins} camera={camera} disabled={anyOpen} />}
-      {roads && <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={anyOpen} onCreated={routeCreated} onNoPath={routeNoPath} />}
+      {roads && <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={anyOpen} onCreated={routeCreated} onNoPath={routeNoPath} onConnected={citiesConnected} />}
 
       <div ref={barSizer} aria-hidden="true" data-testid="bottom-bar-sizer" className={`pointer-events-none invisible absolute right-0 left-0 h-0 ${barInset}`} />
       <div
@@ -547,7 +565,7 @@ export function EditorLayout({
         <PinDeletedToast
           open={deletedAt}
           message={deletedMessage}
-          onUndo={() => history.undo()}
+          onUndo={deletedUndo ? () => history.undo() : undefined}
           onClose={closeDeleted}
           beside={layout.toastBeside}
           bottom={layout.toastBottom + (errorToast ? TOAST_HEIGHT + BAR_GAP : 0)}

@@ -35,6 +35,11 @@ export type RoadsState = {
     draft: { points: readonly Road['points'][number][]; from?: string; to?: string; name?: string; kind?: RoadKind },
     options?: { select?: boolean },
   ): Road | null
+  /**
+   * Cria várias estradas numa mudança só, um passo no Desfazer ("Conectar cidades", AC-F5-14), como
+   * o `addRoad` com `select: false`; as que têm menos de 2 pontos ficam de fora. Devolve as criadas.
+   */
+  addRoads(drafts: readonly { points: readonly Road['points'][number][]; from?: string; to?: string; name?: string; kind?: RoadKind }[]): Road[]
   /** Seleciona a estrada (`null`: nenhuma). */
   select(id: string | null): void
   /**
@@ -129,21 +134,26 @@ export function createRoadsStore(
   { newId = () => crypto.randomUUID() }: { newId?: () => string } = {},
 ): RoadsStore {
   const ids = new Set((pins?.getState().pins ?? []).map((p) => p.id))
+  /** A estrada nova do rascunho, ou `null` com menos de 2 pontos. */
+  const draftRoad = ({ points, from, to, name, kind = 'road' }: Parameters<RoadsState['addRoad']>[0]): Road | null => {
+    if (points.length < 2) return null
+    const drawn: Road = {
+      id: newId(),
+      name: name?.trim() || NEW_ROAD_NAME,
+      kind,
+      points: points.map((p) => (p.pin !== undefined ? { u: p.u, v: p.v, pin: p.pin } : { u: p.u, v: p.v })),
+      ...(from !== undefined ? { from } : {}),
+      ...(to !== undefined ? { to } : {}),
+    }
+    // Um pin ligado pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
+    return pins ? withValidLinks(drawn, new Set(pins.getState().pins.map((p) => p.id))) : drawn
+  }
   const store = createStore<RoadsState>()((set, get) => ({
     roads: pins ? initial.map((r) => withValidLinks(r, ids)) : [...initial],
     selectedId: null,
-    addRoad({ points, from, to, name, kind = 'road' }, { select = true } = {}) {
-      if (points.length < 2) return null
-      const drawn: Road = {
-        id: newId(),
-        name: name?.trim() || NEW_ROAD_NAME,
-        kind,
-        points: points.map((p) => (p.pin !== undefined ? { u: p.u, v: p.v, pin: p.pin } : { u: p.u, v: p.v })),
-        ...(from !== undefined ? { from } : {}),
-        ...(to !== undefined ? { to } : {}),
-      }
-      // Um pin ligado pode ter saído no meio do desenho (Delete, Desfazer): a ponta fica no ponto dela.
-      const road = pins ? withValidLinks(drawn, new Set(pins.getState().pins.map((p) => p.id))) : drawn
+    addRoad(draft, { select = true } = {}) {
+      const road = draftRoad(draft)
+      if (!road) return null
       if (!select) {
         set({ roads: [...get().roads, road] })
         return road
@@ -152,6 +162,11 @@ export function createRoadsStore(
       // Uma seleção só no mapa: o pin selecionado deixa de estar.
       pins?.getState().select(null)
       return road
+    },
+    addRoads(drafts) {
+      const created = drafts.map(draftRoad).filter((r): r is Road => r !== null)
+      if (created.length > 0) set({ roads: [...get().roads, ...created] })
+      return created
     },
     select(id) {
       if (get().selectedId === id) return

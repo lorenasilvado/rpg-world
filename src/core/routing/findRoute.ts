@@ -33,7 +33,7 @@ export const SEA_LAND_REACH = 6
 export const SEA_LAND_COST = 4
 
 /** √2: o passo na diagonal (literal: `Math.SQRT2` fica fora da lista do teste de determinismo). */
-const DIAGONAL = 1.4142135623730951
+export const DIAGONAL = 1.4142135623730951
 
 /** `null` quando não há caminho (ex.: uma ilha, por terra). */
 export function findRoute(grid: CostGrid, from: RoutePoint, to: RoutePoint, mode: RouteMode): Route | null {
@@ -171,7 +171,7 @@ function aStar(
 }
 
 /** Fila de prioridade (heap binário) de células, com repetição (a entrada velha é ignorada ao sair). */
-class MinHeap {
+export class MinHeap {
   private items: Int32Array
   private keys: Float64Array
   length = 0

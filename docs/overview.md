@@ -113,17 +113,20 @@ A rota pelo terreno (F5) tem um worker só dela, `src/workers/router.worker.ts`,
 `routerApi.ts` pelo Comlink. O núcleo fica em `src/core/routing/`, TS puro e determinístico: o
 `costGrid.ts` reduz o campo a uma grade de custo de até 256² (o custo do bioma, a água, a margem,
 o oceano e os rios numa linha 4-conectada), e o `findRoute.ts` roda o A\* nela, por terra ou só pela
-água, e simplifica o caminho em pontos (u, v). O worker guarda a grade do último campo recebido;
-cada rota roda só o A\*. O `routerClient.ts` manda um pedido por vez: uma rota cancelada na fila não
+água, e simplifica o caminho em pontos (u, v); o `connectCities.ts` monta a malha de "Conectar
+cidades" (um Dijkstra por cidade e a árvore mínima de Kruskal). O worker guarda a grade do último
+campo recebido; cada rota roda só o A\* (e cada malha, só os Dijkstras). O `routerClient.ts` manda um pedido por vez: uma rota cancelada na fila não
 chega ao worker, e uma cancelada no worker rejeita na hora e tem o resultado descartado; se o worker
 falha, o próximo pedido cria um novo e manda de novo o último campo. A medição fica em
-`/bench.html` ("Testar rotas", `src/bench/routeBench.ts`). No editor, o `src/features/roads/worldRouter.ts`
+`/bench.html` ("Testar rotas", `src/bench/routeBench.ts`, com as rotas e a malha de 30 cidades). No editor, o `src/features/roads/worldRouter.ts`
 cria o worker só na primeira rota pedida e manda a ele cada mapa final (1024²) exibido, sem as
 prévias. A ferramenta Rota automática (`RouteTool.tsx`, tecla A) marca o pin de origem com o anel
 (`markedId` do `pinsStore`, desenhado pela `PinLayer`), pede a rota ao clicar no destino, com a
 prévia tracejada e o cancelamento pelo `AbortSignal` (Esc, trocar de ferramenta), e cria a estrada
 pelo `addRoad` do `roadsStore`, com o nome de `autoRoute.ts`; o `EditorLayout` mostra o toast
-"Rota criada". A dica das ferramentas de estrada é a `ToolHint` (`src/features/map/`).
+"Rota criada". O botão "Conectar cidades", na dica dela, pede ao worker a malha entre as cidades
+(com os grupos das já ligadas, de `cityNetwork.ts`) e cria as estradas pelo `addRoads`, numa
+mudança só (um passo no Desfazer). A dica das ferramentas de estrada é a `ToolHint` (`src/features/map/`).
 
 O renderer do mapa fica em `src/render/`: o `MapRenderer.ts` cria o app do Pixi na área do mapa do
 editor (`src/app/MapView.tsx`, que o carrega à parte) e troca a textura do terreno
@@ -355,7 +358,7 @@ src/
     noise/              # fbm, ridged, domain warp (ruído 3D)
     world/              # generateWorld, campos, quantis, biomas
     decor/              # Poisson-disk para árvores/montanhas
-    routing/            # grade de custo (costGrid) e A* com simplificação (findRoute)
+    routing/            # grade de custo (costGrid), A* com simplificação (findRoute) e a malha das cidades (connectCities)
     projection/         # Plane (v1) e Sphere (futuro)
     types.ts
   workers/

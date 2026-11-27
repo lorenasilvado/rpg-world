@@ -1,7 +1,7 @@
 import { releaseProxy, wrap, type Remote } from 'comlink'
 import type { RouteField } from '../core'
 import type { WorkerLike } from './generatorClient'
-import type { RouteRequest, RouteResponse, RouterApi } from './routerApi'
+import type { ConnectRequest, ConnectResponse, RouteRequest, RouteResponse, RouterApi } from './routerApi'
 
 /**
  * Lado da thread principal do worker de rota (F5, AC-F5-11). Os pedidos vão ao worker um de cada
@@ -20,6 +20,8 @@ import type { RouteRequest, RouteResponse, RouterApi } from './routerApi'
 export type Router = {
   setField(field: RouteField): Promise<{ gridMs: number }>
   route(req: RouteRequest, options?: { signal?: AbortSignal }): Promise<RouteResponse>
+  /** A malha de "Conectar cidades" (AC-F5-14), na mesma fila e com o mesmo cancelamento da `route`. */
+  connect(req: ConnectRequest, options?: { signal?: AbortSignal }): Promise<ConnectResponse>
   terminate(): void
   /** Quantos pedidos estão no worker ou na fila (para os testes). */
   pendingCalls(): number
@@ -162,6 +164,7 @@ export function createRouter(spawn: () => WorkerLike = createWorker): Router {
       return enqueue((api) => api.setField(data), undefined, true)
     },
     route: (req, options) => enqueue((api) => api.route(req), options?.signal),
+    connect: (req, options) => enqueue((api) => api.connect(req), options?.signal),
     terminate() {
       if (!conn) return
       conn.api[releaseProxy]()

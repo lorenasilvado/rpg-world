@@ -137,6 +137,8 @@ function renderRoutes(r: RouteBenchReport) {
         ${r.seed}): mediana ${r.median} ms, máx. ${r.max} ms (no worker: ${r.workerMedian} e ${r.workerMax} ms); meta
         ${r.targetMs} ms</li>
       <li>Grade de custo, uma vez por campo: ${r.gridMs} ms · sem caminho: ${r.noPath} · maior quadro: ${r.maxFrameGap} ms</li>
+      <li>${ok(r.connect.ms <= r.connect.targetMs)} Conectar ${r.connect.cities} cidades: ${r.connect.ms} ms (no worker:
+        ${r.connect.workerMs} ms), ${r.connect.links} estradas, ${r.connect.isolated} sem caminho; meta ${r.connect.targetMs} ms</li>
     </ul>`
   routesJson.textContent = JSON.stringify(r, null, 2)
 }

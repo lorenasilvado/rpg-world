@@ -94,6 +94,20 @@ describe('routerApi', () => {
     expect(routerApi.route(across).route).toBeNull()
     expect(routerApi.route({ from: { u: 0.58, v: 0.5 }, to: { u: 0.85, v: 0.5 }, mode: 'sea' }).route).not.toBeNull()
   })
+
+  it('connect devolve a malha entre as cidades, e a da ilha fica de fora (AC-F5-14)', () => {
+    const cities = [
+      { u: 0.1, v: 0.2 },
+      { u: 0.9, v: 0.5 },
+      { u: 0.3, v: 0.8 },
+    ]
+    expect(() => routerApi.connect({ cities, groups: [0, 1, 2] })).toThrow(/campo/)
+    routerApi.setField(island())
+    const { network, workerMs } = routerApi.connect({ cities, groups: [0, 1, 2] })
+    expect(network.links.map((l) => [l.from, l.to])).toEqual([[0, 2]])
+    expect(network.isolated).toEqual([1])
+    expect(workerMs).toBeGreaterThanOrEqual(0)
+  })
 })
 
 describe('createRouter', () => {

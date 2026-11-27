@@ -121,3 +121,23 @@ test('a rota pelo terreno roda no worker de rota em até 300 ms num mapa 1024² 
   if (CONFERE_TEMPO) expect(report.max).toBeLessThanOrEqual(report.targetMs)
   expect(errors).toEqual([])
 })
+
+test('"Conectar cidades" liga 30 cidades no worker de rota em até 3 s num mapa 1024² (AC-F5-14)', async ({ page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/bench.html')
+  await page.getByRole('button', { name: 'Testar rotas' }).click()
+  await expect(page.locator('body')).toHaveAttribute('data-routes', 'done', { timeout: 110_000 })
+  const { connect } = JSON.parse((await page.getByTestId('routes-report').textContent()) ?? '') as RouteBenchReport
+  test.info().annotations.push({
+    type: 'conectar 30 cidades',
+    description: `${connect.ms} ms (no worker ${connect.workerMs} ms), ${connect.links} estradas, ${connect.isolated} sem caminho`,
+  })
+  expect(connect.cities).toBe(30)
+  // Uma árvore por grupo de cidades alcançáveis: as de fora não ganham estrada.
+  expect(connect.links).toBeGreaterThan(0)
+  expect(connect.links).toBeLessThanOrEqual(connect.cities - 1 - connect.isolated)
+  if (CONFERE_TEMPO) expect(connect.ms).toBeLessThanOrEqual(connect.targetMs)
+  expect(errors).toEqual([])
+})

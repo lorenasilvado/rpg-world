@@ -79,6 +79,11 @@ export type BenchReport = {
 /** Meta da rota pelo terreno num mapa 1024², em ms (AC-F5-11). */
 export const ROUTE_TARGET_MS = 300
 
+/** Meta de "Conectar cidades" com `CONNECT_CITIES` cidades, em ms (AC-F5-14). */
+export const CONNECT_TARGET_MS = 3000
+/** Quantas cidades a medição de "Conectar cidades" liga. */
+export const CONNECT_CITIES = 30
+
 /** Medição da rota pelo terreno (#249, AC-F5-11), no worker de rota, num mapa 1024². */
 export type RouteBenchReport = {
   machine: { userAgent: string; cores: number }
@@ -98,4 +103,9 @@ export type RouteBenchReport = {
   noPath: number
   /** Maior intervalo entre dois quadros da UI durante as rotas, em ms. */
   maxFrameGap: number
+  /**
+   * "Conectar cidades" (#252, AC-F5-14) entre `cities` pontos de terra sorteados: a ida e volta e o
+   * tempo no worker, em ms, as estradas da malha e as cidades sem caminho por terra.
+   */
+  connect: { cities: number; targetMs: typeof CONNECT_TARGET_MS; ms: number; workerMs: number; links: number; isolated: number }
 }

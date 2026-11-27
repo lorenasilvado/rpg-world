@@ -8,7 +8,7 @@ import { createPinsStore } from '../../state/pinsStore'
 import { createRoadsStore } from '../../state/roadsStore'
 import { createUiStore } from '../../state/uiStore'
 import { createWorldStore, type WorldGenerator } from '../../state/worldStore'
-import type { RouteRequest, RouteResponse } from '../../workers/routerApi'
+import type { ConnectRequest, ConnectResponse, RouteRequest, RouteResponse } from '../../workers/routerApi'
 import { abortError } from '../../workers/routerClient'
 import { MapToolbar } from '../map/MapToolbar'
 import { MeasureTool } from '../map/MeasureTool'
@@ -32,19 +32,26 @@ const pin = (id: string, name: string, u: number, v: number): Pin => ({
 })
 
 type Call = { req: RouteRequest; resolve: (r: RouteResponse) => void; reject: (e: unknown) => void; signal?: AbortSignal }
+type Connect = { req: ConnectRequest; resolve: (r: ConnectResponse) => void; reject: (e: unknown) => void; signal?: AbortSignal }
 
 /** Um worker de rota de mentira: cada pedido espera até o teste responder (`answer`). */
 function fakeRouter() {
   const calls: Call[] = []
+  const connects: Connect[] = []
   const router: WorldRouter = {
     route: (req, options) =>
       new Promise<RouteResponse>((resolve, reject) => {
         options?.signal?.addEventListener('abort', () => reject(abortError()))
         calls.push({ req, resolve, reject, signal: options?.signal })
       }),
+    connect: (req, options) =>
+      new Promise<ConnectResponse>((resolve, reject) => {
+        options?.signal?.addEventListener('abort', () => reject(abortError()))
+        connects.push({ req, resolve, reject, signal: options?.signal })
+      }),
     dispose: vi.fn(),
   }
-  return { router, calls }
+  return { router, calls, connects }
 }
 
 /**
@@ -52,18 +59,19 @@ function fakeRouter() {
  * unidade. O pin "a" (Vila Alta) fica em 256,256, o "b" (Porto Sul) em 768,512 e o "c" em 512,768;
  * o clique no pin é um pouco acima da âncora (a base do desenho).
  */
-function setup({ disabled = false } = {}) {
+function setup({ disabled = false, extraPins = [] as Pin[] } = {}) {
   const ui = createUiStore()
   const world = createWorldStore(idleGenerator, { params: DEFAULT_WORLD_PARAMS })
-  const pins = createPinsStore([pin('a', 'Vila Alta', 0.25, 0.25), pin('b', 'Porto Sul', 0.75, 0.5), pin('c', 'Forte', 0.5, 0.75)])
+  const pins = createPinsStore([pin('a', 'Vila Alta', 0.25, 0.25), pin('b', 'Porto Sul', 0.75, 0.5), pin('c', 'Forte', 0.5, 0.75), ...extraPins])
   let n = 0
   const roads = createRoadsStore([], pins, { newId: () => `r${++n}` })
   const history = createWorldHistory({ world, pins, roads })
   const camera = createCameraStore()
   camera.getState().update({ zoom: 1, scale: 1, view: { x: 0, y: 0, width: 1024, height: 1024 }, origin: { x: 0, y: 0 } })
-  const { router, calls } = fakeRouter()
+  const { router, calls, connects } = fakeRouter()
   const onCreated = vi.fn()
   const onNoPath = vi.fn()
+  const onConnected = vi.fn()
   render(
     <div>
       <main data-testid="map">
@@ -73,10 +81,10 @@ function setup({ disabled = false } = {}) {
       <MapToolbar ui={ui} />
       <MeasureTool ui={ui} world={world} camera={camera} disabled={disabled} />
       <PinTool ui={ui} pins={pins} camera={camera} roads={roads} disabled={disabled} />
-      <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={disabled} onCreated={onCreated} onNoPath={onNoPath} />
+      <RouteTool ui={ui} roads={roads} pins={pins} camera={camera} router={router} disabled={disabled} onCreated={onCreated} onNoPath={onNoPath} onConnected={onConnected} />
     </div>,
   )
-  return { ui, pins, roads, history, calls, onCreated, onNoPath }
+  return { ui, pins, roads, history, calls, connects, onCreated, onNoPath, onConnected }
 }
 
 const canvas = () => screen.getByTestId('canvas')
@@ -98,7 +106,8 @@ describe('Rota automática (AC-F5-12)', () => {
     expect(screen.queryByTestId('route-layer')).toBeNull()
     fireEvent.keyDown(document.body, { key: 'a' })
     expect(ui.getState().tool).toBe('route')
-    expect(screen.getByRole('status').textContent).toBe('Clique no pin de origem')
+    expect(hint()).toBe('Clique no pin de origem')
+    expect(screen.getByRole('status').textContent).toBe('Clique no pin de origem·Conectar cidades')
     act(() => ui.getState().setTool('nav'))
     const button = screen.getByRole('button', { name: 'Rota automática' })
     expect((button as HTMLButtonElement).disabled).toBe(false)
@@ -240,5 +249,109 @@ describe('Rota automática (AC-F5-12)', () => {
     expect(hint()).toBe('Clique no pin de origem')
     expect(error).toHaveBeenCalled()
     error.mockRestore()
+  })
+})
+
+describe('Conectar cidades (AC-F5-14)', () => {
+  const connectButton = () => screen.getByRole('button', { name: 'Conectar cidades' }) as HTMLButtonElement
+  const NETWORK: ConnectResponse = {
+    network: {
+      links: [
+        { from: 0, to: 2, points: [{ u: 0.25, v: 0.25 }, { u: 0.5, v: 0.75 }], cost: 5 },
+        { from: 2, to: 1, points: [{ u: 0.5, v: 0.75 }, { u: 0.75, v: 0.5 }], cost: 6 },
+      ],
+      isolated: [],
+    },
+    workerMs: 1,
+  }
+
+  it('o botão fica na dica do primeiro passo e só habilita com 2 cidades ou mais', () => {
+    const { ui, pins } = setup()
+    act(() => ui.getState().setTool('route'))
+    expect(connectButton().disabled).toBe(false)
+    // Com a origem marcada, a dica é do destino, sem o botão.
+    clickA()
+    expect(screen.queryByRole('button', { name: 'Conectar cidades' })).toBeNull()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    // Uma cidade só (os outros pins viram NPC e Local): desabilitado.
+    act(() => {
+      pins.getState().updatePin('b', { type: 'npc' })
+      pins.getState().updatePin('c', { type: 'local' })
+    })
+    expect(connectButton().disabled).toBe(true)
+    expect(connectButton().title).toBe('Precisa de 2 cidades ou mais')
+  })
+
+  it('pede a malha das cidades, diz "Conectando…" e cria as estradas num passo só do Desfazer', async () => {
+    const npc: Pin = { ...pin('n', 'Ferreiro', 0.1, 0.9), type: 'npc' }
+    const { ui, roads, history, connects, onConnected } = setup({ extraPins: [npc] })
+    act(() => ui.getState().setTool('route'))
+    fireEvent.click(connectButton())
+    expect(connects).toHaveLength(1)
+    // Só as cidades, cada uma no seu grupo (nenhuma estrada ainda).
+    expect(connects[0].req).toEqual({
+      cities: [
+        { u: 0.25, v: 0.25 },
+        { u: 0.75, v: 0.5 },
+        { u: 0.5, v: 0.75 },
+      ],
+      groups: [0, 1, 2],
+    })
+    expect(hint()).toBe('Conectando…')
+    expect(screen.queryByRole('button', { name: 'Conectar cidades' })).toBeNull()
+    // Os cliques nos pins não fazem nada enquanto calcula.
+    clickA()
+    expect(screen.getByTestId('route-layer').dataset.from).toBeUndefined()
+    const before = history.temporal.getState().pastStates.length
+    await act(async () => connects[0].resolve(NETWORK))
+    expect(roads.getState().roads.map((r) => [r.name, r.from, r.to, r.kind])).toEqual([
+      ['Rota de Vila Alta a Forte', 'a', 'c', 'road'],
+      ['Rota de Forte a Porto Sul', 'c', 'b', 'road'],
+    ])
+    expect(roads.getState().selectedId).toBeNull()
+    expect(history.temporal.getState().pastStates.length).toBe(before + 1)
+    expect(onConnected).toHaveBeenCalledWith(2, 0)
+    expect(hint()).toBe('Clique no pin de origem')
+    expect(ui.getState().tool).toBe('route')
+    act(() => history.undo())
+    expect(roads.getState().roads).toEqual([])
+  })
+
+  it('manda as cidades já ligadas por estrada no mesmo grupo', () => {
+    const { ui, roads, connects } = setup()
+    act(() => {
+      roads.getState().addRoad({ points: [{ u: 0.25, v: 0.25 }, { u: 0.75, v: 0.5 }], from: 'a', to: 'b' }, { select: false })
+    })
+    act(() => ui.getState().setTool('route'))
+    fireEvent.click(connectButton())
+    expect(connects[0].req.groups).toEqual([0, 0, 1])
+  })
+
+  it('Esc e trocar de ferramenta cancelam, e o resultado é descartado', async () => {
+    const { ui, roads, connects, onConnected } = setup()
+    act(() => ui.getState().setTool('route'))
+    fireEvent.click(connectButton())
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(connects[0].signal?.aborted).toBe(true)
+    expect(hint()).toBe('Clique no pin de origem')
+    expect(ui.getState().tool).toBe('route')
+    fireEvent.click(connectButton())
+    act(() => ui.getState().setTool('nav'))
+    expect(connects[1].signal?.aborted).toBe(true)
+    await act(async () => connects[1].resolve(NETWORK))
+    expect(roads.getState().roads).toEqual([])
+    expect(onConnected).not.toHaveBeenCalled()
+  })
+
+  it('uma cidade excluída no meio do cálculo tira as estradas dela; as de fora vão para o toast', async () => {
+    const { ui, pins, roads, connects, onConnected } = setup()
+    act(() => ui.getState().setTool('route'))
+    fireEvent.click(connectButton())
+    act(() => {
+      pins.getState().removePin('b')
+    })
+    await act(async () => connects[0].resolve({ ...NETWORK, network: { ...NETWORK.network, isolated: [1] } }))
+    expect(roads.getState().roads.map((r) => r.name)).toEqual(['Rota de Vila Alta a Forte'])
+    expect(onConnected).toHaveBeenCalledWith(1, 1)
   })
 })

@@ -297,6 +297,79 @@ for (const size of [
   })
 }
 
+// Na seed "rotas", Campo, Vale, Serra e Porto ficam no continente e a Ilha, numa ilha a sudeste.
+// A menor malha liga Campo–Vale, Vale–Serra e Porto–Vale; a Ilha fica sem caminho por terra.
+const CITIES_FILE = {
+  ...FILE,
+  world: {
+    ...FILE.world,
+    seed: 'rotas',
+    pins: [pin('Porto', 0.752, 0.697), pin('Ilha', 0.842, 0.807), pin('Campo', 0.6, 0.6), pin('Vale', 0.7, 0.55), pin('Serra', 0.6, 0.45)],
+    roads: [],
+  },
+}
+
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`"Conectar cidades" liga as cidades alcançáveis num passo só; de novo, não repete o par já ligado (AC-F5-14, ${size.width})`, async ({ page }) => {
+    await page.setViewportSize(size)
+    const { map } = await importAndOpen(page, CITIES_FILE)
+    await page.keyboard.press('a')
+    await expect(map).toHaveAttribute('data-tool', 'route')
+    const status = page.getByTestId('route-status')
+    const connect = status.getByRole('button', { name: 'Conectar cidades' })
+    await expect(connect).toBeEnabled()
+    // A dica cabe na área do mapa, sem cortar o botão.
+    const box = (await status.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(size.width)
+
+    await connect.click()
+    await expect(map).toHaveAttribute('data-roads', '3', { timeout: 15_000 })
+    const toast = page.getByTestId('pin-deleted-toast')
+    await expect(toast).toContainText('3 estradas criadas · 1 cidade sem caminho por terra')
+    await expect(page.getByTestId('route-hint')).toHaveText('Clique no pin de origem')
+    await expect.poll(async () => (await readRoads(page)).map((r) => r.name).sort()).toEqual([
+      'Rota de Campo a Vale',
+      'Rota de Porto a Vale',
+      'Rota de Vale a Serra',
+    ])
+    expect(await savedRoad(page, 'Rota de Porto a Vale')).toMatchObject({ kind: 'road', from: 'Porto', to: 'Vale' })
+
+    // Um passo só no Desfazer.
+    await toast.getByRole('button', { name: 'Desfazer' }).click()
+    await expect(map).toHaveAttribute('data-roads', '0')
+    await expect.poll(async () => (await readRoads(page)).length).toBe(0)
+
+    // Com Porto–Vale já ligada (Rota automática), a malha não repete o par.
+    const at = async (u: number, v: number) => {
+      const [x, y, width, height] = ((await map.getAttribute('data-map-rect')) ?? '').split(',').map(Number)
+      return { x: x + u * width, y: y + v * height - 10 }
+    }
+    const porto = await at(0.752, 0.697)
+    const vale = await at(0.7, 0.55)
+    await page.mouse.click(porto.x, porto.y)
+    await page.mouse.click(vale.x, vale.y)
+    await expect(map).toHaveAttribute('data-roads', '1', { timeout: 15_000 })
+    await connect.click()
+    await expect(map).toHaveAttribute('data-roads', '3', { timeout: 15_000 })
+    await expect(toast).toContainText('2 estradas criadas · 1 cidade sem caminho por terra')
+    await expect.poll(async () => (await readRoads(page)).map((r) => r.name).sort()).toEqual([
+      'Rota de Campo a Vale',
+      'Rota de Porto a Vale',
+      'Rota de Vale a Serra',
+    ])
+
+    // Tudo já ligado: nada novo, sem "Desfazer".
+    await connect.click()
+    await expect(toast).toContainText('Nenhuma estrada nova · 1 cidade sem caminho por terra', { timeout: 15_000 })
+    await expect(toast.getByRole('button', { name: 'Desfazer' })).toHaveCount(0)
+    await expect(map).toHaveAttribute('data-roads', '3')
+  })
+}
+
 test.describe('com o toque', () => {
   test.use({ hasTouch: true, isMobile: true })
 

@@ -1,4 +1,4 @@
-import type { RouteRequest, RouteResponse } from '../../workers/routerApi'
+import type { ConnectRequest, ConnectResponse, RouteRequest, RouteResponse } from '../../workers/routerApi'
 import { createRouter, type Router } from '../../workers/routerClient'
 import { MAP_SIZE } from '../../state/sizes'
 import type { WorldStore } from '../../state/worldStore'
@@ -10,6 +10,8 @@ import type { WorldStore } from '../../state/worldStore'
  */
 export type WorldRouter = {
   route(req: RouteRequest, options?: { signal?: AbortSignal }): Promise<RouteResponse>
+  /** "Conectar cidades" (AC-F5-14): a malha entre as cidades. */
+  connect(req: ConnectRequest, options?: { signal?: AbortSignal }): Promise<ConnectResponse>
   dispose(): void
 }
 
@@ -33,6 +35,7 @@ export function createWorldRouter(world: WorldStore, make: () => Router = create
   }
   return {
     route: (req, options) => ensure().route(req, options),
+    connect: (req, options) => ensure().connect(req, options),
     dispose() {
       unsubscribe?.()
       unsubscribe = null
