@@ -62,7 +62,9 @@ geradas automaticamente pela rota mais barata pelo terreno. Estilo dos traços e
 ## Regras
 
 - Tipos de via com estilos distintos: estrada, trilha, rota marítima. Os traços têm a largura e o
-  tracejado do design system em px na tela, em qualquer zoom; no PNG, na escala da imagem.
+  tracejado do design system em px na tela, em qualquer zoom; no PNG, na escala da imagem. No meio
+  de um zoom, o traço pode ficar até 12% mais largo ou mais fino, e volta à largura exata assim que
+  o zoom para.
 - A curva passa por todos os pontos da estrada (Catmull-Rom).
 - Onde duas estradas se cruzam, o contorno de uma não corta o traço da outra: os contornos de
   todas ficam por baixo dos traços de cima, no mapa e no PNG.

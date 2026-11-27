@@ -9,8 +9,8 @@ import { defineConfig, devices } from '@playwright/test'
 // - determinismo-chrome, -firefox e -webkit: o hash do núcleo de geração nos 3 motores
 //   (#8, RNF-4), no servidor de desenvolvimento. Firefox e WebKit são os do Playwright:
 //   instale uma vez com `npx playwright install firefox webkit`;
-// - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 (#55) e os de pins e mundos do M2
-//   (#168) de ponta a ponta, no servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
+// - fluxos-firefox e fluxos-webkit: os fluxos principais do M1 (#55), os de pins e mundos do M2
+//   (#168) e os de estradas do M3 (#254) de ponta a ponta, no servidor de desenvolvimento; no Chrome, eles rodam no projeto app;
 // - iphone: os bugs de viewport do editor no iPhone (Safari), no device iPhone 15 do Playwright
 //   (WebKit, isMobile, hasTouch), no servidor de desenvolvimento;
 // - desempenho: a medição da geração no worker (#9, RNF-2) e o fps de pan e zoom (#55, #168), no
@@ -21,7 +21,7 @@ import { defineConfig, devices } from '@playwright/test'
 const DEV = 'http://localhost:5199'
 const DETERMINISMO = /determinismo\.spec\.ts/
 const DESEMPENHO = /(desempenho|fps)\.spec\.ts/
-const FLUXOS = /fluxos(-m2)?\.spec\.ts/
+const FLUXOS = /fluxos(-m[23])?\.spec\.ts/
 const IPHONE = /iphone\.spec\.ts/
 const PREVIEW = 'npx vite preview --port 5198 --strictPort'
 

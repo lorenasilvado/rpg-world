@@ -4,8 +4,9 @@ import { summarizeFrames } from '../src/sprites/frameStats.ts'
 import { defaultWorld, gotoEditor } from './editor.ts'
 
 // Fps de pan, zoom e pinça com o app completo e 5.000 ícones decorativos (#55, AC-F2-07; critério
-// de saída do M1) e, com 500 pins por cima, AC-F3-17 (#168; critério de saída do M2). Roda no projeto desempenho, sozinho e depois dos outros: em paralelo, a disputa
-// pela CPU atrasa os quadros.
+// de saída do M1), com 500 pins por cima, AC-F3-17 (#168; critério de saída do M2), e com 500 pins
+// e 300 estradas, AC-F5-16 (#254; critério de saída do M3). Roda no projeto desempenho, sozinho e
+// depois dos outros: em paralelo, a disputa pela CPU atrasa os quadros.
 //
 // O editor nunca passa de uns 3.600 ícones (a amostra de Poisson-disk inteira, com a distância
 // mínima `DECOR_SPACING`), então o teste serve o `decor.ts` com uma distância menor: a amostra
@@ -44,9 +45,32 @@ function pins500() {
   })
 }
 
+const KINDS = ['road', 'trail', 'sea'] as const
+
+/**
+ * 300 estradas entre pins vizinhos da grade dos `pins500` (5 de cada 8 pares lado a lado, espalhadas
+ * pelo mapa inteiro), ligadas aos dois pins, com um ponto do meio um pouco abaixo da linha, para a
+ * curva suavizada, e os 3 tipos de via alternados.
+ */
+function roads300(pins: ReturnType<typeof pins500>) {
+  const pairs = Array.from({ length: 20 * 24 }, (_, k) => ({ row: Math.floor(k / 24), col: k % 24 })).filter((_, k) => k % 8 < 5)
+  return pairs.map(({ row, col }, i) => {
+    const a = pins[row * 25 + col]
+    const b = pins[row * 25 + col + 1]
+    const mid = { u: (a.pos.u + b.pos.u) / 2, v: (a.pos.v + b.pos.v) / 2 + 0.008 }
+    return { id: `r-${i}`, name: `Estrada ${i + 1}`, kind: KINDS[i % KINDS.length], points: [{ ...a.pos }, mid, { ...b.pos }], from: a.id, to: b.id }
+  })
+}
+
 const CASES = [
-  { ac: 'AC-F2-07', pins: 0, title: 'pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F2-07)' },
-  { ac: 'AC-F3-17', pins: 500, title: 'pan, zoom e pinça com 500 pins, 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F3-17)' },
+  { ac: 'AC-F2-07', pins: 0, roads: 0, title: 'pan, zoom e pinça com 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F2-07)' },
+  { ac: 'AC-F3-17', pins: 500, roads: 0, title: 'pan, zoom e pinça com 500 pins, 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F3-17)' },
+  {
+    ac: 'AC-F5-16',
+    pins: 500,
+    roads: 300,
+    title: 'pan, zoom e pinça com 500 pins, 300 estradas, 5.000 ícones e o app completo ficam em 60 fps de média e 55 de mínimo (AC-F5-16)',
+  },
 ]
 
 const CONFERE_FPS = !process.env.CI
@@ -62,10 +86,10 @@ const zoom = async (page: Page) => Number(await map(page).getAttribute('data-zoo
 // Desktop 1440×900: a área livre fica entre a sidebar (320) e o drawer (400).
 const CENTER = { x: 320 + 360, y: 450 }
 
-// Os dois casos um depois do outro, no mesmo worker: em paralelo, um atrasaria os quadros do outro.
+// Os casos um depois do outro, no mesmo worker: em paralelo, um atrasaria os quadros do outro.
 test.describe.configure({ mode: 'default' })
 
-for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) => {
+for (const { ac, pins, roads, title } of CASES) test(title, async ({ page, context }) => {
   test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -77,12 +101,15 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
     await route.fulfill({ response, body })
   })
   await page.setViewportSize({ width: 1440, height: 900 })
-  await gotoEditor(page, '/', defaultWorld({ pins: pins === 0 ? [] : pins500() }))
+  const pinList = pins === 0 ? [] : pins500()
+  await gotoEditor(page, '/', defaultWorld({ pins: pinList, roads: roads === 0 ? [] : roads300(pinList) }))
   await expect(page.getByTestId('editor')).toHaveAttribute('data-generation-status', 'idle', { timeout: 60_000 })
   await expect(map(page)).toHaveAttribute('data-terrain-size', '1024', { timeout: 60_000 })
   await expect(map(page)).toHaveAttribute('data-decor-total', '5000')
   await expect(map(page)).toHaveAttribute('data-decor-layer', 'on')
   await expect(map(page)).toHaveAttribute('data-pins', String(pins))
+  await expect(map(page)).toHaveAttribute('data-roads', String(roads))
+  if (roads > 0) await expect(map(page)).toHaveAttribute('data-road-layer', 'on')
 
   const machine = await page.evaluate(() => {
     const gl = document.createElement('canvas').getContext('webgl2')
@@ -193,6 +220,7 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
     machine,
     ac,
     pins,
+    roads,
     pinDrags,
     pans,
     skipped,
@@ -212,7 +240,7 @@ for (const { ac, pins, title } of CASES) test(title, async ({ page, context }) =
     { type: 'tela', description: `${machine.screen.cssWidth}×${machine.screen.cssHeight} CSS, DPR ${machine.screen.devicePixelRatio}` },
     {
       type: 'fps',
-      description: `${pins} pins: média ${stats.avgFps}, mínimo ${stats.minFps} (pior janela de 1 s), pior quadro ${stats.worstFrameMs} ms, ${stats.slowFrames} quadros acima de 1/55 s, ${stats.frames} quadros em ${stats.durationMs} ms`,
+      description: `${pins} pins, ${roads} estradas: média ${stats.avgFps}, mínimo ${stats.minFps} (pior janela de 1 s), pior quadro ${stats.worstFrameMs} ms, ${stats.slowFrames} quadros acima de 1/55 s, ${stats.frames} quadros em ${stats.durationMs} ms`,
     },
   )
   console.log(`[fps ${ac}] ${JSON.stringify(report)}`)
