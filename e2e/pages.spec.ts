@@ -35,6 +35,9 @@ test('o build abre em /rpg-world/ sem erro, com os assets no caminho base (AC-M0
 
 // A medição do spike de desempenho (#9) abre no caminho base, com o worker do build gerando.
 test('a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-05)', async ({ page }) => {
+  // Na suíte inteira, com os outros projetos disputando a CPU, a medição passa dos 30 s do limite
+  // padrão (#300). O limite do teste cobre a espera de 60 s do `expect` e a abertura da página.
+  test.setTimeout(90_000)
   const problems: string[] = []
   page.on('response', (r) => {
     if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`)
