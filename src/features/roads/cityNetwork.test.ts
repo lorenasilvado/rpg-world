@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CityNetwork } from '../../core'
 import type { Pin, Road } from '../../persistence/types'
-import { cityGroups, cityPins, connectMessage, networkRoads } from './cityNetwork'
+import { cityGroups, cityPins, connectMessage, isolatedCount, networkRoads } from './cityNetwork'
 
 const pin = (id: string, type = 'cidade'): Pin => ({
   id,
@@ -58,6 +58,13 @@ describe('Conectar cidades: as cidades e os grupos (AC-F5-14)', () => {
     // "d" saiu no meio do cálculo; b–c ganhou uma estrada (um Refazer, por exemplo).
     const now = cities.filter((c) => c.id !== 'd')
     expect(networkRoads(network, cities, now, [road('b', 'c')]).map((r) => r.name)).toEqual(['Rota de A a B'])
+  })
+
+  it('as cidades sem caminho não contam a que saiu no meio do cálculo', () => {
+    const cities = [pin('a'), pin('b'), pin('c')]
+    const network: CityNetwork = { links: [], isolated: [0, 2] }
+    expect(isolatedCount(network, cities, cities)).toBe(2)
+    expect(isolatedCount(network, cities, [pin('a'), pin('b')])).toBe(1)
   })
 
   it('o texto do toast', () => {

@@ -75,6 +75,12 @@ export function networkRoads(
   })
 }
 
+/** Quantas cidades ficaram sem caminho por terra, sem contar as que saíram no meio do cálculo. */
+export function isolatedCount(network: CityNetwork, cities: readonly Pin[], pins: readonly Pin[]): number {
+  const alive = new Set(pins.map((p) => p.id))
+  return network.isolated.filter((k) => alive.has(cities[k].id)).length
+}
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 /** O texto do toast de "Conectar cidades": as estradas criadas e as cidades sem caminho por terra. */

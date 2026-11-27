@@ -107,7 +107,9 @@ describe('Rota automática (AC-F5-12)', () => {
     fireEvent.keyDown(document.body, { key: 'a' })
     expect(ui.getState().tool).toBe('route')
     expect(hint()).toBe('Clique no pin de origem')
-    expect(screen.getByRole('status').textContent).toBe('Clique no pin de origem·Conectar cidades')
+    // Só o texto é anunciado; o botão fica fora da região status.
+    expect(screen.getByRole('status').textContent).toBe('Clique no pin de origem')
+    expect(screen.getByTestId('route-status').textContent).toBe('Clique no pin de origem·Conectar cidades')
     act(() => ui.getState().setTool('nav'))
     const button = screen.getByRole('button', { name: 'Rota automática' })
     expect((button as HTMLButtonElement).disabled).toBe(false)
@@ -327,6 +329,29 @@ describe('Conectar cidades (AC-F5-14)', () => {
     expect(connects[0].req.groups).toEqual([0, 0, 1])
   })
 
+  it('o foco volta ao botão quando ele reaparece (fim do cálculo ou Esc)', async () => {
+    const { ui, connects } = setup()
+    act(() => ui.getState().setTool('route'))
+    connectButton().focus()
+    fireEvent.click(connectButton())
+    expect(screen.queryByRole('button', { name: 'Conectar cidades' })).toBeNull()
+    await act(async () => connects[0].resolve(NETWORK))
+    expect(document.activeElement).toBe(connectButton())
+    fireEvent.click(connectButton())
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(document.activeElement).toBe(connectButton())
+  })
+
+  it('o foco não vai para o botão se o clique veio de outro lugar', async () => {
+    const { ui, connects } = setup()
+    act(() => ui.getState().setTool('route'))
+    const seed = screen.getByRole('textbox', { name: 'Seed' })
+    fireEvent.click(connectButton())
+    seed.focus()
+    await act(async () => connects[0].resolve(NETWORK))
+    expect(document.activeElement).toBe(seed)
+  })
+
   it('Esc e trocar de ferramenta cancelam, e o resultado é descartado', async () => {
     const { ui, roads, connects, onConnected } = setup()
     act(() => ui.getState().setTool('route'))
@@ -352,6 +377,7 @@ describe('Conectar cidades (AC-F5-14)', () => {
     })
     await act(async () => connects[0].resolve({ ...NETWORK, network: { ...NETWORK.network, isolated: [1] } }))
     expect(roads.getState().roads.map((r) => r.name)).toEqual(['Rota de Vila Alta a Forte'])
-    expect(onConnected).toHaveBeenCalledWith(1, 1)
+    // A cidade excluída não entra na conta das sem caminho.
+    expect(onConnected).toHaveBeenCalledWith(1, 0)
   })
 })

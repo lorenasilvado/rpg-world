@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { BIOME } from '../types'
 import { generateField } from '../world/generateField'
-import { connectCities, type CityNetwork } from './connectCities'
+import { cityRoutes, connectCities, type CityNetwork } from './connectCities'
 import { buildCostGrid, cellOf, type RouteField } from './costGrid'
 import { findRoute, type RoutePoint } from './findRoute'
 
 const WATER: number[] = [BIOME.deepOcean, BIOME.shallowWater, BIOME.lake]
 
 /** Campo sintético `size`², todo campo (planície) e plano, editado por `paint`. */
-function field(size: number, paint?: (set: (x: number, y: number, b: number) => void) => void): RouteField {
+function field(size: number, paint?: (set: (x: number, y: number, b: number) => void) => void, rivers: RoutePoint[][] = []): RouteField {
   const biome = new Uint8Array(size * size).fill(BIOME.grassland)
   const elevation = new Float32Array(size * size).fill(0.5)
   paint?.((x, y, b) => {
     if (x < 0 || y < 0 || x >= size || y >= size) return
     biome[y * size + x] = b
   })
-  return { width: size, height: size, biome, elevation, rivers: [] }
+  return { width: size, height: size, biome, elevation, rivers }
 }
 
 const rect = (set: (x: number, y: number, b: number) => void, x0: number, y0: number, x1: number, y1: number, b: number) => {
@@ -171,5 +171,47 @@ describe('Conectar cidades: a malha (AC-F5-14)', () => {
     const comps = new Set(components(30, net)).size
     expect(net.links.length).toBe(30 - comps)
     expect(new Set(pairsOf(net)).size).toBe(net.links.length)
+  })
+})
+
+describe('Conectar cidades: o custo de cada par é o da findRoute', () => {
+  it('uma cidade num rio, na única passagem entre dois lagos, não bloqueia as outras e cobra a ponte', () => {
+    // Uma faixa de terra de uma linha (y = 128) entre dois lagos, cruzada por um rio em x = 128.
+    const f = field(
+      256,
+      (set) => {
+        rect(set, 100, 0, 156, 127, BIOME.lake)
+        rect(set, 100, 129, 156, 255, BIOME.lake)
+      },
+      [[{ u: 128.5 / 256, v: 0 }, { u: 128.5 / 256, v: 1 }]],
+    )
+    const grid = buildCostGrid(f)
+    const cities = [at(40.5, 128.5), at(128.5, 128.5), at(220.5, 128.5)]
+    expect(grid.river[cellOf(256, cities[1].u, cities[1].v)]).toBe(1)
+    const { cost } = cityRoutes(grid, cities)
+    for (const [i, j] of [[0, 2], [2, 0], [0, 1], [1, 0], [1, 2]]) {
+      const expected = findRoute(grid, cities[i], cities[j], 'land')!.cost
+      expect(cost[i * 3 + j]).toBeCloseTo(expected, 6)
+    }
+  })
+
+  it('num mapa gerado, com cidades nos rios, todo par custa o mesmo que a findRoute', () => {
+    const f = generateField('rpg-world', 256)
+    const grid = buildCostGrid(f)
+    const cities: RoutePoint[] = []
+    // Metade nos rios, metade em terra.
+    for (let c = 0; c < grid.river.length && cities.length < 5; c += 37) if (grid.river[c] && grid.cost[c] !== Infinity) cities.push({ u: ((c % 256) + 0.5) / 256, v: (Math.floor(c / 256) + 0.5) / 256 })
+    for (let c = 11; c < grid.cost.length && cities.length < 10; c += 6007) if (grid.cost[c] !== Infinity && !grid.river[c]) cities.push({ u: ((c % 256) + 0.5) / 256, v: (Math.floor(c / 256) + 0.5) / 256 })
+    expect(cities).toHaveLength(10)
+    const { cost } = cityRoutes(grid, cities)
+    const n = cities.length
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue
+        const expected = findRoute(grid, cities[i], cities[j], 'land')?.cost ?? Infinity
+        if (expected === Infinity) expect(cost[i * n + j]).toBe(Infinity)
+        else expect(cost[i * n + j]).toBeCloseTo(expected, 4)
+      }
+    }
   })
 })

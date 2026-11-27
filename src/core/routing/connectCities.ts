@@ -5,9 +5,10 @@ import { BRIDGE_COST, DIAGONAL, findRoute, MinHeap, simplifyPath, SLOPE_COST, ty
  * A malha de estradas entre as cidades (F5, AC-F5-14, "Conectar cidades"): a árvore mínima pelo
  * custo do terreno, por terra, entre as cidades alcançáveis.
  *
- * - Uma busca de Dijkstra a partir de cada cidade dá o custo por terra até cada outra (o mesmo passo
- *   do A* da `findRoute`, com 8 vizinhos, a inclinação e a ponte em cada célula de rio). A cidade
- *   numa célula com água (ou num rio) é só ponta: a busca chega nela, mas não passa por ela.
+ * - Uma busca de Dijkstra a partir de cada cidade dá o custo por terra até cada outra (`cityRoutes`),
+ *   o mesmo da `findRoute` entre as duas: 8 vizinhos, a inclinação, a ponte em cada célula de rio em
+ *   que entra (a do destino, não) e os cantos de água na diagonal. A cidade numa célula com água é
+ *   só ponta: a busca chega nela, mas não passa por ela; a cidade num rio é uma célula como as outras.
  * - `groups` diz quais cidades já estão ligadas por estrada (o mesmo número: já ligadas, por
  *   qualquer caminho de estradas). A árvore (Kruskal, do par mais barato para o mais caro) nunca liga
  *   duas cidades do mesmo grupo: não repete um par já ligado, nem fecha um ciclo.
@@ -38,36 +39,8 @@ export function connectCities(
   { candidates = NETWORK_CANDIDATES }: { candidates?: number } = {},
 ): CityNetwork {
   const n = cities.length
-  const { size } = grid
-  const cells = cities.map((p) => cellOf(size, p.u, p.v))
-  /** As cidades de cada célula (duas cidades podem cair na mesma). */
-  const at = new Map<number, number[]>()
-  cells.forEach((c, k) => at.set(c, [...(at.get(c) ?? []), k]))
-  /** Célula de uma cidade com água ou rio: só ponta. */
-  const terminal = new Uint8Array(size * size)
-  for (const c of cells) if (grid.cost[c] === Infinity || grid.river[c]) terminal[c] = 1
-
-  const cost = new Float64Array(n * n).fill(Infinity)
-  const paths = new Map<number, number[]>()
-  for (let i = 0; i < n; i++) {
-    const { g, came } = dijkstra(grid, cells[i], terminal, cells, at)
-    const near: number[] = []
-    for (let j = 0; j < n; j++) {
-      if (j === i) continue
-      const c = cells[j]
-      const gj = c === cells[i] ? 0 : g[c]
-      if (gj === Infinity) continue
-      cost[i * n + j] = gj
-      near.push(j)
-    }
-    near.sort((a, b) => cost[i * n + a] - cost[i * n + b] || a - b)
-    for (const j of near.slice(0, candidates)) {
-      const path: number[] = []
-      for (let c = cells[j]; c !== -1; c = came[c]) path.push(c)
-      path.reverse()
-      paths.set(i * n + j, path)
-    }
-  }
+  const cells = cities.map((p) => cellOf(grid.size, p.u, p.v))
+  const { cost, paths } = cityRoutes(grid, cities, candidates)
 
   // Os pares, do mais barato para o mais caro (o custo nos dois sentidos pode diferir um pouco, por
   // causa das pontes nas pontas: vale o menor, e a estrada segue o sentido dele).
@@ -119,6 +92,47 @@ export function connectCities(
   return { links, isolated }
 }
 
+/**
+ * O custo por terra de cada cidade `i` até cada `j` (`cost[i * n + j]`, `Infinity` sem caminho) e o
+ * caminho em células até as `candidates` mais baratas de cada uma (chave `i * n + j`).
+ */
+export function cityRoutes(
+  grid: CostGrid,
+  cities: readonly RoutePoint[],
+  candidates = NETWORK_CANDIDATES,
+): { cost: Float64Array; paths: Map<number, number[]> } {
+  const n = cities.length
+  const { size, river } = grid
+  const cells = cities.map((p) => cellOf(size, p.u, p.v))
+  const targets = new Set(cells)
+  /** Célula de uma cidade com água: só ponta. */
+  const terminal = new Uint8Array(size * size)
+  for (const c of cells) if (grid.cost[c] === Infinity) terminal[c] = 1
+
+  const cost = new Float64Array(n * n).fill(Infinity)
+  const paths = new Map<number, number[]>()
+  for (let i = 0; i < n; i++) {
+    const { g, came } = dijkstra(grid, cells[i], terminal, targets)
+    const near: number[] = []
+    for (let j = 0; j < n; j++) {
+      if (j === i) continue
+      const c = cells[j]
+      if (c !== cells[i] && g[c] === Infinity) continue
+      // A ponte de entrar no destino num rio não conta (como na `findRoute`).
+      cost[i * n + j] = c === cells[i] ? 0 : g[c] - (river[c] ? BRIDGE_COST : 0)
+      near.push(j)
+    }
+    near.sort((a, b) => cost[i * n + a] - cost[i * n + b] || a - b)
+    for (const j of near.slice(0, candidates)) {
+      const path: number[] = []
+      for (let c = cells[j]; c !== -1; c = came[c]) path.push(c)
+      path.reverse()
+      paths.set(i * n + j, path)
+    }
+  }
+  return { cost, paths }
+}
+
 /** O caminho simplificado do par: o guardado pelo Dijkstra ou, fora das candidatas, o da `findRoute`. */
 function routeOf(
   grid: CostGrid,
@@ -138,15 +152,16 @@ function routeOf(
 
 /**
  * Dijkstra por terra a partir de `start`, com o passo da `findRoute`. Uma célula `terminal` (uma
- * cidade com água ou rio) recebe a busca sem a ponte e sem expandir; a busca para quando todas as
- * células de cidade já saíram da fila (ou não há mais para onde ir).
+ * cidade com água) recebe a busca, andando como planície, mas não expande; nos cantos da diagonal
+ * ela continua água. Cada célula de rio em que a busca entra custa uma ponte (`cityRoutes` tira a
+ * do destino). A busca para quando todas as células de cidade já saíram da fila (ou não há mais
+ * para onde ir).
  */
 function dijkstra(
   grid: CostGrid,
   start: number,
   terminal: Uint8Array,
-  cells: readonly number[],
-  at: ReadonlyMap<number, number[]>,
+  targets: ReadonlySet<number>,
 ): { g: Float64Array; came: Int32Array } {
   const { size, cost, river, elevation } = grid
   const total = size * size
@@ -154,18 +169,17 @@ function dijkstra(
   const came = new Int32Array(total).fill(-1)
   const closed = new Uint8Array(total)
   const heap = new MinHeap(total)
-  // As pontas com água andam como planície (como na `findRoute`).
+  // As pontas com água andam como planície (como na `findRoute`); nos cantos, só a origem.
   const w = (c: number) => (cost[c] === Infinity && (c === start || terminal[c]) ? 1 : cost[c])
-  const targets = new Set(cells)
-  targets.delete(start)
-  let left = targets.size
+  const corner = (c: number) => (c === start && cost[c] === Infinity ? 1 : cost[c])
+  let left = targets.size - (targets.has(start) ? 1 : 0)
   g[start] = 0
   heap.push(start, 0)
   while (heap.length > 0 && left > 0) {
     const a = heap.pop()
     if (closed[a]) continue
     closed[a] = 1
-    if (a !== start && at.has(a)) left--
+    if (a !== start && targets.has(a)) left--
     if (a !== start && terminal[a]) continue
     const ax = a % size
     const ay = Math.floor(a / size)
@@ -184,11 +198,11 @@ function dijkstra(
         if (diagonal) {
           const p = ay * size + x
           const q = y * size + ax
-          if (w(p) === Infinity || w(q) === Infinity) continue
+          if (corner(p) === Infinity || corner(q) === Infinity) continue
           if ((river[p] || river[q]) && !river[a] && !river[b]) continue
         }
         const slope = Math.abs(elevation[b] - elevation[a]) * size * SLOPE_COST
-        const bridge = river[b] && !terminal[b] ? BRIDGE_COST : 0
+        const bridge = river[b] ? BRIDGE_COST : 0
         const tentative = g[a] + (diagonal ? DIAGONAL : 1) * ((wa + wb) / 2 + slope) + bridge
         if (tentative < g[b]) {
           g[b] = tentative

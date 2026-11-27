@@ -12,7 +12,7 @@ import { ToolHint } from '../map/ToolHint'
 import { worldToScreen } from '../map/measure'
 import { createVisiblePins } from '../pins/visiblePins'
 import { routeHint, routeName, type RouteStep } from './autoRoute'
-import { cityGroups, cityPins, MIN_CITIES, networkRoads } from './cityNetwork'
+import { cityGroups, cityPins, isolatedCount, MIN_CITIES, networkRoads } from './cityNetwork'
 import type { WorldRouter } from './worldRouter'
 
 /**
@@ -147,11 +147,15 @@ function RouteLayer({
     connectingRef.current = connecting
   }, [connecting])
 
+  /** O botão "Conectar cidades": ele some enquanto calcula, e o foco volta para ele depois. */
+  const connectButton = useRef<HTMLButtonElement>(null)
+  const refocus = useRef(false)
   const connect = useCallback(() => {
     if (disabled || pendingRef.current || connectingRef.current) return
     const list = cityPins(pins.getState().pins)
     if (list.length < MIN_CITIES) return
     pins.getState().mark(null)
+    refocus.current = document.activeElement === connectButton.current
     const job = new AbortController()
     connectingRef.current = job
     setConnecting(job)
@@ -161,8 +165,10 @@ function RouteLayer({
         if (connectingRef.current !== job) return
         connectingRef.current = null
         setConnecting(null)
-        const created = roads.getState().addRoads(networkRoads(network, list, pins.getState().pins, roads.getState().roads))
-        onConnectedRef.current?.(created.length, network.isolated.length)
+        const now = pins.getState().pins
+        const created = roads.getState().addRoads(networkRoads(network, list, now, roads.getState().roads))
+        // Uma cidade que saiu no meio do cálculo não conta como sem caminho.
+        onConnectedRef.current?.(created.length, isolatedCount(network, list, now))
       },
       (error: unknown) => {
         if (connectingRef.current !== job) return
@@ -297,6 +303,15 @@ function RouteLayer({
   }, [ui, roads, pins, camera, router, disabled])
 
   const step: RouteStep = connecting ? 'connecting' : pending ? 'calculating' : fromId !== null ? 'to' : 'from'
+
+  // O botão voltou (fim do cálculo ou Esc): o foco volta para ele, se estava nele e não foi para
+  // outro lugar no meio do caminho.
+  useEffect(() => {
+    if (step !== 'from' || !refocus.current) return
+    refocus.current = false
+    const active = document.activeElement
+    if (!active || active === document.body) connectButton.current?.focus()
+  }, [step])
   const a = pending && pinList.find((p) => p.id === pending.from)
   const b = pending && pinList.find((p) => p.id === pending.to)
   const sa = a ? worldToScreen({ x: a.pos.u * WORLD_SIZE, y: a.pos.v * WORLD_SIZE }, cam) : null
@@ -333,6 +348,7 @@ function RouteLayer({
         action={
           step === 'from' && (
             <button
+              ref={connectButton}
               type="button"
               data-route-action
               disabled={disabled || cities < MIN_CITIES}
