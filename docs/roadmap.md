@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-25
+updated: 2026-11-27
 ---
 
 # Roadmap
@@ -73,8 +73,29 @@ sempre a próxima. Linhas são criadas por `./scripts/new-issue.sh` e o status m
   "Conectar cidades" decididos no [plano do M3](milestones/m3.md).
 - **Tamanho:** M
 
+### M4 — Polimento e dívidas
+- **Objetivo:** acertar as arestas que o M0 ao M3 deixaram na v1 (teclado e foco, testes
+  instáveis, mundos salvos e ajustes visuais), sem feature nova.
+- **Escopo:** nenhuma feature `F#` nova. Follow-ups `prio:baixa` de F1 a F5, escolhidos no
+  `/planejar M4`, em quatro frentes: teclado e foco (ex.: #147, #230, #238, #270, #271, #222,
+  #223); testes e CI estáveis (ex.: #152, #143, #195, #180, #219, #240, #66); mundos salvos (ex.:
+  #172, #171, #226); ajustes visuais `type:design` (ex.: #190, #117, #118, #73, #267, #301). Os
+  nits só de comentário, formatação ou texto de spec entram juntos em poucas issues, ou ficam de
+  fora.
+- **Critério de saída:** os fluxos principais (criar mundo, ajustar os sliders, criar e editar
+  pin, desenhar estrada, rota automática, exportar e importar) rodam só com teclado e estão
+  cobertos por E2E; a suíte inteira passa no CI sem teste pulado por instabilidade, e a lacuna do
+  Firefox sem WebGL2 fica resolvida ou registrada; reabrir um mundo usa o `generatorVersion`
+  salvo; cada follow-up escolhido no plano do M4 termina fechado ou registrado como fora.
+- **Depende de / decisões abertas:** fim do M3. O tamanho máximo do mapa e o idioma da interface
+  continuam em aberto e ficam fora do M4.
+  > Pendente: quantas versões antigas do gerador manter, e por quanto tempo (spec de mundos). Isso
+  > define o alcance da #172.
+- **Tamanho:** M
+
 Fora dos milestones: a preparação 3D (Fase 10 do material), porque o planeta 3D é Won't na v1. O
-polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
+polimento (Fase 9) foi distribuído pelos milestones das features que ele toca, e o que sobrou dele
+está no M4.
 
 ## Issues por milestone
 
