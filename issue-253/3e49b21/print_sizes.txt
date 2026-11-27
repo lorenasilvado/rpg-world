@@ -1,0 +1,7 @@
+commit: 3e49b21a7a4519190da29bc7c7416556db2b54ae
+ac-f5-15-01-pin-do-meio-anterior-e-seguinte.png  1280x800  9fa7469874a79c2a6e16e1dde712e038a6f2422bac44fe856be1a1d636f2dee5
+ac-f5-15-02-clicar-no-vizinho-abre-a-ficha-dele.png  1280x800  ee795148a49fbcd2e82539343b97811e4e16fbc5583bf83d7e79e75aaac326c4
+ac-f5-15-03-ponto-no-mapa-abre-a-estrada.png  1280x800  8555805a46a2da8b73c3d3d3eb9908aece083f2a805241bcfe09ff56c0497589
+ac-f5-15-04-sem-estradas.png  1280x800  23e29da62aab3a640c2da6c9c603e5f3d8adeda7c576dfeee509f2df3224485c
+ac-f5-15-05-celular-com-estradas.png  390x844  a3fb70ba000d028aa427d86eae8b22551d695ab5152700245d02d5b256ed3612
+ac-f5-15-06-celular-sem-estradas.png  390x844  938da3b37a314dc77968900abdfe127f71a24ea84b0d45fdb6878afe75c64c5f
