@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Pin, Road } from '../persistence/types'
 import { createPinsStore } from './pinsStore'
-import { NEW_ROAD_NAME, createRoadsStore, roadsWithPins } from './roadsStore'
+import { NEW_ROAD_NAME, createRoadsStore, linkedPins, roadsWithPins } from './roadsStore'
 
 const pin = (id: string): Pin => ({ id, type: 'cidade', name: id, pos: { u: 0.5, v: 0.5 }, icon: { kind: 'builtin', key: 'cidade' }, description: '', tags: [], fields: {} })
 const road = (id: string, from?: string, to?: string): Road => ({
@@ -127,5 +127,58 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     expect(roads.getState().roads).toEqual([])
     expect(roads.getState().selectedId).toBeNull()
     expect(roads.getState().removeRoad('r1')).toBe(false)
+  })
+})
+
+describe('pins do meio da estrada (AC-F5-17)', () => {
+  const meio = (id: string): Road => ({
+    id,
+    name: id,
+    kind: 'road',
+    points: [
+      { u: 0.1, v: 0.1 },
+      { u: 0.3, v: 0.3, pin: 'c' },
+      { u: 0.5, v: 0.5, pin: 'd' },
+      { u: 0.7, v: 0.7 },
+    ],
+    from: 'a',
+  })
+
+  it('addRoad guarda o pin do meio ligado ao ponto', () => {
+    const pins = createPinsStore([pin('a'), pin('c'), pin('d')])
+    const roads = createRoadsStore([], pins, { newId: () => 'r' })
+    const { points, from } = meio('x')
+    expect(roads.getState().addRoad({ points, from })?.points).toEqual(meio('x').points)
+  })
+
+  it('ao abrir, o pin do meio que não existe perde o vínculo e o ponto fica onde está', () => {
+    const pins = createPinsStore([pin('a'), pin('c')])
+    const roads = createRoadsStore([meio('r')], pins)
+    expect(roads.getState().roads[0].points).toEqual([{ u: 0.1, v: 0.1 }, { u: 0.3, v: 0.3, pin: 'c' }, { u: 0.5, v: 0.5 }, { u: 0.7, v: 0.7 }])
+    expect(roads.getState().roads[0].from).toBe('a')
+  })
+
+  it('excluir um pin do meio deixa a estrada, com o ponto solto onde o pin estava; o pin da ponta a exclui', () => {
+    const pins = createPinsStore([pin('a'), { ...pin('c'), pos: { u: 0.35, v: 0.4 } }, pin('d')])
+    const roads = createRoadsStore([meio('r')], pins)
+    roads.getState().select('r')
+    pins.getState().removePin('c')
+    expect(roads.getState().roads).toHaveLength(1)
+    expect(roads.getState().roads[0].points[1]).toEqual({ u: 0.35, v: 0.4 })
+    expect(roads.getState().roads[0].points[2]).toEqual({ u: 0.5, v: 0.5, pin: 'd' })
+    expect(roads.getState().selectedId).toBe('r')
+    pins.getState().removePin('a')
+    expect(roads.getState().roads).toEqual([])
+  })
+
+  it('roadsWithPins devolve a mesma lista quando nenhum pin ligado sai', () => {
+    const list = [meio('r')]
+    expect(roadsWithPins(list, [pin('a'), pin('c'), pin('d')])).toBe(list)
+  })
+
+  it('linkedPins: a ponta, os pins do meio e a outra ponta, na ordem da estrada, sem repetir', () => {
+    expect(linkedPins({ ...meio('r'), to: 'b' })).toEqual(['a', 'c', 'd', 'b'])
+    expect(linkedPins({ ...meio('r'), to: 'a' })).toEqual(['a', 'c', 'd'])
+    expect(linkedPins(road('r'))).toEqual([])
   })
 })

@@ -25,6 +25,19 @@ describe('estradas: curva e traços (AC-F5-01)', () => {
     expect(road.points[0]).toEqual({ u: 0.1, v: 0.1 })
   })
 
+  it('o ponto do meio ligado a um pin fica nele; com o pin sumido, fica onde está (AC-F5-17)', () => {
+    const road = { points: [{ u: 0.1, v: 0.1 }, { u: 0.5, v: 0.5, pin: 'c' }, { u: 0.6, v: 0.6, pin: 'sumiu' }, { u: 0.9, v: 0.9 }] }
+    const pos = new Map([['c', { u: 0.4, v: 0.7 }]])
+    expect(roadPoints(road, (id) => pos.get(id))).toEqual([
+      { u: 0.1, v: 0.1 },
+      { u: 0.4, v: 0.7 },
+      { u: 0.6, v: 0.6 },
+      { u: 0.9, v: 0.9 },
+    ])
+    // O comprimento é o da curva com o pin na posição dele.
+    expect(roadLengthKm(road, (id) => pos.get(id), 1024)).toBeGreaterThan(roadLengthKm(road, () => undefined, 1024))
+  })
+
   it('a curva Catmull-Rom passa por todos os pontos, uma cúbica por par', () => {
     const pts = [
       { x: 0, y: 0 },

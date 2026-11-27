@@ -24,7 +24,19 @@ describe('Desenhar estrada: o estado (AC-F5-04, AC-F5-05)', () => {
         { u: 0.15, v: 0.2, pin: 'meio' },
         { u: 0.2, v: 0.2, pin: 'b' },
       ]),
-    ).toEqual({ points: [{ u: 0.1, v: 0.1 }, { u: 0.15, v: 0.2 }, { u: 0.2, v: 0.2 }], from: 'a', to: 'b' })
+    ).toEqual({ points: [{ u: 0.1, v: 0.1 }, { u: 0.15, v: 0.2, pin: 'meio' }, { u: 0.2, v: 0.2 }], from: 'a', to: 'b' })
+    // O pin clicado no meio do desenho fica ligado ao ponto dele (AC-F5-17); um ponto solto, não.
+    expect(
+      draftToRoad([
+        { u: 0.1, v: 0.1 },
+        { u: 0.3, v: 0.3, pin: 'c' },
+        { u: 0.4, v: 0.4 },
+        { u: 0.5, v: 0.5, pin: 'd' },
+        { u: 0.6, v: 0.6 },
+      ]),
+    ).toEqual({
+      points: [{ u: 0.1, v: 0.1 }, { u: 0.3, v: 0.3, pin: 'c' }, { u: 0.4, v: 0.4 }, { u: 0.5, v: 0.5, pin: 'd' }, { u: 0.6, v: 0.6 }],
+    })
     // Só o fim num pin.
     expect(draftToRoad([{ u: 0.1, v: 0.1 }, { u: 0.2, v: 0.2, pin: 'b' }])).toEqual({ points: [{ u: 0.1, v: 0.1 }, { u: 0.2, v: 0.2 }], to: 'b' })
   })

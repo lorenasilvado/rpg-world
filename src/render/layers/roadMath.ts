@@ -55,12 +55,15 @@ export function cssColor(color: number): string {
 }
 
 /**
- * Os pontos da estrada, com a ponta ligada a um pin (`from`, `to`) na posição dele (`pinPos`; o pin
- * arrastado dá a posição do arrasto). Uma ponta cujo pin não existe fica no ponto dela. O meio do
- * traçado não muda.
+ * Os pontos da estrada, com a ponta ligada a um pin (`from`, `to`) e o ponto do meio ligado a um pin
+ * (`pin`, AC-F5-17) na posição dele (`pinPos`; o pin arrastado dá a posição do arrasto). Um ponto
+ * cujo pin não existe fica onde está. O resto do traçado não muda.
  */
 export function roadPoints(road: Pick<Road, 'points' | 'from' | 'to'>, pinPos: (id: string) => UV | undefined): UV[] {
-  const points = road.points.map((p) => ({ u: p.u, v: p.v }))
+  const points = road.points.map((p) => {
+    const at = p.pin !== undefined ? pinPos(p.pin) : undefined
+    return at ? { u: at.u, v: at.v } : { u: p.u, v: p.v }
+  })
   if (points.length === 0) return points
   const a = road.from !== undefined ? pinPos(road.from) : undefined
   const b = road.to !== undefined ? pinPos(road.to) : undefined

@@ -187,6 +187,24 @@ describe('Desenhar estrada (AC-F5-04, AC-F5-05)', () => {
     ])
   })
 
+  it('clicar num pin no meio do desenho o liga ao ponto dele (AC-F5-17)', () => {
+    const { ui, roads } = setup()
+    act(() => ui.getState().setTool('road'))
+    click(256, 245)
+    click(768, 500)
+    click(900, 800)
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    expect(roads.getState().roads[0]).toMatchObject({
+      from: 'a',
+      points: [
+        { u: 0.25, v: 0.25 },
+        { u: 0.75, v: 0.5, pin: 'b' },
+        { u: 900 / 1024, v: 800 / 1024 },
+      ],
+    })
+    expect(roads.getState().roads[0].to).toBeUndefined()
+  })
+
   it('a estrada criada tira a seleção do pin', () => {
     const { ui, pins, roads } = setup()
     act(() => pins.getState().select('a'))
