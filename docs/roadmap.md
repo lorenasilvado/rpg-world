@@ -167,4 +167,4 @@ polimento (Fase 9) foi distribuído pelos milestones das features que ele toca.
 | 68 | #251 | [feat] Sem caminho por terra e rota marítima | done | specs/estradas.md | #289 |
 | 69 | #252 | [feat] Conectar cidades | done | specs/estradas.md | #292 |
 | 70 | #253 | [feat] Estradas na aba Conexões do pin | done | specs/estradas.md | #296 |
-| 71 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | doing | specs/estradas.md | |
+| 71 | #254 | [chore] E2E dos fluxos e medição de saída do M3 | done | specs/estradas.md | |
