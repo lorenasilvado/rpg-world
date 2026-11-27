@@ -3,13 +3,17 @@
  * e o nome da rota criada.
  */
 
-/** O passo da ferramenta: escolhendo a origem, escolhendo o destino ou esperando o worker. */
-export type RouteStep = 'from' | 'to' | 'calculating'
+/**
+ * O passo da ferramenta: escolhendo a origem, escolhendo o destino, esperando o worker pela rota ou
+ * pela malha de "Conectar cidades" (AC-F5-14).
+ */
+export type RouteStep = 'from' | 'to' | 'calculating' | 'connecting'
 
 /** A dica da ferramenta, no topo do mapa. */
 export function routeHint(step: RouteStep): string {
   if (step === 'from') return 'Clique no pin de origem'
   if (step === 'to') return 'Agora clique no pin de destino'
+  if (step === 'connecting') return 'Conectando…'
   return 'Calculando a rota…'
 }
 

@@ -13,3 +13,4 @@ export {
   type RouteMode,
   type RoutePoint,
 } from './findRoute'
+export { cityRoutes, connectCities, NETWORK_CANDIDATES, type CityNetwork, type NetworkLink } from './connectCities'

@@ -79,6 +79,35 @@ describe('roadsStore (AC-F5-01, AC-F5-02)', () => {
     expect(pins.getState().selectedId).toBe('a')
   })
 
+  it('addRoads cria várias estradas numa mudança só, sem seleção, e pula as de menos de 2 pontos (AC-F5-14)', () => {
+    const pins = createPinsStore([pin('a'), pin('b'), pin('c')])
+    let n = 0
+    const roads = createRoadsStore([], pins, { newId: () => `r${++n}` })
+    pins.getState().select('a')
+    let changes = 0
+    roads.subscribe((s, prev) => s.roads !== prev.roads && changes++)
+    const pts = [
+      { u: 0.1, v: 0.1 },
+      { u: 0.2, v: 0.2 },
+    ]
+    const created = roads.getState().addRoads([
+      { points: pts, from: 'a', to: 'b', name: 'Rota de a a b' },
+      { points: [pts[0]], from: 'b', to: 'c' },
+      { points: pts, from: 'b', to: 'sumiu', name: 'Rota de b a c' },
+    ])
+    expect(changes).toBe(1)
+    expect(created.map((r) => [r.id, r.name, r.from, r.to])).toEqual([
+      ['r1', 'Rota de a a b', 'a', 'b'],
+      ['r2', 'Rota de b a c', 'b', undefined],
+    ])
+    expect(roads.getState().roads).toEqual(created)
+    expect(roads.getState().selectedId).toBeNull()
+    expect(pins.getState().selectedId).toBe('a')
+    // Nada a criar: nenhuma mudança.
+    expect(roads.getState().addRoads([])).toEqual([])
+    expect(changes).toBe(1)
+  })
+
   it('addRoad com kind: sea cria a rota marítima (AC-F5-13)', () => {
     const pins = createPinsStore([pin('a'), pin('b')])
     const roads = createRoadsStore([], pins, { newId: () => 'r' })

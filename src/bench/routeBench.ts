@@ -2,12 +2,13 @@ import { BIOME, createRandom } from '../core'
 import type { Generator } from '../workers/generatorClient'
 import type { Router } from '../workers/routerClient'
 import { createFrameMonitor } from './runBench'
-import { MAP_SIZE, ROUTE_TARGET_MS, type RouteBenchReport } from './report'
+import { CONNECT_CITIES, CONNECT_TARGET_MS, MAP_SIZE, ROUTE_TARGET_MS, type RouteBenchReport } from './report'
 
 /**
  * Medição da rota pelo terreno (#249, AC-F5-11): gera o mapa 1024² de uma seed fixa no worker de
  * geração, manda o campo ao worker de rota e mede `runs` rotas por terra entre pontos de terra
- * sorteados (com a seed), longe um do outro.
+ * sorteados (com a seed), longe um do outro. Depois, "Conectar cidades" (#252, AC-F5-14) entre
+ * `CONNECT_CITIES` pontos de terra sorteados, nenhum já ligado.
  */
 export const ROUTE_BENCH_SEED = 'rpg-world'
 
@@ -61,6 +62,11 @@ export async function runRouteBench(gen: Generator, router: Router, runs: number
   } finally {
     frames.stop()
   }
+  onStep(`Conectando ${CONNECT_CITIES} cidades…`)
+  const cities = Array.from({ length: CONNECT_CITIES }, land)
+  const connectStart = performance.now()
+  const { network, workerMs: connectWorkerMs } = await router.connect({ cities, groups: cities.map((_, k) => k) })
+  const connectMs = performance.now() - connectStart
   return {
     machine: { userAgent: navigator.userAgent, cores: navigator.hardwareConcurrency },
     seed: ROUTE_BENCH_SEED,
@@ -74,5 +80,13 @@ export async function runRouteBench(gen: Generator, router: Router, runs: number
     workerMax: round(Math.max(...inWorker)),
     noPath,
     maxFrameGap: round(frames.maxGap),
+    connect: {
+      cities: CONNECT_CITIES,
+      targetMs: CONNECT_TARGET_MS,
+      ms: round(connectMs),
+      workerMs: round(connectWorkerMs),
+      links: network.links.length,
+      isolated: network.isolated.length,
+    },
   }
 }

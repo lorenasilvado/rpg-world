@@ -34,6 +34,7 @@ function fakeRouter() {
         options?.signal?.addEventListener('abort', () => reject(abortError()))
         calls.push({ req, resolve, reject, signal: options?.signal })
       }),
+    connect: () => new Promise(() => {}),
     dispose: vi.fn(),
   }
   return { router, calls }

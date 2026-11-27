@@ -1,4 +1,14 @@
-import { buildCostGrid, findRoute, type CostGrid, type Route, type RouteField, type RouteMode, type RoutePoint } from '../core'
+import {
+  buildCostGrid,
+  connectCities,
+  findRoute,
+  type CityNetwork,
+  type CostGrid,
+  type Route,
+  type RouteField,
+  type RouteMode,
+  type RoutePoint,
+} from '../core'
 
 /**
  * API que o worker de rota expõe pelo Comlink (`router.worker.ts`; F5, AC-F5-09 a 11). Fica num
@@ -13,6 +23,19 @@ export type RouteResponse = {
   /** A rota, ou `null` quando não há caminho (por terra, ex.: um pin numa ilha). */
   route: Route | null
   /** Tempo da rota dentro do worker, em ms. */
+  workerMs: number
+}
+
+/**
+ * "Conectar cidades" (AC-F5-14): as cidades e, para cada uma, o grupo das que já estão ligadas por
+ * estrada (o mesmo número: já ligadas).
+ */
+export type ConnectRequest = { cities: RoutePoint[]; groups: number[] }
+
+export type ConnectResponse = {
+  /** As estradas novas (índices em `cities`) e as cidades que ficaram de fora. */
+  network: CityNetwork
+  /** Tempo da malha dentro do worker, em ms. */
   workerMs: number
 }
 
@@ -35,6 +58,14 @@ export const routerApi = {
     const start = performance.now()
     const route = findRoute(grid, from, to, mode)
     return { route, workerMs: performance.now() - start }
+  },
+
+  /** A malha entre as cidades: a árvore mínima pelo custo do terreno (`connectCities`). */
+  connect({ cities, groups }: ConnectRequest): ConnectResponse {
+    if (!grid) throw new Error('o worker de rota ainda não recebeu o campo do mapa')
+    const start = performance.now()
+    const network = connectCities(grid, cities, groups)
+    return { network, workerMs: performance.now() - start }
   },
 
   /** Esquece a grade (para os testes). */

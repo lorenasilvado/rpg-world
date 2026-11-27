@@ -26,7 +26,8 @@ export function PinDeletedToast({
   open: number | null
   /** O texto do toast: "Pin excluído" ou, para a estrada (estradas.md, AC-F5-08), "Estrada excluída". */
   message?: string
-  onUndo: () => void
+  /** Sem ele, o toast não tem "Desfazer" (nada a desfazer: "Conectar cidades" sem estrada nova). */
+  onUndo?: () => void
   onClose: () => void
   beside?: boolean
   bottom?: number
@@ -46,14 +47,18 @@ export function PinDeletedToast({
       style={{ bottom, right, ...(beside ? { width: TOAST_WIDTH } : { left: BAR_SIDE }) }}
       className="toast-in pointer-events-auto absolute z-[2] flex items-center gap-3 rounded-panel bg-paper-solid py-2 pr-2 pl-4 text-ink shadow-lg"
     >
-      <span className="flex-1 font-semibold">{message}</span>
-      <button
-        type="button"
-        onClick={onUndo}
-        className="h-11 rounded-control px-3 font-extrabold text-amber-ink hover:bg-hover active:bg-press"
-      >
-        Desfazer
-      </button>
+      <span className="flex-1 leading-5 font-semibold">{message}</span>
+      {onUndo ? (
+        <button
+          type="button"
+          onClick={onUndo}
+          className="h-11 rounded-control px-3 font-extrabold text-amber-ink hover:bg-hover active:bg-press"
+        >
+          Desfazer
+        </button>
+      ) : (
+        <span aria-hidden className="h-11" />
+      )}
     </div>
   )
 }
