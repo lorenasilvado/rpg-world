@@ -34,10 +34,13 @@ test('o build abre em /rpg-world/ sem erro, com os assets no caminho base (AC-M0
 })
 
 // A medição do spike de desempenho (#9) abre no caminho base, com o worker do build gerando.
+// Na suíte inteira, com os outros projetos disputando a CPU, a medição passa dos 30 s do limite
+// padrão (#300); um estouro aqui deixa sem rodar o projeto desempenho, que depende de pages.
+// O limite do teste é a espera pela medição mais a margem para abrir a página e clicar.
+const BENCH_DONE_MS = 60_000
+const BENCH_MARGIN_MS = 30_000
 test('a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-05)', async ({ page }) => {
-  // Na suíte inteira, com os outros projetos disputando a CPU, a medição passa dos 30 s do limite
-  // padrão (#300). O limite do teste cobre a espera de 60 s do `expect` e a abertura da página.
-  test.setTimeout(90_000)
+  test.setTimeout(BENCH_DONE_MS + BENCH_MARGIN_MS)
   const problems: string[] = []
   page.on('response', (r) => {
     if (r.status() >= 400) problems.push(`${r.status()} ${r.url()}`)
@@ -47,7 +50,7 @@ test('a medição abre em /rpg-world/bench.html e o worker do build gera (AC-M0-
   page.on('worker', (w) => workers.push(new URL(w.url()).pathname))
   await page.goto('./bench.html?rapido')
   await page.getByRole('button', { name: 'Medir' }).click()
-  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: 60_000 })
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'done', { timeout: BENCH_DONE_MS })
   expect(workers.some((p) => p.startsWith('/rpg-world/assets/'))).toBe(true)
   expect(problems).toEqual([])
 })
